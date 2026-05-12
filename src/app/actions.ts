@@ -15,12 +15,12 @@ const authSchema = z.object({
 export async function signInWithPassword(formData: FormData) {
   const parsed = authSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { ok: false, message: "Invalid credentials shape." };
+    redirect("/en/login?error=invalid-credentials");
   }
 
   const supabase = await createSupabaseServerClient();
   if (!supabase) {
-    return { ok: false, message: "Supabase is not configured. Demo mode is available." };
+    redirect(`/${parsed.data.locale}/lobby?demo=1`);
   }
 
   const { error } = await supabase.auth.signInWithPassword({
@@ -29,7 +29,7 @@ export async function signInWithPassword(formData: FormData) {
   });
 
   if (error) {
-    return { ok: false, message: error.message };
+    redirect(`/${parsed.data.locale}/login?error=${encodeURIComponent(error.message)}`);
   }
 
   revalidatePath(`/${parsed.data.locale}/lobby`);
@@ -39,12 +39,12 @@ export async function signInWithPassword(formData: FormData) {
 export async function signUpWithPassword(formData: FormData) {
   const parsed = authSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    return { ok: false, message: "Invalid account details." };
+    redirect("/en/login?error=invalid-account");
   }
 
   const supabase = await createSupabaseServerClient();
   if (!supabase) {
-    return { ok: false, message: "Supabase is not configured. Add env vars before creating accounts." };
+    redirect(`/${parsed.data.locale}/lobby?demo=1`);
   }
 
   const { error } = await supabase.auth.signUp({
@@ -53,7 +53,7 @@ export async function signUpWithPassword(formData: FormData) {
   });
 
   if (error) {
-    return { ok: false, message: error.message };
+    redirect(`/${parsed.data.locale}/login?error=${encodeURIComponent(error.message)}`);
   }
 
   revalidatePath(`/${parsed.data.locale}/lobby`);
