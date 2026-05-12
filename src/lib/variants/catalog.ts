@@ -1,6 +1,6 @@
 import type { VariantDefinition } from "./types";
 
-export const variantCatalog = [
+export const variantCatalog: VariantDefinition[] = [
   {
     key: "classic",
     nameKey: "variant.classic",
@@ -156,7 +156,7 @@ export const variantCatalog = [
     setup: ["rnbqkbnr", "pppppppp", "........", "........", "........", "........", "PPPPPPPP", "RNBQKBNR"],
     aliases: ["3-check"]
   }
-] as const satisfies VariantDefinition[];
+] satisfies VariantDefinition[];
 
 export type VariantKey = (typeof variantCatalog)[number]["key"];
 
