@@ -96,13 +96,14 @@ export function applyMove(state: GameState, move: Move): GameState {
   const toCell = cellAt(next, move.to);
   if (!fromCell?.piece || !toCell) throw new Error("errors.invalidMove");
 
+  const movingPiece = fromCell.piece;
   const captured = toCell.piece;
   if (captured) next.captured.push(captured);
-  toCell.piece = { ...fromCell.piece, promoted: move.promotion || fromCell.piece.promoted };
+  toCell.piece = { ...movingPiece, promoted: move.promotion || movingPiece.promoted };
   fromCell.piece = null;
   next.ply += 1;
   next.turn = next.turn === next.clocks[0]?.color ? next.clocks[1]?.color ?? "black" : next.clocks[0]?.color ?? "white";
-  next.moves.push({ ...move, notation: notationFor(fromCell.piece, move) });
+  next.moves.push({ ...move, notation: notationFor(movingPiece, move) });
   return next;
 }
 
