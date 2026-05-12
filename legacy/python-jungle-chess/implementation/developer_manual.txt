@@ -1,0 +1,14 @@
+
+# Getting Started - Ubuntu
+
+## Setup
+- **Python**: Version 3.11.2 required
+- **Editor**: We recommend Visual Studio Code for the best development experience
+
+## Launch the Game
+
+# Navigate to project folder
+cd ChineseChessGame
+
+# Start the game
+python3 main.py
