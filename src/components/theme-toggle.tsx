@@ -17,7 +17,8 @@ export function ThemeToggle({ labels }: { labels: Record<"light" | "dark" | "sys
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const frame = window.requestAnimationFrame(() => setMounted(true));
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   return (
