@@ -1,0 +1,69 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: allchess-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DEPLOYMENT_TARGET: self-hosted
+      DATABASE_DRIVER: postgres
+      OBJECT_STORAGE_DRIVER: s3
+      DATABASE_URL: postgresql://allchess:allchess_dev_password@postgres:5432/allchess
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: allchess-objects
+      S3_ACCESS_KEY_ID: allchess
+      S3_SECRET_ACCESS_KEY: allchess_dev_password
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: allchess-selfhost-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: allchess
+      POSTGRES_USER: allchess
+      POSTGRES_PASSWORD: allchess_dev_password
+    volumes:
+      - allchess_selfhost_postgres:/var/lib/postgresql/data
+      - ./supabase/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U allchess -d allchess"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: allchess-selfhost-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: allchess
+      MINIO_ROOT_PASSWORD: allchess_dev_password
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - allchess_selfhost_minio:/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: allchess-selfhost-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - allchess_selfhost_redis:/data
+
+volumes:
+  allchess_selfhost_postgres:
+  allchess_selfhost_minio:
+  allchess_selfhost_redis:
