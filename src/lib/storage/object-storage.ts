@@ -1,6 +1,6 @@
 export type ObjectStoragePut = {
   key: string;
-  body: BodyInit | ArrayBuffer | Uint8Array | string;
+  body: ArrayBuffer | Blob | ReadableStream | Uint8Array | string | null;
   contentType?: string;
 };
 
