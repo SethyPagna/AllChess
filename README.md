@@ -13,6 +13,8 @@ The active app is a Next.js 16 production build with:
 - A premium game hub, lobby, variant atlas, profiles, history, analysis, and playable board surfaces.
 - Supabase schema, RLS policies, realtime-ready tables, and local Docker Postgres/Redis.
 - Vercel-ready scripts and config.
+- Cloudflare Workers/OpenNext, R2, D1, Workers AI, Hyperdrive, and custom-domain deployment config.
+- Fully self-hosted Docker profile with app, Postgres, MinIO object storage, and Redis.
 
 ## Run Locally
 
@@ -42,4 +44,19 @@ npm run deploy:preview
 npm run deploy:prod
 ```
 
+Cloudflare deployment:
+
+```bash
+npm run cf:build
+npm run cf:deploy
+```
+
+Self-hosted deployment:
+
+```bash
+docker compose -f docker-compose.selfhost.yml up --build
+```
+
 Secrets must stay in Vercel, GitHub secrets, Supabase, or local ignored `.env` files. Never commit real API keys.
+
+See `docs/cloudflare-deployment.md` and `docs/self-hosting.md` for the Cloudflare, domain, database, and object-storage paths.
