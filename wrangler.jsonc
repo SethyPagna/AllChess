@@ -47,6 +47,34 @@
   "env": {
     "production": {
       "name": "allchess-multiplayer",
+      "services": [
+        {
+          "binding": "WORKER_SELF_REFERENCE",
+          "service": "allchess-multiplayer"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "NEXT_INC_CACHE_R2_BUCKET",
+          "bucket_name": "allchess-opennext-cache"
+        },
+        {
+          "binding": "ALLCHESS_OBJECTS",
+          "bucket_name": "allchess-objects",
+          "preview_bucket_name": "allchess-objects-preview"
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "ALLCHESS_D1",
+          "database_name": "allchess-multiplayer",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "cloudflare/d1/migrations"
+        }
+      ],
+      "ai": {
+        "binding": "AI"
+      },
       "routes": [
         {
           "pattern": "allchess.example.com",
