@@ -58,8 +58,9 @@ export function getLegalMoves(state: GameState, from: Square): Move[] {
   const cell = cellAt(state, from);
   if (!cell?.piece || cell.piece.owner !== state.turn) return [];
 
-  const directions = movementDirections(cell.piece.code);
-  const sliding = isSlidingPiece(cell.piece.code);
+  const piece = cell.piece;
+  const directions = movementDirections(piece.code);
+  const sliding = isSlidingPiece(piece.code);
   const moves: Move[] = [];
 
   for (const [dr, dc] of directions) {
@@ -82,7 +83,7 @@ export function getLegalMoves(state: GameState, from: Square): Move[] {
     }
   }
 
-  return moves.filter((move) => terrainAllows(state, cell.piece, move.to));
+  return moves.filter((move) => terrainAllows(state, piece, move.to));
 }
 
 export function applyMove(state: GameState, move: Move): GameState {
