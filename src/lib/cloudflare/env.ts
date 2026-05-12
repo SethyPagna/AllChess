@@ -1,3 +1,5 @@
+import type { Ai, D1Database, Hyperdrive, R2Bucket } from "@cloudflare/workers-types";
+
 export type CloudflareEnv = {
   DEPLOYMENT_TARGET?: "cloudflare" | "vercel" | "self-hosted" | "local";
   DATABASE_DRIVER?: "supabase" | "postgres" | "d1" | "hyperdrive";
