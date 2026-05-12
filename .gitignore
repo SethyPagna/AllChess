@@ -15,3 +15,4 @@ test-results/
 !.env.example
 *.log
 *.tsbuildinfo
+.vercel
