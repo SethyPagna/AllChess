@@ -9,6 +9,8 @@ coverage/
 playwright-report/
 test-results/
 .vercel/
+.open-next/
+.wrangler/
 .env
 .env.local
 .env.*.local
