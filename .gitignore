@@ -1,0 +1,17 @@
+__pycache__/__pycache__/
+*.pyc
+*.pyo
+node_modules/
+.next/
+out/
+dist/
+coverage/
+playwright-report/
+test-results/
+.vercel/
+.env
+.env.local
+.env.*.local
+!.env.example
+*.log
+*.tsbuildinfo
