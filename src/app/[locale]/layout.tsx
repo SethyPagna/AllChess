@@ -92,10 +92,10 @@ export default async function LocaleLayout({
               />
               <Link
                 href={`/${locale}/login`}
-                className="focus-ring inline-flex items-center gap-2 rounded-md bg-[var(--foreground)] px-3 py-2 text-sm font-semibold text-[var(--background)]"
+                className="focus-ring action-secondary inline-flex h-10 items-center gap-2 px-3 text-sm"
               >
                 <UserRound size={16} />
-                {t("nav.login")}
+                <span className="hidden sm:inline">{t("nav.login")}</span>
               </Link>
             </header>
             <main className="flex-1">{children}</main>
