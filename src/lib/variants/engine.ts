@@ -55,8 +55,23 @@ export function buildBoard(variant: VariantDefinition): BoardCell[][] {
 }
 
 export function getLegalMoves(state: GameState, from: Square): Move[] {
+  if (state.status !== "active") return [];
+
   const cell = cellAt(state, from);
   if (!cell?.piece || cell.piece.owner !== state.turn) return [];
+
+  const variant = getVariant(state.variantKey);
+  return getPseudoLegalMoves(state, from).filter((move) => {
+    const target = cellAt(state, move.to)?.piece;
+    if (variant.supportsCheck && target && isRoyal(target)) return false;
+    if (!variant.supportsCheck) return true;
+    return !wouldLeaveRoyalInCheck(state, move, cell.piece.owner);
+  });
+}
+
+function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
+  const cell = cellAt(state, from);
+  if (!cell?.piece) return [];
 
   const piece = cell.piece;
   const variant = getVariant(state.variantKey);
@@ -132,6 +147,10 @@ function xiangqiSoldierMoves(state: GameState, piece: Piece, from: Square) {
 }
 
 export function applyMove(state: GameState, move: Move): GameState {
+  if (state.status !== "active") {
+    throw new Error("errors.gameCompleted");
+  }
+
   const legal = getLegalMoves(state, move.from).some((candidate) => sameSquare(candidate.to, move.to));
   if (!legal) {
     throw new Error("errors.invalidMove");
@@ -142,6 +161,7 @@ export function applyMove(state: GameState, move: Move): GameState {
   const toCell = cellAt(next, move.to);
   if (!fromCell?.piece || !toCell) throw new Error("errors.invalidMove");
 
+  const variant = getVariant(state.variantKey);
   const movingPiece = fromCell.piece;
   const captured = toCell.piece;
   if (captured) next.captured.push(captured);
@@ -150,11 +170,48 @@ export function applyMove(state: GameState, move: Move): GameState {
   next.ply += 1;
   next.turn = next.turn === next.clocks[0]?.color ? next.clocks[1]?.color ?? "black" : next.clocks[0]?.color ?? "white";
   next.moves.push({ ...move, notation: notationFor(movingPiece, move) });
-  if (captured?.code === "k" || captured?.code === "g") {
+  const moverClock = next.clocks.find((clock) => clock.color === movingPiece.owner);
+  if (moverClock) {
+    moverClock.remainingMs += moverClock.incrementMs;
+  }
+
+  if (!variant.supportsCheck && captured && isRoyal(captured)) {
     next.status = "completed";
     next.result = movingPiece.owner;
+    return next;
   }
-  return next;
+  return withOutcome(next, movingPiece.owner, move.to);
+}
+
+function withOutcome(state: GameState, mover: PlayerColor, destination: Square): GameState {
+  const variant = getVariant(state.variantKey);
+  const movedPiece = cellAt(state, destination)?.piece;
+
+  if (variant.key === "king-of-the-hill" && movedPiece && isRoyal(movedPiece) && isCenterSquare(state, destination)) {
+    state.status = "completed";
+    state.result = mover;
+    return state;
+  }
+
+  if (!variant.supportsCheck) return state;
+
+  const defender = state.turn;
+  const defenderInCheck = isInCheck(state, defender);
+  if (defenderInCheck) {
+    state.checks[defender] = (state.checks[defender] ?? 0) + 1;
+    if (variant.key === "three-check" && (state.checks[defender] ?? 0) >= 3) {
+      state.status = "completed";
+      state.result = mover;
+      return state;
+    }
+  }
+
+  if (!hasAnyLegalMove(state, defender)) {
+    state.status = "completed";
+    state.result = defenderInCheck ? mover : "draw";
+  }
+
+  return state;
 }
 
 export function serializeSquare(square: Square) {
@@ -171,6 +228,57 @@ function cellAt(state: GameState, square: Square) {
 
 function isInside(state: GameState, square: Square) {
   return square.row >= 0 && square.col >= 0 && square.row < state.board.length && square.col < (state.board[0]?.length ?? 0);
+}
+
+function wouldLeaveRoyalInCheck(state: GameState, move: Move, owner: PlayerColor) {
+  const next: GameState = structuredClone(state);
+  const fromCell = cellAt(next, move.from);
+  const toCell = cellAt(next, move.to);
+  if (!fromCell?.piece || !toCell) return true;
+  toCell.piece = { ...fromCell.piece, promoted: move.promotion || fromCell.piece.promoted };
+  fromCell.piece = null;
+  return isInCheck(next, owner);
+}
+
+function isInCheck(state: GameState, color: PlayerColor) {
+  const royal = findRoyal(state, color);
+  if (!royal) return false;
+  const attackers = getVariant(state.variantKey).players.filter((player) => player !== color);
+  return attackers.some((attacker) => isSquareAttacked(state, royal.square, attacker));
+}
+
+function isSquareAttacked(state: GameState, square: Square, byColor: PlayerColor) {
+  return state.board.some((row) =>
+    row.some((cell) => {
+      if (cell.piece?.owner !== byColor) return false;
+      return getPseudoLegalMoves(state, cell.square).some((move) => sameSquare(move.to, square));
+    })
+  );
+}
+
+function findRoyal(state: GameState, color: PlayerColor) {
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (cell.piece?.owner === color && isRoyal(cell.piece)) return cell;
+    }
+  }
+  return null;
+}
+
+function hasAnyLegalMove(state: GameState, color: PlayerColor) {
+  if (state.turn !== color) return false;
+  return state.board.some((row) => row.some((cell) => cell.piece?.owner === color && getLegalMoves(state, cell.square).length > 0));
+}
+
+function isRoyal(piece: Piece) {
+  return piece.code === "k" || piece.code === "g";
+}
+
+function isCenterSquare(state: GameState, square: Square) {
+  const centerRows = state.board.length % 2 === 0 ? [state.board.length / 2 - 1, state.board.length / 2] : [Math.floor(state.board.length / 2)];
+  const width = state.board[0]?.length ?? 0;
+  const centerCols = width % 2 === 0 ? [width / 2 - 1, width / 2] : [Math.floor(width / 2)];
+  return centerRows.includes(square.row) && centerCols.includes(square.col);
 }
 
 function makePiece(token: string, owner: PlayerColor, row: number, col: number): Piece {
