@@ -109,6 +109,8 @@ select {
 }
 
 .play-arena {
+  position: relative;
+  z-index: 40;
   display: grid;
   grid-template-columns: 9.5rem minmax(0, 1fr);
   gap: 1rem;
