@@ -6,7 +6,7 @@ import { Bot, Brain, Flag, Lightbulb, PauseCircle, PlayCircle, RotateCcw, Sparkl
 import { botDifficultyLevels, cancelBotMove, requestBotMove, type BotDifficultyKey, type BotMoveResult } from "@/lib/bots";
 import { formatClock, tickGameClock } from "@/lib/clocks";
 import { getTimeControl, timeControls, type TimeControlKey } from "@/lib/time-controls";
-import { applyMove, createInitialState, getLegalMoves, sameSquare, serializeSquare, type GameState, type Move, type Square } from "@/lib/variants";
+import { applyMove, createInitialState, getLegalMoves, sameSquare, serializeSquare, type GameState, type Square } from "@/lib/variants";
 
 const glyphs: Record<string, string> = {
   k: "\u265a",
@@ -96,10 +96,11 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
         return;
       }
 
+      const move = result.move;
       setHistory((current) => [...current, snapshot]);
       setState((current) => {
         if (current.id !== snapshot.id || current.ply !== snapshot.ply || current.turn !== snapshot.turn) return current;
-        return applyMove(current, result.move);
+        return applyMove(current, move);
       });
       setSuggestedMove(null);
       setNotice(source === "auto" ? "Bot replied automatically." : "Bot played the current side.");
