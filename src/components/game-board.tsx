@@ -326,7 +326,14 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
             </button>
             <button
               type="button"
-              onClick={() => setBotMode((current) => (current === "opponent" ? "human" : "opponent"))}
+              aria-label="Play Bots"
+              onClick={() => {
+                setBotMode((current) => {
+                  const next = current === "opponent" ? "human" : "opponent";
+                  setNotice(next === "opponent" ? "Bot opponent is on. Make a move and the bot will reply automatically." : "Bot opponent is off.");
+                  return next;
+                });
+              }}
               className={`focus-ring inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold ${
                 botMode === "opponent" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"
               }`}
