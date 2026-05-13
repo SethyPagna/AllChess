@@ -1,4 +1,5 @@
 import type { PlayerClock, PlayerColor, GameState, Move } from "@/lib/variants";
+import type { CatalogStats, GameFamilyKey } from "@/lib/catalog";
 
 export type RoomStatus = "waiting" | "active" | "completed" | "abandoned";
 export type ChatPolicy = "disabled" | "players" | "spectators" | "everyone";
@@ -44,6 +45,8 @@ export type LiveStats = {
   spectators: number;
   botGames: number;
   source: "durable-object" | "demo";
+  catalog?: CatalogStats;
+  byFamily?: Partial<Record<GameFamilyKey, { activeGames: number; spectators: number; botGames: number }>>;
 };
 
 export type ClientRealtimeMessage =

@@ -43,6 +43,7 @@ describe("site statistics", () => {
     expect(stats.playersOnline.value).toBe("0");
     expect(stats.activeRooms.value).toBe("0");
     expect(stats.spectators.value).toBe("0");
+    expect(Number(stats.variants.value)).toBeGreaterThan(11);
     expect(stats.playersOnline.isEstimated).toBe(false);
   });
 });

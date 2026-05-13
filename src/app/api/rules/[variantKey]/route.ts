@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getGameCatalogEntry } from "@/lib/catalog";
 import { getVariantRuleSummary } from "@/lib/rules-atlas";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ variantKey: string }> }) {
@@ -7,6 +8,18 @@ export async function GET(_request: Request, { params }: { params: Promise<{ var
   try {
     return NextResponse.json(getVariantRuleSummary(variantKey));
   } catch {
-    return NextResponse.json({ error: "Unknown variant." }, { status: 404 });
+    const entry = getGameCatalogEntry(decodeURIComponent(variantKey));
+    if (!entry) {
+      return NextResponse.json({ error: "Unknown game." }, { status: 404 });
+    }
+    return NextResponse.json({
+      variantKey: entry.id,
+      sourceLinks: entry.ruleSourceLinks,
+      numberedBasics: entry.shortRules,
+      specialRules: entry.reviewFocus,
+      winConditions: entry.winConditions,
+      drawConditions: entry.playability === "playable" ? ["See the playable rules adapter for draw handling."] : ["Draw handling is locked before a game becomes playable."],
+      illegalMoveNotes: entry.playability === "playable" ? ["All moves are validated by the authoritative rules engine."] : ["This game is not marked playable until illegal-move tests pass."]
+    });
   }
 }

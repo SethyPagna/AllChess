@@ -1,5 +1,6 @@
 import type { D1Database } from "@cloudflare/workers-types";
 
+import { getCatalogStats } from "@/lib/catalog";
 import type { GameState, Move } from "@/lib/variants";
 import type { LiveStats, RoomSnapshot } from "@/lib/realtime/types";
 
@@ -126,12 +127,14 @@ export function createD1GameRepository(db: D1Database): GameRepository {
         .first<{ activeRooms?: number; activeGames?: number; spectators?: number }>();
 
       return {
-        playersOnline: Number(rooms?.activeRooms ?? 0) * 2,
+        playersOnline: 0,
         activeRooms: Number(rooms?.activeRooms ?? 0),
         activeGames: Number(rooms?.activeGames ?? 0),
         spectators: Number(rooms?.spectators ?? 0),
         botGames: 0,
-        source: "durable-object"
+        source: "durable-object",
+        catalog: getCatalogStats(),
+        byFamily: {}
       };
     },
 

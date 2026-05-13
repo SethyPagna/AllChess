@@ -1,4 +1,5 @@
 import { applyMove, createInitialState, getLegalMoves, sameSquare, type GameState, type Move } from "@/lib/variants";
+import { getCatalogStats } from "@/lib/catalog";
 import type { LiveStats, MatchmakingTicket, RoomSnapshot } from "@/lib/realtime/types";
 
 export function createRoomSnapshot(input: {
@@ -77,6 +78,8 @@ export function createDemoLiveStats(overrides: Partial<LiveStats> = {}): LiveSta
     spectators: 0,
     botGames: 0,
     source: "demo",
+    catalog: getCatalogStats(),
+    byFamily: {},
     ...overrides
   };
 }

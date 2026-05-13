@@ -53,7 +53,7 @@ describe("realtime multiplayer foundations", () => {
     await expect(ticket.json()).resolves.toMatchObject({ mode: "demo", ticket: { profileId: "p1" } });
 
     const stats = await liveStatsGet();
-    await expect(stats.json()).resolves.toMatchObject({ source: "demo", playersOnline: 0 });
+    await expect(stats.json()).resolves.toMatchObject({ source: "demo", playersOnline: 0, catalog: { playableGames: 11 } });
 
     const bot = await botMovePost(
       new Request("http://allchess.test/api/bots/move", {
