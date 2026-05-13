@@ -25,6 +25,7 @@ describe("game outcome descriptions", () => {
       headline: "You won by checkmate",
       completedAtPly: 1
     });
+    expect(outcome?.context.join(" ")).toContain("escape, capture, or block");
   });
 
   test("describes draws without celebration", () => {
@@ -43,6 +44,7 @@ describe("game outcome descriptions", () => {
       celebrate: false,
       headline: "Draw by stalemate"
     });
+    expect(describeGameOutcome(state, "white")?.context.join(" ")).toContain("not currently in check");
   });
 
   test("describes timeout losses from the viewer perspective", () => {
@@ -61,5 +63,6 @@ describe("game outcome descriptions", () => {
       headline: "You lost on time",
       celebrate: false
     });
+    expect(describeGameOutcome(state, "white")?.context.join(" ")).toContain("clock reached zero");
   });
 });

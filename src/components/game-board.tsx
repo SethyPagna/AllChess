@@ -370,6 +370,11 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
                     <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">Match over</p>
                     <h2>{outcome.headline}</h2>
                     <p>{outcome.detail}</p>
+                    <ul className="match-result-context">
+                      {outcome.context.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
                     <div className="mt-4 flex flex-wrap justify-center gap-2">
                       <button type="button" onClick={reset} className="focus-ring action-primary px-4 py-2 text-sm">
                         Play again

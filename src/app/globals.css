@@ -473,6 +473,26 @@ select {
   font-weight: 700;
 }
 
+.match-result-context {
+  display: grid;
+  gap: 0.42rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.match-result-context li {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  padding: 0.5rem 0.6rem;
+  color: var(--foreground);
+  font-size: 0.82rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
 .match-result-win {
   border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
 }
