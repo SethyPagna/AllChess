@@ -27,7 +27,7 @@ const en = {
   "nav.login": "Sign in",
   "nav.profile": "Profile",
   "auth.title": "Welcome back",
-  "auth.subtitle": "Sign in with Supabase auth to keep ratings, records, and preferences synced.",
+  "auth.subtitle": "Sign in with AllChess auth to keep ratings, records, and preferences synced in Cloudflare D1.",
   "auth.email": "Email",
   "auth.password": "Password",
   "auth.magic": "Send magic link",
