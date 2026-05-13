@@ -1,64 +1,49 @@
 # Cloudflare Deployment
 
-AllChess supports Cloudflare as a first-class deployment target alongside GitHub, local development, and Vercel.
+AllChess is Cloudflare-first. Supabase, Hyperdrive, Vercel databases, and Vercel object storage are not part of the runtime plan.
 
 ## Architecture
 
 - Runtime: Cloudflare Workers through the OpenNext Cloudflare adapter.
-- Static assets: Worker assets from `.open-next/assets`.
-- Next incremental cache: R2 bucket `allchess-opennext-cache`.
+- Database: D1 database `allchess`.
 - User objects: R2 bucket `allchess-objects`.
-- Cloudflare-native SQL: D1 database `allchess-multiplayer`.
-- Postgres path: Hyperdrive binding `HYPERDRIVE` for Supabase, Neon, or self-hosted Postgres.
-- AI path: Workers AI binding `AI`, with OpenAI still supported through environment secrets.
-- Domain path: custom domain route in `wrangler.jsonc`.
+- Preview objects: R2 bucket `allchess-objects-preview`.
+- Next incremental cache: R2 bucket `allchess-opennext-cache`.
+- AI: Workers AI binding `AI`, with optional OpenAI secrets for deeper review.
+- Other products: LEARN and edsync must use separate Cloudflare resources.
 
-## One-Time Cloudflare Setup
+## One-Time Setup
 
 ```bash
 npx wrangler login
 npx wrangler r2 bucket create allchess-opennext-cache
 npx wrangler r2 bucket create allchess-objects
 npx wrangler r2 bucket create allchess-objects-preview
-npx wrangler d1 create allchess-multiplayer
+npx wrangler d1 create allchess
+npm run db:migrate:remote
 ```
 
-Copy the returned D1 database id into `wrangler.jsonc`.
-
-For Postgres through Hyperdrive:
-
-```bash
-npx wrangler hyperdrive create allchess-postgres --connection-string "postgres://USER:PASSWORD@HOST:5432/DATABASE"
-```
-
-Copy the returned Hyperdrive id into `wrangler.jsonc`.
-
-## Local Cloudflare Preview
-
-```bash
-npm run cf:build
-npm run cf:preview
-```
-
-## Deploy to Cloudflare
-
-```bash
-npm run cf:deploy
-```
-
-## Domain
-
-Replace `allchess.example.com` in `wrangler.jsonc` with the real domain, then make sure the domain is on Cloudflare DNS. Use Cloudflare dashboard rules for WAF, bot protection, and TLS mode.
+Copy the D1 database id into `wrangler.jsonc` and set the same value as `CLOUDFLARE_D1_DATABASE_ID` anywhere the app runs outside Workers.
 
 ## Secrets
 
-Set secrets with Wrangler, never in Git:
+Use Wrangler, Vercel, or GitHub secrets. Never commit tokens.
 
 ```bash
+npx wrangler secret put SESSION_SECRET
 npx wrangler secret put OPENAI_API_KEY
-npx wrangler secret put NEXT_PUBLIC_SUPABASE_URL
-npx wrangler secret put NEXT_PUBLIC_SUPABASE_ANON_KEY
-npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY
+npx wrangler secret put GOOGLE_CLIENT_ID
+npx wrangler secret put GOOGLE_CLIENT_SECRET
+npx wrangler secret put GOOGLE_REDIRECT_URI
 ```
 
-Cloudflare resource bindings are declared in `wrangler.jsonc`; secret values stay in Cloudflare.
+If a broad Cloudflare token was exposed in chat or logs, rotate it after creating least-privilege tokens for Workers, D1, R2, and DNS.
+
+## Deploy
+
+```bash
+npm run verify
+npm run cf:deploy
+```
+
+For Vercel, link the project as `allchess` and set Cloudflare credentials in Vercel environment variables. Vercel should host the app only; data still belongs to Cloudflare D1/R2.
