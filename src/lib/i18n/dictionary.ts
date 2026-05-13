@@ -21,6 +21,7 @@ const en = {
   "app.description": "A multilingual multiplayer chess platform with global variants, realtime rooms, records, and AI review.",
   "nav.home": "Home",
   "nav.lobby": "Lobby",
+  "nav.play": "Play",
   "nav.variants": "Variants",
   "nav.history": "History",
   "nav.settings": "Settings",

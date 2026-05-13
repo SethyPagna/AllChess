@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Bell, ChevronDown, Diamond, Eye, Flag, GraduationCap, Handshake, Mail, Puzzle, Radio, Search, Settings, Share2, Swords, Users } from "lucide-react";
+import { Eye, Flag, Handshake, Radio, Share2, Users } from "lucide-react";
 
 import { GameBoard } from "@/components/game-board";
 import { RulesPanel } from "@/components/rules-panel";
@@ -23,63 +23,8 @@ export default async function PlayPage({
     notFound();
   }
 
-  const navItems = [
-    { label: "Play", icon: Swords, href: `/${locale}/play/classic`, active: true },
-    { label: "Puzzles", icon: Puzzle, href: `/${locale}/learn` },
-    { label: "Learn", icon: GraduationCap, href: `/${locale}/learn` },
-    { label: "More", icon: ChevronDown, href: `/${locale}/variants` }
-  ];
-
   return (
     <section className="play-arena">
-      <aside className="play-rail" aria-label="Play navigation">
-        <a href={`/${locale}`} className="play-rail-brand focus-ring">
-          <span className="play-rail-mark">A</span>
-          <span>AllChess</span>
-        </a>
-
-        <nav className="play-rail-nav">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <a key={item.label} href={item.href} className={`play-rail-link focus-ring ${item.active ? "is-active" : ""}`}>
-                <Icon size={21} />
-                <span>{item.label}</span>
-              </a>
-            );
-          })}
-          <a href={`/${locale}/profile`} className="play-rail-link play-rail-trial focus-ring">
-            <Diamond size={21} />
-            <span>Free Trial</span>
-          </a>
-        </nav>
-
-        <div className="play-rail-bottom">
-          <button type="button" className="play-rail-search focus-ring">
-            <Search size={18} />
-            <span>Search</span>
-          </button>
-          <a href={`/${locale}/profile`} className="play-rail-profile focus-ring">
-            <span className="play-rail-avatar">P</span>
-            <span>Player</span>
-          </a>
-          <div className="play-rail-icons">
-            <button type="button" className="focus-ring" aria-label="Friends">
-              <Users size={18} />
-            </button>
-            <button type="button" className="focus-ring" aria-label="Messages">
-              <Mail size={18} />
-            </button>
-            <button type="button" className="focus-ring" aria-label="Notifications">
-              <Bell size={18} />
-            </button>
-            <button type="button" className="focus-ring" aria-label="Settings">
-              <Settings size={18} />
-            </button>
-          </div>
-        </div>
-      </aside>
-
       <div className="play-core grid gap-4">
         <div className="play-context flex flex-wrap items-center justify-between gap-4">
           <div>
