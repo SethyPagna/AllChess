@@ -1,13 +1,12 @@
 # Self-Hosting
 
-The self-hosted edition is for running AllChess on your own server and domain while keeping GitHub and Cloudflare in the release workflow.
+The self-hosted edition runs the AllChess app container on your own server while keeping Cloudflare as the managed database, object storage, DNS, and security layer.
 
-## Included Services
+## Included Service
 
 - `app`: production Next.js standalone server.
-- `postgres`: owned Postgres database for profiles, games, moves, ratings, and analysis records.
-- `minio`: S3-compatible object storage for uploads, records, exports, and future media.
-- `redis`: cache and future job queue support.
+
+Cloudflare D1 and R2 remain the source of truth, so no Supabase, Postgres, MinIO, or Redis services are required for the supported self-host path.
 
 ## Start Locally
 
@@ -18,33 +17,31 @@ docker compose -f docker-compose.selfhost.yml up --build
 
 Open `http://localhost:3000/en`.
 
+## Required Environment
+
+Set these in `.env`, your server environment, or a secret manager:
+
+```bash
+CLOUDFLARE_ACCOUNT_ID=
+CLOUDFLARE_D1_DATABASE_ID=
+CLOUDFLARE_API_TOKEN=
+R2_PUBLIC_BASE_URL=
+SESSION_SECRET=
+```
+
+The Cloudflare token should be least-privilege for the `allchess` D1 database and R2 buckets.
+
 ## Domain Through Cloudflare
 
 1. Put the domain on Cloudflare DNS.
 2. Point an `A` or `CNAME` record to the server or load balancer.
 3. Enable TLS, WAF managed rules, and DDoS protections.
-4. Set `NEXT_PUBLIC_SITE_URL=https://your-domain.example` in `.env`.
+4. Set `NEXT_PUBLIC_SITE_URL=https://your-domain.example`.
 
-## Database Migration Path
+## Data Boundaries
 
-The app keeps Supabase and self-hosted Postgres schemas aligned through SQL migrations:
+AllChess uses separate resources from LEARN and edsync:
 
-- Supabase production: `supabase/migrations`.
-- Self-hosted Postgres: same migration folder mounted into Docker at first boot.
-- Cloudflare D1: SQLite-compatible schema in `cloudflare/d1/migrations`.
-
-For a mature migration from Supabase to owned Postgres:
-
-1. Export Supabase data.
-2. Restore into the self-hosted Postgres service.
-3. Set `DATABASE_DRIVER=postgres`.
-4. Set `DATABASE_URL` to the self-hosted Postgres connection string.
-5. If deploying Cloudflare Workers in front of owned Postgres, create a Hyperdrive binding.
-
-## Object Storage Migration Path
-
-- Cloudflare-hosted: R2 bucket `allchess-objects`.
-- Self-hosted: MinIO bucket `allchess-objects`.
-- Vercel-hosted with Cloudflare storage: R2 through S3-compatible credentials.
-
-Keep object keys stable across providers so records can move without rewriting database rows.
+- D1: `allchess`
+- R2: `allchess-objects`, `allchess-objects-preview`
+- OpenNext cache: `allchess-opennext-cache`
