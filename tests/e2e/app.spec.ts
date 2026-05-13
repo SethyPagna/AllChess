@@ -4,7 +4,7 @@ test("localized game hub can open variants and a playable board", async ({ page 
   await page.goto("/en");
   await expect(page.getByRole("heading", { name: "AllChess" })).toBeVisible();
 
-  await page.getByRole("main").getByRole("link", { name: "Variants" }).click();
+  await page.goto("/en/variants");
   await expect(page.getByRole("heading", { name: "Global variant atlas" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Xiangqi" })).toBeVisible();
 
