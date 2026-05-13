@@ -138,7 +138,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
       const result = await requestBotMove(snapshot, botDifficulty, {
         requestId,
         delayMs: source === "auto" ? 180 : 0,
-        maxSearchTimeMs: Math.min(botLevel.moveTimeMs, source === "auto" ? 900 : 1200)
+        maxSearchTimeMs: botLevel.moveTimeMs
       });
       finishBotRequest(snapshot, result, source);
     },
@@ -152,7 +152,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
     setThinking({ status: "thinking", label: "Finding a suggestion..." });
     setNotice(null);
 
-    const result = await requestBotMove(state, botDifficulty, { requestId, maxSearchTimeMs: Math.min(botLevel.moveTimeMs, 650) });
+    const result = await requestBotMove(state, botDifficulty, { requestId, maxSearchTimeMs: Math.min(botLevel.moveTimeMs, 1800) });
     if (activeBotRequestRef.current !== requestId) return;
     activeBotRequestRef.current = null;
     setThinking({ status: "idle", label: "" });

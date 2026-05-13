@@ -326,9 +326,10 @@ function evaluateMove(
   const searchDepth = Math.max(0, difficulty.depth - 1);
   const searchScore = minimax(next, searchDepth, perspective, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, difficulty, budget);
   const movedPiece = next.board[move.to.row]?.[move.to.col]?.piece;
-  const riskPenalty = movedPiece ? hangingPenalty(next, move.to, movedPiece) * (1 - difficulty.riskTolerance) : 0;
+  const riskPenalty = movedPiece && difficulty.skill >= 8 ? hangingPenalty(next, move.to, movedPiece) * (1 - difficulty.riskTolerance) : 0;
+  const strategyBonus = difficulty.skill >= 12 ? strategicMoveScore(state, next, move, perspective, difficulty) : 0;
   const noise = difficulty.skill >= 20 ? 0 : deterministicNoise(move) * (22 - difficulty.skill);
-  return searchScore - riskPenalty + noise;
+  return searchScore + strategyBonus - riskPenalty + noise;
 }
 
 function minimax(
@@ -437,13 +438,76 @@ function staticMoveScore(state: GameState, move: Move) {
   const centerRow = (state.board.length - 1) / 2;
   const centerCol = ((state.board[0]?.length ?? 1) - 1) / 2;
   const centerDistance = Math.abs(move.to.row - centerRow) + Math.abs(move.to.col - centerCol);
-  const captureScore = target?.piece ? pieceValues[target.piece.code] ?? 100 : 0;
+  const captureScore = target?.piece ? (pieceValues[target.piece.code] ?? 100) * 10 - (moving ? (pieceValues[moving.code] ?? 100) : 0) / 8 : 0;
   const developmentScore = moving && ["n", "b", "h", "e", "a", "g"].includes(moving.code) ? 20 : 0;
   const centerScore = Math.max(0, 12 - centerDistance * 2);
   const promotionScore = moving?.code === "p" && (move.to.row === 0 || move.to.row === state.board.length - 1) ? 760 : 0;
   const castlingScore = moving?.code === "k" && Math.abs(move.to.col - move.from.col) === 2 ? 90 : 0;
 
   return captureScore + promotionScore + castlingScore + developmentScore + centerScore;
+}
+
+function strategicMoveScore(state: GameState, next: GameState, move: Move, perspective: PlayerColor, difficulty: BotDifficulty) {
+  const movedPiece = next.board[move.to.row]?.[move.to.col]?.piece;
+  if (!movedPiece) return 0;
+  const opponents = opponentColors(next, perspective);
+  const attacksAfter = allLegalMovesFor(next, perspective);
+  const newThreats = attacksAfter.reduce((total, candidate) => {
+    const target = next.board[candidate.to.row]?.[candidate.to.col]?.piece;
+    return total + (target && opponents.includes(target.owner) ? (pieceValues[target.code] ?? 100) * 0.12 : 0);
+  }, 0);
+  const ownDanger = isSquareAttackedBy(next, move.to, opponents) ? (pieceValues[movedPiece.code] ?? 100) * 0.18 : 0;
+  const ownSupport = nearbyFriendlySupport(next, move.to, movedPiece.owner) * 18;
+  const advancement = advancementScore(state, move, movedPiece.owner, movedPiece.code) * (difficulty.skill / 10);
+  const objective = variantObjectiveScore(next, move, movedPiece.owner) * (difficulty.skill / 8);
+  const tempo = givesTurnPressure(next, perspective) ? 45 : 0;
+  return newThreats + ownSupport + advancement + objective + tempo - ownDanger;
+}
+
+function isSquareAttackedBy(state: GameState, square: { row: number; col: number }, attackers: PlayerColor[]) {
+  return attackers.some((attacker) => allLegalMovesFor(state, attacker).some((move) => move.to.row === square.row && move.to.col === square.col));
+}
+
+function nearbyFriendlySupport(state: GameState, square: { row: number; col: number }, owner: PlayerColor) {
+  let support = 0;
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (!cell.piece || cell.piece.owner !== owner) continue;
+      const distance = Math.abs(cell.square.row - square.row) + Math.abs(cell.square.col - square.col);
+      if (distance > 0 && distance <= 2) support += 1;
+    }
+  }
+  return support;
+}
+
+function advancementScore(state: GameState, move: Move, owner: PlayerColor, code: string) {
+  if (!["p", "s", "d", "w", "t", "l", "e", "r"].includes(code)) return 0;
+  const rows = state.board.length;
+  const forwardOwners: PlayerColor[] = ["white", "red", "sente"];
+  const progress = forwardOwners.includes(owner) ? rows - 1 - move.to.row : move.to.row;
+  return Math.max(0, progress) * (code === "p" || code === "s" ? 9 : 5);
+}
+
+function variantObjectiveScore(state: GameState, move: Move, owner: PlayerColor) {
+  if (state.variantKey === "king-of-the-hill") {
+    const centerRows = [Math.floor((state.board.length - 1) / 2), Math.ceil((state.board.length - 1) / 2)];
+    const centerCols = [Math.floor(((state.board[0]?.length ?? 1) - 1) / 2), Math.ceil(((state.board[0]?.length ?? 1) - 1) / 2)];
+    return centerRows.includes(move.to.row) && centerCols.includes(move.to.col) ? 500 : 0;
+  }
+  if (state.variantKey === "jungle") {
+    const targetRow = owner === "white" ? 0 : state.board.length - 1;
+    return Math.max(0, 18 - (Math.abs(move.to.row - targetRow) + Math.abs(move.to.col - 3)) * 3);
+  }
+  if (state.variantKey === "three-check") {
+    return (state.checks[owner] ?? 0) * 80;
+  }
+  return 0;
+}
+
+function givesTurnPressure(state: GameState, perspective: PlayerColor) {
+  const opponents = opponentColors(state, perspective);
+  const enemyRoyal = opponents.map((color) => findRoyalSquare(state, color)).find(Boolean);
+  return enemyRoyal ? attackedAround(state, enemyRoyal, perspective) > 0 : false;
 }
 
 function positionalScore(state: GameState, perspective: PlayerColor) {
@@ -487,7 +551,7 @@ function attackedAround(state: GameState, square: { row: number; col: number }, 
 
 function hangingPenalty(state: GameState, square: { row: number; col: number }, piece: { code: string; owner: PlayerColor }) {
   const attackers = opponentColors(state, piece.owner);
-  const canBeCaptured = attackers.some((attacker) => allLegalMovesFor(state, attacker).some((move) => move.to.row === square.row && move.to.col === square.col));
+  const canBeCaptured = isSquareAttackedBy(state, square, attackers);
   return canBeCaptured ? (pieceValues[piece.code] ?? 100) * 0.45 : 0;
 }
 

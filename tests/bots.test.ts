@@ -136,6 +136,20 @@ describe("bot difficulty ladder", () => {
     expect(chooseBotMove(state, "legend", { engine: "internal" })).toMatchObject({ from: { row: 2, col: 1 }, to: { row: 1, col: 1 } });
   });
 
+  test("legend search values variant objectives beyond raw material", () => {
+    let state = createInitialState("king-of-the-hill", "hill-objective");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[4][3].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[7][7].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[5][7].piece = { id: "black-queen", code: "q", owner: "black", labelKey: "chess.queen" };
+
+    expect(chooseBotMove(state, "legend", { engine: "internal" })).toMatchObject({ from: { row: 4, col: 3 }, to: { row: 3, col: 3 } });
+  });
+
   test("async bot result exposes public benchmark fields", async () => {
     const state = createInitialState("classic", "public-bot-result");
 
