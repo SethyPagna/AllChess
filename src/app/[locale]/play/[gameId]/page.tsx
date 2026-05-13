@@ -2,8 +2,10 @@ import { notFound } from "next/navigation";
 import { Flag, Handshake, Radio } from "lucide-react";
 
 import { GameBoard } from "@/components/game-board";
+import { RulesPanel } from "@/components/rules-panel";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { getVariantRuleSummary } from "@/lib/rules-atlas";
 import { getVariant } from "@/lib/variants";
 
 export default async function PlayPage({
@@ -43,6 +45,7 @@ export default async function PlayPage({
           </button>
         </div>
       </div>
+      <RulesPanel summary={getVariantRuleSummary(variant.key)} compact />
       <GameBoard variantKey={variant.key} />
     </section>
   );
