@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { BookOpen, Crown, History, Home, LogIn, Menu, Settings, Swords, UserRound } from "lucide-react";
+import { BookOpen, ChevronDown, Crown, Eye, History, Home, Library, LogIn, Menu, Settings, Swords, Trophy, UserRound, Users } from "lucide-react";
 
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -37,12 +37,45 @@ export default async function LocaleLayout({
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
-  const nav = [
-    ["lobby", t("nav.lobby"), Home],
-    ["play/classic", t("nav.play"), Swords],
-    ["variants", t("nav.variants"), BookOpen],
-    ["history", t("nav.history"), History],
-    ["settings", t("nav.settings"), Settings]
+  const navGroups = [
+    {
+      label: t("nav.play"),
+      Icon: Swords,
+      links: [
+        ["lobby", t("nav.lobby"), Home],
+        ["play/classic", "Classic", Swords],
+        ["play/classic?bot=normal", "Bots", Users]
+      ]
+    },
+    {
+      label: t("nav.learn"),
+      Icon: BookOpen,
+      links: [
+        ["variants", t("nav.variants"), Library],
+        ["variants?playability=learn", "Rules", BookOpen]
+      ]
+    },
+    {
+      label: t("nav.watch"),
+      Icon: Eye,
+      links: [
+        ["lobby?watch=live", "Watch live", Eye],
+        ["leaderboards", t("nav.leaderboards"), Trophy]
+      ]
+    },
+    {
+      label: t("nav.community"),
+      Icon: Users,
+      links: [
+        ["history", t("nav.history"), History],
+        ["profile/player", t("nav.profile"), UserRound]
+      ]
+    },
+    {
+      label: t("nav.settings"),
+      Icon: Settings,
+      links: [["settings", t("nav.settings"), Settings]]
+    }
   ] as const;
   const profileHref = `/${locale}/profile/player`;
   const loginHref = `/${locale}/login`;
@@ -63,18 +96,25 @@ export default async function LocaleLayout({
                 </span>
               </Link>
               <nav className="app-nav">
-                {nav.map(([href, label, Icon]) => (
-                  <Link key={href} href={`/${locale}/${href}`} className="app-nav-link focus-ring">
-                    <Icon size={20} strokeWidth={2.5} />
-                    <span>{label}</span>
-                  </Link>
+                {navGroups.map(({ label, Icon, links }, index) => (
+                  <details key={label} className="app-nav-group" open={index < 3}>
+                    <summary className="app-nav-group-summary focus-ring">
+                      <Icon size={18} strokeWidth={2.5} />
+                      <span>{label}</span>
+                      <ChevronDown size={15} />
+                    </summary>
+                    <div>
+                      {links.map(([href, itemLabel, ItemIcon]) => (
+                        <Link key={href} href={`/${locale}/${href}` as never} className="app-nav-link app-nav-sub-link focus-ring">
+                          <ItemIcon size={18} strokeWidth={2.5} />
+                          <span>{itemLabel}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </details>
                 ))}
               </nav>
               <div className="app-sidebar-bottom">
-                <Link href={profileHref as never} className="app-nav-link focus-ring">
-                  <UserRound size={20} strokeWidth={2.5} />
-                  <span>{t("nav.profile")}</span>
-                </Link>
                 <Link href={loginHref as never} className="app-nav-link focus-ring">
                   <LogIn size={20} strokeWidth={2.5} />
                   <span>{t("nav.login")}</span>
@@ -94,8 +134,8 @@ export default async function LocaleLayout({
                     <Menu size={18} />
                   </summary>
                   <div className="app-menu-panel">
-                    {nav.map(([href, label, Icon]) => (
-                      <Link key={href} href={`/${locale}/${href}`} className="app-nav-link focus-ring">
+                    {navGroups.flatMap((group) => [...group.links]).map(([href, label, Icon]) => (
+                      <Link key={href} href={`/${locale}/${href}` as never} className="app-nav-link focus-ring">
                         <Icon size={18} />
                         <span>{label}</span>
                       </Link>

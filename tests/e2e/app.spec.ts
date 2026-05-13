@@ -6,9 +6,9 @@ test("localized game hub can open variants and a playable board", async ({ page 
 
   await page.goto("/en/variants");
   await expect(page.getByRole("heading", { name: "Global variant atlas" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Xiangqi" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Xiangqi / Xiàngqí / 象棋" })).toBeVisible();
 
-  await page.getByRole("link", { name: "Start" }).first().click();
+  await page.getByRole("link", { name: "Play" }).first().click();
   await expect(page.getByRole("heading", { name: "Classic Chess" })).toBeVisible();
   await expect(page.getByLabel("Game board")).toBeVisible();
   await expect(page.getByLabel("Bot difficulty")).toContainText("Grandmaster");
@@ -34,4 +34,16 @@ test("language menu keeps the current route", async ({ page }) => {
 
   await expect(page).toHaveURL(/\/fr\/play\/classic$/);
   await expect(page.getByRole("heading", { name: "Classic Chess" })).toBeVisible();
+});
+
+test("catalog search finds native and romanized game names", async ({ page }) => {
+  await page.goto("/en/variants");
+
+  await page.getByPlaceholder("Search names, aliases, native names").fill("Dou Shou Qi");
+  await expect(page.getByRole("heading", { name: /Jungle/ })).toBeVisible();
+
+  await page.getByPlaceholder("Search names, aliases, native names").fill("Oware");
+  await page.getByRole("link", { name: "Learn" }).first().click();
+  await expect(page.getByRole("heading", { name: /Oware/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Rules" })).toBeVisible();
 });
