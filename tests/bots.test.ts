@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { chooseBotMove, botDifficultyLevels } from "@/lib/bots";
+import { chooseBotMove, chooseBotMoveSafe, botDifficultyLevels } from "@/lib/bots";
 import { applyMove, createInitialState, getLegalMoves } from "@/lib/variants";
 
 describe("bot difficulty ladder", () => {
@@ -38,5 +38,17 @@ describe("bot difficulty ladder", () => {
     const move = chooseBotMove(state, "hell");
 
     expect(move.to).toEqual({ row: 4, col: 7 });
+  });
+
+  test("safe bot move returns a completed state instead of throwing when no legal moves exist", () => {
+    const state = createInitialState("classic", "no-moves");
+    const blocked = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      status: "active" as const,
+      turn: "white" as const
+    };
+
+    expect(chooseBotMoveSafe(blocked, "normal")).toEqual({ move: null, reason: "no-legal-moves" });
   });
 });

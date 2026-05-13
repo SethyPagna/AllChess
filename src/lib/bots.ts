@@ -39,10 +39,21 @@ const pieceValues: Record<string, number> = {
 };
 
 export function chooseBotMove(state: GameState, difficultyKey: BotDifficultyKey = "normal"): Move {
+  const safe = chooseBotMoveSafe(state, difficultyKey);
+  if (!safe.move) {
+    throw new Error("errors.noLegalMoves");
+  }
+  return safe.move;
+}
+
+export function chooseBotMoveSafe(
+  state: GameState,
+  difficultyKey: BotDifficultyKey = "normal"
+): { move: Move; reason: "ok" } | { move: null; reason: "no-legal-moves" } {
   const difficulty = botDifficultyLevels.find((level) => level.key === difficultyKey) ?? botDifficultyLevels[1];
   const legalMoves = allLegalMoves(state);
   if (!legalMoves.length) {
-    throw new Error("errors.noLegalMoves");
+    return { move: null, reason: "no-legal-moves" };
   }
 
   const ranked = legalMoves
@@ -50,10 +61,10 @@ export function chooseBotMove(state: GameState, difficultyKey: BotDifficultyKey 
     .sort((a, b) => b.score - a.score);
 
   if (difficulty.key === "easy") {
-    return ranked[Math.min(ranked.length - 1, Math.floor(ranked.length / 2))].move;
+    return { move: ranked[Math.min(ranked.length - 1, Math.floor(ranked.length / 2))].move, reason: "ok" };
   }
 
-  return ranked[0].move;
+  return { move: ranked[0].move, reason: "ok" };
 }
 
 export function allLegalMoves(state: GameState) {
