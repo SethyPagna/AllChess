@@ -47,6 +47,30 @@ describe("variant engine", () => {
     expect(next.moves[0].notation).toBe("P6,0-5,0");
   });
 
+  test("allows classic pawns to move two squares from their starting rank", () => {
+    const state = createInitialState("classic", "pawn-double");
+    const moves = getLegalMoves(state, { row: 6, col: 4 });
+
+    expect(moves).toContainEqual({ from: { row: 6, col: 4 }, to: { row: 4, col: 4 } });
+  });
+
+  test("tracks captures and completed status after a royal capture", () => {
+    let state = createInitialState("classic", "royal-capture");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[0][4].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[1][4].piece = { id: "white-queen", code: "q", owner: "white", labelKey: "chess.queen" };
+
+    const next = applyMove(state, { from: { row: 1, col: 4 }, to: { row: 0, col: 4 } });
+
+    expect(next.status).toBe("completed");
+    expect(next.result).toBe("white");
+    expect(next.captured).toContainEqual(expect.objectContaining({ code: "k", owner: "black" }));
+  });
+
   test("blocks non-rat pieces from entering Jungle Chess rivers", () => {
     const state = createInitialState("jungle", "jungle-test");
     const tigerMoves = getLegalMoves(state, { row: 0, col: 6 });
