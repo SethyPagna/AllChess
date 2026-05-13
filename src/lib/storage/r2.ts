@@ -1,6 +1,6 @@
 import type { CloudflareEnv } from "@/lib/cloudflare/env";
 
-import { createPublicObjectUrl, type ObjectStorage, type ObjectStorageObject, type ObjectStoragePut } from "./object-storage";
+import { createPublicObjectUrl, normalizeObjectKey, type ObjectStorage, type ObjectStorageObject, type ObjectStoragePut } from "./object-storage";
 
 type R2PutBody = Parameters<NonNullable<CloudflareEnv["ALLCHESS_OBJECTS"]>["put"]>[1];
 
@@ -11,12 +11,13 @@ export function createR2Storage(env: Pick<CloudflareEnv, "ALLCHESS_OBJECTS">, pu
 
   return {
     async put(input: ObjectStoragePut): Promise<ObjectStorageObject> {
-      await env.ALLCHESS_OBJECTS!.put(input.key, input.body as R2PutBody, {
+      const key = normalizeObjectKey(input.key);
+      await env.ALLCHESS_OBJECTS!.put(key, input.body as R2PutBody, {
         httpMetadata: input.contentType ? { contentType: input.contentType } : undefined
       });
       return {
-        key: input.key,
-        url: createPublicObjectUrl(publicBaseUrl, input.key),
+        key,
+        url: createPublicObjectUrl(publicBaseUrl, key),
         contentType: input.contentType
       };
     },
