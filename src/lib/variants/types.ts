@@ -49,6 +49,8 @@ export type GameState = {
 export type VariantDefinition = {
   key: string;
   nameKey: string;
+  rulesAdapter: "chessops" | "xiangqiops" | "shogiops" | "makruk-js" | "allchess-janggi" | "allchess-jungle";
+  engineProtocol: "uci" | "usi" | "internal";
   family: "western" | "east-asian" | "southeast-asian" | "abstract";
   board: {
     rows: number;

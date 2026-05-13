@@ -19,6 +19,22 @@ describe("variant catalog", () => {
     ]);
   });
 
+  test("declares a rules adapter for every launch variant", () => {
+    expect(Object.fromEntries(variantCatalog.map((variant) => [variant.key, variant.rulesAdapter]))).toEqual({
+      classic: "chessops",
+      chess960: "chessops",
+      xiangqi: "xiangqiops",
+      shogi: "shogiops",
+      janggi: "allchess-janggi",
+      makruk: "makruk-js",
+      jungle: "allchess-jungle",
+      antichess: "chessops",
+      horde: "chessops",
+      "king-of-the-hill": "chessops",
+      "three-check": "chessops"
+    });
+  });
+
   test("resolves aliases to their canonical variant", () => {
     expect(getVariant("chinese-chess").key).toBe("xiangqi");
   });

@@ -4,6 +4,8 @@ export const variantCatalog: VariantDefinition[] = [
   {
     key: "classic",
     nameKey: "variant.classic",
+    rulesAdapter: "chessops",
+    engineProtocol: "uci",
     family: "western",
     board: { rows: 8, cols: 8, coordinates: "orthodox" },
     players: ["white", "black"],
@@ -19,6 +21,8 @@ export const variantCatalog: VariantDefinition[] = [
   {
     key: "chess960",
     nameKey: "variant.chess960",
+    rulesAdapter: "chessops",
+    engineProtocol: "uci",
     family: "western",
     board: { rows: 8, cols: 8, coordinates: "orthodox" },
     players: ["white", "black"],
@@ -33,6 +37,8 @@ export const variantCatalog: VariantDefinition[] = [
   {
     key: "xiangqi",
     nameKey: "variant.xiangqi",
+    rulesAdapter: "xiangqiops",
+    engineProtocol: "uci",
     family: "east-asian",
     board: { rows: 10, cols: 9, coordinates: "xiangqi" },
     players: ["red", "black"],
@@ -47,6 +53,8 @@ export const variantCatalog: VariantDefinition[] = [
   {
     key: "shogi",
     nameKey: "variant.shogi",
+    rulesAdapter: "shogiops",
+    engineProtocol: "usi",
     family: "east-asian",
     board: { rows: 9, cols: 9, coordinates: "shogi" },
     players: ["sente", "gote"],
@@ -61,6 +69,8 @@ export const variantCatalog: VariantDefinition[] = [
   {
     key: "janggi",
     nameKey: "variant.janggi",
+    rulesAdapter: "allchess-janggi",
+    engineProtocol: "internal",
     family: "east-asian",
     board: { rows: 10, cols: 9, coordinates: "xiangqi" },
     players: ["red", "blue"],
@@ -75,6 +85,8 @@ export const variantCatalog: VariantDefinition[] = [
   {
     key: "makruk",
     nameKey: "variant.makruk",
+    rulesAdapter: "makruk-js",
+    engineProtocol: "uci",
     family: "southeast-asian",
     board: { rows: 8, cols: 8, coordinates: "orthodox" },
     players: ["white", "black"],
@@ -89,6 +101,8 @@ export const variantCatalog: VariantDefinition[] = [
   {
     key: "jungle",
     nameKey: "variant.jungle",
+    rulesAdapter: "allchess-jungle",
+    engineProtocol: "internal",
     family: "abstract",
     board: { rows: 9, cols: 7, coordinates: "jungle" },
     players: ["white", "black"],
@@ -103,6 +117,8 @@ export const variantCatalog: VariantDefinition[] = [
   {
     key: "antichess",
     nameKey: "variant.antichess",
+    rulesAdapter: "chessops",
+    engineProtocol: "uci",
     family: "western",
     board: { rows: 8, cols: 8, coordinates: "orthodox" },
     players: ["white", "black"],
@@ -117,6 +133,8 @@ export const variantCatalog: VariantDefinition[] = [
   {
     key: "horde",
     nameKey: "variant.horde",
+    rulesAdapter: "chessops",
+    engineProtocol: "uci",
     family: "western",
     board: { rows: 8, cols: 8, coordinates: "orthodox" },
     players: ["white", "black"],
@@ -131,6 +149,8 @@ export const variantCatalog: VariantDefinition[] = [
   {
     key: "king-of-the-hill",
     nameKey: "variant.king-of-the-hill",
+    rulesAdapter: "chessops",
+    engineProtocol: "uci",
     family: "western",
     board: { rows: 8, cols: 8, coordinates: "orthodox" },
     players: ["white", "black"],
@@ -145,6 +165,8 @@ export const variantCatalog: VariantDefinition[] = [
   {
     key: "three-check",
     nameKey: "variant.three-check",
+    rulesAdapter: "chessops",
+    engineProtocol: "uci",
     family: "western",
     board: { rows: 8, cols: 8, coordinates: "orthodox" },
     players: ["white", "black"],
