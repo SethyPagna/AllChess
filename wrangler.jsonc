@@ -54,7 +54,7 @@
     {
       "binding": "ALLCHESS_D1",
       "database_name": "allchess",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "b1153fb9-cae6-4e11-a18e-428a394e4210",
       "migrations_dir": "cloudflare/d1/migrations"
     }
   ],
@@ -106,7 +106,7 @@
         {
           "binding": "ALLCHESS_D1",
           "database_name": "allchess",
-          "database_id": "00000000-0000-0000-0000-000000000000",
+          "database_id": "b1153fb9-cae6-4e11-a18e-428a394e4210",
           "migrations_dir": "cloudflare/d1/migrations"
         }
       ],
