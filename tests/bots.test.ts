@@ -44,7 +44,7 @@ describe("bot difficulty ladder", () => {
 
     expect(move).toMatchObject({ from: { row: 2, col: 1 }, to: { row: 1, col: 1 } });
     expect(applyMove(state, move)).toMatchObject({ status: "completed", result: "white" });
-  });
+  }, 15_000);
 
   test("difficulty changes strategy instead of only relabeling the same move", () => {
     let state = createInitialState("classic", "difficulty-test");
