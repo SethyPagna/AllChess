@@ -11,15 +11,15 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
   const proofPoints = [
-    { Icon: Bot, label: "Six bot levels" },
+    { Icon: Bot, label: "Grandmaster and Legend bots" },
     { Icon: Globe2, label: "Global variants" },
     { Icon: Sparkles, label: "Review-ready games" }
   ];
   const siteStats = createDefaultStats();
   const stats = [
     { Icon: Trophy, label: siteStats.playersOnline.label, value: siteStats.playersOnline.value },
-    { Icon: Globe2, label: siteStats.variants.label, value: siteStats.variants.value },
-    { Icon: Sparkles, label: siteStats.review.label, value: siteStats.review.value },
+    { Icon: Globe2, label: siteStats.activeRooms.label, value: siteStats.activeRooms.value },
+    { Icon: Sparkles, label: siteStats.spectators.label, value: siteStats.spectators.value },
     { Icon: Bot, label: siteStats.bots.label, value: siteStats.bots.value }
   ];
 

@@ -4,11 +4,23 @@ export type SiteStat = {
   isEstimated: boolean;
 };
 
-export function createDefaultStats() {
+import type { LiveStats } from "@/lib/realtime/types";
+
+export function createDefaultStats(live: LiveStats = { playersOnline: 0, activeRooms: 0, activeGames: 0, spectators: 0, botGames: 0, source: "demo" }) {
   return {
     playersOnline: {
       label: "Players online",
-      value: "Live soon",
+      value: String(live.playersOnline),
+      isEstimated: false
+    },
+    activeRooms: {
+      label: "Active rooms",
+      value: String(live.activeRooms),
+      isEstimated: false
+    },
+    spectators: {
+      label: "Spectators",
+      value: String(live.spectators),
       isEstimated: false
     },
     variants: {
@@ -23,7 +35,7 @@ export function createDefaultStats() {
     },
     bots: {
       label: "Bots",
-      value: "6 levels",
+      value: "GM + Legend",
       isEstimated: false
     }
   } satisfies Record<string, SiteStat>;

@@ -11,6 +11,9 @@ test("localized game hub can open variants and a playable board", async ({ page 
   await page.getByRole("link", { name: "Start" }).first().click();
   await expect(page.getByRole("heading", { name: "Classic Chess" })).toBeVisible();
   await expect(page.getByLabel("Game board")).toBeVisible();
+  await expect(page.getByLabel("Bot difficulty")).toContainText("Grandmaster");
+  await expect(page.getByLabel("Bot difficulty")).toContainText("Legend");
+  await expect(page.getByLabel("Rules summary")).toBeVisible();
 });
 
 test("settings exposes language and theme controls", async ({ page }) => {

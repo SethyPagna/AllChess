@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Bot, Clock, Lock, Radio, Swords } from "lucide-react";
+import { Bot, Clock, Eye, Lock, Radio, Swords, Users } from "lucide-react";
 
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { createDefaultStats } from "@/lib/stats";
 import { variantCatalog } from "@/lib/variants";
 
 export default async function LobbyPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -10,11 +11,14 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
   const featured = variantCatalog.slice(0, 6);
+  const siteStats = createDefaultStats();
   const lobbyActions = [
     { Icon: Swords, title: t("lobby.quickPair"), body: "Find an even opponent by rating and preferred time control." },
     { Icon: Lock, title: t("lobby.privateRoom"), body: "Create a shareable room code for friends." },
     { Icon: Clock, title: t("lobby.correspondence"), body: "Play long-form games across time zones." },
-    { Icon: Bot, title: t("lobby.aiPractice"), body: "Practice against Easy through Hell bot levels." }
+    { Icon: Eye, title: "Watch live", body: "Spectate public rooms with read-only board, clocks, and move list." },
+    { Icon: Bot, title: t("lobby.aiPractice"), body: "Practice against Easy through Legend bot levels." },
+    { Icon: Users, title: "Live presence", body: `${siteStats.playersOnline.value} online · ${siteStats.activeRooms.value} rooms · ${siteStats.spectators.value} spectators.` }
   ];
 
   return (
@@ -32,6 +36,10 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
           <Link href={`/${locale}/play/classic?bot=normal`} className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2 text-sm">
             <Bot size={16} />
             Bot practice
+          </Link>
+          <Link href={`/${locale}/lobby?watch=live`} className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2 text-sm">
+            <Eye size={16} />
+            Watch live
           </Link>
           <Link href={`/${locale}/variants`} className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2 text-sm">
             <Radio size={16} />

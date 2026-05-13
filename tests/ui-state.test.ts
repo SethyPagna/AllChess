@@ -37,10 +37,12 @@ describe("time controls", () => {
 });
 
 describe("site statistics", () => {
-  test("uses honest live-data placeholders instead of fake player counts", () => {
+  test("uses honest live-data counts instead of fake player counts", () => {
     const stats = createDefaultStats();
 
-    expect(stats.playersOnline.value).toBe("Live soon");
+    expect(stats.playersOnline.value).toBe("0");
+    expect(stats.activeRooms.value).toBe("0");
+    expect(stats.spectators.value).toBe("0");
     expect(stats.playersOnline.isEstimated).toBe(false);
   });
 });

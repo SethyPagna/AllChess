@@ -375,6 +375,9 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
           <p className="text-sm font-bold text-[var(--muted)]">Table</p>
           <p className="text-2xl font-black capitalize">{state.turn} to move</p>
           {thinking.status === "thinking" ? <p className="mt-1 text-sm font-bold text-[var(--info)]">{thinking.label}</p> : null}
+          <p className="mt-1 text-xs font-bold text-[var(--muted)]">
+            Bot tier: {botLevel.label} · {botLevel.estimatedStrength} · {botLevel.benchmarkVersion}
+          </p>
           {suggestedMove ? (
             <p className="mt-1 text-sm font-bold text-[var(--accent-strong)]">
               Suggestion: {suggestedMove.notation} - depth {suggestedMove.depthReached}

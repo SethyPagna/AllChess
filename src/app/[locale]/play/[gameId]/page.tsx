@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Flag, Handshake, Radio } from "lucide-react";
+import { Eye, Flag, Handshake, Radio, Share2, Users } from "lucide-react";
 
 import { GameBoard } from "@/components/game-board";
 import { RulesPanel } from "@/components/rules-panel";
@@ -36,6 +36,14 @@ export default async function PlayPage({
         </div>
         <div className="flex gap-2">
           <button className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2">
+            <Share2 size={16} />
+            Room
+          </button>
+          <button className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2">
+            <Eye size={16} />
+            Spectate
+          </button>
+          <button className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2">
             <Handshake size={16} />
             {t("play.draw")}
           </button>
@@ -44,6 +52,10 @@ export default async function PlayPage({
             {t("play.resign")}
           </button>
         </div>
+      </div>
+      <div className="panel flex flex-wrap items-center gap-2 p-3 text-sm text-[var(--muted)]">
+        <Users size={16} className="text-[var(--accent)]" />
+        Realtime-ready room: authoritative moves, reconnect snapshots, spectators, clocks, and bot seats use the server room protocol.
       </div>
       <RulesPanel summary={getVariantRuleSummary(variant.key)} compact />
       <GameBoard variantKey={variant.key} />
