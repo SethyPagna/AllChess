@@ -14,6 +14,7 @@
     "test:i18n": "vitest run tests/i18n.test.ts",
     "test:e2e": "playwright test",
     "audit:env": "node scripts/env-audit.mjs",
+    "audit:live": "playwright test tests/e2e/gameplay-audit.spec.ts",
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build",
     "deploy:preview": "npm run verify && vercel deploy --name allchess",
     "deploy:prod": "npm run verify && vercel deploy --prod --name allchess",

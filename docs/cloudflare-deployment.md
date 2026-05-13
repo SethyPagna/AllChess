@@ -9,7 +9,7 @@ AllChess is Cloudflare-first. Supabase, Hyperdrive, Vercel databases, and Vercel
 - User objects: R2 bucket `allchess-objects`.
 - Preview objects: R2 bucket `allchess-objects-preview`.
 - Next incremental cache: R2 bucket `allchess-opennext-cache`.
-- AI: Workers AI binding `AI`, with optional OpenAI secrets for deeper review.
+- AI: Workers AI binding `AI`, with optional Groq, Mistral, Cerebras, Google AI, or OpenAI secrets for deeper review.
 - Other products: LEARN and edsync must use separate Cloudflare resources.
 
 ## One-Time Setup
@@ -31,11 +31,19 @@ Use Wrangler, Vercel, or GitHub secrets. Never commit tokens.
 
 ```bash
 npx wrangler secret put SESSION_SECRET
+npx wrangler secret put AI_PROVIDER
+npx wrangler secret put AI_MODEL
 npx wrangler secret put OPENAI_API_KEY
+npx wrangler secret put GROQ_API_KEY
+npx wrangler secret put MISTRAL_API_KEY
+npx wrangler secret put CEREBRAS_API_KEY
+npx wrangler secret put GOOGLE_AI_API_KEY
 npx wrangler secret put GOOGLE_CLIENT_ID
 npx wrangler secret put GOOGLE_CLIENT_SECRET
 npx wrangler secret put GOOGLE_REDIRECT_URI
 ```
+
+Run `npm run audit:env -- cloudflare` before deploy and `npm run audit:env -- vercel` after setting Vercel project variables. The audit masks secret values and only reports whether required names are present.
 
 If a broad Cloudflare token was exposed in chat or logs, rotate it after creating least-privilege tokens for Workers, D1, R2, and DNS.
 

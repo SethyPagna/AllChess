@@ -33,6 +33,8 @@ npm run lint
 npm run typecheck
 npm run test
 npm run build
+npm run audit:live
+npm run audit:env -- vercel
 ```
 
 ## Deploy
@@ -65,6 +67,6 @@ docker compose -f docker-compose.selfhost.yml up --build
 
 ## Secrets
 
-Never commit real API keys or tokens. Store Cloudflare, Vercel, Google OAuth, and AI provider credentials in local ignored `.env` files or hosted secret stores. Rotate any broad token that was pasted into chat or logs.
+Never commit real API keys or tokens. Store Cloudflare, Vercel, Google OAuth, and AI provider credentials in local ignored `.env` files or hosted secret stores. The AI analysis adapter supports the Business OS style providers Groq, Mistral, Cerebras, Google AI, and OpenAI. Rotate any broad token that was pasted into chat or logs.
 
 See `docs/cloudflare-deployment.md` and `docs/self-hosting.md` for the Cloudflare, domain, database, and object-storage paths.
