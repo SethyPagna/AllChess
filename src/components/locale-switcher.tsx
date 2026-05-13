@@ -14,8 +14,8 @@ export function LocaleSwitcher({ active }: { active: LocaleCode }) {
   const currentPath = `${pathname}${query ? `?${query}` : ""}`;
 
   return (
-    <details className="relative inline-block" aria-label="Languages">
-      <summary className="focus-ring action-secondary inline-flex h-10 cursor-pointer list-none items-center gap-2 px-3 text-sm">
+    <details className="relative inline-block">
+      <summary aria-label="Languages" className="focus-ring action-secondary inline-flex h-10 cursor-pointer list-none items-center gap-2 px-3 text-sm">
         <Languages size={16} />
         <span>{active.toUpperCase()}</span>
       </summary>

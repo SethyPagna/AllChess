@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { createTranslator } from "@/lib/i18n/dictionary";
@@ -30,7 +32,9 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
         </div>
         <div className="grid gap-3">
           <h2 className="text-lg font-bold">{t("settings.language")}</h2>
-          <LocaleSwitcher active={locale} />
+          <Suspense fallback={<span className="action-secondary inline-flex h-10 w-fit items-center px-3 text-sm">{locale.toUpperCase()}</span>}>
+            <LocaleSwitcher active={locale} />
+          </Suspense>
         </div>
       </div>
     </section>

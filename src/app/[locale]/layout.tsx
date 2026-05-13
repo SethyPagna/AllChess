@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { BookOpen, Crown, History, Menu, Play, Settings, UserRound } from "lucide-react";
 
 import { LocaleSwitcher } from "@/components/locale-switcher";
@@ -90,7 +91,9 @@ export default async function LocaleLayout({
                   system: t("settings.system")
                 }}
               />
-              <LocaleSwitcher active={locale as LocaleCode} />
+              <Suspense fallback={<span className="action-secondary inline-flex h-10 items-center px-3 text-sm">{locale.toUpperCase()}</span>}>
+                <LocaleSwitcher active={locale as LocaleCode} />
+              </Suspense>
               <Link
                 href={`/${locale}/login`}
                 className="focus-ring action-secondary inline-flex h-10 items-center gap-2 px-3 text-sm"
