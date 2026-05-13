@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "allchess-multiplayer",
+  "name": "allchess",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-05-13",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -14,7 +14,7 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "allchess-multiplayer"
+      "service": "allchess"
     }
   ],
   "r2_buckets": [
@@ -31,7 +31,7 @@
   "d1_databases": [
     {
       "binding": "ALLCHESS_D1",
-      "database_name": "allchess-multiplayer",
+      "database_name": "allchess",
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "cloudflare/d1/migrations"
     }
@@ -46,11 +46,11 @@
   },
   "env": {
     "production": {
-      "name": "allchess-multiplayer",
+      "name": "allchess",
       "services": [
         {
           "binding": "WORKER_SELF_REFERENCE",
-          "service": "allchess-multiplayer"
+          "service": "allchess"
         }
       ],
       "r2_buckets": [
@@ -67,7 +67,7 @@
       "d1_databases": [
         {
           "binding": "ALLCHESS_D1",
-          "database_name": "allchess-multiplayer",
+          "database_name": "allchess",
           "database_id": "00000000-0000-0000-0000-000000000000",
           "migrations_dir": "cloudflare/d1/migrations"
         }
@@ -84,14 +84,8 @@
       "vars": {
         "DEPLOYMENT_TARGET": "cloudflare",
         "OBJECT_STORAGE_DRIVER": "r2",
-        "DATABASE_DRIVER": "hyperdrive"
-      },
-      "hyperdrive": [
-        {
-          "binding": "HYPERDRIVE",
-          "id": "00000000000000000000000000000000"
-        }
-      ]
+        "DATABASE_DRIVER": "d1"
+      }
     }
   }
 }
