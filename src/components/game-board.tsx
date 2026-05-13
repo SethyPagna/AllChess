@@ -63,7 +63,7 @@ export function GameBoard({
   const [botDifficulty, setBotDifficulty] = useState<BotDifficultyKey>("normal");
   const [botMode, setBotMode] = useState<BotMode>(initialBotMode);
   const [seatChoice, setSeatChoice] = useState<SeatChoice>("random");
-  const [humanColor, setHumanColor] = useState(() => pickHumanColor(withTimeControl(initialState ?? createInitialState(variantKey), "rapid"), "random"));
+  const [humanColor, setHumanColor] = useState(() => pickHumanColor(withTimeControl(initialState ?? createInitialState(variantKey), "rapid"), "first"));
   const [thinking, setThinking] = useState<ThinkingState>({ status: "idle", label: "" });
   const [suggestedMove, setSuggestedMove] = useState<SuggestedMove | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -73,6 +73,7 @@ export function GameBoard({
   const [reviewPly, setReviewPly] = useState<number | null>(null);
   const [reviewPlaying, setReviewPlaying] = useState(false);
   const activeBotRequestRef = useRef<string | null>(null);
+  const resolvedRandomSeatRef = useRef(false);
 
   const timeline = useMemo(() => (history.length ? [...history, state] : [state]), [history, state]);
   const reviewMoves = useMemo(() => analyzeMoveList(state.moves), [state.moves]);
@@ -208,6 +209,7 @@ export function GameBoard({
     setSelected(null);
     setSuggestedMove(null);
     setNotice("Suggestion applied.");
+    setPanelTab("review");
     setReviewPly(null);
     setReviewPlaying(false);
   }
@@ -246,6 +248,7 @@ export function GameBoard({
     setNotice(null);
     setThinking({ status: "idle", label: "" });
     setShowOutcome(true);
+    setPanelTab("status");
     setReviewPly(null);
     setReviewPlaying(false);
   }
@@ -264,6 +267,7 @@ export function GameBoard({
     setNotice(null);
     setThinking({ status: "idle", label: "" });
     setShowOutcome(true);
+    setPanelTab("status");
     setReviewPly(null);
     setReviewPlaying(false);
   }
@@ -294,6 +298,12 @@ export function GameBoard({
     setReviewPlaying(false);
     setSelected(null);
   }
+
+  useEffect(() => {
+    if (resolvedRandomSeatRef.current || seatChoice !== "random") return;
+    resolvedRandomSeatRef.current = true;
+    setHumanColor(pickHumanColor(state, "random"));
+  }, [seatChoice, state]);
 
   useEffect(() => {
     if (isReviewing || state.status !== "active" || thinking.status === "thinking") return;
@@ -374,7 +384,14 @@ export function GameBoard({
               <Lightbulb size={16} />
               Suggest
             </button>
-            <button type="button" title="Apply the highlighted suggestion to the board." aria-label="Apply suggestion" onClick={applySuggestion} className="focus-ring action-primary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={!suggestedMove || thinking.status === "thinking" || isReviewing}>
+            <button
+              type="button"
+              title="Apply the highlighted suggestion to the board."
+              aria-label={suggestedMove ? "Apply suggestion" : "Apply disabled"}
+              onClick={applySuggestion}
+              className="focus-ring action-primary inline-flex items-center gap-2 px-3 py-2 text-sm"
+              disabled={!suggestedMove || thinking.status === "thinking" || isReviewing}
+            >
               <Sparkles size={16} />
               Apply
             </button>
@@ -390,6 +407,7 @@ export function GameBoard({
                 setBotMode((current) => {
                   const next = current === "opponent" ? "human" : "opponent";
                   setNotice(next === "opponent" ? "Bot opponent is on. Make a move and the bot will reply automatically." : "Bot opponent is off.");
+                  setPanelTab("status");
                   return next;
                 });
               }}
@@ -589,6 +607,34 @@ export function GameBoard({
                 <span>{activeReviewMove?.detail ?? "Use Game Review to replay positions with move quality labels."}</span>
                 {activeReviewMove ? <small>Best line: {activeReviewMove.bestLine}</small> : null}
               </div>
+              <ol className="review-move-list move-list max-h-52 overflow-auto text-sm">
+                <li className={displayPly === 0 ? "is-active" : ""}>
+                  <button type="button" onClick={() => setReviewCursor(0)} className="focus-ring">
+                    <span>0.</span>
+                    <strong>Starting position</strong>
+                    <em>Info</em>
+                  </button>
+                </li>
+                {reviewMoves.length ? (
+                  reviewMoves.map((move) => (
+                    <li key={`${move.notation}-${move.ply}`} className={displayPly === move.ply ? "is-active" : ""} data-review={move.classification}>
+                      <button type="button" onClick={() => setReviewCursor(move.ply)} className="focus-ring" aria-label={`Review move ${move.ply} ${move.notation}`}>
+                        <span>{move.ply}.</span>
+                        <strong>{move.notation}</strong>
+                        <em>{move.label}</em>
+                      </button>
+                    </li>
+                  ))
+                ) : (
+                  <li>
+                    <button type="button" className="focus-ring" disabled>
+                      <span>1.</span>
+                      <strong>No moves yet</strong>
+                      <em>Info</em>
+                    </button>
+                  </li>
+                )}
+              </ol>
               <div className="review-summary-row">
                 <span data-review="best">{reviewSummary.best} Best</span>
                 <span data-review="excellent">{reviewSummary.excellent} Excellent</span>
@@ -624,35 +670,6 @@ export function GameBoard({
           ) : null}
         </div>
         <details className="hidden" open>
-          <summary className="focus-ring">Setup before game</summary>
-          <div className="play-options-card">
-          <div className="play-options-heading">
-            <Timer size={18} />
-            <span>{getTimeControl(timeControl).label}</span>
-          </div>
-          <div className="play-time-grid" aria-label="Quick time controls">
-            {timeControls.slice(0, 6).map((control) => (
-              <button key={control.key} type="button" onClick={() => changeTimeControl(control.key)} className={`focus-ring ${timeControl === control.key ? "is-selected" : ""}`}>
-                {control.label}
-              </button>
-            ))}
-          </div>
-          <div className="play-options-row">
-            <SlidersHorizontal size={18} />
-            <span>Bot strength</span>
-            <strong>{botLevel.label}</strong>
-          </div>
-          <div className="play-toggle-list" aria-label="Training options">
-            <span>Bot Chat</span>
-            <span className="toggle-pill is-on" aria-hidden="true" />
-            <span>Evaluation Bar</span>
-            <span className="toggle-pill" aria-hidden="true" />
-            <span>Threat Arrows</span>
-            <span className="toggle-pill" aria-hidden="true" />
-          </div>
-          </div>
-        </details>
-        <details className="hidden" open>
           <summary className="focus-ring">Status and clocks</summary>
           <div className="play-table-card">
           <p className="text-sm font-bold text-[var(--muted)]">Current position</p>
@@ -666,7 +683,6 @@ export function GameBoard({
               Suggestion: {suggestedMove.notation} - depth {suggestedMove.depthReached}
             </p>
           ) : null}
-          {notice ? <p className="mt-1 text-sm text-[var(--warning)]">{notice}</p> : null}
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3">
           {state.clocks.map((clock) => (
@@ -675,88 +691,6 @@ export function GameBoard({
               <strong>{formatClock(clock.remainingMs)}</strong>
             </div>
           ))}
-          </div>
-        </details>
-        <details className="hidden" open>
-          <summary className="focus-ring">Review</summary>
-          <div className="play-review-card">
-          <div className="review-tabs" aria-label="Review tabs">
-            <button type="button" className="is-active">Moves</button>
-            <button type="button">Info</button>
-            <button type="button">Openings</button>
-          </div>
-          <div className="review-engine-row">
-            <span className="inline-flex items-center gap-2">
-              <Brain size={16} className="text-[var(--accent)]" />
-              Analysis
-            </span>
-            <span>Stockfish 18 Lite</span>
-          </div>
-          <div className="review-position-card">
-            <p>{displayPly === 0 ? "Starting position" : `Position after ${activeReviewMove?.notation ?? "latest move"}`}</p>
-            <strong>{activeReviewMove ? `${activeReviewMove.label} - ${activeReviewMove.score}/100` : "Ready for review"}</strong>
-            <span>{activeReviewMove?.detail ?? "Make a move, then use Game Review to replay the position with move quality labels."}</span>
-            {activeReviewMove ? <small>Best line: {activeReviewMove.bestLine}</small> : null}
-          </div>
-          <ol className="review-move-list move-list max-h-64 overflow-auto text-sm">
-            <li className={displayPly === 0 ? "is-active" : ""}>
-              <button type="button" onClick={() => setReviewCursor(0)} className="focus-ring">
-                <span>0.</span>
-                <strong>Starting position</strong>
-                <em>Info</em>
-              </button>
-            </li>
-            {reviewMoves.length ? (
-              reviewMoves.map((move) => (
-                <li key={`${move.notation}-${move.ply}`} className={displayPly === move.ply ? "is-active" : ""} data-review={move.classification}>
-                  <button type="button" onClick={() => setReviewCursor(move.ply)} className="focus-ring" aria-label={`Review move ${move.ply} ${move.notation}`}>
-                    <span>{move.ply}.</span>
-                    <strong>{move.notation}</strong>
-                    <em>{move.label}</em>
-                  </button>
-                </li>
-              ))
-            ) : (
-              <li>
-                <button type="button" className="focus-ring" disabled>
-                  <span>1.</span>
-                  <strong>No moves yet</strong>
-                  <em>Info</em>
-                </button>
-              </li>
-            )}
-          </ol>
-          <div className="review-summary-row">
-            <span data-review="best">{reviewSummary.best} Best</span>
-            <span data-review="excellent">{reviewSummary.excellent} Excellent</span>
-            <span data-review="blunder">{reviewSummary.blunder} Blunder</span>
-          </div>
-          <button type="button" onClick={startReview} className="focus-ring review-primary-button">
-            <Sparkles size={20} />
-            Game Review
-          </button>
-          <div className="review-controls" aria-label="Review playback controls">
-            <button type="button" onClick={() => setReviewCursor(0)} className="focus-ring" aria-label="First move" disabled={!reviewMoves.length}>
-              <SkipBack size={20} />
-            </button>
-            <button type="button" onClick={() => setReviewCursor(displayPly - 1)} className="focus-ring" aria-label="Previous move" disabled={!reviewMoves.length || displayPly === 0}>
-              <Undo2 size={20} />
-            </button>
-            <button type="button" onClick={() => setReviewPlaying((current) => !current)} className="focus-ring is-main" aria-label={reviewPlaying ? "Pause review" : "Play review"} disabled={!reviewMoves.length}>
-              {reviewPlaying ? <PauseCircle size={24} /> : <PlayCircle size={24} />}
-            </button>
-            <button type="button" onClick={() => setReviewCursor(displayPly + 1)} className="focus-ring" aria-label="Next move" disabled={!reviewMoves.length || displayPly >= timeline.length - 1}>
-              <PlayCircle size={20} />
-            </button>
-            <button type="button" onClick={() => setReviewCursor(timeline.length - 1)} className="focus-ring" aria-label="Last move" disabled={!reviewMoves.length}>
-              <SkipForward size={20} />
-            </button>
-          </div>
-          {isReviewing ? (
-            <button type="button" onClick={jumpToLive} className="focus-ring review-live-button">
-              Back to live board
-            </button>
-          ) : null}
           </div>
         </details>
         <div className="play-table-card text-sm text-[var(--muted)]">
