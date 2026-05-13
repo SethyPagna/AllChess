@@ -215,7 +215,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
                     type="button"
                     key={serializeSquare(cell.square)}
                     onClick={() => choose(cell.square)}
-                    className="focus-ring relative grid min-h-10 place-items-center overflow-hidden text-4xl font-black sm:text-6xl"
+                    className="focus-ring relative grid min-h-10 place-items-center overflow-hidden font-black"
                     style={{
                       background: isSelected
                         ? "var(--accent)"
@@ -224,12 +224,10 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
                           : dark
                             ? "var(--board-dark)"
                             : "var(--board-light)",
-                      color: isDarkPiece ? "#111917" : "#f8fffb"
+                      color: isDarkPiece ? "#111917" : "#f8fffb",
+                      fontSize: "min(72px, 9vw)"
                     }}
                   >
-                    {cell.terrain && cell.terrain !== "land" ? (
-                      <span className="absolute left-1 top-1 text-[9px] font-semibold uppercase opacity-55">{cell.terrain[0]}</span>
-                    ) : null}
                     {cell.piece ? (
                       <span className="piece-symbol" data-dark={isDarkPiece}>
                         {glyphs[cell.piece.code] ?? cell.piece.code.toUpperCase()}
