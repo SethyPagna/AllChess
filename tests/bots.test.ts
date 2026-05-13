@@ -13,7 +13,7 @@ describe("bot difficulty ladder", () => {
     expect(botDifficultyLevels.map((level) => level.beamWidth)).toEqual([4, 8, 14, 20, 32, 44]);
     expect(botDifficultyLevels.map((level) => level.quiescenceDepth)).toEqual([0, 0, 1, 1, 2, 4]);
     expect(botDifficultyLevels.map((level) => level.riskTolerance)).toEqual([0.85, 0.65, 0.45, 0.28, 0.12, 0.03]);
-  }, 15_000);
+  });
 
   test("always chooses a legal move for every launch variant", () => {
     const variants = ["classic", "chess960", "xiangqi", "shogi", "janggi", "makruk", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"];
@@ -26,7 +26,7 @@ describe("bot difficulty ladder", () => {
       expect(legalMoves).toContainEqual(expect.objectContaining({ from: botMove.from, to: botMove.to }));
       expect(() => applyMove(state, botMove)).not.toThrow();
     }
-  });
+  }, 15_000);
 
   test("legend difficulty prefers immediate checkmate over material", () => {
     let state = createInitialState("classic", "mate-test");
