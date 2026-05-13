@@ -1,6 +1,4 @@
-import Link from "next/link";
-
-import { signInWithPassword, signUpWithPassword } from "@/app/actions";
+import { continueAsGuest, signInWithGoogle, signInWithPassword, signUpWithPassword } from "@/app/actions";
 import type { LocaleCode } from "@/lib/i18n/locales";
 
 export function AuthCard({
@@ -15,12 +13,10 @@ export function AuthCard({
       <div className="space-y-5 py-6">
         <h1 className="max-w-2xl text-4xl font-black tracking-normal sm:text-6xl">{copy.title}</h1>
         <p className="max-w-xl text-lg leading-8 text-[var(--muted)]">{copy.subtitle}</p>
-        <Link
-          href={`/${locale}/lobby?demo=1`}
-          className="focus-ring inline-flex rounded-md bg-[var(--accent)] px-5 py-3 font-bold text-black"
-        >
-          {copy.demo}
-        </Link>
+        <form action={continueAsGuest}>
+          <input type="hidden" name="locale" value={locale} />
+          <button className="focus-ring inline-flex rounded-md bg-[var(--accent)] px-5 py-3 font-bold text-black">{copy.demo}</button>
+        </form>
       </div>
       <div className="panel p-5">
         <form action={signInWithPassword} className="grid gap-4">
@@ -56,6 +52,12 @@ export function AuthCard({
               Create
             </button>
           </div>
+        </form>
+        <form action={signInWithGoogle} className="mt-3">
+          <input type="hidden" name="locale" value={locale} />
+          <button className="focus-ring w-full rounded-md border border-[var(--border)] px-4 py-3 font-semibold">
+            Continue with Google
+          </button>
         </form>
       </div>
     </section>

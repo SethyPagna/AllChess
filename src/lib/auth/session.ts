@@ -54,11 +54,13 @@ export function createSessionId() {
 
 async function derivePasswordKey(password: string, salt: Uint8Array, iterationCount = iterations) {
   const passwordKey = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
+  const saltBuffer = new ArrayBuffer(salt.byteLength);
+  new Uint8Array(saltBuffer).set(salt);
   const bits = await crypto.subtle.deriveBits(
     {
       name: "PBKDF2",
       hash: "SHA-256",
-      salt,
+      salt: saltBuffer,
       iterations: iterationCount
     },
     passwordKey,

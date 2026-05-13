@@ -1,10 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createExpiredSessionCookie, createSessionCookie } from "@/lib/auth/session";
+import { createGuestSessionWithD1, signInWithD1, signUpWithD1 } from "@/lib/auth/d1";
+import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
 
 const authSchema = z.object({
   email: z.string().email(),
@@ -18,20 +21,17 @@ export async function signInWithPassword(formData: FormData) {
     redirect("/en/login?error=invalid-credentials");
   }
 
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) {
+  const env = await getCloudflareRuntimeEnv();
+  if (!env.ALLCHESS_D1) {
     redirect(`/${parsed.data.locale}/lobby?demo=1`);
   }
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email: parsed.data.email,
-    password: parsed.data.password
-  });
-
-  if (error) {
-    redirect(`/${parsed.data.locale}/login?error=${encodeURIComponent(error.message)}`);
+  const result = await signInWithD1(env.ALLCHESS_D1, parsed.data.email, parsed.data.password);
+  if (!result.ok) {
+    redirect(`/${parsed.data.locale}/login?error=${encodeURIComponent(result.error)}`);
   }
 
+  await setSessionCookie(result.sessionId, result.maxAge);
   revalidatePath(`/${parsed.data.locale}/lobby`);
   redirect(`/${parsed.data.locale}/lobby`);
 }
@@ -42,27 +42,62 @@ export async function signUpWithPassword(formData: FormData) {
     redirect("/en/login?error=invalid-account");
   }
 
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) {
+  const env = await getCloudflareRuntimeEnv();
+  if (!env.ALLCHESS_D1) {
     redirect(`/${parsed.data.locale}/lobby?demo=1`);
   }
 
-  const { error } = await supabase.auth.signUp({
-    email: parsed.data.email,
-    password: parsed.data.password
-  });
-
-  if (error) {
-    redirect(`/${parsed.data.locale}/login?error=${encodeURIComponent(error.message)}`);
+  const result = await signUpWithD1(env.ALLCHESS_D1, parsed.data.email, parsed.data.password);
+  if (!result.ok) {
+    redirect(`/${parsed.data.locale}/login?error=${encodeURIComponent(result.error)}`);
   }
 
+  await setSessionCookie(result.sessionId, result.maxAge);
   revalidatePath(`/${parsed.data.locale}/lobby`);
   redirect(`/${parsed.data.locale}/lobby`);
 }
 
+export async function continueAsGuest(formData: FormData) {
+  const locale = String(formData.get("locale") ?? "en");
+  const env = await getCloudflareRuntimeEnv();
+  if (!env.ALLCHESS_D1) {
+    redirect(`/${locale}/lobby?demo=1`);
+  }
+
+  const result = await createGuestSessionWithD1(env.ALLCHESS_D1);
+  if (result.ok) {
+    await setSessionCookie(result.sessionId, result.maxAge);
+  }
+  revalidatePath(`/${locale}/lobby`);
+  redirect(`/${locale}/lobby`);
+}
+
+export async function signInWithGoogle(formData: FormData) {
+  const locale = String(formData.get("locale") ?? "en");
+  const env = await getCloudflareRuntimeEnv();
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_REDIRECT_URI) {
+    redirect(`/${locale}/login?error=google-oauth-not-configured`);
+  }
+
+  const url = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+  url.searchParams.set("client_id", env.GOOGLE_CLIENT_ID);
+  url.searchParams.set("redirect_uri", env.GOOGLE_REDIRECT_URI);
+  url.searchParams.set("response_type", "code");
+  url.searchParams.set("scope", "openid email profile");
+  url.searchParams.set("state", locale);
+  redirect(url.toString() as never);
+}
+
 export async function signOut(locale = "en") {
-  const supabase = await createSupabaseServerClient();
-  await supabase?.auth.signOut();
+  const cookie = createExpiredSessionCookie();
+  const cookieStore = await cookies();
+  cookieStore.set(cookie.name, cookie.value, cookie.options);
   revalidatePath(`/${locale}`);
   redirect(`/${locale}`);
+}
+
+async function setSessionCookie(sessionId: string, maxAge: number) {
+  const cookie = createSessionCookie(sessionId, maxAge);
+  const cookieStore = await cookies();
+  cookieStore.set(cookie.name, cookie.value, cookie.options);
 }
