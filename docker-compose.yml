@@ -1,33 +1,14 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: allchess-postgres
-    restart: unless-stopped
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: allchess-app-local
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: allchess
-      POSTGRES_USER: allchess
-      POSTGRES_PASSWORD: allchess_dev_password
+      DEPLOYMENT_TARGET: local
+      DATABASE_DRIVER: d1
+      OBJECT_STORAGE_DRIVER: r2
     ports:
-      - "55433:5432"
-    volumes:
-      - allchess_postgres:/var/lib/postgresql/data
-      - ./supabase/migrations:/docker-entrypoint-initdb.d:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U allchess -d allchess"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
-  redis:
-    image: redis:7-alpine
-    container_name: allchess-redis
-    restart: unless-stopped
-    ports:
-      - "6381:6379"
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes:
-      - allchess_redis:/data
-
-volumes:
-  allchess_postgres:
-  allchess_redis:
+      - "3000:3000"
