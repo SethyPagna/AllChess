@@ -203,11 +203,15 @@ select {
   color: var(--accent);
 }
 
-.app-sidebar-tools {
+.app-universal-tools {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
-  padding-top: 0.4rem;
+  position: fixed;
+  z-index: 75;
+  left: 0.9rem;
+  bottom: 0.9rem;
+  width: calc(12.5rem - 1.8rem);
 }
 
 .app-main {
@@ -952,6 +956,14 @@ select {
 
   .app-mobile-header {
     display: flex;
+  }
+
+  .app-universal-tools {
+    top: 0.55rem;
+    right: 3.35rem;
+    bottom: auto;
+    left: auto;
+    width: auto;
   }
 
   .app-content {

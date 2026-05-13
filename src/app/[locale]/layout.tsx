@@ -79,18 +79,6 @@ export default async function LocaleLayout({
                   <LogIn size={20} strokeWidth={2.5} />
                   <span>{t("nav.login")}</span>
                 </Link>
-                <div className="app-sidebar-tools">
-                  <ThemeToggle
-                    labels={{
-                      light: t("settings.light"),
-                      dark: t("settings.dark"),
-                      system: t("settings.system")
-                    }}
-                  />
-                  <Suspense fallback={<span className="action-secondary inline-flex h-10 items-center px-3 text-sm">{locale.toUpperCase()}</span>}>
-                    <LocaleSwitcher active={locale as LocaleCode} />
-                  </Suspense>
-                </div>
               </div>
             </aside>
             <div className="app-main">
@@ -101,16 +89,6 @@ export default async function LocaleLayout({
                   </span>
                   <span>{t("app.name")}</span>
                 </Link>
-                <ThemeToggle
-                  labels={{
-                    light: t("settings.light"),
-                    dark: t("settings.dark"),
-                    system: t("settings.system")
-                  }}
-                />
-                <Suspense fallback={<span className="action-secondary inline-flex h-10 items-center px-3 text-sm">{locale.toUpperCase()}</span>}>
-                  <LocaleSwitcher active={locale as LocaleCode} />
-                </Suspense>
                 <details className="app-menu">
                   <summary className="focus-ring grid h-10 w-10 cursor-pointer list-none place-items-center rounded-md border border-[var(--border)]">
                     <Menu size={18} />
@@ -133,6 +111,18 @@ export default async function LocaleLayout({
                   </div>
                 </details>
               </header>
+              <div className="app-universal-tools">
+                <ThemeToggle
+                  labels={{
+                    light: t("settings.light"),
+                    dark: t("settings.dark"),
+                    system: t("settings.system")
+                  }}
+                />
+                <Suspense fallback={<span className="action-secondary inline-flex h-10 items-center px-3 text-sm">{locale.toUpperCase()}</span>}>
+                  <LocaleSwitcher active={locale as LocaleCode} />
+                </Suspense>
+              </div>
               <main className="app-content">{children}</main>
             </div>
           </div>
