@@ -1,7 +1,26 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { Bot, Brain, Flag, Lightbulb, PauseCircle, PlayCircle, RotateCcw, Sparkles, Swords, Undo2 } from "lucide-react";
+import {
+  Bot,
+  Brain,
+  Crown,
+  Dices,
+  Flag,
+  GraduationCap,
+  Handshake,
+  Lightbulb,
+  Medal,
+  PauseCircle,
+  PlayCircle,
+  RotateCcw,
+  SlidersHorizontal,
+  Sparkles,
+  Swords,
+  Timer,
+  Undo2,
+  Zap
+} from "lucide-react";
 
 import { botDifficultyLevels, cancelBotMove, requestBotMove, type BotDifficultyKey, type BotMoveResult } from "@/lib/bots";
 import { formatClock, tickGameClock } from "@/lib/clocks";
@@ -46,6 +65,14 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
   const files = useMemo(() => Array.from({ length: cols }, (_, index) => String.fromCharCode(97 + index)), [cols]);
   const botLevel = botDifficultyLevels.find((level) => level.key === botDifficulty) ?? botDifficultyLevels[1];
   const outcome = useMemo(() => describeGameOutcome(state, "white"), [state]);
+  const playCards = [
+    { label: "Play Online", description: "Pair with a similar-strength opponent.", Icon: Zap },
+    { label: "Play Bots", description: "Practice against Easy through Legend tiers.", Icon: Bot },
+    { label: "Play Coach", description: "Use suggestions, review, and move feedback.", Icon: GraduationCap },
+    { label: "Play a Friend", description: "Create a room code and share it.", Icon: Handshake },
+    { label: "Tournaments", description: "Arena-ready brackets and fast events.", Icon: Medal },
+    { label: "Chess Variants", description: "Classic, Xiangqi, Shogi, Makruk, Jungle, and more.", Icon: Dices }
+  ];
 
   function choose(square: Square) {
     if (state.status === "completed" || thinking.status === "thinking") return;
@@ -370,8 +397,55 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
         </div>
       </div>
 
-      <aside className="panel game-side-panel grid content-start gap-4 p-4">
-        <div>
+      <aside className="game-side-panel play-panel grid content-start gap-4 p-4">
+        <div className="play-panel-title">
+          <Crown size={34} className="text-[var(--warning)]" />
+          <div>
+            <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">AllChess Arena</p>
+            <h2>Play Chess</h2>
+          </div>
+        </div>
+        <div className="play-action-stack">
+          {playCards.map((card) => {
+            const Icon = card.Icon;
+            return (
+              <button key={card.label} type="button" className="play-action-card focus-ring">
+                <Icon size={32} />
+                <span>
+                  <strong>{card.label}</strong>
+                  <small>{card.description}</small>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="play-options-card">
+          <div className="play-options-heading">
+            <Timer size={18} />
+            <span>{getTimeControl(timeControl).label}</span>
+          </div>
+          <div className="play-time-grid" aria-label="Quick time controls">
+            {timeControls.slice(0, 6).map((control) => (
+              <button key={control.key} type="button" onClick={() => changeTimeControl(control.key)} className={`focus-ring ${timeControl === control.key ? "is-selected" : ""}`}>
+                {control.label}
+              </button>
+            ))}
+          </div>
+          <div className="play-options-row">
+            <SlidersHorizontal size={18} />
+            <span>Bot strength</span>
+            <strong>{botLevel.label}</strong>
+          </div>
+          <div className="play-toggle-list" aria-label="Training options">
+            <span>Bot Chat</span>
+            <span className="toggle-pill is-on" aria-hidden="true" />
+            <span>Evaluation Bar</span>
+            <span className="toggle-pill" aria-hidden="true" />
+            <span>Threat Arrows</span>
+            <span className="toggle-pill" aria-hidden="true" />
+          </div>
+        </div>
+        <div className="play-table-card">
           <p className="text-sm font-bold text-[var(--muted)]">Table</p>
           <p className="text-2xl font-black capitalize">{state.turn} to move</p>
           {thinking.status === "thinking" ? <p className="mt-1 text-sm font-bold text-[var(--info)]">{thinking.label}</p> : null}
@@ -387,13 +461,13 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
         </div>
         <div className="grid grid-cols-2 gap-3">
           {state.clocks.map((clock) => (
-            <div key={clock.color} className="rounded-md border border-[var(--border)] p-3">
-              <p className="text-xs uppercase text-[var(--muted)]">{clock.color}</p>
-              <p className="font-mono text-xl">{formatClock(clock.remainingMs)}</p>
+            <div key={clock.color} className="play-clock-card">
+              <p>{clock.color}</p>
+              <strong>{formatClock(clock.remainingMs)}</strong>
             </div>
           ))}
         </div>
-        <div>
+        <div className="play-table-card">
           <p className="mb-2 flex items-center gap-2 text-sm font-bold">
             <Brain size={16} className="text-[var(--accent)]" />
             Moves
@@ -402,7 +476,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
             {state.moves.length ? state.moves.map((move, index) => <li key={`${move.notation}-${index}`}>{index + 1}. {move.notation}</li>) : <li>No moves yet.</li>}
           </ol>
         </div>
-        <div className="rounded-md bg-[var(--surface-strong)] p-3 text-sm text-[var(--muted)]">
+        <div className="play-table-card text-sm text-[var(--muted)]">
           <p className="mb-1 flex items-center gap-2 font-bold text-[var(--foreground)]">
             <Flag size={16} className="text-[var(--warning)]" />
             Review hook
