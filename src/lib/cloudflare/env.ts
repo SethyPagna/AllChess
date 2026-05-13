@@ -26,7 +26,7 @@ export const cloudflareResourceNames = {
   cacheBucket: "allchess-opennext-cache"
 } as const;
 
-export function normalizeCloudflareEnv(env: Partial<CloudflareEnv> & Record<string, unknown> = {}): CloudflareEnv {
+export function normalizeCloudflareEnv(env: Record<string, unknown> = {}): CloudflareEnv {
   return {
     ...env,
     DATABASE_DRIVER: "d1",

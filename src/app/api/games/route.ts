@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { createD1GameRepository } from "@/lib/cloudflare/d1";
+import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
 import { createInitialState } from "@/lib/variants";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const createGameSchema = z.object({
   variantKey: z.string().default("classic"),
@@ -12,9 +13,9 @@ const createGameSchema = z.object({
 export async function POST(request: Request) {
   const body = createGameSchema.parse(await request.json().catch(() => ({})));
   const state = createInitialState(body.variantKey);
-  const supabase = await createSupabaseServerClient();
+  const env = await getCloudflareRuntimeEnv();
 
-  if (!supabase) {
+  if (!env.ALLCHESS_D1) {
     return NextResponse.json({
       mode: "demo",
       game: {
@@ -26,21 +27,11 @@ export async function POST(request: Request) {
     });
   }
 
-  const { data, error } = await supabase
-    .from("games")
-    .insert({
-      id: state.id,
-      variant_key: body.variantKey,
-      status: "waiting",
-      board_state: state,
-      private_code: body.privateRoom ? Math.random().toString(36).slice(2, 8).toUpperCase() : null
-    })
-    .select("*")
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+  try {
+    const repository = createD1GameRepository(env.ALLCHESS_D1);
+    await repository.createGame({ state, privateRoom: body.privateRoom });
+    return NextResponse.json({ mode: "d1", game: { id: state.id, variant_key: body.variantKey, status: state.status, board_state: state } });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Unable to create game." }, { status: 400 });
   }
-
-  return NextResponse.json({ mode: "supabase", game: data });
 }

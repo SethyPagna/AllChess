@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { createD1GameRepository } from "@/lib/cloudflare/d1";
+import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
 
 const analysisSchema = z.object({
   gameId: z.string().min(1),
@@ -38,11 +39,13 @@ export async function POST(request: Request) {
   };
 
   const summary = `AI analysis queued for ${payload.variantKey} with ${payload.moves.length} moves.`;
-  const supabase = await createSupabaseServerClient();
+  const env = await getCloudflareRuntimeEnv();
 
-  if (supabase) {
-    await supabase.from("analysis_reports").insert({
-      game_id: payload.gameId,
+  if (env.ALLCHESS_D1) {
+    const repository = createD1GameRepository(env.ALLCHESS_D1);
+    await repository.saveAnalysis({
+      id: crypto.randomUUID(),
+      gameId: payload.gameId,
       provider,
       model,
       summary,
