@@ -1,4 +1,4 @@
-import type { Ai, D1Database, R2Bucket } from "@cloudflare/workers-types";
+import type { Ai, D1Database, DurableObjectNamespace, R2Bucket } from "@cloudflare/workers-types";
 
 export type CloudflareEnv = {
   DEPLOYMENT_TARGET?: "cloudflare" | "vercel" | "self-hosted" | "local";
@@ -7,6 +7,9 @@ export type CloudflareEnv = {
   ALLCHESS_D1?: D1Database;
   ALLCHESS_OBJECTS?: R2Bucket;
   NEXT_INC_CACHE_R2_BUCKET?: R2Bucket;
+  GAME_ROOM_DO?: DurableObjectNamespace;
+  MATCHMAKING_DO?: DurableObjectNamespace;
+  PRESENCE_DO?: DurableObjectNamespace;
   AI?: Ai;
   CLOUDFLARE_ACCOUNT_ID?: string;
   CLOUDFLARE_D1_DATABASE_ID?: string;

@@ -17,6 +17,28 @@
       "service": "allchess"
     }
   ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "GAME_ROOM_DO",
+        "class_name": "GameRoomDO"
+      },
+      {
+        "name": "MATCHMAKING_DO",
+        "class_name": "MatchmakingDO"
+      },
+      {
+        "name": "PRESENCE_DO",
+        "class_name": "PresenceDO"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["GameRoomDO", "MatchmakingDO", "PresenceDO"]
+    }
+  ],
   "r2_buckets": [
     {
       "binding": "NEXT_INC_CACHE_R2_BUCKET",
@@ -53,6 +75,22 @@
           "service": "allchess"
         }
       ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "GAME_ROOM_DO",
+            "class_name": "GameRoomDO"
+          },
+          {
+            "name": "MATCHMAKING_DO",
+            "class_name": "MatchmakingDO"
+          },
+          {
+            "name": "PRESENCE_DO",
+            "class_name": "PresenceDO"
+          }
+        ]
+      },
       "r2_buckets": [
         {
           "binding": "NEXT_INC_CACHE_R2_BUCKET",
