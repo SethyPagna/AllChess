@@ -109,14 +109,23 @@ select {
 }
 
 .board-shell {
-  width: min(100%, 760px);
+  width: min(100%, 760px, calc(100vh - 8rem));
   max-width: calc(100vw - 2rem);
   margin-inline: auto;
+  flex: 0 0 auto;
+}
+
+.board-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--board-cols) / var(--board-rows);
+  isolation: isolate;
 }
 
 .board-grid {
   display: grid;
   width: 100%;
+  height: 100%;
   aspect-ratio: var(--board-cols) / var(--board-rows);
   background: var(--border);
 }
@@ -152,22 +161,152 @@ select {
 
 .piece-symbol {
   display: grid;
-  width: 100%;
-  height: 100%;
+  width: 88%;
+  height: 88%;
   place-items: center;
   font-family: "Noto Sans Symbols 2", "DejaVu Sans", "Segoe UI Symbol", "Apple Symbols", "Noto Serif CJK SC", serif;
   line-height: 1;
   opacity: 1;
   filter: none;
   text-shadow: none;
-  transform: translateY(-1px) scale(0.98);
+  transform: none;
   -webkit-text-stroke: 0;
+}
+
+.piece-svg {
+  fill: currentColor;
+  stroke: color-mix(in srgb, currentColor 78%, var(--surface));
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.1px;
+}
+
+.native-piece-symbol {
+  width: 100%;
+  height: 100%;
+  font-size: clamp(1.85rem, calc((min(760px, 100vw - 2rem) / var(--board-cols)) * 0.72), 4.8rem);
+  font-weight: 950;
 }
 
 .piece-symbol[data-dark="true"] {
   filter: none;
   text-shadow: none;
   -webkit-text-stroke: 0;
+}
+
+.match-result-banner,
+.match-result-modal,
+.win-celebration {
+  position: absolute;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.match-result-banner {
+  left: clamp(0.75rem, 3vw, 1.25rem);
+  right: clamp(0.75rem, 3vw, 1.25rem);
+  top: clamp(0.75rem, 3vw, 1.25rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  box-shadow: var(--shadow);
+  padding: 0.7rem 0.85rem;
+  font-size: 0.9rem;
+}
+
+.match-result-banner span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.match-result-modal {
+  left: 50%;
+  top: 50%;
+  width: min(88%, 26rem);
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  box-shadow: var(--shadow);
+  padding: clamp(1rem, 3vw, 1.4rem);
+  text-align: center;
+  pointer-events: auto;
+}
+
+.match-result-modal h2 {
+  margin: 0.25rem 0 0.4rem;
+  font-size: clamp(1.35rem, 4vw, 2rem);
+  font-weight: 950;
+  line-height: 1.05;
+}
+
+.match-result-modal p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.match-result-win {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+}
+
+.match-result-loss {
+  border-color: color-mix(in srgb, var(--danger) 34%, var(--border));
+}
+
+.match-result-draw {
+  border-color: color-mix(in srgb, var(--info) 34%, var(--border));
+}
+
+.win-celebration {
+  inset: 0;
+  overflow: hidden;
+}
+
+.win-celebration::before,
+.win-celebration::after {
+  content: "";
+  position: absolute;
+  top: 12%;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow:
+    2.5rem 1.2rem var(--warning),
+    5rem 0.2rem var(--info),
+    7rem 2.4rem var(--accent-strong),
+    10rem 0.8rem var(--warning),
+    13rem 2rem var(--info),
+    16rem 0.4rem var(--accent);
+  animation: celebration-fall 1.6s ease-out infinite;
+}
+
+.win-celebration::before {
+  left: 12%;
+}
+
+.win-celebration::after {
+  left: 42%;
+  animation-delay: 0.32s;
+}
+
+@keyframes celebration-fall {
+  from {
+    transform: translateY(-1rem) rotate(0deg);
+    opacity: 0.95;
+  }
+  to {
+    transform: translateY(15rem) rotate(120deg);
+    opacity: 0;
+  }
 }
 
 .move-list {
@@ -182,4 +321,19 @@ select {
 .focus-ring:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
   outline-offset: 3px;
+}
+
+@media (max-width: 900px) {
+  .board-shell {
+    width: min(100%, calc(100vw - 1rem));
+  }
+
+  .match-result-banner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .match-result-banner span {
+    text-align: left;
+  }
 }

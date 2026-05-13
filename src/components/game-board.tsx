@@ -5,27 +5,10 @@ import { Bot, Brain, Flag, Lightbulb, PauseCircle, PlayCircle, RotateCcw, Sparkl
 
 import { botDifficultyLevels, cancelBotMove, requestBotMove, type BotDifficultyKey, type BotMoveResult } from "@/lib/bots";
 import { formatClock, tickGameClock } from "@/lib/clocks";
+import { describeGameOutcome } from "@/lib/game-outcome";
 import { getTimeControl, timeControls, type TimeControlKey } from "@/lib/time-controls";
 import { applyMove, createInitialState, getLegalMoves, sameSquare, serializeSquare, type GameState, type Square } from "@/lib/variants";
-
-const glyphs: Record<string, string> = {
-  k: "\u265a",
-  q: "\u265b",
-  r: "\u265c",
-  b: "\u265d",
-  n: "\u265e",
-  p: "\u265f",
-  g: "\u738b",
-  a: "\u58eb",
-  e: "\u8c61",
-  h: "\u99ac",
-  c: "\u70ae",
-  s: "\u9280",
-  l: "\u9999",
-  d: "\u72ac",
-  w: "\u72fc",
-  t: "\u864e"
-};
+import { PieceIcon } from "@/components/piece-icon";
 
 type BotMode = "human" | "opponent" | "both";
 
@@ -52,6 +35,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
   const [thinking, setThinking] = useState<ThinkingState>({ status: "idle", label: "" });
   const [suggestedMove, setSuggestedMove] = useState<SuggestedMove | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [showOutcome, setShowOutcome] = useState(true);
   const activeBotRequestRef = useRef<string | null>(null);
 
   const legalMoves = useMemo(() => (selected ? getLegalMoves(state, selected) : []), [selected, state]);
@@ -61,6 +45,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
   const cols = state.board[0]?.length ?? 8;
   const files = useMemo(() => Array.from({ length: cols }, (_, index) => String.fromCharCode(97 + index)), [cols]);
   const botLevel = botDifficultyLevels.find((level) => level.key === botDifficulty) ?? botDifficultyLevels[1];
+  const outcome = useMemo(() => describeGameOutcome(state, "white"), [state]);
 
   function choose(square: Square) {
     if (state.status === "completed" || thinking.status === "thinking") return;
@@ -200,6 +185,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
     setSuggestedMove(null);
     setNotice(null);
     setThinking({ status: "idle", label: "" });
+    setShowOutcome(true);
   }
 
   function changeTimeControl(nextControl: TimeControlKey) {
@@ -213,6 +199,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
     setSuggestedMove(null);
     setNotice(null);
     setThinking({ status: "idle", label: "" });
+    setShowOutcome(true);
   }
 
   useEffect(() => {
@@ -311,49 +298,74 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
         </div>
 
         <div className="board-shell" style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
-          <div className="board-grid overflow-hidden rounded-lg border border-[var(--border)] shadow-2xl" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }} aria-label="Game board">
-            {state.board.flatMap((row) =>
-              row.map((cell) => {
-                const isSelected = selected && sameSquare(selected, cell.square);
-                const isLegal = legalTargets.has(serializeSquare(cell.square));
-                const isSuggestedFrom = suggestedMove && sameSquare(suggestedMove.from, cell.square);
-                const isSuggestedTo = suggestedMove && sameSquare(suggestedMove.to, cell.square);
-                const dark = (cell.square.row + cell.square.col) % 2 === 1;
-                const isDarkPiece = cell.piece?.owner === "black" || cell.piece?.owner === "blue" || cell.piece?.owner === "gote";
-                const name = squareName(cell.square, files, rows);
-                return (
-                  <button
-                    type="button"
-                    key={serializeSquare(cell.square)}
-                    onClick={() => choose(cell.square)}
-                    className="board-square focus-ring relative grid place-items-center overflow-hidden font-black"
-                    aria-label={cell.piece ? `${name} ${cell.piece.owner} ${pieceName(cell.piece.code)}` : name}
-                    data-square={name}
-                    data-suggested={isSuggestedFrom ? "from" : isSuggestedTo ? "to" : undefined}
-                    style={{
-                      background: isSelected
-                        ? "var(--accent)"
-                        : isSuggestedFrom || isSuggestedTo
-                          ? "color-mix(in srgb, var(--info) 46%, var(--board-light))"
-                          : isLegal
-                            ? "color-mix(in srgb, var(--accent) 34%, var(--board-light))"
-                            : dark
-                              ? "var(--board-dark)"
-                              : "var(--board-light)",
-                      color: isDarkPiece ? "var(--piece-dark)" : "var(--piece-light)"
-                    }}
-                  >
-                    {cell.square.col === 0 ? <span className="board-coordinate board-rank">{rows - cell.square.row}</span> : null}
-                    {cell.square.row === rows - 1 ? <span className="board-coordinate board-file">{files[cell.square.col]}</span> : null}
-                    {cell.piece ? (
-                      <span className="piece-symbol" data-dark={isDarkPiece}>
-                        {glyphs[cell.piece.code] ?? cell.piece.code.toUpperCase()}
-                      </span>
-                    ) : null}
-                  </button>
-                );
-              })
-            )}
+          <div className="board-stage">
+            <div className="board-grid overflow-hidden rounded-lg border border-[var(--border)] shadow-2xl" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }} aria-label="Game board">
+              {state.board.flatMap((row) =>
+                row.map((cell) => {
+                  const isSelected = selected && sameSquare(selected, cell.square);
+                  const isLegal = legalTargets.has(serializeSquare(cell.square));
+                  const isSuggestedFrom = suggestedMove && sameSquare(suggestedMove.from, cell.square);
+                  const isSuggestedTo = suggestedMove && sameSquare(suggestedMove.to, cell.square);
+                  const dark = (cell.square.row + cell.square.col) % 2 === 1;
+                  const isDarkPiece = cell.piece?.owner === "black" || cell.piece?.owner === "blue" || cell.piece?.owner === "gote";
+                  const name = squareName(cell.square, files, rows);
+                  return (
+                    <button
+                      type="button"
+                      key={serializeSquare(cell.square)}
+                      onClick={() => choose(cell.square)}
+                      className="board-square focus-ring relative grid place-items-center overflow-hidden font-black"
+                      aria-label={cell.piece ? `${name} ${cell.piece.owner} ${pieceName(cell.piece.code)}` : name}
+                      data-square={name}
+                      data-suggested={isSuggestedFrom ? "from" : isSuggestedTo ? "to" : undefined}
+                      style={{
+                        background: isSelected
+                          ? "var(--accent)"
+                          : isSuggestedFrom || isSuggestedTo
+                            ? "color-mix(in srgb, var(--info) 46%, var(--board-light))"
+                            : isLegal
+                              ? "color-mix(in srgb, var(--accent) 34%, var(--board-light))"
+                              : dark
+                                ? "var(--board-dark)"
+                                : "var(--board-light)",
+                        color: isDarkPiece ? "var(--piece-dark)" : "var(--piece-light)"
+                      }}
+                    >
+                      {cell.square.col === 0 ? <span className="board-coordinate board-rank">{rows - cell.square.row}</span> : null}
+                      {cell.square.row === rows - 1 ? <span className="board-coordinate board-file">{files[cell.square.col]}</span> : null}
+                      {cell.piece ? <PieceIcon code={cell.piece.code} owner={cell.piece.owner} variantKey={state.variantKey} promoted={cell.piece.promoted} /> : null}
+                    </button>
+                  );
+                })
+              )}
+            </div>
+            {outcome ? (
+              <>
+                <div className={`match-result-banner match-result-${outcome.result}`} role="status">
+                  <strong>{outcome.headline}</strong>
+                  <span>{outcome.detail}</span>
+                </div>
+                {outcome.celebrate ? <div className="win-celebration" aria-hidden="true" /> : null}
+                {showOutcome ? (
+                  <div className={`match-result-modal match-result-${outcome.result}`} role="dialog" aria-label="Match over" aria-modal="false">
+                    <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">Match over</p>
+                    <h2>{outcome.headline}</h2>
+                    <p>{outcome.detail}</p>
+                    <div className="mt-4 flex flex-wrap justify-center gap-2">
+                      <button type="button" onClick={reset} className="focus-ring action-primary px-4 py-2 text-sm">
+                        Play again
+                      </button>
+                      <button type="button" onClick={() => setShowOutcome(false)} className="focus-ring action-secondary px-4 py-2 text-sm">
+                        Review moves
+                      </button>
+                      <button type="button" onClick={() => setShowOutcome(false)} className="focus-ring action-secondary px-4 py-2 text-sm">
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </>
+            ) : null}
           </div>
         </div>
       </div>

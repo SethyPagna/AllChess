@@ -27,7 +27,7 @@ export function PieceIcon({ code, variantKey, promoted = false }: PieceIconProps
   }
 
   return (
-    <span className="piece-icon native-piece-symbol" data-piece="native" data-code={normalized}>
+    <span className="piece-symbol piece-icon native-piece-symbol" data-piece="native" data-code={normalized}>
       {nativeGlyphs[normalized] ?? normalized.toUpperCase()}
     </span>
   );
@@ -36,7 +36,7 @@ export function PieceIcon({ code, variantKey, promoted = false }: PieceIconProps
 function WesternPieceIcon({ code, promoted }: { code: string; promoted: boolean }) {
   const piece = westernPieceName(code);
   return (
-    <svg className="piece-icon piece-svg" data-piece={piece} data-promoted={promoted || undefined} viewBox="0 0 100 100" aria-hidden="true">
+    <svg className="piece-symbol piece-icon piece-svg" data-piece={piece} data-promoted={promoted || undefined} viewBox="0 0 100 100" aria-hidden="true">
       {piece === "king" ? <KingPaths /> : null}
       {piece === "queen" ? <QueenPaths /> : null}
       {piece === "rook" ? <RookPaths /> : null}
