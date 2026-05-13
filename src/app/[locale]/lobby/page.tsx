@@ -32,11 +32,11 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
           <p className="mt-2 text-[var(--muted)]">{t("app.description")}</p>
         </div>
         <div className="panel lobby-action-row">
-          <Link href={`/${locale}/play/classic`} className="focus-ring action-primary inline-flex items-center gap-2 px-4 py-2 text-sm">
+          <Link href={`/${locale}/play` as never} className="focus-ring action-primary inline-flex items-center gap-2 px-4 py-2 text-sm">
             <Swords size={16} />
             Play now
           </Link>
-          <Link href={`/${locale}/play/classic?bot=normal`} className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2 text-sm">
+          <Link href={`/${locale}/play/classic?bot=normal&mode=bot`} className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2 text-sm">
             <Bot size={16} />
             Bot practice
           </Link>

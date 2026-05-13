@@ -43,7 +43,7 @@ export default async function LocaleLayout({
       Icon: Swords,
       links: [
         ["lobby", t("nav.lobby"), Home],
-        ["play/classic", "Play board", Swords],
+        ["play", "Play board", Swords],
         ["practice", "Bot practice", Users]
       ]
     },

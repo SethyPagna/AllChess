@@ -814,6 +814,90 @@ select {
   min-height: 17rem;
 }
 
+.play-mode-grid {
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.play-mode-button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.15rem 0.45rem;
+  align-items: center;
+  border: 1px solid rgb(255 255 255 / 9%);
+  border-radius: 8px;
+  background: #2d2b28;
+  color: #f8f6ef;
+  padding: 0.65rem;
+  text-align: left;
+}
+
+.play-mode-button svg {
+  color: var(--accent);
+  grid-row: span 2;
+}
+
+.play-mode-button span {
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.play-mode-button small {
+  color: #bdb6aa;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.play-mode-button.is-selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, #2d2b28);
+}
+
+.play-setup-field {
+  display: grid;
+  gap: 0.35rem;
+  color: #d7d0c3;
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+.play-setup-field select {
+  min-height: 2.45rem;
+  border: 1px solid rgb(255 255 255 / 11%);
+  border-radius: 8px;
+  background: #171614;
+  color: #fffdf7;
+  padding: 0 0.65rem;
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+.pregame-board-overlay {
+  position: absolute;
+  inset: auto clamp(0.75rem, 4vw, 2rem) clamp(0.75rem, 4vw, 2rem);
+  z-index: 3;
+  display: grid;
+  gap: 0.25rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  box-shadow: var(--shadow);
+  padding: 0.8rem 0.9rem;
+}
+
+.pregame-board-overlay strong {
+  color: var(--foreground);
+  font-size: 1rem;
+  font-weight: 950;
+}
+
+.pregame-board-overlay span {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
 .play-section-label {
   margin: 0 0 -0.55rem;
   color: #c7c1b5;
@@ -1431,6 +1515,78 @@ select {
   max-width: 1180px;
 }
 
+.play-setup-page {
+  max-width: 1180px;
+}
+
+.play-setup-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.play-setup-hero h1 {
+  margin: 0.2rem 0;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 950;
+  line-height: 1;
+}
+
+.play-setup-hero p {
+  max-width: 45rem;
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.play-mode-browser {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+}
+
+.play-mode-card {
+  display: grid;
+  gap: 0.85rem;
+  align-content: start;
+  padding: 1rem;
+}
+
+.play-mode-card > svg {
+  color: var(--accent);
+}
+
+.play-mode-card h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 950;
+}
+
+.play-mode-card p {
+  margin: 0.25rem 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 750;
+}
+
+.play-mode-card-games {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.play-mode-card-games a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--foreground);
+  padding: 0.55rem 0.65rem;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
 .practice-hero {
   display: flex;
   align-items: center;
@@ -1715,7 +1871,8 @@ select {
     min-height: 2rem;
   }
 
-  .practice-hero {
+  .practice-hero,
+  .play-setup-hero {
     align-items: flex-start;
     flex-direction: column;
   }

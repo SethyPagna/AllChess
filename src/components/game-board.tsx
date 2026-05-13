@@ -6,6 +6,7 @@ import {
   Brain,
   Crown,
   Flag,
+  FlipHorizontal2,
   Lightbulb,
   PauseCircle,
   PlayCircle,
@@ -29,8 +30,19 @@ import { applyMove, createInitialState, getLegalMoves, sameSquare, serializeSqua
 import { PieceIcon } from "@/components/piece-icon";
 
 type BotMode = "human" | "opponent" | "both";
+type PlayMode = "online" | "bot" | "offline" | "room" | "matchmaking" | "spectate";
 type SeatChoice = "random" | "first" | "second";
+type BoardOrientation = "auto" | "first" | "second";
 type PanelTab = "setup" | "status" | "review";
+
+const playModeOptions: Array<{ key: PlayMode; label: string; description: string; Icon: typeof Swords }> = [
+  { key: "online", label: "Play Online", description: "Match with a player", Icon: Swords },
+  { key: "bot", label: "Play Bots", description: "Practice by tier", Icon: Bot },
+  { key: "offline", label: "Offline Local", description: "Same device", Icon: Crown },
+  { key: "room", label: "Create Room", description: "Invite by code", Icon: Flag },
+  { key: "matchmaking", label: "Matchmaking", description: "Queue by settings", Icon: Timer },
+  { key: "spectate", label: "Spectate", description: "Watch live rooms", Icon: Brain }
+];
 
 type ThinkingState = {
   status: "idle" | "thinking" | "cancelled" | "failed";
@@ -49,27 +61,32 @@ export function GameBoard({
   variantKey,
   initialState,
   rulesSummary,
-  initialBotMode = "human"
+  initialBotMode = "human",
+  initialPlayMode
 }: {
   variantKey: string;
   initialState?: GameState;
   rulesSummary?: VariantRuleSummary;
   initialBotMode?: BotMode;
+  initialPlayMode?: PlayMode;
 }) {
   const [timeControl, setTimeControl] = useState<TimeControlKey>("rapid");
   const [state, setState] = useState(() => withTimeControl(initialState ?? createInitialState(variantKey), "rapid"));
   const [history, setHistory] = useState<GameState[]>([]);
   const [selected, setSelected] = useState<Square | null>(null);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [playMode, setPlayMode] = useState<PlayMode>(initialPlayMode ?? (initialBotMode === "opponent" ? "bot" : "offline"));
   const [botDifficulty, setBotDifficulty] = useState<BotDifficultyKey>("normal");
   const [botMode, setBotMode] = useState<BotMode>(initialBotMode);
   const [seatChoice, setSeatChoice] = useState<SeatChoice>("random");
+  const [boardOrientation, setBoardOrientation] = useState<BoardOrientation>("auto");
   const [humanColor, setHumanColor] = useState(() => pickHumanColor(withTimeControl(initialState ?? createInitialState(variantKey), "rapid"), "first"));
   const [thinking, setThinking] = useState<ThinkingState>({ status: "idle", label: "" });
   const [suggestedMove, setSuggestedMove] = useState<SuggestedMove | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [showOutcome, setShowOutcome] = useState(true);
   const [showRules, setShowRules] = useState(false);
-  const [panelTab, setPanelTab] = useState<PanelTab>("status");
+  const [panelTab, setPanelTab] = useState<PanelTab>("setup");
   const [reviewPly, setReviewPly] = useState<number | null>(null);
   const [reviewPlaying, setReviewPlaying] = useState(false);
   const activeBotRequestRef = useRef<string | null>(null);
@@ -90,7 +107,22 @@ export function GameBoard({
   const files = useMemo(() => Array.from({ length: cols }, (_, index) => String.fromCharCode(97 + index)), [cols]);
   const botLevel = botDifficultyLevels.find((level) => level.key === botDifficulty) ?? botDifficultyLevels[1];
   const outcome = useMemo(() => describeGameOutcome(state, humanColor), [humanColor, state]);
+  const firstColor = state.clocks[0]?.color ?? "white";
+  const secondColor = state.clocks[1]?.color ?? "black";
+  const visualOrientation = boardOrientation === "auto" ? (humanColor === secondColor ? "second" : "first") : boardOrientation;
+  const isBoardFlipped = visualOrientation === "second";
+  const orientedRows = useMemo(() => {
+    const rowsToRender = displayState.board.map((row) => [...row]);
+    return isBoardFlipped ? rowsToRender.reverse().map((row) => row.reverse()) : rowsToRender;
+  }, [displayState.board, isBoardFlipped]);
+  const modeDetails = playModeOptions.find((option) => option.key === playMode) ?? playModeOptions[2];
+
   function choose(square: Square) {
+    if (!gameStarted) {
+      setNotice("Choose a mode and press Start Game first.");
+      setPanelTab("setup");
+      return;
+    }
     if (isReviewing) {
       setNotice("Review mode is showing a saved position. Jump to live to keep playing.");
       return;
@@ -240,9 +272,11 @@ export function GameBoard({
     if (requestId) cancelBotMove(requestId);
     activeBotRequestRef.current = null;
     const nextState = withTimeControl(createInitialState(variantKey), timeControl);
+    resolvedRandomSeatRef.current = false;
     setHistory([]);
     setState(nextState);
     setHumanColor(pickHumanColor(nextState, seatChoice));
+    setGameStarted(false);
     setSelected(null);
     setSuggestedMove(null);
     setNotice(null);
@@ -258,10 +292,12 @@ export function GameBoard({
     if (requestId) cancelBotMove(requestId);
     activeBotRequestRef.current = null;
     const nextState = withTimeControl(createInitialState(variantKey), nextControl);
+    resolvedRandomSeatRef.current = false;
     setTimeControl(nextControl);
     setHistory([]);
     setState(nextState);
     setHumanColor(pickHumanColor(nextState, seatChoice));
+    setGameStarted(false);
     setSelected(null);
     setSuggestedMove(null);
     setNotice(null);
@@ -274,9 +310,28 @@ export function GameBoard({
 
   function changeSeatChoice(nextChoice: SeatChoice) {
     setSeatChoice(nextChoice);
-    const nextColor = pickHumanColor(state, nextChoice);
+    const nextColor = nextChoice === "random" && !gameStarted ? firstColor : pickHumanColor(state, nextChoice);
     setHumanColor(nextColor);
-    setNotice(nextChoice === "random" ? `Random side selected: ${colorLabel(nextColor)}.` : `You are playing ${colorLabel(nextColor)}.`);
+    setNotice(nextChoice === "random" && !gameStarted ? "Random side will be chosen when the game starts." : `You are playing ${colorLabel(nextColor)}.`);
+  }
+
+  function startGame() {
+    const nextColor = pickHumanColor(state, seatChoice);
+    resolvedRandomSeatRef.current = true;
+    setHumanColor(nextColor);
+    setBotMode(playMode === "bot" ? "opponent" : "human");
+    setBoardOrientation("auto");
+    setGameStarted(true);
+    setPanelTab("status");
+    setNotice(`${modeDetails.label} started. You are playing ${colorLabel(nextColor)}.`);
+  }
+
+  function flipBoard() {
+    setBoardOrientation((current) => {
+      const next = current === "second" ? "first" : "second";
+      setNotice(`Board view flipped to ${next === "second" ? colorLabel(secondColor) : colorLabel(firstColor)} side.`);
+      return next;
+    });
   }
 
   function startReview() {
@@ -300,13 +355,13 @@ export function GameBoard({
   }
 
   useEffect(() => {
-    if (resolvedRandomSeatRef.current || seatChoice !== "random") return;
+    if (!gameStarted || resolvedRandomSeatRef.current || seatChoice !== "random") return;
     resolvedRandomSeatRef.current = true;
     setHumanColor(pickHumanColor(state, "random"));
-  }, [seatChoice, state]);
+  }, [gameStarted, seatChoice, state]);
 
   useEffect(() => {
-    if (isReviewing || state.status !== "active" || thinking.status === "thinking") return;
+    if (!gameStarted || isReviewing || state.status !== "active" || thinking.status === "thinking") return;
     const shouldMove = botMode === "both" || (botMode === "opponent" && state.turn === botColor);
     if (!shouldMove) return;
     const snapshot = state;
@@ -314,7 +369,7 @@ export function GameBoard({
       void playBotMove("auto", snapshot);
     }, 80);
     return () => window.clearTimeout(timer);
-  }, [botColor, botMode, isReviewing, playBotMove, state, thinking.status]);
+  }, [botColor, botMode, gameStarted, isReviewing, playBotMove, state, thinking.status]);
 
   useEffect(() => {
     if (!reviewPlaying) return;
@@ -347,40 +402,12 @@ export function GameBoard({
         <div className="panel board-controls play-command-bar">
           <div className="play-command-status">
             <Swords size={18} className="text-[var(--accent)]" />
-            <span className="font-bold capitalize">{colorLabel(state.turn)} to move</span>
-            <span>{isReviewing ? `review ply ${displayPly}` : state.status}</span>
+            <span className="font-bold capitalize">Board controls</span>
+            <span>{gameStarted ? modeDetails.label : "setup"}</span>
             <strong>{thinking.status === "thinking" ? thinking.label : `You: ${colorLabel(humanColor)} · ${botLevel.label}`}</strong>
           </div>
           <div className="play-command-actions">
-            <select
-              aria-label="Side"
-              title="Choose your side. Random avoids always starting as the first side."
-              className="control play-command-select px-3 py-2 text-sm font-semibold"
-              value={seatChoice}
-              onChange={(event) => changeSeatChoice(event.target.value as SeatChoice)}
-            >
-              <option value="random">Random side</option>
-              <option value="first">{colorLabel(state.clocks[0]?.color ?? "white")}</option>
-              <option value="second">{colorLabel(state.clocks[1]?.color ?? "black")}</option>
-            </select>
-            <select
-              aria-label="Bot difficulty"
-              title={`${botLevel.label}: ${botLevel.estimatedStrength}. Depth ${botLevel.depth}, ${botLevel.moveTimeMs}ms search, ${botLevel.nodeBudget} node budget. You can change this during a game.`}
-              className="control play-command-select px-3 py-2 text-sm font-semibold"
-              value={botDifficulty}
-              onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)}
-            >
-              {botDifficultyLevels.map((level) => (
-                <option key={level.key} value={level.key}>
-                  {level.label}
-                </option>
-              ))}
-            </select>
-            <button type="button" title="Show the basic rules, win conditions, draw rules, and source links." aria-label="Rules summary" onClick={() => setShowRules(true)} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm">
-              <Flag size={16} />
-              Rules
-            </button>
-            <button type="button" title="Find and highlight a legal candidate move for the current side." onClick={suggestMove} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking" || isReviewing}>
+            <button type="button" title="Find and highlight a legal candidate move for the current side." onClick={suggestMove} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={!gameStarted || thinking.status === "thinking" || isReviewing}>
               <Lightbulb size={16} />
               Suggest
             </button>
@@ -390,12 +417,12 @@ export function GameBoard({
               aria-label={suggestedMove ? "Apply suggestion" : "Apply disabled"}
               onClick={applySuggestion}
               className="focus-ring action-primary inline-flex items-center gap-2 px-3 py-2 text-sm"
-              disabled={!suggestedMove || thinking.status === "thinking" || isReviewing}
+              disabled={!gameStarted || !suggestedMove || thinking.status === "thinking" || isReviewing}
             >
               <Sparkles size={16} />
               Apply
             </button>
-            <button type="button" title="Ask the bot engine to move for whichever side is currently to move." onClick={() => void playBotMove("manual")} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking" || isReviewing}>
+            <button type="button" title="Ask the bot engine to move for whichever side is currently to move." onClick={() => void playBotMove("manual")} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={!gameStarted || thinking.status === "thinking" || isReviewing}>
               <PlayCircle size={16} />
               Move
             </button>
@@ -429,6 +456,10 @@ export function GameBoard({
               <Bot size={16} />
               Auto
             </button>
+            <button type="button" title="Flip the visual board orientation without changing sides." onClick={flipBoard} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" aria-label="Flip board">
+              <FlipHorizontal2 size={16} />
+              Flip
+            </button>
             <button type="button" title="Stop the current bot search." onClick={cancelThinking} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status !== "thinking"}>
               <PauseCircle size={16} />
               Cancel
@@ -444,8 +475,8 @@ export function GameBoard({
         <div className="board-shell" data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
             <div className="board-grid overflow-hidden rounded-lg border border-[var(--border)] shadow-2xl" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }} aria-label="Game board">
-              {displayState.board.flatMap((row) =>
-                row.map((cell) => {
+              {orientedRows.flatMap((row, visualRow) =>
+                row.map((cell, visualCol) => {
                   const isSelected = selected && sameSquare(selected, cell.square);
                   const isLegal = legalTargets.has(serializeSquare(cell.square));
                   const isSuggestedFrom = suggestedMove && sameSquare(suggestedMove.from, cell.square);
@@ -475,14 +506,20 @@ export function GameBoard({
                         color: isDarkPiece ? "var(--piece-dark)" : "var(--piece-light)"
                       }}
                     >
-                      {cell.square.col === 0 ? <span className="board-coordinate board-rank">{rows - cell.square.row}</span> : null}
-                      {cell.square.row === rows - 1 ? <span className="board-coordinate board-file">{files[cell.square.col]}</span> : null}
+                      {visualCol === 0 ? <span className="board-coordinate board-rank">{rows - cell.square.row}</span> : null}
+                      {visualRow === rows - 1 ? <span className="board-coordinate board-file">{files[cell.square.col]}</span> : null}
                       {cell.piece ? <PieceIcon code={cell.piece.code} owner={cell.piece.owner} variantKey={displayState.variantKey} promoted={cell.piece.promoted} /> : null}
                     </button>
                   );
                 })
               )}
             </div>
+            {!gameStarted ? (
+              <div className="pregame-board-overlay" role="status">
+                <strong>Choose setup first</strong>
+                <span>{modeDetails.label} · {getTimeControl(timeControl).label} · {seatChoice === "random" ? "Random side" : colorLabel(humanColor)}</span>
+              </div>
+            ) : null}
             {outcome && !isReviewing ? (
               <>
                 <div className={`match-result-banner match-result-${outcome.result}`} role="status">
@@ -544,10 +581,37 @@ export function GameBoard({
         <div className="play-tab-panel">
           {panelTab === "setup" ? (
             <div className="play-options-card">
+              <div className="play-mode-grid" aria-label="Play modes">
+                {playModeOptions.map(({ key, label, description, Icon }) => (
+                  <button key={key} type="button" onClick={() => setPlayMode(key)} className={`focus-ring play-mode-button ${playMode === key ? "is-selected" : ""}`}>
+                    <Icon size={17} />
+                    <span>{label}</span>
+                    <small>{description}</small>
+                  </button>
+                ))}
+              </div>
               <div className="play-options-heading">
                 <Timer size={18} />
                 <span>{getTimeControl(timeControl).label}</span>
               </div>
+              <label className="play-setup-field">
+                <span>Side</span>
+                <select aria-label="Side" value={seatChoice} onChange={(event) => changeSeatChoice(event.target.value as SeatChoice)}>
+                  <option value="random">Random side</option>
+                  <option value="first">{colorLabel(firstColor)}</option>
+                  <option value="second">{colorLabel(secondColor)}</option>
+                </select>
+              </label>
+              <label className="play-setup-field">
+                <span>Bot difficulty</span>
+                <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)}>
+                  {botDifficultyLevels.map((level) => (
+                    <option key={level.key} value={level.key}>
+                      {level.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <div className="play-time-grid" aria-label="Quick time controls">
                 {timeControls.slice(0, 6).map((control) => (
                   <button key={control.key} type="button" title={`Start a new ${control.label} game`} onClick={() => changeTimeControl(control.key)} className={`focus-ring ${timeControl === control.key ? "is-selected" : ""}`}>
@@ -560,7 +624,11 @@ export function GameBoard({
                 <span>Side</span>
                 <strong>{colorLabel(humanColor)}</strong>
               </div>
-              <p className="text-xs font-bold text-[var(--muted)]">Use the top controls to change side or bot strength any time. Time controls start a fresh game.</p>
+              <button type="button" onClick={startGame} className="focus-ring action-primary inline-flex items-center justify-center gap-2 px-4 py-3 text-sm">
+                <PlayCircle size={18} />
+                Start Game
+              </button>
+              <p className="text-xs font-bold text-[var(--muted)]">Choose the mode, side, clock, and bot tier before the game starts. Bot tier can still change mid-game from Status.</p>
             </div>
           ) : null}
           {panelTab === "status" ? (
@@ -571,6 +639,19 @@ export function GameBoard({
                 {thinking.status === "thinking" ? <p className="mt-1 text-sm font-bold text-[var(--info)]">{thinking.label}</p> : null}
                 <p className="mt-1 text-xs font-bold text-[var(--muted)]">
                   Bot tier: {botLevel.label} · {botLevel.estimatedStrength} · {botLevel.benchmarkVersion}
+                </p>
+                <label className="play-setup-field mt-3">
+                  <span>Bot difficulty</span>
+                  <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)}>
+                    {botDifficultyLevels.map((level) => (
+                      <option key={level.key} value={level.key}>
+                        {level.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <p className="mt-1 text-xs font-bold text-[var(--muted)]">
+                  You: {colorLabel(humanColor)} · View: {visualOrientation === "second" ? colorLabel(secondColor) : colorLabel(firstColor)}
                 </p>
                 <p className="mt-1 text-xs text-[var(--muted)]">
                   Depth {botLevel.depth}, {botLevel.moveTimeMs}ms search, {botLevel.nodeBudget} nodes, risk {Math.round(botLevel.riskTolerance * 100)}%.

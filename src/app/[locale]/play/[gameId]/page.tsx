@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Eye, Flag, Handshake, Radio, Share2 } from "lucide-react";
 
 import { GameBoard } from "@/components/game-board";
+import { RulesSummaryButton } from "@/components/rules-summary-button";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getVariantRuleSummary } from "@/lib/rules-atlas";
@@ -24,6 +25,8 @@ export default async function PlayPage({
   } catch {
     notFound();
   }
+  const rawMode = Array.isArray(query.mode) ? query.mode[0] : query.mode;
+  const initialPlayMode = ["online", "bot", "offline", "room", "matchmaking", "spectate"].includes(rawMode ?? "") ? rawMode : undefined;
 
   return (
     <section className="play-arena">
@@ -38,6 +41,7 @@ export default async function PlayPage({
           </div>
           <p className="play-objective">{variant.objective}</p>
           <div className="play-header-actions">
+            <RulesSummaryButton summary={getVariantRuleSummary(variant.key)} />
             <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm">
               <Share2 size={16} />
               Room
@@ -57,7 +61,12 @@ export default async function PlayPage({
           </div>
         </div>
 
-        <GameBoard variantKey={variant.key} rulesSummary={getVariantRuleSummary(variant.key)} initialBotMode={query.bot ? "opponent" : "human"} />
+        <GameBoard
+          variantKey={variant.key}
+          rulesSummary={getVariantRuleSummary(variant.key)}
+          initialBotMode={query.bot || initialPlayMode === "bot" ? "opponent" : "human"}
+          initialPlayMode={initialPlayMode as "online" | "bot" | "offline" | "room" | "matchmaking" | "spectate" | undefined}
+        />
       </div>
     </section>
   );
