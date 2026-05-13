@@ -1,20 +1,19 @@
-# AllChess Multiplayer
+# AllChess
 
-AllChess Multiplayer is a production-focused, multilingual chess platform rebuilt from the original terminal Jungle Chess project.
+AllChess is a multilingual, Cloudflare-first chess ecosystem for classic chess and global variants.
 
-The legacy Python implementation is preserved in `legacy/python-jungle-chess` for reference while the active application is a Next.js app designed for Vercel, Supabase, realtime multiplayer, AI analysis, and future self-hosted Postgres deployments.
+The legacy Python Jungle Chess implementation remains in `legacy/python-jungle-chess` for reference. The active app is a Next.js 16 application deployed as `allchess`, with Cloudflare D1 for data and Cloudflare R2 for object storage.
 
 ## Status
 
-The active app is a Next.js 16 production build with:
-
-- 19 launch locales with reusable dictionaries and chess vocabulary fallback.
-- Light, dark, and system theme modes.
-- A premium game hub, lobby, variant atlas, profiles, history, analysis, and playable board surfaces.
-- Supabase schema, RLS policies, realtime-ready tables, and local Docker Postgres/Redis.
-- Vercel-ready scripts and config.
-- Cloudflare Workers/OpenNext, R2, D1, Workers AI, Hyperdrive, and custom-domain deployment config.
-- Fully self-hosted Docker profile with app, Postgres, MinIO object storage, and Redis.
+- 19 launch locales with shared chess vocabulary.
+- Board-first responsive UI with compact navigation, bot controls, move history, and review-ready play.
+- App-owned D1 auth scaffolding: email/password, guest mode, passkeys schema, and Google OAuth configuration hooks.
+- D1 repositories for games, moves, rooms, ratings, profiles, sessions, and analysis reports.
+- R2 object storage with `allchess/` key prefixing.
+- Launch variants declare their rules adapter: `chessops`, `xiangqiops`, `shogiops`, `makruk-js`, or owned AllChess modules.
+- Bot difficulty ladder: Easy, Normal, Hard, Very Hard, Nightmare, Hell.
+- Deployment paths for GitHub, local development, Vercel hosting, Cloudflare Workers, and Docker self-deploy.
 
 ## Run Locally
 
@@ -25,38 +24,47 @@ npm run dev
 
 Open `http://localhost:3000/en`.
 
+On Windows PowerShell, use `npm.cmd` if script execution policy blocks `npm.ps1`.
+
 ## Verify
 
 ```bash
 npm run lint
 npm run typecheck
 npm run test
-npm run test:e2e
 npm run build
 ```
 
 ## Deploy
 
-Set the values from `.env.example` in Vercel, especially Supabase and AI keys, then run:
+Cloudflare:
 
 ```bash
-npm run deploy:preview
-npm run deploy:prod
-```
-
-Cloudflare deployment:
-
-```bash
-npm run cf:build
+npx wrangler r2 bucket create allchess-opennext-cache
+npx wrangler r2 bucket create allchess-objects
+npx wrangler r2 bucket create allchess-objects-preview
+npx wrangler d1 create allchess
+npm run db:migrate:remote
 npm run cf:deploy
 ```
 
-Self-hosted deployment:
+Vercel:
+
+```bash
+vercel link --yes --project allchess
+npm run deploy:prod
+```
+
+Vercel should host the app only. Database and object storage stay on Cloudflare.
+
+Docker self-deploy:
 
 ```bash
 docker compose -f docker-compose.selfhost.yml up --build
 ```
 
-Secrets must stay in Vercel, GitHub secrets, Supabase, or local ignored `.env` files. Never commit real API keys.
+## Secrets
+
+Never commit real API keys or tokens. Store Cloudflare, Vercel, Google OAuth, and AI provider credentials in local ignored `.env` files or hosted secret stores. Rotate any broad token that was pasted into chat or logs.
 
 See `docs/cloudflare-deployment.md` and `docs/self-hosting.md` for the Cloudflare, domain, database, and object-storage paths.
