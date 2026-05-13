@@ -15,6 +15,8 @@
   --warning: #b46b22;
   --board-light: #dfe9de;
   --board-dark: #6c8f76;
+  --piece-light: #fffaf0;
+  --piece-dark: #16211d;
   --shadow: 0 18px 50px rgb(28 47 39 / 12%);
 }
 
@@ -33,6 +35,8 @@
   --warning: #f0bd77;
   --board-light: #b5c8ae;
   --board-dark: #4d7058;
+  --piece-light: #fff8e6;
+  --piece-dark: #07100d;
   --shadow: 0 18px 60px rgb(0 0 0 / 35%);
 }
 
@@ -100,23 +104,79 @@ select {
   font-weight: 700;
 }
 
+.game-board-layout {
+  align-items: start;
+}
+
+.board-shell {
+  width: min(100%, 760px);
+  max-width: calc(100vw - 2rem);
+  margin-inline: auto;
+}
+
+.board-grid {
+  display: grid;
+  width: 100%;
+  aspect-ratio: var(--board-cols) / var(--board-rows);
+  background: var(--border);
+}
+
+.board-square {
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  font-size: clamp(1.75rem, calc((min(760px, 100vw - 2rem) / var(--board-cols)) * 0.72), 4.7rem);
+}
+
+.board-coordinate {
+  position: absolute;
+  z-index: 2;
+  color: color-mix(in srgb, currentColor 68%, transparent);
+  font-size: clamp(0.58rem, calc((min(760px, 100vw - 2rem) / var(--board-cols)) * 0.14), 0.78rem);
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.board-rank {
+  left: 0.22rem;
+  top: 0.22rem;
+}
+
+.board-file {
+  right: 0.22rem;
+  bottom: 0.2rem;
+  text-transform: uppercase;
+}
+
 .piece-symbol {
   display: grid;
   width: 100%;
   height: 100%;
   place-items: center;
-  font-family: "Noto Sans Symbols 2", "Segoe UI Symbol", "Apple Symbols", "Noto Serif CJK SC", serif;
+  font-family: "Noto Sans Symbols 2", "DejaVu Sans", "Segoe UI Symbol", "Apple Symbols", "Noto Serif CJK SC", serif;
   line-height: 1;
-  filter: drop-shadow(0 10px 14px rgb(0 0 0 / 28%));
-  text-shadow: 0 1px 0 rgb(255 255 255 / 38%), 0 3px 0 rgb(0 0 0 / 12%);
-  transform: translateY(-1px) scale(1.04);
-  -webkit-text-stroke: 0.018em rgb(255 255 255 / 36%);
+  opacity: 1;
+  filter: none;
+  text-shadow: none;
+  transform: translateY(-1px) scale(0.98);
+  -webkit-text-stroke: 0;
 }
 
 .piece-symbol[data-dark="true"] {
-  filter: drop-shadow(0 10px 13px rgb(0 0 0 / 38%));
-  text-shadow: 0 1px 0 rgb(255 255 255 / 16%), 0 3px 0 rgb(0 0 0 / 22%);
-  -webkit-text-stroke: 0.018em rgb(255 255 255 / 18%);
+  filter: none;
+  text-shadow: none;
+  -webkit-text-stroke: 0;
+}
+
+.move-list {
+  overscroll-behavior: contain;
+}
+
+.game-side-panel {
+  max-height: min(760px, calc(100vh - 8rem));
+  overflow: auto;
 }
 
 .focus-ring:focus-visible {
