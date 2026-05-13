@@ -25,8 +25,8 @@ const configs: Record<BotDifficultyKey, StockfishDifficultyConfig> = {
   normal: { limitStrength: true, elo: 1400, skillLevel: 6, moveTimeMs: 250, depth: 4 },
   hard: { limitStrength: true, elo: 1900, skillLevel: 10, moveTimeMs: 500, depth: 7 },
   "very-hard": { limitStrength: true, elo: 2300, skillLevel: 14, moveTimeMs: 900, depth: 10 },
-  nightmare: { limitStrength: true, elo: 2700, skillLevel: 18, moveTimeMs: 1500, depth: 14 },
-  hell: { limitStrength: false, elo: 3200, skillLevel: 20, moveTimeMs: 2400, depth: 18 }
+  grandmaster: { limitStrength: true, elo: 2850, skillLevel: 18, moveTimeMs: 1800, depth: 16 },
+  legend: { limitStrength: false, elo: 3400, skillLevel: 20, moveTimeMs: 3200, depth: 22 }
 };
 
 export function shouldUseStockfish(state: GameState, engine: BotEngineMode = "auto") {

@@ -21,12 +21,12 @@ describe("Stockfish engine adapter", () => {
 
   test("maps difficulties to distinct UCI strength and time settings", () => {
     const easy = getStockfishDifficultyConfig("easy");
-    const hell = getStockfishDifficultyConfig("hell");
+    const legend = getStockfishDifficultyConfig("legend");
 
     expect(easy.limitStrength).toBe(true);
-    expect(easy.elo).toBeLessThan(hell.elo);
-    expect(easy.moveTimeMs).toBeLessThan(hell.moveTimeMs);
-    expect(hell.limitStrength).toBe(false);
+    expect(easy.elo).toBeLessThan(legend.elo);
+    expect(easy.moveTimeMs).toBeLessThan(legend.moveTimeMs);
+    expect(legend.limitStrength).toBe(false);
   });
 
   test("builds UCI commands with strength limiting and position moves", () => {

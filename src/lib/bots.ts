@@ -1,11 +1,15 @@
 import { applyMove, getLegalMoves, sameSquare, type GameState, type Move, type PlayerColor } from "@/lib/variants";
 import { moveToUci, requestStockfishMove, shouldUseStockfish, type BotEngineMode } from "@/lib/stockfish-engine";
 
-export type BotDifficultyKey = "easy" | "normal" | "hard" | "very-hard" | "nightmare" | "hell";
+export type BotTierKey = "easy" | "normal" | "hard" | "very-hard" | "grandmaster" | "legend";
+export type BotDifficultyKey = BotTierKey;
+export type BotPlayStyle = "balanced" | "tactical" | "positional" | "defensive" | "wild";
 
 export type BotDifficulty = {
-  key: BotDifficultyKey;
+  key: BotTierKey;
   label: string;
+  estimatedStrength: string;
+  benchmarkVersion: string;
   depth: number;
   moveTimeMs: number;
   skill: number;
@@ -19,12 +23,19 @@ export type BotMoveResult = {
   requestId: string;
   status: "ok" | "no-legal-moves" | "cancelled" | "failed";
   engine: "stockfish" | "internal";
+  tier: BotTierKey;
   move: Move | null;
   uciMove?: string;
   principalVariation: string[];
+  pv: string[];
   reason: "ok" | "no-legal-moves" | "cancelled" | "failed";
   score: number | null;
   evaluation: number | null;
+  confidence: number;
+  benchmarkVersion: string;
+  legal: boolean;
+  depth: number;
+  nodes: number;
   depthReached: number;
   nodesSearched: number;
   elapsedMs: number;
@@ -37,15 +48,29 @@ export type BotMoveOptions = {
   delayMs?: number;
   maxSearchTimeMs?: number;
   engine?: BotEngineMode;
+  playStyle?: BotPlayStyle;
+  roomId?: string;
+  rated?: boolean;
+};
+
+export type BotMoveRequest = {
+  state: GameState;
+  tier: BotTierKey;
+  variantKey: string;
+  engineMode: BotEngineMode;
+  playStyle: BotPlayStyle;
+  maxSearchTimeMs: number;
+  roomId?: string;
+  rated?: boolean;
 };
 
 export const botDifficultyLevels: BotDifficulty[] = [
-  { key: "easy", label: "Easy", depth: 1, moveTimeMs: 120, skill: 2, nodeBudget: 80, beamWidth: 4, quiescenceDepth: 0, riskTolerance: 0.85 },
-  { key: "normal", label: "Normal", depth: 2, moveTimeMs: 250, skill: 5, nodeBudget: 250, beamWidth: 8, quiescenceDepth: 0, riskTolerance: 0.65 },
-  { key: "hard", label: "Hard", depth: 3, moveTimeMs: 500, skill: 8, nodeBudget: 900, beamWidth: 14, quiescenceDepth: 1, riskTolerance: 0.45 },
-  { key: "very-hard", label: "Very Hard", depth: 4, moveTimeMs: 900, skill: 12, nodeBudget: 2200, beamWidth: 20, quiescenceDepth: 1, riskTolerance: 0.28 },
-  { key: "nightmare", label: "Nightmare", depth: 5, moveTimeMs: 1500, skill: 16, nodeBudget: 5200, beamWidth: 28, quiescenceDepth: 2, riskTolerance: 0.15 },
-  { key: "hell", label: "Hell", depth: 6, moveTimeMs: 2400, skill: 20, nodeBudget: 12000, beamWidth: 36, quiescenceDepth: 3, riskTolerance: 0.05 }
+  { key: "easy", label: "Easy", estimatedStrength: "Beginner practice", benchmarkVersion: "allchess-bench-v1", depth: 1, moveTimeMs: 120, skill: 2, nodeBudget: 80, beamWidth: 4, quiescenceDepth: 0, riskTolerance: 0.85 },
+  { key: "normal", label: "Normal", estimatedStrength: "Club basics", benchmarkVersion: "allchess-bench-v1", depth: 2, moveTimeMs: 250, skill: 5, nodeBudget: 250, beamWidth: 8, quiescenceDepth: 0, riskTolerance: 0.65 },
+  { key: "hard", label: "Hard", estimatedStrength: "Tactical club", benchmarkVersion: "allchess-bench-v1", depth: 3, moveTimeMs: 500, skill: 8, nodeBudget: 900, beamWidth: 14, quiescenceDepth: 1, riskTolerance: 0.45 },
+  { key: "very-hard", label: "Very Hard", estimatedStrength: "Expert practice", benchmarkVersion: "allchess-bench-v1", depth: 4, moveTimeMs: 900, skill: 12, nodeBudget: 2200, beamWidth: 20, quiescenceDepth: 1, riskTolerance: 0.28 },
+  { key: "grandmaster", label: "Grandmaster", estimatedStrength: "Engine-backed master benchmark", benchmarkVersion: "allchess-bench-v1", depth: 5, moveTimeMs: 1800, skill: 18, nodeBudget: 7200, beamWidth: 32, quiescenceDepth: 2, riskTolerance: 0.12 },
+  { key: "legend", label: "Legend", estimatedStrength: "Maximum local benchmark", benchmarkVersion: "allchess-bench-v1", depth: 7, moveTimeMs: 3200, skill: 20, nodeBudget: 18000, beamWidth: 44, quiescenceDepth: 4, riskTolerance: 0.03 }
 ];
 
 const pendingRequests = new Map<string, { cancelled: boolean }>();
@@ -129,6 +154,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
   const requestState = { cancelled: false };
   pendingRequests.set(requestId, requestState);
   const startedAt = Date.now();
+  const tierConfig = difficultyFor(difficultyKey);
 
   return new Promise((resolve) => {
     const finish = (result: BotMoveResult) => {
@@ -142,11 +168,18 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
           requestId,
           status: "cancelled",
           engine: "internal",
+          tier: difficultyKey,
           move: null,
           principalVariation: [],
+          pv: [],
           reason: "cancelled",
           score: null,
           evaluation: null,
+          confidence: 0,
+          benchmarkVersion: tierConfig.benchmarkVersion,
+          legal: false,
+          depth: 0,
+          nodes: 0,
           depthReached: 0,
           nodesSearched: 0,
           elapsedMs: Date.now() - startedAt,
@@ -164,12 +197,19 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
               requestId,
               status: "ok",
               engine: "stockfish",
+              tier: difficultyKey,
               move: stockfish.move,
               uciMove: stockfish.uciMove,
               principalVariation: stockfish.principalVariation,
+              pv: stockfish.principalVariation,
               reason: "ok",
               score: stockfish.evaluation,
               evaluation: stockfish.evaluation,
+              confidence: confidenceFor(stockfish.evaluation, stockfish.depthReached, difficultyKey),
+              benchmarkVersion: tierConfig.benchmarkVersion,
+              legal: true,
+              depth: stockfish.depthReached,
+              nodes: stockfish.nodesSearched,
               depthReached: stockfish.depthReached,
               nodesSearched: stockfish.nodesSearched,
               elapsedMs: Date.now() - startedAt,
@@ -185,11 +225,18 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
             requestId,
             status: "no-legal-moves",
             engine: "internal",
+            tier: difficultyKey,
             move: null,
             principalVariation: [],
+            pv: [],
             reason: "no-legal-moves",
             score: null,
             evaluation: null,
+            confidence: 0,
+            benchmarkVersion: tierConfig.benchmarkVersion,
+            legal: false,
+            depth: 0,
+            nodes: 0,
             depthReached: 0,
             nodesSearched: 0,
             elapsedMs: Date.now() - startedAt,
@@ -203,12 +250,19 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
           requestId,
           status: validatedLegal ? "ok" : "failed",
           engine: "internal",
+          tier: difficultyKey,
           move: validatedLegal ? result.move : null,
           uciMove: validatedLegal ? safeUci(state, result.move) : undefined,
           principalVariation: validatedLegal ? [safeUci(state, result.move)].filter(Boolean) : [],
+          pv: validatedLegal ? [safeUci(state, result.move)].filter(Boolean) : [],
           reason: validatedLegal ? "ok" : "failed",
           score: result.score,
           evaluation: result.score,
+          confidence: validatedLegal ? confidenceFor(result.score, result.depthReached, difficultyKey) : 0,
+          benchmarkVersion: tierConfig.benchmarkVersion,
+          legal: validatedLegal,
+          depth: result.depthReached,
+          nodes: result.nodesSearched,
           depthReached: result.depthReached,
           nodesSearched: result.nodesSearched,
           elapsedMs: Date.now() - startedAt,
@@ -220,11 +274,18 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
           requestId,
           status: "failed",
           engine: "internal",
+          tier: difficultyKey,
           move: null,
           principalVariation: [],
+          pv: [],
           reason: "failed",
           score: null,
           evaluation: null,
+          confidence: 0,
+          benchmarkVersion: tierConfig.benchmarkVersion,
+          legal: false,
+          depth: 0,
+          nodes: 0,
           depthReached: 0,
           nodesSearched: 0,
           elapsedMs: Date.now() - startedAt,
@@ -470,6 +531,20 @@ function windowSafeSetTimeout(callback: () => void, delayMs: number) {
 function deterministicNoise(move: Move) {
   const seed = (move.from.row + 1) * 17 + (move.from.col + 1) * 31 + (move.to.row + 1) * 43 + (move.to.col + 1) * 59;
   return (seed % 11) - 5;
+}
+
+function confidenceFor(score: number | null, depth: number, tier: BotTierKey) {
+  const tierFloor: Record<BotTierKey, number> = {
+    easy: 0.34,
+    normal: 0.45,
+    hard: 0.56,
+    "very-hard": 0.68,
+    grandmaster: 0.82,
+    legend: 0.9
+  };
+  const scoreSignal = Math.min(0.08, Math.abs(score ?? 0) / 24000);
+  const depthSignal = Math.min(0.08, depth / 100);
+  return Number(Math.min(0.99, tierFloor[tier] + scoreSignal + depthSignal).toFixed(2));
 }
 
 function difficultyFor(key: BotDifficultyKey) {
