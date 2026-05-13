@@ -6,6 +6,7 @@ import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { cloudflareResourceNames, normalizeCloudflareEnv } from "@/lib/cloudflare/env";
 import { createR2Storage } from "@/lib/storage/r2";
 import { createInitialState } from "@/lib/variants";
+import { readFileSync } from "node:fs";
 
 function createMockD1() {
   const calls: Array<{ sql: string; bindings: unknown[] }> = [];
@@ -35,6 +36,15 @@ function createMockD1() {
 }
 
 describe("Cloudflare platform configuration", () => {
+  test("includes D1 tables for catalog metadata, rules versions, leaderboards, and review summaries", () => {
+    const migration = readFileSync("cloudflare/d1/migrations/0003_catalog_leaderboards.sql", "utf8");
+
+    expect(migration).toContain("create table if not exists game_catalog_entries");
+    expect(migration).toContain("create table if not exists rules_versions");
+    expect(migration).toContain("create table if not exists leaderboards");
+    expect(migration).toContain("create table if not exists game_review_summaries");
+  });
+
   test("normalizes AllChess to Cloudflare-only resources without Supabase drivers", () => {
     const env = normalizeCloudflareEnv({
       DEPLOYMENT_TARGET: "vercel",
