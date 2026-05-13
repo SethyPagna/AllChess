@@ -328,6 +328,7 @@ export function applyMove(state: GameState, move: Move): GameState {
   if (!variant.supportsCheck && captured && isRoyal(captured)) {
     next.status = "completed";
     next.result = movingPiece.owner;
+    next.outcomeReason = "royal-captured";
     return next;
   }
   return withOutcome(next, movingPiece.owner, move.to);
@@ -340,6 +341,7 @@ function withOutcome(state: GameState, mover: PlayerColor, destination: Square):
   if (variant.key === "king-of-the-hill" && movedPiece && isRoyal(movedPiece) && isCenterSquare(state, destination)) {
     state.status = "completed";
     state.result = mover;
+    state.outcomeReason = "objective";
     return state;
   }
 
@@ -352,6 +354,7 @@ function withOutcome(state: GameState, mover: PlayerColor, destination: Square):
     if (variant.key === "three-check" && (state.checks[defender] ?? 0) >= 3) {
       state.status = "completed";
       state.result = mover;
+      state.outcomeReason = "three-check";
       return state;
     }
   }
@@ -359,6 +362,7 @@ function withOutcome(state: GameState, mover: PlayerColor, destination: Square):
   if (!hasAnyLegalMove(state, defender)) {
     state.status = "completed";
     state.result = defenderInCheck || variant.key === "xiangqi" ? mover : "draw";
+    state.outcomeReason = defenderInCheck ? "checkmate" : state.result === "draw" ? "stalemate" : "no-legal-moves";
   }
 
   return state;

@@ -14,6 +14,7 @@ export function tickGameClock(state: GameState, elapsedMs: number): GameState {
   if (nextClock.remainingMs === 0) {
     next.status = "completed";
     next.result = opponentOf(next, state.turn);
+    next.outcomeReason = "timeout";
   }
 
   return next;
