@@ -10,6 +10,9 @@ describe("bot difficulty ladder", () => {
 
     const budgets = botDifficultyLevels.map((level) => level.depth * level.moveTimeMs);
     expect([...budgets].sort((a, b) => a - b)).toEqual(budgets);
+    expect(botDifficultyLevels.map((level) => level.beamWidth)).toEqual([4, 8, 14, 20, 28, 36]);
+    expect(botDifficultyLevels.map((level) => level.quiescenceDepth)).toEqual([0, 0, 1, 1, 2, 3]);
+    expect(botDifficultyLevels.map((level) => level.riskTolerance)).toEqual([0.85, 0.65, 0.45, 0.28, 0.15, 0.05]);
   });
 
   test("always chooses a legal move for every launch variant", () => {
@@ -59,6 +62,20 @@ describe("bot difficulty ladder", () => {
 
     expect(easy).not.toMatchObject({ from: { row: 2, col: 1 }, to: { row: 1, col: 1 } });
     expect(hell.to).toEqual({ row: 1, col: 1 });
+  });
+
+  test("hell difficulty values promotion as a decisive strategic gain", () => {
+    let state = createInitialState("classic", "bot-promotion");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[1][0].piece = { id: "white-pawn", code: "p", owner: "white", labelKey: "chess.pawn" };
+    state.board[7][7].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[0][7].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+
+    expect(chooseBotMove(state, "hell")).toMatchObject({ from: { row: 1, col: 0 }, to: { row: 0, col: 0 } });
   });
 
   test("safe bot move returns a completed state instead of throwing when no legal moves exist", () => {
