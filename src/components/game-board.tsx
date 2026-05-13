@@ -237,7 +237,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
                             ? "var(--board-dark)"
                             : "var(--board-light)",
                       color: isDarkPiece ? "#111917" : "#f8fffb",
-                      fontSize: "min(72px, 9vw)"
+                      fontSize: "min(88px, 10vw)"
                     }}
                   >
                     {cell.piece ? (
