@@ -25,32 +25,32 @@ export default async function PlayPage({
 
   return (
     <section className="play-arena">
-      <div className="play-core grid gap-4">
-        <div className="play-context flex flex-wrap items-center justify-between gap-4">
+      <div className="play-core grid gap-3">
+        <div className="play-context play-header-compact">
           <div>
-            <h1 className="text-3xl font-black sm:text-4xl">{t(variant.nameKey)}</h1>
-            <p className="text-sm font-semibold text-[var(--muted)] sm:text-base">{variant.objective}</p>
-            <p className="mt-2 inline-flex items-center gap-2 rounded-md bg-[var(--surface-soft)] px-3 py-2 text-xs font-bold text-[var(--muted)]">
+            <h1>{t(variant.nameKey)}</h1>
+            <p className="inline-flex items-center gap-2 rounded-md bg-[var(--surface-soft)] px-3 py-2 text-xs font-bold text-[var(--muted)]">
               <Radio size={14} />
-              {variant.rulesAdapter} · {variant.engineProtocol.toUpperCase()}
+              {variant.rulesAdapter} / {variant.engineProtocol.toUpperCase()}
             </p>
           </div>
-          <div className="flex max-w-full flex-wrap gap-2">
-            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm sm:px-4 sm:text-base">
+          <p className="play-objective">{variant.objective}</p>
+          <div className="play-header-actions">
+            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm">
               <Share2 size={16} />
               Room
             </button>
-            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm sm:px-4 sm:text-base">
+            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm">
               <Eye size={16} />
-              Spectate
+              Watch
             </button>
-            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm sm:px-4 sm:text-base">
+            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm">
               <Handshake size={16} />
-              {t("play.draw")}
+              Draw
             </button>
-            <button className="focus-ring inline-flex items-center gap-2 rounded-md border border-[var(--danger)] px-3 py-2 text-sm text-[var(--danger)] sm:px-4 sm:text-base">
+            <button className="focus-ring inline-flex items-center gap-2 rounded-md border border-[var(--danger)] px-3 py-2 text-sm font-bold text-[var(--danger)]">
               <Flag size={16} />
-              {t("play.resign")}
+              Resign
             </button>
           </div>
         </div>

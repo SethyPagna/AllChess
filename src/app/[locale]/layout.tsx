@@ -43,8 +43,8 @@ export default async function LocaleLayout({
       Icon: Swords,
       links: [
         ["lobby", t("nav.lobby"), Home],
-        ["play/classic", "Classic", Swords],
-        ["play/classic?bot=normal", "Bots", Users]
+        ["play/classic", "Play board", Swords],
+        ["play/classic?bot=normal", "Bot practice", Users]
       ]
     },
     {
@@ -52,7 +52,7 @@ export default async function LocaleLayout({
       Icon: BookOpen,
       links: [
         ["variants", t("nav.variants"), Library],
-        ["variants?playability=learn", "Rules", BookOpen]
+        ["variants?playability=learn", "Rules atlas", BookOpen]
       ]
     },
     {
@@ -72,9 +72,12 @@ export default async function LocaleLayout({
       ]
     },
     {
-      label: t("nav.settings"),
+      label: "Account",
       Icon: Settings,
-      links: [["settings", t("nav.settings"), Settings]]
+      links: [
+        ["settings", t("nav.settings"), Settings],
+        ["login", t("nav.login"), LogIn]
+      ]
     }
   ] as const;
   const profileHref = `/${locale}/profile/player`;
@@ -114,10 +117,10 @@ export default async function LocaleLayout({
                   </details>
                 ))}
               </nav>
-              <div className="app-sidebar-bottom">
-                <Link href={loginHref as never} className="app-nav-link focus-ring">
-                  <LogIn size={20} strokeWidth={2.5} />
-                  <span>{t("nav.login")}</span>
+              <div className="app-sidebar-bottom" aria-label="Account shortcut">
+                <Link href={profileHref as never} className="app-nav-link focus-ring">
+                  <UserRound size={20} strokeWidth={2.5} />
+                  <span>{t("nav.profile")}</span>
                 </Link>
               </div>
             </aside>

@@ -70,6 +70,10 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
             <span>learning paths</span>
           </div>
         </div>
+        <div>
+          <h2 className="section-title">Play Now</h2>
+          <p className="section-subtitle">Playable boards, grouped tightly so the lobby reads at a glance.</p>
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {featured.map((entry) => (
             <Link key={entry.id} href={`/${locale}/play/${entry.variantKey}`} className="panel focus-ring grid gap-2 p-4 transition hover:border-[var(--accent)]">
@@ -81,6 +85,10 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
             </Link>
           ))}
         </div>
+        <div>
+          <h2 className="section-title">Game Families</h2>
+          <p className="section-subtitle">Explore the wider catalog by lineage and rules family.</p>
+        </div>
         <div className="panel lobby-family-strip">
           {familyHighlights.map((family) => (
             <Link key={family.key} href={`/${locale}/variants?family=${family.key}`} className="focus-ring">
@@ -91,6 +99,10 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
         </div>
       </div>
       <aside className="panel grid content-start gap-4 p-5">
+        <div>
+          <h2 className="section-title">Lobby Tools</h2>
+          <p className="section-subtitle">Rooms, live watching, bot practice, and presence.</p>
+        </div>
         {lobbyActions.map(({ Icon, title, body }) => (
           <div key={title} className="rounded-md bg-[var(--surface-strong)] p-4">
             <h2 className="flex items-center gap-2 font-bold">

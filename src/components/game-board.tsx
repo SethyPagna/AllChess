@@ -5,12 +5,8 @@ import {
   Bot,
   Brain,
   Crown,
-  Dices,
   Flag,
-  GraduationCap,
-  Handshake,
   Lightbulb,
-  Medal,
   PauseCircle,
   PlayCircle,
   RotateCcw,
@@ -21,7 +17,6 @@ import {
   Swords,
   Timer,
   Undo2,
-  Zap
 } from "lucide-react";
 
 import { botDifficultyLevels, cancelBotMove, requestBotMove, type BotDifficultyKey, type BotMoveResult } from "@/lib/bots";
@@ -46,8 +41,6 @@ type SuggestedMove = {
   score: number | null;
   depthReached: number;
 };
-
-type PlayCardKey = "online" | "bots" | "coach" | "friend" | "tournaments" | "variants";
 
 export function GameBoard({ variantKey, initialState }: { variantKey: string; initialState?: GameState }) {
   const [timeControl, setTimeControl] = useState<TimeControlKey>("rapid");
@@ -79,44 +72,6 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
   const files = useMemo(() => Array.from({ length: cols }, (_, index) => String.fromCharCode(97 + index)), [cols]);
   const botLevel = botDifficultyLevels.find((level) => level.key === botDifficulty) ?? botDifficultyLevels[1];
   const outcome = useMemo(() => describeGameOutcome(state, "white"), [state]);
-  const playCards: Array<{ key: PlayCardKey; label: string; description: string; Icon: typeof Zap }> = [
-    { key: "online", label: "Play Online", description: "Open the lobby for live rooms and pairing.", Icon: Zap },
-    { key: "bots", label: "Play Bots", description: "Practice against Easy through Legend tiers.", Icon: Bot },
-    { key: "coach", label: "Play Coach", description: "Get a suggestion or review the current game.", Icon: GraduationCap },
-    { key: "friend", label: "Play a Friend", description: "Prepare a private room invite.", Icon: Handshake },
-    { key: "tournaments", label: "Tournaments", description: "See arena status for scheduled brackets.", Icon: Medal },
-    { key: "variants", label: "Chess Variants", description: "Classic, Xiangqi, Shogi, Makruk, Jungle, and more.", Icon: Dices }
-  ];
-
-  async function runPlayCardAction(action: PlayCardKey) {
-    if (action === "online") {
-      navigateToSibling("lobby");
-      return;
-    }
-    if (action === "variants") {
-      navigateToSibling("variants");
-      return;
-    }
-    if (action === "bots") {
-      setBotMode("opponent");
-      setNotice("Bot opponent is on. Make a move and the bot will reply automatically.");
-      return;
-    }
-    if (action === "coach") {
-      if (reviewMoves.length) {
-        startReview();
-        return;
-      }
-      await suggestMove();
-      return;
-    }
-    if (action === "friend") {
-      setNotice("Friend rooms use the room service when online deployment is connected. For now, use the lobby room controls.");
-      return;
-    }
-    setNotice("Tournament brackets will appear here when arena scheduling is connected.");
-  }
-
   function choose(square: Square) {
     if (isReviewing) {
       setNotice("Review mode is showing a saved position. Jump to live to keep playing.");
@@ -347,6 +302,62 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
   return (
     <div className="game-board-layout grid gap-4">
       <div className="grid gap-3">
+        <div className="panel board-controls play-command-bar">
+          <div className="play-command-status">
+            <Swords size={18} className="text-[var(--accent)]" />
+            <span className="font-bold capitalize">{state.turn}</span>
+            <span>{isReviewing ? `review ply ${displayPly}` : state.status}</span>
+            {thinking.status === "thinking" ? <strong>{thinking.label}</strong> : null}
+          </div>
+          <div className="play-command-actions">
+            <button type="button" onClick={suggestMove} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking" || isReviewing}>
+              <Lightbulb size={16} />
+              Suggest
+            </button>
+            {suggestedMove ? (
+              <button type="button" onClick={applySuggestion} className="focus-ring action-primary inline-flex items-center gap-2 px-3 py-2 text-sm">
+                <Sparkles size={16} />
+                Apply
+              </button>
+            ) : null}
+            <button type="button" onClick={() => void playBotMove("manual")} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking" || isReviewing}>
+              <PlayCircle size={16} />
+              Move
+            </button>
+            <button
+              type="button"
+              onClick={() => setBotMode((current) => (current === "opponent" ? "human" : "opponent"))}
+              className={`focus-ring inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold ${
+                botMode === "opponent" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"
+              }`}
+            >
+              <Bot size={16} />
+              Bot
+            </button>
+            <button
+              type="button"
+              onClick={() => setBotMode((current) => (current === "both" ? "human" : "both"))}
+              className={`focus-ring inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold ${
+                botMode === "both" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"
+              }`}
+            >
+              <Bot size={16} />
+              Auto
+            </button>
+            {thinking.status === "thinking" ? (
+              <button type="button" onClick={cancelThinking} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm">
+                <PauseCircle size={16} />
+                Cancel
+              </button>
+            ) : null}
+            <button type="button" onClick={undo} className="focus-ring action-secondary grid h-10 w-10 place-items-center" aria-label="Undo">
+              <Undo2 size={17} />
+            </button>
+            <button type="button" onClick={reset} className="focus-ring action-secondary grid h-10 w-10 place-items-center" aria-label="Reset">
+              <RotateCcw size={17} />
+            </button>
+          </div>
+        </div>
         <div className="board-shell" data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
             <div className="board-grid overflow-hidden rounded-lg border border-[var(--border)] shadow-2xl" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }} aria-label="Game board">
@@ -431,7 +442,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
           </div>
         </div>
 
-        <div className="panel board-controls flex flex-wrap items-center justify-between gap-3 p-3">
+        <div className="panel board-controls hidden flex-wrap items-center justify-between gap-3 p-3">
           <div className="flex items-center gap-2">
             <Swords size={18} className="text-[var(--accent)]" />
             <span className="text-sm font-bold capitalize">{state.turn}</span>
@@ -506,27 +517,13 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
         <div className="play-panel-title">
           <Crown size={34} className="text-[var(--warning)]" />
           <div>
-            <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">AllChess Arena</p>
-            <h2>Play Chess</h2>
+            <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">Match center</p>
+            <h2>Game Tools</h2>
           </div>
         </div>
-        <p className="play-section-label">Modes</p>
-        <div className="play-action-stack">
-          {playCards.map((card) => {
-            const Icon = card.Icon;
-            return (
-              <button key={card.key} type="button" onClick={() => void runPlayCardAction(card.key)} className="play-action-card focus-ring" aria-label={card.label}>
-                <Icon size={32} />
-                <span>
-                  <strong>{card.label}</strong>
-                  <small>{card.description}</small>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        <p className="play-section-label">Setup</p>
-        <div className="play-options-card">
+        <details className="play-disclosure" open>
+          <summary className="focus-ring">Setup before game</summary>
+          <div className="play-options-card">
           <div className="play-options-heading">
             <Timer size={18} />
             <span>{getTimeControl(timeControl).label}</span>
@@ -551,10 +548,12 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
             <span>Threat Arrows</span>
             <span className="toggle-pill" aria-hidden="true" />
           </div>
-        </div>
-        <p className="play-section-label">Status</p>
-        <div className="play-table-card">
-          <p className="text-sm font-bold text-[var(--muted)]">Table</p>
+          </div>
+        </details>
+        <details className="play-disclosure" open>
+          <summary className="focus-ring">Status and clocks</summary>
+          <div className="play-table-card">
+          <p className="text-sm font-bold text-[var(--muted)]">Current position</p>
           <p className="text-2xl font-black capitalize">{state.turn} to move</p>
           {thinking.status === "thinking" ? <p className="mt-1 text-sm font-bold text-[var(--info)]">{thinking.label}</p> : null}
           <p className="mt-1 text-xs font-bold text-[var(--muted)]">
@@ -566,17 +565,19 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
             </p>
           ) : null}
           {notice ? <p className="mt-1 text-sm text-[var(--warning)]">{notice}</p> : null}
-        </div>
-        <div className="grid grid-cols-2 gap-3">
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3">
           {state.clocks.map((clock) => (
             <div key={clock.color} className="play-clock-card">
               <p>{clock.color}</p>
               <strong>{formatClock(clock.remainingMs)}</strong>
             </div>
           ))}
-        </div>
-        <p className="play-section-label">Review</p>
-        <div className="play-review-card">
+          </div>
+        </details>
+        <details className="play-disclosure" open>
+          <summary className="focus-ring">Review</summary>
+          <div className="play-review-card">
           <div className="review-tabs" aria-label="Review tabs">
             <button type="button" className="is-active">Moves</button>
             <button type="button">Info</button>
@@ -654,7 +655,8 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
               Back to live board
             </button>
           ) : null}
-        </div>
+          </div>
+        </details>
         <div className="play-table-card text-sm text-[var(--muted)]">
           <p className="mb-1 flex items-center gap-2 font-bold text-[var(--foreground)]">
             <Flag size={16} className="text-[var(--warning)]" />
@@ -665,11 +667,6 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
       </aside>
     </div>
   );
-}
-
-function navigateToSibling(section: "lobby" | "variants") {
-  const [, locale = "en"] = window.location.pathname.split("/");
-  window.location.href = `/${locale}/${section}`;
 }
 
 function withTimeControl(state: GameState, key: TimeControlKey): GameState {
