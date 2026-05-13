@@ -1,4 +1,4 @@
-import { applyMove, getLegalMoves, type GameState, type Move, type PlayerColor } from "@/lib/variants";
+import { applyMove, getLegalMoves, sameSquare, type GameState, type Move, type PlayerColor } from "@/lib/variants";
 
 export type BotDifficultyKey = "easy" | "normal" | "hard" | "very-hard" | "nightmare" | "hell";
 
@@ -14,6 +14,25 @@ export type BotDifficulty = {
   riskTolerance: number;
 };
 
+export type BotMoveResult = {
+  requestId: string;
+  status: "ok" | "no-legal-moves" | "cancelled" | "failed";
+  move: Move | null;
+  reason: "ok" | "no-legal-moves" | "cancelled" | "failed";
+  score: number | null;
+  depthReached: number;
+  nodesSearched: number;
+  elapsedMs: number;
+  validatedLegal: boolean;
+  error?: string;
+};
+
+export type BotMoveOptions = {
+  requestId?: string;
+  delayMs?: number;
+  maxSearchTimeMs?: number;
+};
+
 export const botDifficultyLevels: BotDifficulty[] = [
   { key: "easy", label: "Easy", depth: 1, moveTimeMs: 120, skill: 2, nodeBudget: 80, beamWidth: 4, quiescenceDepth: 0, riskTolerance: 0.85 },
   { key: "normal", label: "Normal", depth: 2, moveTimeMs: 250, skill: 5, nodeBudget: 250, beamWidth: 8, quiescenceDepth: 0, riskTolerance: 0.65 },
@@ -22,6 +41,8 @@ export const botDifficultyLevels: BotDifficulty[] = [
   { key: "nightmare", label: "Nightmare", depth: 5, moveTimeMs: 1500, skill: 16, nodeBudget: 5200, beamWidth: 28, quiescenceDepth: 2, riskTolerance: 0.15 },
   { key: "hell", label: "Hell", depth: 6, moveTimeMs: 2400, skill: 20, nodeBudget: 12000, beamWidth: 36, quiescenceDepth: 3, riskTolerance: 0.05 }
 ];
+
+const pendingRequests = new Map<string, { cancelled: boolean }>();
 
 const pieceValues: Record<string, number> = {
   k: 10000,
@@ -52,8 +73,12 @@ export function chooseBotMove(state: GameState, difficultyKey: BotDifficultyKey 
 
 export function chooseBotMoveSafe(
   state: GameState,
-  difficultyKey: BotDifficultyKey = "normal"
-): { move: Move; reason: "ok" } | { move: null; reason: "no-legal-moves" } {
+  difficultyKey: BotDifficultyKey = "normal",
+  options: Pick<BotMoveOptions, "maxSearchTimeMs"> = {}
+):
+  | { move: Move; reason: "ok"; score: number; depthReached: number; nodesSearched: number; elapsedMs: number; validatedLegal: true }
+  | { move: null; reason: "no-legal-moves" } {
+  const startedAt = Date.now();
   const difficulty = botDifficultyLevels.find((level) => level.key === difficultyKey) ?? botDifficultyLevels[1];
   const legalMoves = allLegalMoves(state);
   if (!legalMoves.length) {
@@ -61,16 +86,117 @@ export function chooseBotMoveSafe(
   }
 
   const perspective = state.turn;
-  const budget = { nodes: 0, deadline: Date.now() + Math.min(difficulty.moveTimeMs, 45) };
+  const searchTimeMs = Math.max(8, Math.min(options.maxSearchTimeMs ?? difficulty.moveTimeMs, difficulty.moveTimeMs));
+  const budget = { nodes: 0, deadline: startedAt + searchTimeMs };
   const ranked = legalMoves
     .map((move) => ({ move, score: evaluateMove(state, move, difficulty, perspective, budget) }))
     .sort((a, b) => b.score - a.score);
 
+  const selected = difficulty.key === "easy" ? ranked[Math.min(ranked.length - 1, Math.floor(ranked.length / 2))] : ranked[0];
+  const depthReached = Math.max(1, Math.min(difficulty.depth, difficulty.depth - (Date.now() >= budget.deadline ? 1 : 0)));
+
   if (difficulty.key === "easy") {
-    return { move: ranked[Math.min(ranked.length - 1, Math.floor(ranked.length / 2))].move, reason: "ok" };
+    return {
+      move: selected.move,
+      reason: "ok",
+      score: selected.score,
+      depthReached,
+      nodesSearched: budget.nodes,
+      elapsedMs: Date.now() - startedAt,
+      validatedLegal: true
+    };
   }
 
-  return { move: ranked[0].move, reason: "ok" };
+  return {
+    move: selected.move,
+    reason: "ok",
+    score: selected.score,
+    depthReached,
+    nodesSearched: budget.nodes,
+    elapsedMs: Date.now() - startedAt,
+    validatedLegal: true
+  };
+}
+
+export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey = "normal", options: BotMoveOptions = {}): Promise<BotMoveResult> {
+  const requestId = options.requestId ?? crypto.randomUUID();
+  const requestState = { cancelled: false };
+  pendingRequests.set(requestId, requestState);
+  const startedAt = Date.now();
+
+  return new Promise((resolve) => {
+    const finish = (result: BotMoveResult) => {
+      pendingRequests.delete(requestId);
+      resolve(result);
+    };
+
+    windowSafeSetTimeout(() => {
+      if (requestState.cancelled) {
+        finish({
+          requestId,
+          status: "cancelled",
+          move: null,
+          reason: "cancelled",
+          score: null,
+          depthReached: 0,
+          nodesSearched: 0,
+          elapsedMs: Date.now() - startedAt,
+          validatedLegal: false
+        });
+        return;
+      }
+
+      try {
+        const result = chooseBotMoveSafe(state, difficultyKey, options);
+        if (!result.move) {
+          finish({
+            requestId,
+            status: "no-legal-moves",
+            move: null,
+            reason: "no-legal-moves",
+            score: null,
+            depthReached: 0,
+            nodesSearched: 0,
+            elapsedMs: Date.now() - startedAt,
+            validatedLegal: false
+          });
+          return;
+        }
+
+        const validatedLegal = isLegalMove(state, result.move);
+        finish({
+          requestId,
+          status: validatedLegal ? "ok" : "failed",
+          move: validatedLegal ? result.move : null,
+          reason: validatedLegal ? "ok" : "failed",
+          score: result.score,
+          depthReached: result.depthReached,
+          nodesSearched: result.nodesSearched,
+          elapsedMs: Date.now() - startedAt,
+          validatedLegal,
+          error: validatedLegal ? undefined : "Bot selected an illegal move."
+        });
+      } catch (error) {
+        finish({
+          requestId,
+          status: "failed",
+          move: null,
+          reason: "failed",
+          score: null,
+          depthReached: 0,
+          nodesSearched: 0,
+          elapsedMs: Date.now() - startedAt,
+          validatedLegal: false,
+          error: error instanceof Error ? error.message : "Bot move failed."
+        });
+      }
+    }, options.delayMs ?? 0);
+  });
+}
+
+export function cancelBotMove(requestId: string) {
+  const request = pendingRequests.get(requestId);
+  if (request) request.cancelled = true;
 }
 
 export function allLegalMoves(state: GameState) {
@@ -94,7 +220,7 @@ function evaluateMove(
     return evaluateState(next, perspective);
   }
 
-  const searchDepth = Math.min(difficulty.depth - 1, 4);
+  const searchDepth = Math.max(0, difficulty.depth - 1);
   const searchScore = minimax(next, searchDepth, perspective, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, difficulty, budget);
   const movedPiece = next.board[move.to.row]?.[move.to.col]?.piece;
   const riskPenalty = movedPiece ? hangingPenalty(next, move.to, movedPiece) * (1 - difficulty.riskTolerance) : 0;
@@ -289,6 +415,14 @@ function tryMove(state: GameState, move: Move) {
   } catch {
     return null;
   }
+}
+
+function isLegalMove(state: GameState, move: Move) {
+  return getLegalMoves(state, move.from).some((candidate) => sameSquare(candidate.to, move.to));
+}
+
+function windowSafeSetTimeout(callback: () => void, delayMs: number) {
+  return setTimeout(callback, delayMs);
 }
 
 function deterministicNoise(move: Move) {

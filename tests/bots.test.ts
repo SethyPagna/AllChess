@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { chooseBotMove, chooseBotMoveSafe, botDifficultyLevels } from "@/lib/bots";
+import { cancelBotMove, chooseBotMove, chooseBotMoveSafe, botDifficultyLevels, requestBotMove } from "@/lib/bots";
 import { applyMove, createInitialState, getLegalMoves } from "@/lib/variants";
 
 describe("bot difficulty ladder", () => {
@@ -88,5 +88,31 @@ describe("bot difficulty ladder", () => {
     };
 
     expect(chooseBotMoveSafe(blocked, "normal")).toEqual({ move: null, reason: "no-legal-moves" });
+  });
+
+  test("async bot request reports a validated legal move with search metadata", async () => {
+    const state = createInitialState("classic", "async-bot");
+
+    const result = await requestBotMove(state, "hard", { maxSearchTimeMs: 60 });
+
+    expect(result.status).toBe("ok");
+    expect(result.move).toBeTruthy();
+    expect(result.validatedLegal).toBe(true);
+    expect(result.depthReached).toBeGreaterThanOrEqual(1);
+    expect(result.elapsedMs).toBeGreaterThanOrEqual(0);
+    expect(result.nodesSearched).toBeGreaterThan(0);
+  });
+
+  test("cancelled async bot request never applies a stale move", async () => {
+    const state = createInitialState("classic", "cancel-bot");
+    const pending = requestBotMove(state, "hell", { requestId: "cancel-me", delayMs: 25, maxSearchTimeMs: 80 });
+
+    cancelBotMove("cancel-me");
+
+    await expect(pending).resolves.toMatchObject({
+      status: "cancelled",
+      move: null,
+      validatedLegal: false
+    });
   });
 });
