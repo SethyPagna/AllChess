@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { getStockfishDifficultyConfig, moveToUci, shouldUseStockfish, uciToLegalMove } from "@/lib/stockfish-engine";
+import { buildStockfishCommands, getStockfishDifficultyConfig, moveToUci, shouldUseStockfish, uciToLegalMove } from "@/lib/stockfish-engine";
 import { createInitialState } from "@/lib/variants";
 
 describe("Stockfish engine adapter", () => {
@@ -27,5 +27,16 @@ describe("Stockfish engine adapter", () => {
     expect(easy.elo).toBeLessThan(hell.elo);
     expect(easy.moveTimeMs).toBeLessThan(hell.moveTimeMs);
     expect(hell.limitStrength).toBe(false);
+  });
+
+  test("builds UCI commands with strength limiting and position moves", () => {
+    const state = createInitialState("classic", "uci-commands");
+    const commands = buildStockfishCommands(state, "hard", ["e2e4"]);
+
+    expect(commands).toContain("uci");
+    expect(commands).toContain("setoption name UCI_LimitStrength value true");
+    expect(commands).toContain("setoption name UCI_Elo value 1900");
+    expect(commands).toContain("position startpos moves e2e4");
+    expect(commands.at(-1)).toBe("go movetime 500 depth 7");
   });
 });

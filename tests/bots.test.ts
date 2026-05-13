@@ -93,14 +93,16 @@ describe("bot difficulty ladder", () => {
   test("async bot request reports a validated legal move with search metadata", async () => {
     const state = createInitialState("classic", "async-bot");
 
-    const result = await requestBotMove(state, "hard", { maxSearchTimeMs: 60 });
+    const result = await requestBotMove(state, "hard", { engine: "internal", maxSearchTimeMs: 60 });
 
     expect(result.status).toBe("ok");
     expect(result.move).toBeTruthy();
+    expect(result.engine).toBe("internal");
     expect(result.validatedLegal).toBe(true);
     expect(result.depthReached).toBeGreaterThanOrEqual(1);
     expect(result.elapsedMs).toBeGreaterThanOrEqual(0);
     expect(result.nodesSearched).toBeGreaterThan(0);
+    expect(result.evaluation).toEqual(expect.any(Number));
   });
 
   test("cancelled async bot request never applies a stale move", async () => {
@@ -112,7 +114,23 @@ describe("bot difficulty ladder", () => {
     await expect(pending).resolves.toMatchObject({
       status: "cancelled",
       move: null,
+      engine: "internal",
       validatedLegal: false
     });
+  });
+
+  test("internal search avoids an obviously hanging queen when a safe mate is available", () => {
+    let state = createInitialState("classic", "queen-hanging");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[0][0].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[0][7].piece = { id: "black-rook", code: "r", owner: "black", labelKey: "chess.rook" };
+    state.board[2][1].piece = { id: "white-queen", code: "q", owner: "white", labelKey: "chess.queen" };
+    state.board[2][2].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+
+    expect(chooseBotMove(state, "hell", { engine: "internal" })).toMatchObject({ from: { row: 2, col: 1 }, to: { row: 1, col: 1 } });
   });
 });

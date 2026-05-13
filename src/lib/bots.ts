@@ -1,4 +1,5 @@
 import { applyMove, getLegalMoves, sameSquare, type GameState, type Move, type PlayerColor } from "@/lib/variants";
+import { moveToUci, requestStockfishMove, shouldUseStockfish, type BotEngineMode } from "@/lib/stockfish-engine";
 
 export type BotDifficultyKey = "easy" | "normal" | "hard" | "very-hard" | "nightmare" | "hell";
 
@@ -17,9 +18,13 @@ export type BotDifficulty = {
 export type BotMoveResult = {
   requestId: string;
   status: "ok" | "no-legal-moves" | "cancelled" | "failed";
+  engine: "stockfish" | "internal";
   move: Move | null;
+  uciMove?: string;
+  principalVariation: string[];
   reason: "ok" | "no-legal-moves" | "cancelled" | "failed";
   score: number | null;
+  evaluation: number | null;
   depthReached: number;
   nodesSearched: number;
   elapsedMs: number;
@@ -31,6 +36,7 @@ export type BotMoveOptions = {
   requestId?: string;
   delayMs?: number;
   maxSearchTimeMs?: number;
+  engine?: BotEngineMode;
 };
 
 export const botDifficultyLevels: BotDifficulty[] = [
@@ -63,7 +69,7 @@ const pieceValues: Record<string, number> = {
   t: 700
 };
 
-export function chooseBotMove(state: GameState, difficultyKey: BotDifficultyKey = "normal", options: Pick<BotMoveOptions, "maxSearchTimeMs"> = {}): Move {
+export function chooseBotMove(state: GameState, difficultyKey: BotDifficultyKey = "normal", options: Pick<BotMoveOptions, "maxSearchTimeMs" | "engine"> = {}): Move {
   const safe = chooseBotMoveSafe(state, difficultyKey, options);
   if (!safe.move) {
     throw new Error("errors.noLegalMoves");
@@ -74,7 +80,7 @@ export function chooseBotMove(state: GameState, difficultyKey: BotDifficultyKey 
 export function chooseBotMoveSafe(
   state: GameState,
   difficultyKey: BotDifficultyKey = "normal",
-  options: Pick<BotMoveOptions, "maxSearchTimeMs"> = {}
+  options: Pick<BotMoveOptions, "maxSearchTimeMs" | "engine"> = {}
 ):
   | { move: Move; reason: "ok"; score: number; depthReached: number; nodesSearched: number; elapsedMs: number; validatedLegal: true }
   | { move: null; reason: "no-legal-moves" } {
@@ -130,14 +136,17 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
       resolve(result);
     };
 
-    windowSafeSetTimeout(() => {
+    windowSafeSetTimeout(async () => {
       if (requestState.cancelled) {
         finish({
           requestId,
           status: "cancelled",
+          engine: "internal",
           move: null,
+          principalVariation: [],
           reason: "cancelled",
           score: null,
+          evaluation: null,
           depthReached: 0,
           nodesSearched: 0,
           elapsedMs: Date.now() - startedAt,
@@ -147,14 +156,40 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
       }
 
       try {
+        if (shouldUseStockfish(state, options.engine ?? "auto")) {
+          const playedMoves = state.moves.map((move) => moveToUci(state, move));
+          const stockfish = await requestStockfishMove(state, difficultyKey, playedMoves, options.maxSearchTimeMs ?? difficultyFor(difficultyKey).moveTimeMs);
+          if (stockfish && !requestState.cancelled) {
+            finish({
+              requestId,
+              status: "ok",
+              engine: "stockfish",
+              move: stockfish.move,
+              uciMove: stockfish.uciMove,
+              principalVariation: stockfish.principalVariation,
+              reason: "ok",
+              score: stockfish.evaluation,
+              evaluation: stockfish.evaluation,
+              depthReached: stockfish.depthReached,
+              nodesSearched: stockfish.nodesSearched,
+              elapsedMs: Date.now() - startedAt,
+              validatedLegal: true
+            });
+            return;
+          }
+        }
+
         const result = chooseBotMoveSafe(state, difficultyKey, options);
         if (!result.move) {
           finish({
             requestId,
             status: "no-legal-moves",
+            engine: "internal",
             move: null,
+            principalVariation: [],
             reason: "no-legal-moves",
             score: null,
+            evaluation: null,
             depthReached: 0,
             nodesSearched: 0,
             elapsedMs: Date.now() - startedAt,
@@ -167,9 +202,13 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
         finish({
           requestId,
           status: validatedLegal ? "ok" : "failed",
+          engine: "internal",
           move: validatedLegal ? result.move : null,
+          uciMove: validatedLegal ? safeUci(state, result.move) : undefined,
+          principalVariation: validatedLegal ? [safeUci(state, result.move)].filter(Boolean) : [],
           reason: validatedLegal ? "ok" : "failed",
           score: result.score,
+          evaluation: result.score,
           depthReached: result.depthReached,
           nodesSearched: result.nodesSearched,
           elapsedMs: Date.now() - startedAt,
@@ -180,9 +219,12 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
         finish({
           requestId,
           status: "failed",
+          engine: "internal",
           move: null,
+          principalVariation: [],
           reason: "failed",
           score: null,
+          evaluation: null,
           depthReached: 0,
           nodesSearched: 0,
           elapsedMs: Date.now() - startedAt,
@@ -428,4 +470,16 @@ function windowSafeSetTimeout(callback: () => void, delayMs: number) {
 function deterministicNoise(move: Move) {
   const seed = (move.from.row + 1) * 17 + (move.from.col + 1) * 31 + (move.to.row + 1) * 43 + (move.to.col + 1) * 59;
   return (seed % 11) - 5;
+}
+
+function difficultyFor(key: BotDifficultyKey) {
+  return botDifficultyLevels.find((level) => level.key === key) ?? botDifficultyLevels[1];
+}
+
+function safeUci(state: GameState, move: Move) {
+  try {
+    return moveToUci(state, move);
+  } catch {
+    return "";
+  }
 }
