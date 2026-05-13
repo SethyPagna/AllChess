@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Eye, Flag, Handshake, Radio, Share2, Users } from "lucide-react";
+import { Eye, Flag, Handshake, Radio, Share2 } from "lucide-react";
 
 import { GameBoard } from "@/components/game-board";
 import { RulesPanel } from "@/components/rules-panel";
@@ -53,11 +53,6 @@ export default async function PlayPage({
               {t("play.resign")}
             </button>
           </div>
-        </div>
-
-        <div className="play-room-strip flex flex-wrap items-center gap-2 rounded-md p-3 text-sm text-[var(--muted)]">
-          <Users size={16} className="text-[var(--accent)]" />
-          Realtime-ready room: authoritative moves, reconnect snapshots, spectators, clocks, and bot seats use the server room protocol.
         </div>
 
         <GameBoard variantKey={variant.key} />

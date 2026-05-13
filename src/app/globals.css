@@ -296,7 +296,7 @@ select {
 }
 
 .play-arena .game-board-layout {
-  --board-fixed-size: clamp(420px, min(52vw, calc(100vh - 8rem)), 820px);
+  --board-fixed-size: clamp(420px, min(52vw, calc(100vh - 12rem)), 820px);
   grid-template-columns: var(--board-fixed-size) minmax(20rem, 1fr);
   min-width: 0;
 }
