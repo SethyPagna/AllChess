@@ -1,19 +1,11 @@
 "use client";
 
-import { Moon, Monitor, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
-import { cn } from "@/lib/utils";
-
-const modes = [
-  { value: "light", icon: Sun },
-  { value: "dark", icon: Moon },
-  { value: "system", icon: Monitor }
-] as const;
-
 export function ThemeToggle({ labels }: { labels: Record<"light" | "dark" | "system", string> }) {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -21,23 +13,20 @@ export function ThemeToggle({ labels }: { labels: Record<"light" | "dark" | "sys
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
+  const isDark = mounted && resolvedTheme === "dark";
+  const Icon = isDark ? Sun : Moon;
+  const nextTheme = isDark ? "light" : "dark";
+  const label = isDark ? labels.light : labels.dark;
+
   return (
-    <div className="inline-grid grid-cols-3 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1">
-      {modes.map(({ value, icon: Icon }) => (
-        <button
-          key={value}
-          type="button"
-          aria-label={labels[value]}
-          title={labels[value]}
-          onClick={() => setTheme(value)}
-          className={cn(
-            "focus-ring grid h-9 w-9 place-items-center rounded-md text-[var(--muted)] transition",
-            mounted && theme === value && "bg-[var(--accent)] text-black shadow-sm"
-          )}
-        >
-          <Icon aria-hidden="true" size={16} />
-        </button>
-      ))}
-    </div>
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={() => setTheme(nextTheme)}
+      className="focus-ring action-secondary grid h-10 w-10 place-items-center text-[var(--muted)]"
+    >
+      <Icon aria-hidden="true" size={17} />
+    </button>
   );
 }

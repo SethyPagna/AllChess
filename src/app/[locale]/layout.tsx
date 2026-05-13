@@ -90,6 +90,7 @@ export default async function LocaleLayout({
                   system: t("settings.system")
                 }}
               />
+              <LocaleSwitcher active={locale as LocaleCode} />
               <Link
                 href={`/${locale}/login`}
                 className="focus-ring action-secondary inline-flex h-10 items-center gap-2 px-3 text-sm"
@@ -100,7 +101,6 @@ export default async function LocaleLayout({
             </header>
             <main className="flex-1">{children}</main>
             <footer className="mt-10 space-y-3 border-t border-[var(--border)] py-6 text-sm text-[var(--muted)]">
-              <LocaleSwitcher active={locale as LocaleCode} />
               <p>{t("app.description")}</p>
             </footer>
           </div>
