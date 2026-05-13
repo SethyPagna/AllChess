@@ -1,3 +1,4 @@
+import { DurableObject } from "cloudflare:workers";
 import type { DurableObjectState } from "@cloudflare/workers-types";
 
 import { applyAuthoritativeRoomMove, createDemoLiveStats, createMatchmakingTicket, createRoomSnapshot } from "@/lib/realtime/rooms";
@@ -10,10 +11,12 @@ function json(data: unknown, init?: ResponseInit) {
   });
 }
 
-export class GameRoomDO {
+export class GameRoomDO extends DurableObject {
   private snapshot: RoomSnapshot | null = null;
 
-  constructor(private state: DurableObjectState) {}
+  constructor(ctx: DurableObjectState, env: unknown) {
+    super(ctx, env);
+  }
 
   async fetch(request: Request) {
     const url = new URL(request.url);
@@ -28,7 +31,7 @@ export class GameRoomDO {
       const result = applyAuthoritativeRoomMove(snapshot, body.move);
       if (!result.ok) return json({ type: "move_rejected", reason: result.reason, expectedMoveVersion: snapshot.moveVersion } satisfies ServerRealtimeMessage, { status: 400 });
       this.snapshot = result.snapshot;
-      await this.state.storage.put("snapshot", this.snapshot);
+      await this.ctx.storage.put("snapshot", this.snapshot);
       return json({ type: "move_applied", snapshot: this.snapshot, move: body.move } satisfies ServerRealtimeMessage);
     }
     return json({ error: "Unsupported room operation." }, { status: 404 });
@@ -36,8 +39,8 @@ export class GameRoomDO {
 
   private async getSnapshot(variantKey = "classic") {
     if (this.snapshot) return this.snapshot;
-    this.snapshot = ((await this.state.storage.get("snapshot")) as RoomSnapshot | undefined) ?? createRoomSnapshot({ variantKey });
-    await this.state.storage.put("snapshot", this.snapshot);
+    this.snapshot = ((await this.ctx.storage.get("snapshot")) as RoomSnapshot | undefined) ?? createRoomSnapshot({ variantKey });
+    await this.ctx.storage.put("snapshot", this.snapshot);
     return this.snapshot;
   }
 
@@ -57,37 +60,41 @@ export class GameRoomDO {
   }
 }
 
-export class MatchmakingDO {
-  constructor(private state: DurableObjectState) {}
+export class MatchmakingDO extends DurableObject {
+  constructor(ctx: DurableObjectState, env: unknown) {
+    super(ctx, env);
+  }
 
   async fetch(request: Request) {
     const url = new URL(request.url);
     if (request.method === "POST" && url.pathname.endsWith("/join")) {
       const body = (await request.json().catch(() => ({}))) as Partial<MatchmakingTicket>;
       const ticket = createMatchmakingTicket(body);
-      await this.state.storage.put(`ticket:${ticket.ticketId}`, ticket);
+      await this.ctx.storage.put(`ticket:${ticket.ticketId}`, ticket);
       return json({ ticket });
     }
     if (request.method === "POST" && url.pathname.endsWith("/leave")) {
       const body = (await request.json().catch(() => ({}))) as { ticketId?: string };
-      if (body.ticketId) await this.state.storage.delete(`ticket:${body.ticketId}`);
+      if (body.ticketId) await this.ctx.storage.delete(`ticket:${body.ticketId}`);
       return json({ left: Boolean(body.ticketId) });
     }
     return json({ error: "Unsupported matchmaking operation." }, { status: 404 });
   }
 }
 
-export class PresenceDO {
-  constructor(private state: DurableObjectState) {}
+export class PresenceDO extends DurableObject {
+  constructor(ctx: DurableObjectState, env: unknown) {
+    super(ctx, env);
+  }
 
   async fetch(request: Request) {
     if (request.method === "GET") {
-      const stats = ((await this.state.storage.get("stats")) as LiveStats | undefined) ?? createDemoLiveStats({ source: "durable-object" });
+      const stats = ((await this.ctx.storage.get("stats")) as LiveStats | undefined) ?? createDemoLiveStats({ source: "durable-object" });
       return json(stats);
     }
     if (request.method === "POST") {
       const stats = createDemoLiveStats({ ...((await request.json().catch(() => ({}))) as Partial<LiveStats>), source: "durable-object" });
-      await this.state.storage.put("stats", stats);
+      await this.ctx.storage.put("stats", stats);
       return json(stats);
     }
     return json({ error: "Unsupported presence operation." }, { status: 404 });
