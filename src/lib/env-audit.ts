@@ -11,8 +11,10 @@ export type EnvAuditResult = {
 };
 
 const baseRequired = ["DEPLOYMENT_TARGET", "DATABASE_DRIVER", "OBJECT_STORAGE_DRIVER", "SESSION_SECRET"];
-const cloudflareRequired = ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_D1_DATABASE_ID"];
+const cloudflareAccountRequired = ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_D1_DATABASE_ID"];
+const cloudflareBindingRequired = ["ALLCHESS_D1", "ALLCHESS_OBJECTS"];
 const objectStorageRequired = ["R2_PUBLIC_BASE_URL"];
+const realtimeRequired = ["GAME_ROOM_DO", "MATCHMAKING_DO", "PRESENCE_DO"];
 const optional = ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_REDIRECT_URI", "CLOUDFLARE_ZONE_ID", "CLOUDFLARE_DOMAIN"];
 
 const providerKeyByName: Record<string, string[]> = {
@@ -81,14 +83,14 @@ function requiredKeysFor(target: EnvAuditTarget, provider: string) {
   }
 
   if (target === "docker") {
-    return ["NEXT_PUBLIC_SITE_URL", ...baseRequired, ...cloudflareRequired, ...objectStorageRequired, ...aiRequired];
+    return ["NEXT_PUBLIC_SITE_URL", ...baseRequired, ...cloudflareAccountRequired, ...objectStorageRequired, ...aiRequired];
   }
 
   if (target === "cloudflare") {
-    return [...baseRequired, ...cloudflareRequired, ...aiRequired];
+    return [...baseRequired, ...cloudflareAccountRequired, ...cloudflareBindingRequired, ...realtimeRequired, ...aiRequired];
   }
 
-  return ["NEXT_PUBLIC_SITE_URL", ...baseRequired, ...cloudflareRequired, "CLOUDFLARE_API_TOKEN", ...objectStorageRequired, ...aiRequired];
+  return ["NEXT_PUBLIC_SITE_URL", ...baseRequired, ...cloudflareAccountRequired, "CLOUDFLARE_API_TOKEN", ...objectStorageRequired, ...aiRequired];
 }
 
 function buildWarnings(target: EnvAuditTarget, provider: string, env: Record<string, string | undefined>) {

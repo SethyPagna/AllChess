@@ -1,6 +1,7 @@
 import type { D1Database } from "@cloudflare/workers-types";
 
 import type { GameState, Move } from "@/lib/variants";
+import type { LiveStats, RoomSnapshot } from "@/lib/realtime/types";
 
 export type CreateGameInput = {
   state: GameState;
@@ -16,6 +17,8 @@ export type RecordMoveInput = {
 
 export type GameRepository = {
   createGame(input: CreateGameInput): Promise<{ id: string; mode: "d1" }>;
+  createRoom(input: { snapshot: RoomSnapshot; hostId?: string | null; roomCode?: string | null }): Promise<{ id: string; mode: "d1"; roomCode: string }>;
+  getLiveStats(): Promise<LiveStats>;
   recordMove(input: RecordMoveInput): Promise<{ id: string; mode: "d1" }>;
   saveAnalysis(input: {
     id: string;
@@ -61,6 +64,75 @@ export function createD1GameRepository(db: D1Database): GameRepository {
       }
 
       return { id: input.state.id, mode: "d1" };
+    },
+
+    async createRoom(input) {
+      const roomCode = input.roomCode ?? createRoomCode();
+      await db
+        .prepare(
+          `insert into games (
+            id, variant_key, status, result, board_state, current_turn, private_code, created_by, time_control
+          ) values (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .bind(
+          input.snapshot.gameId,
+          input.snapshot.variantKey,
+          input.snapshot.status,
+          "unfinished",
+          JSON.stringify(input.snapshot.state),
+          input.snapshot.state.turn,
+          roomCode,
+          input.hostId ?? null,
+          JSON.stringify({ key: "rapid" })
+        )
+        .run();
+
+      await db
+        .prepare(
+          `insert into rooms (
+            id, host_id, game_id, variant_key, room_code, is_private, status, spectator_count, rated, time_control_key, visibility, chat_policy
+          ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .bind(
+          input.snapshot.roomId,
+          input.hostId ?? null,
+          input.snapshot.gameId,
+          input.snapshot.variantKey,
+          roomCode,
+          1,
+          input.snapshot.status,
+          input.snapshot.spectators,
+          input.snapshot.rated ? 1 : 0,
+          "rapid",
+          "private",
+          input.snapshot.chatPolicy
+        )
+        .run();
+
+      return { id: input.snapshot.roomId, mode: "d1", roomCode };
+    },
+
+    async getLiveStats() {
+      const rooms = await db
+        .prepare(
+          `select
+            count(*) as activeRooms,
+            sum(case when status = 'active' then 1 else 0 end) as activeGames,
+            coalesce(sum(spectator_count), 0) as spectators
+           from rooms
+           where status in ('waiting', 'active')`
+        )
+        .bind()
+        .first<{ activeRooms?: number; activeGames?: number; spectators?: number }>();
+
+      return {
+        playersOnline: Number(rooms?.activeRooms ?? 0) * 2,
+        activeRooms: Number(rooms?.activeRooms ?? 0),
+        activeGames: Number(rooms?.activeGames ?? 0),
+        spectators: Number(rooms?.spectators ?? 0),
+        botGames: 0,
+        source: "durable-object"
+      };
     },
 
     async recordMove(input) {

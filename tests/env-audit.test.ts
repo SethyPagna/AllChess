@@ -34,7 +34,7 @@ describe("environment audit", () => {
     });
 
     expect(result.ok).toBe(false);
-    expect(result.missing).toEqual(expect.arrayContaining(["SESSION_SECRET", "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_D1_DATABASE_ID"]));
+    expect(result.missing).toEqual(expect.arrayContaining(["SESSION_SECRET", "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_D1_DATABASE_ID", "GAME_ROOM_DO"]));
     expect(maskSecret("OPENAI_API_KEY", "sk-live-secret")).toBe("sk-l...cret");
   });
 

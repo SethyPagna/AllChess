@@ -9,6 +9,7 @@ AllChess is Cloudflare-first. Supabase, Hyperdrive, Vercel databases, and Vercel
 - User objects: R2 bucket `allchess-objects`.
 - Preview objects: R2 bucket `allchess-objects-preview`.
 - Next incremental cache: R2 bucket `allchess-opennext-cache`.
+- Realtime: Durable Objects `GameRoomDO`, `MatchmakingDO`, and `PresenceDO`.
 - AI: Workers AI binding `AI`, with optional Groq, Mistral, Cerebras, Google AI, or OpenAI secrets for deeper review.
 - Other products: LEARN and edsync must use separate Cloudflare resources.
 
@@ -24,10 +25,12 @@ npm run db:migrate:remote
 ```
 
 Copy the D1 database id into `wrangler.jsonc` and set the same value as `CLOUDFLARE_D1_DATABASE_ID` anywhere the app runs outside Workers.
+Use the existing Worker/Pages project named `allchess` when it exists; redeploy that target instead of creating a duplicate. Preferred short hostnames are `allchess.<domain>` first, then `allchess-app.<domain>` if the shorter name is unavailable.
 
 ## Secrets
 
 Use Wrangler, Vercel, or GitHub secrets. Never commit tokens.
+Environment variables and secrets are allowed when they are actually needed for deploy, persistence, auth, OAuth, or AI. Keep values in secret stores and dashboards, not in source files or logs.
 
 ```bash
 npx wrangler secret put SESSION_SECRET
@@ -51,7 +54,9 @@ If a broad Cloudflare token was exposed in chat or logs, rotate it after creatin
 
 ```bash
 npm run verify
+npm run audit:env -- cloudflare
 npm run cf:deploy
 ```
 
 For Vercel, link the project as `allchess` and set Cloudflare credentials in Vercel environment variables. Vercel should host the app only; data still belongs to Cloudflare D1/R2.
+Run `npm run audit:env -- vercel` before production deploy.

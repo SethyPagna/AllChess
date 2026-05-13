@@ -86,6 +86,32 @@ describe("Cloudflare platform configuration", () => {
     expect(mock.calls[0]?.bindings).toContain("classic");
     expect(mock.calls[0]?.bindings.some((value) => typeof value === "string" && value.includes("\"variantKey\":\"classic\""))).toBe(true);
   });
+
+  test("persists realtime rooms and reads live stats from D1", async () => {
+    const mock = createMockD1();
+    const repo = createD1GameRepository(mock.db as never);
+    const state = createInitialState("classic", "room-game");
+    const snapshot = {
+      roomId: "room-1",
+      gameId: state.id,
+      variantKey: state.variantKey,
+      status: state.status,
+      players: [],
+      spectators: 3,
+      clocks: state.clocks,
+      state,
+      moveVersion: 0,
+      rated: true,
+      chatPolicy: "players" as const
+    };
+
+    await repo.createRoom({ snapshot, roomCode: "ROOM42" });
+    const stats = await repo.getLiveStats();
+
+    expect(mock.calls.some((call) => call.sql.includes("insert into rooms"))).toBe(true);
+    expect(mock.calls.some((call) => call.bindings.includes("ROOM42"))).toBe(true);
+    expect(stats.source).toBe("durable-object");
+  });
 });
 
 describe("Cloudflare-owned auth primitives", () => {
