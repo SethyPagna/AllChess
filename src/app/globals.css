@@ -687,6 +687,10 @@ select {
   outline-offset: 3px;
 }
 
+header:has(details[open]) {
+  z-index: 80;
+}
+
 @media (max-width: 900px) {
   .play-arena {
     display: grid;
