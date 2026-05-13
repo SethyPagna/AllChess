@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import { applyMove, createInitialState, getLegalMoves, getVariant, variantCatalog } from "@/lib/variants";
+import { ruleSources } from "@/lib/variants/rule-sources";
 
 describe("variant catalog", () => {
   test("contains the planned global launch variants", () => {
@@ -38,6 +39,13 @@ describe("variant catalog", () => {
   test("resolves aliases to their canonical variant", () => {
     expect(getVariant("chinese-chess").key).toBe("xiangqi");
   });
+
+  test("keeps credible rule sources for implemented rule families", () => {
+    expect(ruleSources.classic[0].url).toContain("fide");
+    expect(ruleSources.xiangqi[0].name).toContain("World Xiangqi Federation");
+    expect(ruleSources.shogi[0].name).toContain("Japan Shogi Association");
+    expect(ruleSources.jungle[0].scope).toContain("den");
+  });
 });
 
 describe("variant engine", () => {
@@ -68,6 +76,41 @@ describe("variant engine", () => {
     const moves = getLegalMoves(state, { row: 6, col: 4 });
 
     expect(moves).toContainEqual({ from: { row: 6, col: 4 }, to: { row: 4, col: 4 } });
+  });
+
+  test("promotes a western pawn immediately on the back rank", () => {
+    let state = createInitialState("classic", "promotion");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[1][0].piece = { id: "white-pawn", code: "p", owner: "white", labelKey: "chess.pawn" };
+    state.board[7][7].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[0][7].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+
+    const next = applyMove(state, { from: { row: 1, col: 0 }, to: { row: 0, col: 0 }, promotion: true });
+
+    expect(next.board[0][0].piece).toMatchObject({ code: "q", owner: "white", promoted: true });
+  });
+
+  test("allows legal kingside castling and moves the rook", () => {
+    let state = createInitialState("classic", "castle");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[7][4].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[7][7].piece = { id: "white-rook", code: "r", owner: "white", labelKey: "chess.rook" };
+    state.board[0][4].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+
+    expect(getLegalMoves(state, { row: 7, col: 4 })).toContainEqual({ from: { row: 7, col: 4 }, to: { row: 7, col: 6 } });
+
+    const next = applyMove(state, { from: { row: 7, col: 4 }, to: { row: 7, col: 6 } });
+
+    expect(next.board[7][6].piece).toMatchObject({ code: "k", owner: "white" });
+    expect(next.board[7][5].piece).toMatchObject({ code: "r", owner: "white" });
   });
 
   test("check-based games never allow capturing a royal piece", () => {
@@ -148,6 +191,102 @@ describe("variant engine", () => {
     expect(next.checks.black).toBe(3);
     expect(next.status).toBe("completed");
     expect(next.result).toBe("white");
+  });
+
+  test("xiangqi general and advisors stay inside the palace", () => {
+    let state = createInitialState("xiangqi", "palace");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "red"
+    };
+    state.board[9][4].piece = { id: "red-general", code: "g", owner: "red", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "black-general", code: "g", owner: "black", labelKey: "chess.king" };
+    state.board[5][4].piece = { id: "file-blocker", code: "p", owner: "red", labelKey: "chess.pawn" };
+
+    expect(getLegalMoves(state, { row: 9, col: 4 })).toEqual(
+      expect.arrayContaining([
+        { from: { row: 9, col: 4 }, to: { row: 8, col: 4 } },
+        { from: { row: 9, col: 4 }, to: { row: 9, col: 3 } },
+        { from: { row: 9, col: 4 }, to: { row: 9, col: 5 } }
+      ])
+    );
+    expect(getLegalMoves(state, { row: 9, col: 4 })).not.toContainEqual({ from: { row: 9, col: 4 }, to: { row: 8, col: 3 } });
+    state.board[9][3].piece = { id: "red-advisor", code: "a", owner: "red", labelKey: "chess.bishop" };
+    expect(getLegalMoves({ ...state, turn: "red" }, { row: 9, col: 3 })).toContainEqual({ from: { row: 9, col: 3 }, to: { row: 8, col: 4 } });
+  });
+
+  test("xiangqi prevents flying generals from facing each other", () => {
+    let state = createInitialState("xiangqi", "flying-general");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "red"
+    };
+    state.board[9][4].piece = { id: "red-general", code: "g", owner: "red", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "black-general", code: "g", owner: "black", labelKey: "chess.king" };
+    state.board[4][4].piece = { id: "red-soldier", code: "p", owner: "red", labelKey: "chess.pawn" };
+
+    expect(getLegalMoves(state, { row: 4, col: 4 })).not.toContainEqual({ from: { row: 4, col: 4 }, to: { row: 4, col: 3 } });
+  });
+
+  test("xiangqi cannon captures only with exactly one screen", () => {
+    let state = createInitialState("xiangqi", "cannon");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "red"
+    };
+    state.board[0][4].piece = { id: "black-general", code: "g", owner: "black", labelKey: "chess.king" };
+    state.board[9][4].piece = { id: "red-general", code: "g", owner: "red", labelKey: "chess.king" };
+    state.board[5][4].piece = { id: "red-cannon", code: "c", owner: "red", labelKey: "chess.rook" };
+    state.board[3][4].piece = { id: "screen", code: "p", owner: "red", labelKey: "chess.pawn" };
+    state.board[1][4].piece = { id: "black-horse", code: "h", owner: "black", labelKey: "chess.knight" };
+    state.board[2][4].piece = { id: "black-soldier", code: "p", owner: "black", labelKey: "chess.pawn" };
+
+    const moves = getLegalMoves(state, { row: 5, col: 4 });
+
+    expect(moves).toContainEqual({ from: { row: 5, col: 4 }, to: { row: 2, col: 4 } });
+    expect(moves).not.toContainEqual({ from: { row: 5, col: 4 }, to: { row: 1, col: 4 } });
+  });
+
+  test("xiangqi horse legs and elephant eyes block movement", () => {
+    let state = createInitialState("xiangqi", "blockers");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "red"
+    };
+    state.board[9][4].piece = { id: "red-general", code: "g", owner: "red", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "black-general", code: "g", owner: "black", labelKey: "chess.king" };
+    state.board[5][4].piece = { id: "red-horse", code: "h", owner: "red", labelKey: "chess.knight" };
+    state.board[4][4].piece = { id: "horse-leg", code: "p", owner: "red", labelKey: "chess.pawn" };
+    state.board[9][2].piece = { id: "red-elephant", code: "e", owner: "red", labelKey: "chess.elephant" };
+    state.board[8][3].piece = { id: "elephant-eye", code: "p", owner: "red", labelKey: "chess.pawn" };
+
+    expect(getLegalMoves(state, { row: 5, col: 4 })).not.toContainEqual({ from: { row: 5, col: 4 }, to: { row: 3, col: 5 } });
+    expect(getLegalMoves(state, { row: 9, col: 2 })).not.toContainEqual({ from: { row: 9, col: 2 }, to: { row: 7, col: 4 } });
+    expect(getLegalMoves(state, { row: 9, col: 2 })).not.toContainEqual({ from: { row: 9, col: 2 }, to: { row: 5, col: 6 } });
+  });
+
+  test("xiangqi stalemate is a loss for the side with no legal move", () => {
+    let state = createInitialState("xiangqi", "xiangqi-stalemate");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "red"
+    };
+    state.board[0][4].piece = { id: "black-general", code: "g", owner: "black", labelKey: "chess.king" };
+    state.board[2][3].piece = { id: "red-rook-left", code: "r", owner: "red", labelKey: "chess.rook" };
+    state.board[1][5].piece = { id: "red-rook-right", code: "r", owner: "red", labelKey: "chess.rook" };
+    state.board[3][3].piece = { id: "red-horse", code: "h", owner: "red", labelKey: "chess.knight" };
+    state.board[5][4].piece = { id: "file-blocker", code: "p", owner: "red", labelKey: "chess.pawn" };
+    state.board[9][4].piece = { id: "red-general", code: "g", owner: "red", labelKey: "chess.king" };
+
+    const next = applyMove(state, { from: { row: 2, col: 3 }, to: { row: 1, col: 3 } });
+
+    expect(next.status).toBe("completed");
+    expect(next.result).toBe("red");
   });
 
   test("blocks non-rat pieces from entering Jungle Chess rivers", () => {
