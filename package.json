@@ -1,5 +1,5 @@
 {
-  "name": "allchess-multiplayer",
+  "name": "allchess",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -14,15 +14,14 @@
     "test:i18n": "vitest run tests/i18n.test.ts",
     "test:e2e": "playwright test",
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build",
-    "deploy:preview": "npm run verify && vercel deploy",
-    "deploy:prod": "npm run verify && vercel deploy --prod",
+    "deploy:preview": "npm run verify && vercel deploy --name allchess",
+    "deploy:prod": "npm run verify && vercel deploy --prod --name allchess",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "npm run cf:build && wrangler dev",
     "cf:deploy": "npm run cf:build && wrangler deploy",
     "cf:types": "wrangler types src/worker-configuration.d.ts",
-    "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
-    "db:start": "supabase start",
-    "db:reset": "supabase db reset"
+    "db:migrate:local": "wrangler d1 migrations apply allchess --local",
+    "db:migrate:remote": "wrangler d1 migrations apply allchess --remote"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.984.0",
