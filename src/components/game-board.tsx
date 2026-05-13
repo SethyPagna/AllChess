@@ -315,7 +315,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
               Suggest
             </button>
             {suggestedMove ? (
-              <button type="button" onClick={applySuggestion} className="focus-ring action-primary inline-flex items-center gap-2 px-3 py-2 text-sm">
+              <button type="button" aria-label="Apply suggestion" onClick={applySuggestion} className="focus-ring action-primary inline-flex items-center gap-2 px-3 py-2 text-sm">
                 <Sparkles size={16} />
                 Apply
               </button>
