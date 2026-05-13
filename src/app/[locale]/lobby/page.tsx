@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Bot, Clock, Lock, Radio, Swords } from "lucide-react";
 
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
@@ -9,32 +10,53 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
   const featured = variantCatalog.slice(0, 6);
+  const lobbyActions = [
+    { Icon: Swords, title: t("lobby.quickPair"), body: "Find an even opponent by rating and preferred time control." },
+    { Icon: Lock, title: t("lobby.privateRoom"), body: "Create a shareable room code for friends." },
+    { Icon: Clock, title: t("lobby.correspondence"), body: "Play long-form games across time zones." },
+    { Icon: Bot, title: t("lobby.aiPractice"), body: "Practice against Easy through Hell bot levels." }
+  ];
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[1fr_360px]">
+    <section className="grid gap-6 lg:grid-cols-[1fr_380px]">
       <div className="space-y-5">
         <div>
           <h1 className="text-4xl font-black sm:text-5xl">{t("lobby.title")}</h1>
           <p className="mt-2 text-[var(--muted)]">{t("app.description")}</p>
         </div>
+        <div className="panel flex flex-wrap gap-2 p-3">
+          <Link href={`/${locale}/play/classic`} className="focus-ring action-primary inline-flex items-center gap-2 px-4 py-2 text-sm">
+            <Swords size={16} />
+            Play now
+          </Link>
+          <Link href={`/${locale}/play/classic?bot=normal`} className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2 text-sm">
+            <Bot size={16} />
+            Bot practice
+          </Link>
+          <Link href={`/${locale}/variants`} className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2 text-sm">
+            <Radio size={16} />
+            Browse rules
+          </Link>
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {featured.map((variant) => (
             <Link key={variant.key} href={`/${locale}/play/${variant.key}`} className="panel focus-ring grid gap-2 p-4 transition hover:border-[var(--accent)]">
-              <span className="text-lg font-black">{t(variant.nameKey)}</span>
+              <span className="flex items-center justify-between gap-3 text-lg font-black">
+                {t(variant.nameKey)}
+                <span className="rounded-md bg-[var(--surface-soft)] px-2 py-1 text-xs font-bold text-[var(--muted)]">{variant.rulesAdapter}</span>
+              </span>
               <span className="text-sm text-[var(--muted)]">{variant.objective}</span>
             </Link>
           ))}
         </div>
       </div>
       <aside className="panel grid content-start gap-4 p-5">
-        {[
-          [t("lobby.quickPair"), "Find an even opponent by rating and preferred time control."],
-          [t("lobby.privateRoom"), "Create a shareable room code for friends."],
-          [t("lobby.correspondence"), "Play long-form games across time zones."],
-          [t("lobby.aiPractice"), "Practice against analysis-guided AI lines."]
-        ].map(([title, body]) => (
+        {lobbyActions.map(({ Icon, title, body }) => (
           <div key={title} className="rounded-md bg-[var(--surface-strong)] p-4">
-            <h2 className="font-bold">{title}</h2>
+            <h2 className="flex items-center gap-2 font-bold">
+              <Icon size={16} className="text-[var(--accent)]" />
+              {title}
+            </h2>
             <p className="mt-1 text-sm text-[var(--muted)]">{body}</p>
           </div>
         ))}

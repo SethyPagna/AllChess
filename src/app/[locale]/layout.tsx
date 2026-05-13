@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { BookOpen, Crown, History, Menu, Play, Settings, UserRound } from "lucide-react";
 
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -36,38 +37,52 @@ export default async function LocaleLayout({
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
   const nav = [
-    ["lobby", t("nav.lobby")],
-    ["variants", t("nav.variants")],
-    ["history", t("nav.history")],
-    ["settings", t("nav.settings")]
+    ["lobby", t("nav.lobby"), Play],
+    ["variants", t("nav.variants"), BookOpen],
+    ["history", t("nav.history"), History],
+    ["settings", t("nav.settings"), Settings]
   ] as const;
 
   return (
     <html lang={locale} dir={rtlLocales.has(locale) ? "rtl" : "ltr"} suppressHydrationWarning>
       <body>
         <ThemeProvider>
-          <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
-            <header className="glass sticky top-3 z-30 mb-6 flex flex-wrap items-center gap-3 rounded-lg px-4 py-3">
+          <div className="mx-auto flex min-h-screen w-full max-w-[1500px] flex-col px-3 py-3 sm:px-5 lg:px-6">
+            <header className="glass sticky top-3 z-30 mb-5 flex items-center gap-3 rounded-lg px-3 py-2">
               <Link href={`/${locale}`} className="focus-ring mr-auto flex items-center gap-3 rounded-md">
-                <span className="grid h-10 w-10 place-items-center rounded-md bg-[var(--accent)] font-black text-black">
-                  AC
+                <span className="grid h-10 w-10 place-items-center rounded-md bg-[var(--accent)] text-black">
+                  <Crown size={22} strokeWidth={2.5} />
                 </span>
                 <span>
                   <span className="block text-lg font-bold leading-tight">{t("app.name")}</span>
-                  <span className="block text-xs text-[var(--muted)]">{t("app.tagline")}</span>
+                  <span className="hidden text-xs text-[var(--muted)] sm:block">{t("app.tagline")}</span>
                 </span>
               </Link>
-              <nav className="flex flex-wrap items-center gap-1 text-sm text-[var(--muted)]">
-                {nav.map(([href, label]) => (
+              <nav className="hidden items-center gap-1 text-sm text-[var(--muted)] md:flex">
+                {nav.map(([href, label, Icon]) => (
                   <Link
                     key={href}
                     href={`/${locale}/${href}`}
-                    className="focus-ring rounded-md px-3 py-2 transition hover:bg-[var(--surface-strong)] hover:text-[var(--foreground)]"
+                    className="focus-ring inline-flex items-center gap-2 rounded-md px-3 py-2 transition hover:bg-[var(--surface-strong)] hover:text-[var(--foreground)]"
                   >
+                    <Icon size={16} />
                     {label}
                   </Link>
                 ))}
               </nav>
+              <details className="relative md:hidden">
+                <summary className="focus-ring grid h-10 w-10 cursor-pointer list-none place-items-center rounded-md border border-[var(--border)]">
+                  <Menu size={18} />
+                </summary>
+                <div className="panel absolute right-0 top-12 grid min-w-48 gap-1 p-2 shadow-xl">
+                  {nav.map(([href, label, Icon]) => (
+                    <Link key={href} href={`/${locale}/${href}`} className="focus-ring inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm">
+                      <Icon size={16} />
+                      {label}
+                    </Link>
+                  ))}
+                </div>
+              </details>
               <ThemeToggle
                 labels={{
                   light: t("settings.light"),
@@ -77,8 +92,9 @@ export default async function LocaleLayout({
               />
               <Link
                 href={`/${locale}/login`}
-                className="focus-ring rounded-md bg-[var(--foreground)] px-4 py-2 text-sm font-semibold text-[var(--background)]"
+                className="focus-ring inline-flex items-center gap-2 rounded-md bg-[var(--foreground)] px-3 py-2 text-sm font-semibold text-[var(--background)]"
               >
+                <UserRound size={16} />
                 {t("nav.login")}
               </Link>
             </header>
