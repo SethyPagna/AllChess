@@ -4,6 +4,7 @@ import { Bot, Globe2, Sparkles, Trophy } from "lucide-react";
 import { GameBoard } from "@/components/game-board";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { createDefaultStats } from "@/lib/stats";
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
@@ -14,11 +15,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
     { Icon: Globe2, label: "Global variants" },
     { Icon: Sparkles, label: "Review-ready games" }
   ];
+  const siteStats = createDefaultStats();
   const stats = [
-    { Icon: Trophy, label: t("lobby.online"), value: "2,418" },
-    { Icon: Globe2, label: t("nav.variants"), value: "11" },
-    { Icon: Sparkles, label: t("chess.replay"), value: "Live" },
-    { Icon: Bot, label: t("play.analysis"), value: "AI" }
+    { Icon: Trophy, label: siteStats.playersOnline.label, value: siteStats.playersOnline.value },
+    { Icon: Globe2, label: siteStats.variants.label, value: siteStats.variants.value },
+    { Icon: Sparkles, label: siteStats.review.label, value: siteStats.review.value },
+    { Icon: Bot, label: siteStats.bots.label, value: siteStats.bots.value }
   ];
 
   return (
