@@ -6,8 +6,37 @@ create table if not exists profiles (
   locale text not null default 'en',
   theme text not null default 'system' check (theme in ('light', 'dark', 'system')),
   rating integer not null default 1200,
+  is_guest integer not null default 0,
   created_at text not null default (datetime('now')),
   updated_at text not null default (datetime('now'))
+);
+
+create table if not exists accounts (
+  id text primary key,
+  profile_id text not null references profiles(id) on delete cascade,
+  provider text not null check (provider in ('password', 'google')),
+  provider_account_id text,
+  email text unique,
+  password_hash text,
+  created_at text not null default (datetime('now')),
+  unique (provider, provider_account_id)
+);
+
+create table if not exists sessions (
+  id text primary key,
+  profile_id text not null references profiles(id) on delete cascade,
+  expires_at text not null,
+  created_at text not null default (datetime('now'))
+);
+
+create table if not exists passkeys (
+  id text primary key,
+  profile_id text not null references profiles(id) on delete cascade,
+  credential_id text unique not null,
+  public_key text not null,
+  counter integer not null default 0,
+  transports text not null default '[]',
+  created_at text not null default (datetime('now'))
 );
 
 create table if not exists games (
@@ -81,3 +110,6 @@ create table if not exists analysis_reports (
 create index if not exists idx_games_variant_status on games(variant_key, status);
 create index if not exists idx_moves_game_ply on moves(game_id, ply);
 create index if not exists idx_rooms_code on rooms(room_code);
+create index if not exists idx_accounts_email on accounts(email);
+create index if not exists idx_sessions_profile on sessions(profile_id);
+create index if not exists idx_passkeys_profile on passkeys(profile_id);
