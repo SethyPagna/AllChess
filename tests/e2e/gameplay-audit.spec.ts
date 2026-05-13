@@ -31,7 +31,8 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   expect(afterSuggestion?.height).toBeCloseTo(before!.height, 1);
 
   await page.getByRole("button", { name: "Reset" }).click();
-  await page.getByRole("button", { name: "Bot opponent" }).click();
+  await page.getByRole("button", { name: "Play Bots" }).click();
+  await expect(page.getByText("Bot opponent is on.")).toBeVisible();
   await page.getByRole("button", { name: /e2.*pawn/i }).click();
   await page.getByRole("button", { name: "e4" }).click();
   await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 5000 });
@@ -67,6 +68,7 @@ test("checkmate shows match-over feedback without resizing the board", async ({ 
   const dialog = page.getByRole("dialog", { name: "Match over" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole("heading", { name: /checkmate/i })).toBeVisible();
+  await expect(dialog.getByText(/escape, capture, or block/i)).toBeVisible();
   await expect(page.getByRole("button", { name: "Play again" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Review moves" })).toBeVisible();
 

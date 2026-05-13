@@ -588,6 +588,15 @@ select {
   line-height: 1;
 }
 
+.play-section-label {
+  margin: 0 0 -0.55rem;
+  color: #c7c1b5;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .play-action-stack {
   display: grid;
   gap: 0.55rem;

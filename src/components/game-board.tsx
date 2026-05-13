@@ -47,6 +47,8 @@ type SuggestedMove = {
   depthReached: number;
 };
 
+type PlayCardKey = "online" | "bots" | "coach" | "friend" | "tournaments" | "variants";
+
 export function GameBoard({ variantKey, initialState }: { variantKey: string; initialState?: GameState }) {
   const [timeControl, setTimeControl] = useState<TimeControlKey>("rapid");
   const [state, setState] = useState(() => withTimeControl(initialState ?? createInitialState(variantKey), "rapid"));
@@ -77,14 +79,43 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
   const files = useMemo(() => Array.from({ length: cols }, (_, index) => String.fromCharCode(97 + index)), [cols]);
   const botLevel = botDifficultyLevels.find((level) => level.key === botDifficulty) ?? botDifficultyLevels[1];
   const outcome = useMemo(() => describeGameOutcome(state, "white"), [state]);
-  const playCards = [
-    { label: "Play Online", description: "Pair with a similar-strength opponent.", Icon: Zap },
-    { label: "Play Bots", description: "Practice against Easy through Legend tiers.", Icon: Bot },
-    { label: "Play Coach", description: "Use suggestions, review, and move feedback.", Icon: GraduationCap },
-    { label: "Play a Friend", description: "Create a room code and share it.", Icon: Handshake },
-    { label: "Tournaments", description: "Arena-ready brackets and fast events.", Icon: Medal },
-    { label: "Chess Variants", description: "Classic, Xiangqi, Shogi, Makruk, Jungle, and more.", Icon: Dices }
+  const playCards: Array<{ key: PlayCardKey; label: string; description: string; Icon: typeof Zap }> = [
+    { key: "online", label: "Play Online", description: "Open the lobby for live rooms and pairing.", Icon: Zap },
+    { key: "bots", label: "Play Bots", description: "Practice against Easy through Legend tiers.", Icon: Bot },
+    { key: "coach", label: "Play Coach", description: "Get a suggestion or review the current game.", Icon: GraduationCap },
+    { key: "friend", label: "Play a Friend", description: "Prepare a private room invite.", Icon: Handshake },
+    { key: "tournaments", label: "Tournaments", description: "See arena status for scheduled brackets.", Icon: Medal },
+    { key: "variants", label: "Chess Variants", description: "Classic, Xiangqi, Shogi, Makruk, Jungle, and more.", Icon: Dices }
   ];
+
+  async function runPlayCardAction(action: PlayCardKey) {
+    if (action === "online") {
+      navigateToSibling("lobby");
+      return;
+    }
+    if (action === "variants") {
+      navigateToSibling("variants");
+      return;
+    }
+    if (action === "bots") {
+      setBotMode("opponent");
+      setNotice("Bot opponent is on. Make a move and the bot will reply automatically.");
+      return;
+    }
+    if (action === "coach") {
+      if (reviewMoves.length) {
+        startReview();
+        return;
+      }
+      await suggestMove();
+      return;
+    }
+    if (action === "friend") {
+      setNotice("Friend rooms use the room service when online deployment is connected. For now, use the lobby room controls.");
+      return;
+    }
+    setNotice("Tournament brackets will appear here when arena scheduling is connected.");
+  }
 
   function choose(square: Square) {
     if (isReviewing) {
@@ -479,11 +510,12 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
             <h2>Play Chess</h2>
           </div>
         </div>
+        <p className="play-section-label">Modes</p>
         <div className="play-action-stack">
           {playCards.map((card) => {
             const Icon = card.Icon;
             return (
-              <button key={card.label} type="button" className="play-action-card focus-ring" aria-label={card.label}>
+              <button key={card.key} type="button" onClick={() => void runPlayCardAction(card.key)} className="play-action-card focus-ring" aria-label={card.label}>
                 <Icon size={32} />
                 <span>
                   <strong>{card.label}</strong>
@@ -493,6 +525,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
             );
           })}
         </div>
+        <p className="play-section-label">Setup</p>
         <div className="play-options-card">
           <div className="play-options-heading">
             <Timer size={18} />
@@ -519,6 +552,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
             <span className="toggle-pill" aria-hidden="true" />
           </div>
         </div>
+        <p className="play-section-label">Status</p>
         <div className="play-table-card">
           <p className="text-sm font-bold text-[var(--muted)]">Table</p>
           <p className="text-2xl font-black capitalize">{state.turn} to move</p>
@@ -541,6 +575,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
             </div>
           ))}
         </div>
+        <p className="play-section-label">Review</p>
         <div className="play-review-card">
           <div className="review-tabs" aria-label="Review tabs">
             <button type="button" className="is-active">Moves</button>
@@ -630,6 +665,11 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
       </aside>
     </div>
   );
+}
+
+function navigateToSibling(section: "lobby" | "variants") {
+  const [, locale = "en"] = window.location.pathname.split("/");
+  window.location.href = `/${locale}/${section}`;
 }
 
 function withTimeControl(state: GameState, key: TimeControlKey): GameState {
