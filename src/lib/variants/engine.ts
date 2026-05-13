@@ -59,6 +59,14 @@ export function getLegalMoves(state: GameState, from: Square): Move[] {
   if (!cell?.piece || cell.piece.owner !== state.turn) return [];
 
   const piece = cell.piece;
+  const variant = getVariant(state.variantKey);
+  if (piece.code === "p" && ["western", "southeast-asian"].includes(variant.family)) {
+    return westernPawnMoves(state, piece, from, variant.family === "western").filter((move) => terrainAllows(state, piece, move.to));
+  }
+  if (piece.code === "p" && (variant.key === "xiangqi" || variant.key === "janggi")) {
+    return xiangqiSoldierMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
+  }
+
   const directions = movementDirections(piece.code);
   const sliding = isSlidingPiece(piece.code);
   const moves: Move[] = [];
@@ -86,6 +94,43 @@ export function getLegalMoves(state: GameState, from: Square): Move[] {
   return moves.filter((move) => terrainAllows(state, piece, move.to));
 }
 
+function westernPawnMoves(state: GameState, piece: Piece, from: Square, allowDouble: boolean) {
+  const forward = orient(piece.owner, -1);
+  const moves: Move[] = [];
+  const one = { row: from.row + forward, col: from.col };
+  if (isInside(state, one) && !cellAt(state, one)?.piece) {
+    moves.push({ from, to: one });
+    const startRow = ["black", "blue", "gote"].includes(piece.owner) ? 1 : state.board.length - 2;
+    const two = { row: from.row + forward * 2, col: from.col };
+    if (allowDouble && from.row === startRow && isInside(state, two) && !cellAt(state, two)?.piece) {
+      moves.push({ from, to: two });
+    }
+  }
+
+  for (const dc of [-1, 1]) {
+    const capture = { row: from.row + forward, col: from.col + dc };
+    const target = cellAt(state, capture);
+    if (target?.piece && target.piece.owner !== piece.owner) {
+      moves.push({ from, to: capture });
+    }
+  }
+
+  return moves;
+}
+
+function xiangqiSoldierMoves(state: GameState, piece: Piece, from: Square) {
+  const forward = orient(piece.owner, -1);
+  const crossedRiver = ["black", "blue", "gote"].includes(piece.owner)
+    ? from.row >= Math.floor(state.board.length / 2)
+    : from.row < Math.floor(state.board.length / 2);
+  const directions: Array<[number, number]> = crossedRiver ? [[forward, 0], [0, -1], [0, 1]] : [[forward, 0]];
+  return directions.flatMap(([dr, dc]) => {
+    const to = { row: from.row + dr, col: from.col + dc };
+    const target = cellAt(state, to);
+    return target && (!target.piece || target.piece.owner !== piece.owner) ? [{ from, to }] : [];
+  });
+}
+
 export function applyMove(state: GameState, move: Move): GameState {
   const legal = getLegalMoves(state, move.from).some((candidate) => sameSquare(candidate.to, move.to));
   if (!legal) {
@@ -105,6 +150,10 @@ export function applyMove(state: GameState, move: Move): GameState {
   next.ply += 1;
   next.turn = next.turn === next.clocks[0]?.color ? next.clocks[1]?.color ?? "black" : next.clocks[0]?.color ?? "white";
   next.moves.push({ ...move, notation: notationFor(movingPiece, move) });
+  if (captured?.code === "k" || captured?.code === "g") {
+    next.status = "completed";
+    next.result = movingPiece.owner;
+  }
   return next;
 }
 
