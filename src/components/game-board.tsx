@@ -291,7 +291,7 @@ export function GameBoard({
     setNotice(null);
     setThinking({ status: "idle", label: "" });
     setShowOutcome(true);
-    setPanelTab("status");
+    setPanelTab("setup");
     setReviewPly(null);
     setReviewPlaying(false);
   }
@@ -313,7 +313,7 @@ export function GameBoard({
     setNotice(null);
     setThinking({ status: "idle", label: "" });
     setShowOutcome(true);
-    setPanelTab("status");
+    setPanelTab("setup");
     setReviewPly(null);
     setReviewPlaying(false);
   }
@@ -415,7 +415,7 @@ export function GameBoard({
             <Swords size={18} className="text-[var(--accent)]" />
             <span className="font-bold capitalize">Board controls</span>
             <span>{gameStarted ? modeDetails.label : "setup"}</span>
-            <strong>{thinking.status === "thinking" ? thinking.label : `You: ${colorLabel(humanColor)} · ${botLevel.label}`}</strong>
+            <strong>{thinking.status === "thinking" ? thinking.label : gameStarted ? "Ready" : "Configure first"}</strong>
           </div>
           <div className="play-command-actions">
             <button type="button" title="Find and highlight a legal candidate move for the current side." onClick={suggestMove} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={!gameStarted || thinking.status === "thinking" || isReviewing}>

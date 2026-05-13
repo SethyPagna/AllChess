@@ -11,8 +11,8 @@ export default defineConfig({
   webServer: {
     command: "npm run dev -- --hostname 127.0.0.1 --port 3210",
     url: "http://127.0.0.1:3210",
-    reuseExistingServer: false,
-    timeout: 120000
+    reuseExistingServer: !process.env.CI,
+    timeout: 180000
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },

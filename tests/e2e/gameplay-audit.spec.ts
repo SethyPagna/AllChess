@@ -10,6 +10,7 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await page.goto("/en/play/classic");
   const board = page.getByLabel("Game board");
   await expect(board).toBeVisible();
+  await page.getByRole("button", { name: "Start Game" }).click();
   const before = await board.boundingBox();
   expect(before).toBeTruthy();
 
@@ -31,8 +32,9 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   expect(afterSuggestion?.height).toBeCloseTo(before!.height, 1);
 
   await page.getByRole("button", { name: "Reset" }).click();
-  await page.getByRole("button", { name: "Play Bots" }).click();
-  await expect(page.getByText("Bot opponent is on.")).toBeVisible();
+  await page.getByRole("button", { name: /Play Bots/ }).last().click();
+  await page.getByRole("button", { name: "Start Game" }).click();
+  await expect(page.getByText(/Play Bots started/i)).toBeVisible();
   await page.getByRole("button", { name: /e2.*pawn/i }).click();
   await page.getByRole("button", { name: "e4" }).click();
   await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 5000 });
@@ -53,6 +55,7 @@ test("checkmate shows match-over feedback without resizing the board", async ({ 
   await page.goto("/en/play/classic");
   const board = page.getByLabel("Game board");
   await expect(board).toBeVisible();
+  await page.getByRole("button", { name: "Start Game" }).click();
   const before = await board.boundingBox();
   expect(before).toBeTruthy();
 
@@ -75,5 +78,37 @@ test("checkmate shows match-over feedback without resizing the board", async ({ 
   const afterMate = await board.boundingBox();
   expect(afterMate?.width).toBeCloseTo(before!.width, 1);
   expect(afterMate?.height).toBeCloseTo(before!.height, 1);
+  expect(runtimeErrors).toEqual([]);
+});
+
+test("setup flow supports bot practice as black with an automatic first reply", async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
+  });
+
+  await page.goto("/en/play");
+  await expect(page.getByRole("heading", { name: "Choose how you want to play" })).toBeVisible();
+
+  await page.goto("/en/play/classic?mode=bot&bot=normal");
+  const board = page.getByLabel("Game board");
+  await expect(board).toBeVisible();
+  const before = await board.boundingBox();
+  expect(before).toBeTruthy();
+
+  await page.getByLabel("Side").selectOption("second");
+  await page.getByLabel("Bot difficulty").first().selectOption("grandmaster");
+  await page.getByRole("button", { name: "Start Game" }).click();
+
+  await expect(page.getByText(/You: Black/)).toBeVisible();
+  await expect(page.getByText(/View: Black/)).toBeVisible();
+  await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText(/Bot source:/)).toBeVisible();
+  await expect(page.getByText(/opening-book|internal-search|engine-search/)).toBeVisible();
+
+  const after = await board.boundingBox();
+  expect(after?.width).toBeCloseTo(before!.width, 1);
+  expect(after?.height).toBeCloseTo(before!.height, 1);
   expect(runtimeErrors).toEqual([]);
 });
