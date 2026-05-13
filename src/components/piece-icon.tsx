@@ -27,7 +27,7 @@ export function PieceIcon({ code, owner, variantKey, promoted = false }: PieceIc
   }
 
   return (
-    <span className="piece-symbol piece-icon native-piece-symbol" data-owner={owner} data-piece="native" data-code={normalized}>
+    <span className="piece-symbol piece-icon native-piece-symbol" data-owner={owner} data-piece="native" data-code={normalized} data-variant={variantKey}>
       {nativeGlyphs[normalized] ?? normalized.toUpperCase()}
     </span>
   );
@@ -50,11 +50,11 @@ function WesternPieceIcon({ code, owner, promoted }: { code: string; owner: Play
 function KingPaths() {
   return (
     <>
-      <path d="M47 10h6v13h13v6H53v13h-6V29H34v-6h13z" />
-      <path d="M31 82h38l-4-15H35z" />
-      <path d="M28 65h44l-7-26H35z" />
-      <path d="M38 40c2-9 22-9 24 0l-4 18H42z" />
-      <path d="M25 90h50v-8H25z" />
+      <path d="M46.5 8h7v12.5H66v7H53.5v12.2h-7V27.5H34v-7h12.5z" />
+      <path d="M34 80h32l-3.6-13.5H37.6z" />
+      <path d="M25 65.8h50L66.5 38H33.5z" />
+      <path d="M38 39c2.8-8.5 21.2-8.5 24 0l-4.4 18.5H42.4z" />
+      <path d="M22 91h56v-10.5H22z" />
     </>
   );
 }
@@ -62,14 +62,14 @@ function KingPaths() {
 function QueenPaths() {
   return (
     <>
-      <circle cx="20" cy="25" r="6" />
-      <circle cx="38" cy="16" r="6" />
-      <circle cx="50" cy="13" r="7" />
-      <circle cx="62" cy="16" r="6" />
-      <circle cx="80" cy="25" r="6" />
-      <path d="M25 34l10 31h30l10-31-18 17-7-25-7 25z" />
-      <path d="M32 82h36l-3-17H35z" />
-      <path d="M25 90h50v-8H25z" />
+      <circle cx="17" cy="27" r="6.5" />
+      <circle cx="34" cy="16.5" r="6.2" />
+      <circle cx="50" cy="12.5" r="7" />
+      <circle cx="66" cy="16.5" r="6.2" />
+      <circle cx="83" cy="27" r="6.5" />
+      <path d="M22 37l12.5 30h31L78 37 58.5 53.5 50 25.5 41.5 53.5z" />
+      <path d="M31 81h38l-4-14H35z" />
+      <path d="M22 91h56V81H22z" />
     </>
   );
 }
@@ -108,9 +108,10 @@ function KnightPaths() {
 function PawnPaths() {
   return (
     <>
-      <circle cx="50" cy="30" r="14" />
-      <path d="M38 52h24l7 27H31z" />
-      <path d="M25 90h50V79H25z" />
+      <circle cx="50" cy="28" r="13.5" />
+      <path d="M39 48.5h22l5 12.5H34z" />
+      <path d="M32 78.5h36l-6-18H38z" />
+      <path d="M22 91h56V78.5H22z" />
     </>
   );
 }
