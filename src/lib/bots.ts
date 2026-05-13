@@ -63,8 +63,8 @@ const pieceValues: Record<string, number> = {
   t: 700
 };
 
-export function chooseBotMove(state: GameState, difficultyKey: BotDifficultyKey = "normal"): Move {
-  const safe = chooseBotMoveSafe(state, difficultyKey);
+export function chooseBotMove(state: GameState, difficultyKey: BotDifficultyKey = "normal", options: Pick<BotMoveOptions, "maxSearchTimeMs"> = {}): Move {
+  const safe = chooseBotMoveSafe(state, difficultyKey, options);
   if (!safe.move) {
     throw new Error("errors.noLegalMoves");
   }

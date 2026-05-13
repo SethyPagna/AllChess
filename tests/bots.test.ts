@@ -20,7 +20,7 @@ describe("bot difficulty ladder", () => {
 
     for (const variantKey of variants) {
       const state = createInitialState(variantKey, `${variantKey}-bot`);
-      const botMove = chooseBotMove(state, "normal");
+      const botMove = chooseBotMove(state, "normal", { maxSearchTimeMs: 40 });
       const legalMoves = state.board.flatMap((row) => row.flatMap((cell) => getLegalMoves(state, cell.square)));
 
       expect(legalMoves).toContainEqual(expect.objectContaining({ from: botMove.from, to: botMove.to }));
