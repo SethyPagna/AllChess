@@ -1,4 +1,5 @@
 import { applyMove, getLegalMoves, sameSquare, type GameState, type Move, type PlayerColor } from "@/lib/variants";
+import { lookupBotKnowledge, type BotKnowledgeSource, type BotMoveExplanation } from "@/lib/bot-training";
 import { moveToUci, requestStockfishMove, shouldUseStockfish, type BotEngineMode } from "@/lib/stockfish-engine";
 
 export type BotTierKey = "easy" | "normal" | "hard" | "very-hard" | "grandmaster" | "legend";
@@ -40,6 +41,8 @@ export type BotMoveResult = {
   nodesSearched: number;
   elapsedMs: number;
   validatedLegal: boolean;
+  knowledgeSource?: BotKnowledgeSource;
+  explanation?: BotMoveExplanation;
   error?: string;
 };
 
@@ -117,6 +120,23 @@ export function chooseBotMoveSafe(
   }
 
   const perspective = state.turn;
+  if (difficulty.key !== "easy") {
+    const terminalWin = legalMoves
+      .map((move) => ({ move, next: tryMove(state, move) }))
+      .find(({ next }) => next?.status === "completed" && next.result === perspective);
+    if (terminalWin) {
+      return {
+        move: terminalWin.move,
+        reason: "ok",
+        score: 100000 - state.ply,
+        depthReached: 1,
+        nodesSearched: legalMoves.length,
+        elapsedMs: Date.now() - startedAt,
+        validatedLegal: true
+      };
+    }
+  }
+
   const searchTimeMs = Math.max(8, Math.min(options.maxSearchTimeMs ?? difficulty.moveTimeMs, difficulty.moveTimeMs));
   const budget = { nodes: 0, deadline: startedAt + searchTimeMs };
   const ranked = legalMoves
@@ -189,6 +209,35 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
       }
 
       try {
+        const knowledge = lookupBotKnowledge(state, difficultyKey);
+        if (knowledge && !requestState.cancelled) {
+          finish({
+            requestId,
+            status: "ok",
+            engine: "internal",
+            tier: difficultyKey,
+            move: knowledge.move,
+            uciMove: knowledge.entry.moveUci,
+            principalVariation: knowledge.principalVariation,
+            pv: knowledge.principalVariation,
+            reason: "ok",
+            score: null,
+            evaluation: null,
+            confidence: knowledge.entry.confidence,
+            benchmarkVersion: knowledge.entry.benchmarkVersion,
+            legal: true,
+            depth: 0,
+            nodes: 1,
+            depthReached: 0,
+            nodesSearched: 1,
+            elapsedMs: Date.now() - startedAt,
+            validatedLegal: true,
+            knowledgeSource: knowledge.entry.source,
+            explanation: knowledge.entry.explanation
+          });
+          return;
+        }
+
         if (shouldUseStockfish(state, options.engine ?? "auto")) {
           const playedMoves = state.moves.map((move) => moveToUci(state, move));
           const stockfish = await requestStockfishMove(state, difficultyKey, playedMoves, options.maxSearchTimeMs ?? difficultyFor(difficultyKey).moveTimeMs);
@@ -213,7 +262,9 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
               depthReached: stockfish.depthReached,
               nodesSearched: stockfish.nodesSearched,
               elapsedMs: Date.now() - startedAt,
-              validatedLegal: true
+              validatedLegal: true,
+              knowledgeSource: "engine-search",
+              explanation: explanationForMove("engine-search", state, stockfish.move, stockfish.evaluation, difficultyKey)
             });
             return;
           }
@@ -267,6 +318,8 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
           nodesSearched: result.nodesSearched,
           elapsedMs: Date.now() - startedAt,
           validatedLegal,
+          knowledgeSource: "internal-search",
+          explanation: validatedLegal ? explanationForMove("internal-search", state, result.move, result.score, difficultyKey) : undefined,
           error: validatedLegal ? undefined : "Bot selected an illegal move."
         });
       } catch (error) {
@@ -678,6 +731,44 @@ function confidenceFor(score: number | null, depth: number, tier: BotTierKey) {
   const scoreSignal = Math.min(0.08, Math.abs(score ?? 0) / 24000);
   const depthSignal = Math.min(0.08, depth / 100);
   return Number(Math.min(0.99, tierFloor[tier] + scoreSignal + depthSignal).toFixed(2));
+}
+
+function explanationForMove(source: BotKnowledgeSource, state: GameState, move: Move, score: number | null, tier: BotTierKey): BotMoveExplanation {
+  const moving = state.board[move.from.row]?.[move.from.col]?.piece;
+  const target = state.board[move.to.row]?.[move.to.col]?.piece;
+  const captureValue = target ? pieceValues[target.code] ?? 100 : 0;
+  const tierPrefix = tier === "grandmaster" || tier === "legend" ? "Deep tier" : "Search";
+  const plan = target
+    ? `${tierPrefix} chooses a capture worth ${captureValue} while checking the reply tree before committing.`
+    : `${tierPrefix} improves ${moving?.code ? pieceLabel(moving.code) : "piece"} activity and keeps legal replies under review.`;
+  const threat = target
+    ? `It removes an opposing ${pieceLabel(target.code)} and looks for follow-up pressure.`
+    : "It increases mobility, central control, or variant-objective pressure without relying on a single tactic.";
+  const risk = score !== null && score < -250 ? "The position is worse, so the bot favors damage control and avoids forcing a losing race." : "The move was filtered for immediate hanging-piece and terminal-state blunders.";
+  const fallbackGoal = score !== null && score < -600 ? "If the advantage cannot be recovered, steer toward draw or stalemate-saving resources." : "If the opponent parries the main idea, keep development and defended pieces intact.";
+  return { plan, threat: `${source}: ${threat}`, risk, fallbackGoal };
+}
+
+function pieceLabel(code: string) {
+  const labels: Record<string, string> = {
+    a: "advisor",
+    b: "bishop",
+    c: "cannon",
+    d: "dog",
+    e: "elephant",
+    g: "general",
+    h: "horse",
+    k: "king",
+    l: "lance",
+    n: "knight",
+    p: "pawn",
+    q: "queen",
+    r: "rook",
+    s: "soldier",
+    t: "tiger",
+    w: "wolf"
+  };
+  return labels[code] ?? "piece";
 }
 
 function difficultyFor(key: BotDifficultyKey) {

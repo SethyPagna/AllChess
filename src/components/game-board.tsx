@@ -83,6 +83,7 @@ export function GameBoard({
   const [humanColor, setHumanColor] = useState(() => pickHumanColor(withTimeControl(initialState ?? createInitialState(variantKey), "rapid"), "first"));
   const [thinking, setThinking] = useState<ThinkingState>({ status: "idle", label: "" });
   const [suggestedMove, setSuggestedMove] = useState<SuggestedMove | null>(null);
+  const [lastBotResult, setLastBotResult] = useState<BotMoveResult | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [showOutcome, setShowOutcome] = useState(true);
   const [showRules, setShowRules] = useState(false);
@@ -157,16 +158,19 @@ export function GameBoard({
       setThinking({ status: "idle", label: "" });
 
       if (result.status === "cancelled") {
+        setLastBotResult(result);
         setNotice("Bot thinking was cancelled.");
         return;
       }
 
       if (!result.move) {
+        setLastBotResult(result);
         setNotice(result.status === "no-legal-moves" ? "No legal moves are available. Review the final position or reset the board." : result.error ?? "Bot move failed.");
         return;
       }
 
       const move = result.move;
+      setLastBotResult(result);
       setHistory((current) => [...current, snapshot]);
       setState((current) => {
         if (current.id !== snapshot.id || current.ply !== snapshot.ply || current.turn !== snapshot.turn) return current;
@@ -212,11 +216,13 @@ export function GameBoard({
     setThinking({ status: "idle", label: "" });
 
     if (!result.move) {
+      setLastBotResult(result);
       setSuggestedMove(null);
       setNotice("No legal moves are available.");
       return;
     }
 
+    setLastBotResult(result);
     setSuggestedMove({
       from: result.move.from,
       to: result.move.to,
@@ -240,6 +246,7 @@ export function GameBoard({
     setState((current) => applyMove(current, move));
     setSelected(null);
     setSuggestedMove(null);
+    setLastBotResult(null);
     setNotice("Suggestion applied.");
     setPanelTab("review");
     setReviewPly(null);
@@ -262,6 +269,7 @@ export function GameBoard({
     setState(previous);
     setSelected(null);
     setSuggestedMove(null);
+    setLastBotResult(null);
     setNotice(null);
     setReviewPly(null);
     setReviewPlaying(false);
@@ -279,6 +287,7 @@ export function GameBoard({
     setGameStarted(false);
     setSelected(null);
     setSuggestedMove(null);
+    setLastBotResult(null);
     setNotice(null);
     setThinking({ status: "idle", label: "" });
     setShowOutcome(true);
@@ -300,6 +309,7 @@ export function GameBoard({
     setGameStarted(false);
     setSelected(null);
     setSuggestedMove(null);
+    setLastBotResult(null);
     setNotice(null);
     setThinking({ status: "idle", label: "" });
     setShowOutcome(true);
@@ -321,6 +331,7 @@ export function GameBoard({
     setHumanColor(nextColor);
     setBotMode(playMode === "bot" ? "opponent" : "human");
     setBoardOrientation("auto");
+    setLastBotResult(null);
     setGameStarted(true);
     setPanelTab("status");
     setNotice(`${modeDetails.label} started. You are playing ${colorLabel(nextColor)}.`);
@@ -656,6 +667,22 @@ export function GameBoard({
                 <p className="mt-1 text-xs text-[var(--muted)]">
                   Depth {botLevel.depth}, {botLevel.moveTimeMs}ms search, {botLevel.nodeBudget} nodes, risk {Math.round(botLevel.riskTolerance * 100)}%.
                 </p>
+                {lastBotResult ? (
+                  <div className="bot-explanation-card">
+                    <p>
+                      <strong>Bot source:</strong> {lastBotResult.knowledgeSource ?? lastBotResult.engine} · depth {lastBotResult.depthReached} · nodes {lastBotResult.nodesSearched}
+                    </p>
+                    {lastBotResult.explanation ? (
+                      <>
+                        <span>{lastBotResult.explanation.plan}</span>
+                        <span>{lastBotResult.explanation.threat}</span>
+                        <span>{lastBotResult.explanation.fallbackGoal}</span>
+                      </>
+                    ) : (
+                      <span>Move was validated by the rules engine before it could affect the board.</span>
+                    )}
+                  </div>
+                ) : null}
                 {suggestedMove ? (
                   <p className="mt-1 text-sm font-bold text-[var(--accent-strong)]">
                     Suggestion: {suggestedMove.notation} · depth {suggestedMove.depthReached}

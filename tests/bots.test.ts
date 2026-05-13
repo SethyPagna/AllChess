@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import { cancelBotMove, chooseBotMove, chooseBotMoveSafe, botDifficultyLevels, requestBotMove } from "@/lib/bots";
+import { createBotPositionKey, listBotKnowledge, listBotModelManifests, lookupBotKnowledge } from "@/lib/bot-training";
 import { applyMove, createInitialState, getLegalMoves } from "@/lib/variants";
 
 describe("bot difficulty ladder", () => {
@@ -159,11 +160,46 @@ describe("bot difficulty ladder", () => {
       status: "ok",
       tier: "grandmaster",
       legal: true,
-      benchmarkVersion: "allchess-bench-v1"
+      knowledgeSource: "opening-book",
+      benchmarkVersion: "allchess-knowledge-v1"
     });
     expect(result.depth).toBe(result.depthReached);
     expect(result.nodes).toBe(result.nodesSearched);
     expect(result.pv).toEqual(result.principalVariation);
     expect(result.confidence).toBeGreaterThanOrEqual(0.82);
+    expect(result.explanation?.plan).toContain("center");
+  });
+
+  test("knowledge layer validates cached moves before using them", async () => {
+    const state = createInitialState("classic", "knowledge-start");
+    const key = createBotPositionKey(state);
+    const entries = listBotKnowledge("classic").filter((entry) => entry.positionKey === key);
+    const hit = lookupBotKnowledge(state, "grandmaster");
+
+    expect(entries.length).toBeGreaterThan(0);
+    expect(hit?.entry.source).toBe("opening-book");
+    expect(hit?.move).toMatchObject({ from: { row: 6, col: 4 }, to: { row: 4, col: 4 } });
+
+    const result = await requestBotMove(state, "grandmaster", { engine: "internal", maxSearchTimeMs: 70 });
+    expect(result).toMatchObject({
+      status: "ok",
+      knowledgeSource: "opening-book",
+      nodesSearched: 1,
+      validatedLegal: true
+    });
+  });
+
+  test("bot model manifests describe D1/R2 training artifacts", () => {
+    const manifests = listBotModelManifests();
+
+    expect(manifests).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          variantKey: "classic",
+          storage: "r2",
+          benchmarkVersion: "allchess-knowledge-v1"
+        })
+      ])
+    );
   });
 });

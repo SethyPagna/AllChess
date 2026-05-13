@@ -1100,6 +1100,31 @@ select {
   font-size: 1.35rem;
 }
 
+.bot-explanation-card {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--info) 28%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--info) 8%, var(--surface-soft));
+  padding: 0.7rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 720;
+  line-height: 1.35;
+}
+
+.bot-explanation-card p {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.bot-explanation-card span {
+  display: block;
+}
+
 .play-review-card {
   border: 1px solid rgb(255 255 255 / 8%);
   border-radius: 8px;
