@@ -41,6 +41,29 @@ export function auditEnv(target: EnvAuditTarget, env: Record<string, string | un
   };
 }
 
+export function formatEnvAudit(result: EnvAuditResult) {
+  const status = result.ok ? "ok" : "missing required values";
+  const lines = [`AllChess env audit: ${result.target}`, `Status: ${status}`];
+  lines.push(`Required: ${result.required.join(", ")}`);
+
+  if (result.missing.length) {
+    lines.push(`Missing: ${result.missing.join(", ")}`);
+  }
+
+  const configured = Object.entries(result.configured).map(([key, value]) => `${key}=${value}`);
+  if (configured.length) {
+    lines.push("Configured:");
+    lines.push(...configured.map((entry) => `- ${entry}`));
+  }
+
+  if (result.warnings.length) {
+    lines.push("Warnings:");
+    lines.push(...result.warnings.map((warning) => `- ${warning}`));
+  }
+
+  return `${lines.join("\n")}\n`;
+}
+
 export function maskSecret(name: string, value: string) {
   const trimmed = String(value || "").trim();
   if (!trimmed) return "";

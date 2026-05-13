@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { auditEnv, maskSecret } from "@/lib/env-audit";
+import { auditEnv, formatEnvAudit, maskSecret } from "@/lib/env-audit";
 
 describe("environment audit", () => {
   test("validates Vercel required variables without exposing secret values", () => {
@@ -36,5 +36,25 @@ describe("environment audit", () => {
     expect(result.ok).toBe(false);
     expect(result.missing).toEqual(expect.arrayContaining(["SESSION_SECRET", "CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_D1_DATABASE_ID"]));
     expect(maskSecret("OPENAI_API_KEY", "sk-live-secret")).toBe("sk-l...cret");
+  });
+
+  test("formats audit output without raw secret values", () => {
+    const result = auditEnv("local", {
+      NEXT_PUBLIC_SITE_URL: "http://localhost:3000",
+      DEPLOYMENT_TARGET: "local",
+      DATABASE_DRIVER: "d1",
+      OBJECT_STORAGE_DRIVER: "r2",
+      SESSION_SECRET: "local-session-secret",
+      AI_PROVIDER: "openai",
+      OPENAI_API_KEY: "sk-local-secret",
+      OPENAI_MODEL: "gpt-5.4-mini"
+    });
+
+    const output = formatEnvAudit(result);
+
+    expect(output).toContain("AllChess env audit: local");
+    expect(output).toContain("OPENAI_API_KEY=sk-l...cret");
+    expect(output).not.toContain("local-session-secret");
+    expect(output).not.toContain("sk-local-secret");
   });
 });
