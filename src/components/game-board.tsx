@@ -225,79 +225,9 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
   }, []);
 
   return (
-    <div className="game-board-layout grid gap-4 xl:grid-cols-[minmax(320px,760px)_minmax(280px,380px)]">
+    <div className="game-board-layout grid gap-4">
       <div className="grid gap-3">
-        <div className="panel flex flex-wrap items-center justify-between gap-3 p-3">
-          <div className="flex items-center gap-2">
-            <Swords size={18} className="text-[var(--accent)]" />
-            <span className="text-sm font-bold capitalize">{state.turn}</span>
-            <span className="text-xs text-[var(--muted)]">{state.status}</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <select aria-label="Time control" className="control px-3 py-2 text-sm font-semibold" value={timeControl} onChange={(event) => changeTimeControl(event.target.value as TimeControlKey)}>
-              {timeControls.map((control) => (
-                <option key={control.key} value={control.key}>
-                  {control.label}
-                </option>
-              ))}
-            </select>
-            <select aria-label="Bot difficulty" className="control px-3 py-2 text-sm font-semibold" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)}>
-              {botDifficultyLevels.map((level) => (
-                <option key={level.key} value={level.key}>
-                  {level.label}
-                </option>
-              ))}
-            </select>
-            <button type="button" onClick={suggestMove} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking"}>
-              <Lightbulb size={16} />
-              Suggest
-            </button>
-            {suggestedMove ? (
-              <button type="button" onClick={applySuggestion} className="focus-ring action-primary inline-flex items-center gap-2 px-3 py-2 text-sm">
-                <Sparkles size={16} />
-                Apply suggestion
-              </button>
-            ) : null}
-            <button type="button" onClick={() => void playBotMove("manual")} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking"}>
-              <PlayCircle size={16} />
-              Move for me
-            </button>
-            <button
-              type="button"
-              onClick={() => setBotMode((current) => (current === "opponent" ? "human" : "opponent"))}
-              className={`focus-ring inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold ${
-                botMode === "opponent" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"
-              }`}
-            >
-              <Bot size={16} />
-              Bot opponent
-            </button>
-            <button
-              type="button"
-              onClick={() => setBotMode((current) => (current === "both" ? "human" : "both"))}
-              className={`focus-ring inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold ${
-                botMode === "both" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"
-              }`}
-            >
-              <Bot size={16} />
-              Both bots
-            </button>
-            {thinking.status === "thinking" ? (
-              <button type="button" onClick={cancelThinking} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm">
-                <PauseCircle size={16} />
-                Cancel thinking
-              </button>
-            ) : null}
-            <button type="button" onClick={undo} className="focus-ring action-secondary grid h-10 w-10 place-items-center" aria-label="Undo">
-              <Undo2 size={17} />
-            </button>
-            <button type="button" onClick={reset} className="focus-ring action-secondary grid h-10 w-10 place-items-center" aria-label="Reset">
-              <RotateCcw size={17} />
-            </button>
-          </div>
-        </div>
-
-        <div className="board-shell" style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
+        <div className="board-shell" data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
             <div className="board-grid overflow-hidden rounded-lg border border-[var(--border)] shadow-2xl" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }} aria-label="Game board">
               {state.board.flatMap((row) =>
@@ -366,6 +296,76 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
                 ) : null}
               </>
             ) : null}
+          </div>
+        </div>
+
+        <div className="panel board-controls flex flex-wrap items-center justify-between gap-3 p-3">
+          <div className="flex items-center gap-2">
+            <Swords size={18} className="text-[var(--accent)]" />
+            <span className="text-sm font-bold capitalize">{state.turn}</span>
+            <span className="text-xs text-[var(--muted)]">{state.status}</span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <select aria-label="Time control" className="control px-3 py-2 text-sm font-semibold" value={timeControl} onChange={(event) => changeTimeControl(event.target.value as TimeControlKey)}>
+              {timeControls.map((control) => (
+                <option key={control.key} value={control.key}>
+                  {control.label}
+                </option>
+              ))}
+            </select>
+            <select aria-label="Bot difficulty" className="control px-3 py-2 text-sm font-semibold" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)}>
+              {botDifficultyLevels.map((level) => (
+                <option key={level.key} value={level.key}>
+                  {level.label}
+                </option>
+              ))}
+            </select>
+            <button type="button" onClick={suggestMove} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking"}>
+              <Lightbulb size={16} />
+              Suggest
+            </button>
+            {suggestedMove ? (
+              <button type="button" onClick={applySuggestion} className="focus-ring action-primary inline-flex items-center gap-2 px-3 py-2 text-sm">
+                <Sparkles size={16} />
+                Apply suggestion
+              </button>
+            ) : null}
+            <button type="button" onClick={() => void playBotMove("manual")} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking"}>
+              <PlayCircle size={16} />
+              Move for me
+            </button>
+            <button
+              type="button"
+              onClick={() => setBotMode((current) => (current === "opponent" ? "human" : "opponent"))}
+              className={`focus-ring inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold ${
+                botMode === "opponent" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"
+              }`}
+            >
+              <Bot size={16} />
+              Bot opponent
+            </button>
+            <button
+              type="button"
+              onClick={() => setBotMode((current) => (current === "both" ? "human" : "both"))}
+              className={`focus-ring inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold ${
+                botMode === "both" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"
+              }`}
+            >
+              <Bot size={16} />
+              Both bots
+            </button>
+            {thinking.status === "thinking" ? (
+              <button type="button" onClick={cancelThinking} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm">
+                <PauseCircle size={16} />
+                Cancel thinking
+              </button>
+            ) : null}
+            <button type="button" onClick={undo} className="focus-ring action-secondary grid h-10 w-10 place-items-center" aria-label="Undo">
+              <Undo2 size={17} />
+            </button>
+            <button type="button" onClick={reset} className="focus-ring action-secondary grid h-10 w-10 place-items-center" aria-label="Reset">
+              <RotateCcw size={17} />
+            </button>
           </div>
         </div>
       </div>

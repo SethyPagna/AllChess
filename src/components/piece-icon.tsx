@@ -20,23 +20,23 @@ const nativeGlyphs: Record<string, string> = {
   t: "\u864e"
 };
 
-export function PieceIcon({ code, variantKey, promoted = false }: PieceIconProps) {
+export function PieceIcon({ code, owner, variantKey, promoted = false }: PieceIconProps) {
   const normalized = code.toLowerCase();
   if (variantKey === "classic" || variantKey === "chess960" || ["k", "q", "r", "b", "n", "p"].includes(normalized)) {
-    return <WesternPieceIcon code={normalized} promoted={promoted} />;
+    return <WesternPieceIcon code={normalized} owner={owner} promoted={promoted} />;
   }
 
   return (
-    <span className="piece-symbol piece-icon native-piece-symbol" data-piece="native" data-code={normalized}>
+    <span className="piece-symbol piece-icon native-piece-symbol" data-owner={owner} data-piece="native" data-code={normalized}>
       {nativeGlyphs[normalized] ?? normalized.toUpperCase()}
     </span>
   );
 }
 
-function WesternPieceIcon({ code, promoted }: { code: string; promoted: boolean }) {
+function WesternPieceIcon({ code, owner, promoted }: { code: string; owner: PlayerColor; promoted: boolean }) {
   const piece = westernPieceName(code);
   return (
-    <svg className="piece-symbol piece-icon piece-svg" data-piece={piece} data-promoted={promoted || undefined} viewBox="0 0 100 100" aria-hidden="true">
+    <svg className="piece-symbol piece-icon piece-svg" data-owner={owner} data-piece={piece} data-promoted={promoted || undefined} viewBox="0 0 100 100" aria-hidden="true">
       {piece === "king" ? <KingPaths /> : null}
       {piece === "queen" ? <QueenPaths /> : null}
       {piece === "rook" ? <RookPaths /> : null}

@@ -34,20 +34,20 @@ export default async function PlayPage({
             {variant.rulesAdapter} · {variant.engineProtocol.toUpperCase()}
           </p>
         </div>
-        <div className="flex gap-2">
-          <button className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2">
+        <div className="flex max-w-full flex-wrap gap-2">
+          <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm sm:px-4 sm:text-base">
             <Share2 size={16} />
             Room
           </button>
-          <button className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2">
+          <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm sm:px-4 sm:text-base">
             <Eye size={16} />
             Spectate
           </button>
-          <button className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2">
+          <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm sm:px-4 sm:text-base">
             <Handshake size={16} />
             {t("play.draw")}
           </button>
-          <button className="focus-ring inline-flex items-center gap-2 rounded-md border border-[var(--danger)] px-4 py-2 text-[var(--danger)]">
+          <button className="focus-ring inline-flex items-center gap-2 rounded-md border border-[var(--danger)] px-3 py-2 text-sm text-[var(--danger)] sm:px-4 sm:text-base">
             <Flag size={16} />
             {t("play.resign")}
           </button>
@@ -57,8 +57,8 @@ export default async function PlayPage({
         <Users size={16} className="text-[var(--accent)]" />
         Realtime-ready room: authoritative moves, reconnect snapshots, spectators, clocks, and bot seats use the server room protocol.
       </div>
-      <RulesPanel summary={getVariantRuleSummary(variant.key)} compact />
       <GameBoard variantKey={variant.key} />
+      <RulesPanel summary={getVariantRuleSummary(variant.key)} compact />
     </section>
   );
 }
