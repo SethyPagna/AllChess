@@ -137,6 +137,24 @@ export function chooseBotMoveSafe(
     }
   }
 
+  if (difficulty.skill >= 18) {
+    const decisivePromotion = legalMoves.find((move) => {
+      const piece = state.board[move.from.row]?.[move.from.col]?.piece;
+      return piece?.code === "p" && (move.to.row === 0 || move.to.row === state.board.length - 1);
+    });
+    if (decisivePromotion) {
+      return {
+        move: decisivePromotion,
+        reason: "ok",
+        score: 18000,
+        depthReached: 1,
+        nodesSearched: legalMoves.length,
+        elapsedMs: Date.now() - startedAt,
+        validatedLegal: true
+      };
+    }
+  }
+
   const searchTimeMs = Math.max(8, Math.min(options.maxSearchTimeMs ?? difficulty.moveTimeMs, difficulty.moveTimeMs));
   const budget = { nodes: 0, deadline: startedAt + searchTimeMs };
   const ranked = legalMoves
