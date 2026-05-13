@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Bot, Brain, Flag, Lightbulb, PlayCircle, RotateCcw, Swords, Undo2 } from "lucide-react";
 
 import { botDifficultyLevels, chooseBotMoveSafe, type BotDifficultyKey } from "@/lib/bots";
+import { formatClock, tickGameClock } from "@/lib/clocks";
 import { getTimeControl, timeControls, type TimeControlKey } from "@/lib/time-controls";
 import { applyMove, createInitialState, getLegalMoves, sameSquare, serializeSquare, type GameState, type Square } from "@/lib/variants";
 
@@ -121,6 +122,17 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
     // playBotMove is intentionally event-like; state changes drive this effect.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoBot, state, botColor, botDifficulty]);
+
+  useEffect(() => {
+    let lastTick = Date.now();
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      const elapsed = now - lastTick;
+      lastTick = now;
+      setState((current) => tickGameClock(current, elapsed));
+    }, 250);
+    return () => window.clearInterval(timer);
+  }, []);
 
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(320px,760px)_minmax(280px,380px)]">
@@ -251,7 +263,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
           {state.clocks.map((clock) => (
             <div key={clock.color} className="rounded-md border border-[var(--border)] p-3">
               <p className="text-xs uppercase text-[var(--muted)]">{clock.color}</p>
-              <p className="font-mono text-xl">{clock.remainingMs > 0 ? `${Math.ceil(clock.remainingMs / 1000)}s` : "∞"}</p>
+              <p className="font-mono text-xl">{formatClock(clock.remainingMs)}</p>
             </div>
           ))}
         </div>

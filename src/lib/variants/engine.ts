@@ -65,7 +65,7 @@ export function getLegalMoves(state: GameState, from: Square): Move[] {
     const target = cellAt(state, move.to)?.piece;
     if (variant.supportsCheck && target && isRoyal(target)) return false;
     if (!variant.supportsCheck) return true;
-    return !wouldLeaveRoyalInCheck(state, move, cell.piece.owner);
+    return !wouldLeaveRoyalInCheck(state, move, cell.piece!.owner);
   });
 }
 

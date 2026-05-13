@@ -2,6 +2,8 @@ import { describe, expect, test } from "vitest";
 
 import { createDefaultStats } from "@/lib/stats";
 import { timeControls } from "@/lib/time-controls";
+import { formatClock, tickGameClock } from "@/lib/clocks";
+import { createInitialState } from "@/lib/variants";
 import { localizePath } from "@/lib/i18n/navigation";
 
 describe("navigation helpers", () => {
@@ -15,6 +17,22 @@ describe("time controls", () => {
   test("includes standard speed modes for chess variants", () => {
     expect(timeControls.map((control) => control.key)).toEqual(["bullet", "blitz", "rapid", "classical", "correspondence", "freestyle"]);
     expect(timeControls.find((control) => control.key === "blitz")).toMatchObject({ baseSeconds: 300, incrementSeconds: 0 });
+  });
+
+  test("ticks the active player clock and flags on timeout", () => {
+    const state = createInitialState("classic", "clock-test");
+    state.clocks = state.clocks.map((clock) => (clock.color === "white" ? { ...clock, remainingMs: 900 } : clock));
+
+    const next = tickGameClock(state, 1000);
+
+    expect(next.clocks.find((clock) => clock.color === "white")?.remainingMs).toBe(0);
+    expect(next.status).toBe("completed");
+    expect(next.result).toBe("black");
+  });
+
+  test("formats chess clocks compactly", () => {
+    expect(formatClock(65_000)).toBe("1:05");
+    expect(formatClock(0)).toBe("∞");
   });
 });
 
