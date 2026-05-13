@@ -682,6 +682,214 @@ select {
   font-size: 1.35rem;
 }
 
+.play-review-card {
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 8px;
+  background: #211f1d;
+  overflow: hidden;
+}
+
+.review-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 1px solid rgb(255 255 255 / 10%);
+}
+
+.review-tabs button {
+  min-height: 3rem;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #eee9df;
+  font-weight: 800;
+}
+
+.review-tabs button.is-active {
+  border-color: #d9d8cf;
+  color: #fffdf7;
+}
+
+.review-engine-row,
+.review-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  color: #d9d4c8;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.review-position-card {
+  display: grid;
+  gap: 0.35rem;
+  border-block: 1px solid rgb(255 255 255 / 8%);
+  background: #292724;
+  padding: 0.85rem 0.9rem;
+}
+
+.review-position-card p,
+.review-position-card strong,
+.review-position-card span,
+.review-position-card small {
+  margin: 0;
+}
+
+.review-position-card p {
+  color: #d5d1c6;
+  font-size: 0.8rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.review-position-card strong {
+  color: #fffdf7;
+  font-size: 1rem;
+  font-weight: 950;
+}
+
+.review-position-card span,
+.review-position-card small {
+  color: #c9c3b6;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.review-move-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.review-move-list li button {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 2.6rem minmax(0, 1fr) auto;
+  gap: 0.6rem;
+  align-items: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #e9e4d9;
+  padding: 0.5rem 0.9rem;
+  text-align: left;
+}
+
+.review-move-list li:nth-child(even) button {
+  background: rgb(255 255 255 / 2.5%);
+}
+
+.review-move-list li.is-active button {
+  background: color-mix(in srgb, var(--accent) 24%, #292724);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.review-move-list span {
+  color: #9fb098;
+  font-weight: 900;
+}
+
+.review-move-list strong {
+  overflow: hidden;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-move-list em,
+.review-summary-row span {
+  border-radius: 999px;
+  background: rgb(255 255 255 / 8%);
+  padding: 0.15rem 0.45rem;
+  color: #dcd6ca;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 950;
+}
+
+[data-review="best"] em,
+.review-summary-row [data-review="best"] {
+  background: #7dbd43;
+  color: #0b1207;
+}
+
+[data-review="excellent"] em,
+.review-summary-row [data-review="excellent"] {
+  background: #4a9f5f;
+  color: #f8fff8;
+}
+
+[data-review="blunder"] em,
+.review-summary-row [data-review="blunder"] {
+  background: #d64242;
+  color: #fff7f7;
+}
+
+[data-review="mistake"] em {
+  background: #b6782d;
+  color: #fff7ed;
+}
+
+[data-review="inaccuracy"] em {
+  background: #7a7895;
+  color: #f9f8ff;
+}
+
+.review-primary-button,
+.review-live-button {
+  display: flex;
+  width: calc(100% - 1.5rem);
+  min-height: 3.8rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  margin: 0.75rem;
+  border: 0;
+  border-radius: 8px;
+  background: #72b446;
+  color: #081207;
+  font-size: 1.2rem;
+  font-weight: 950;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%), 0 12px 22px rgb(0 0 0 / 20%);
+}
+
+.review-live-button {
+  min-height: 2.8rem;
+  background: #353a36;
+  color: #fffdf7;
+  font-size: 0.9rem;
+}
+
+.review-controls {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+  padding: 0 0.75rem 0.75rem;
+}
+
+.review-controls button {
+  display: grid;
+  min-height: 3rem;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 8px;
+  background: #302e2b;
+  color: #d9d4c8;
+}
+
+.review-controls button.is-main {
+  background: #3a3733;
+  color: #fffdf7;
+}
+
+.review-controls button:disabled,
+.review-primary-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.46;
+}
+
 .focus-ring:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
   outline-offset: 3px;

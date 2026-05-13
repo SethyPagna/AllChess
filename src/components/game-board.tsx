@@ -14,6 +14,8 @@ import {
   PauseCircle,
   PlayCircle,
   RotateCcw,
+  SkipBack,
+  SkipForward,
   SlidersHorizontal,
   Sparkles,
   Swords,
@@ -24,6 +26,7 @@ import {
 
 import { botDifficultyLevels, cancelBotMove, requestBotMove, type BotDifficultyKey, type BotMoveResult } from "@/lib/bots";
 import { formatClock, tickGameClock } from "@/lib/clocks";
+import { analyzeMoveList, summarizeReview } from "@/lib/game-review";
 import { describeGameOutcome } from "@/lib/game-outcome";
 import { getTimeControl, timeControls, type TimeControlKey } from "@/lib/time-controls";
 import { applyMove, createInitialState, getLegalMoves, sameSquare, serializeSquare, type GameState, type Square } from "@/lib/variants";
@@ -55,13 +58,22 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
   const [suggestedMove, setSuggestedMove] = useState<SuggestedMove | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [showOutcome, setShowOutcome] = useState(true);
+  const [reviewPly, setReviewPly] = useState<number | null>(null);
+  const [reviewPlaying, setReviewPlaying] = useState(false);
   const activeBotRequestRef = useRef<string | null>(null);
 
+  const timeline = useMemo(() => (history.length ? [...history, state] : [state]), [history, state]);
+  const reviewMoves = useMemo(() => analyzeMoveList(state.moves), [state.moves]);
+  const reviewSummary = useMemo(() => summarizeReview(reviewMoves), [reviewMoves]);
+  const displayPly = reviewPly ?? timeline.length - 1;
+  const displayState = timeline[Math.min(displayPly, timeline.length - 1)] ?? state;
+  const activeReviewMove = displayPly > 0 ? reviewMoves[displayPly - 1] : null;
+  const isReviewing = reviewPly !== null;
   const legalMoves = useMemo(() => (selected ? getLegalMoves(state, selected) : []), [selected, state]);
   const legalTargets = useMemo(() => new Set(legalMoves.map((move) => serializeSquare(move.to))), [legalMoves]);
   const botColor = state.clocks[1]?.color ?? "black";
-  const rows = state.board.length;
-  const cols = state.board[0]?.length ?? 8;
+  const rows = displayState.board.length;
+  const cols = displayState.board[0]?.length ?? 8;
   const files = useMemo(() => Array.from({ length: cols }, (_, index) => String.fromCharCode(97 + index)), [cols]);
   const botLevel = botDifficultyLevels.find((level) => level.key === botDifficulty) ?? botDifficultyLevels[1];
   const outcome = useMemo(() => describeGameOutcome(state, "white"), [state]);
@@ -75,6 +87,10 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
   ];
 
   function choose(square: Square) {
+    if (isReviewing) {
+      setNotice("Review mode is showing a saved position. Jump to live to keep playing.");
+      return;
+    }
     if (state.status === "completed" || thinking.status === "thinking") return;
     if (selected && legalTargets.has(serializeSquare(square))) {
       const move = legalMoves.find((candidate) => sameSquare(candidate.to, square));
@@ -83,6 +99,8 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
         setState((current) => applyMove(current, move));
         setSuggestedMove(null);
         setNotice(null);
+        setReviewPly(null);
+        setReviewPlaying(false);
       }
       setSelected(null);
       return;
@@ -117,6 +135,8 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
       setSuggestedMove(null);
       setNotice(source === "auto" ? "Bot replied automatically." : "Bot played the current side.");
       setSelected(null);
+      setReviewPly(null);
+      setReviewPlaying(false);
     },
     []
   );
@@ -140,7 +160,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
   );
 
   async function suggestMove() {
-    if (state.status !== "active" || activeBotRequestRef.current) return;
+    if (state.status !== "active" || activeBotRequestRef.current || isReviewing) return;
     const requestId = crypto.randomUUID();
     activeBotRequestRef.current = requestId;
     setThinking({ status: "thinking", label: "Finding a suggestion..." });
@@ -181,6 +201,8 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
     setSelected(null);
     setSuggestedMove(null);
     setNotice("Suggestion applied.");
+    setReviewPly(null);
+    setReviewPlaying(false);
   }
 
   function cancelThinking() {
@@ -200,6 +222,8 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
     setSelected(null);
     setSuggestedMove(null);
     setNotice(null);
+    setReviewPly(null);
+    setReviewPlaying(false);
   }
 
   function reset() {
@@ -213,6 +237,8 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
     setNotice(null);
     setThinking({ status: "idle", label: "" });
     setShowOutcome(true);
+    setReviewPly(null);
+    setReviewPlaying(false);
   }
 
   function changeTimeControl(nextControl: TimeControlKey) {
@@ -227,10 +253,32 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
     setNotice(null);
     setThinking({ status: "idle", label: "" });
     setShowOutcome(true);
+    setReviewPly(null);
+    setReviewPlaying(false);
+  }
+
+  function startReview() {
+    setReviewPly(0);
+    setReviewPlaying(false);
+    setSelected(null);
+    setSuggestedMove(null);
+    setNotice("Review mode opened. Use playback controls to inspect each position.");
+  }
+
+  function jumpToLive() {
+    setReviewPly(null);
+    setReviewPlaying(false);
+    setNotice("Back to live board.");
+  }
+
+  function setReviewCursor(nextPly: number) {
+    setReviewPly(Math.max(0, Math.min(nextPly, timeline.length - 1)));
+    setReviewPlaying(false);
+    setSelected(null);
   }
 
   useEffect(() => {
-    if (state.status !== "active" || thinking.status === "thinking") return;
+    if (isReviewing || state.status !== "active" || thinking.status === "thinking") return;
     const shouldMove = botMode === "both" || (botMode === "opponent" && state.turn === botColor);
     if (!shouldMove) return;
     const snapshot = state;
@@ -238,7 +286,21 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
       void playBotMove("auto", snapshot);
     }, 80);
     return () => window.clearTimeout(timer);
-  }, [botColor, botMode, playBotMove, state, thinking.status]);
+  }, [botColor, botMode, isReviewing, playBotMove, state, thinking.status]);
+
+  useEffect(() => {
+    if (!reviewPlaying) return;
+    const timer = window.setInterval(() => {
+      setReviewPly((current) => {
+        const next = Math.min((current ?? 0) + 1, timeline.length - 1);
+        if (next >= timeline.length - 1) {
+          window.setTimeout(() => setReviewPlaying(false), 0);
+        }
+        return next;
+      });
+    }, 900);
+    return () => window.clearInterval(timer);
+  }, [reviewPlaying, timeline.length]);
 
   useEffect(() => {
     let lastTick = Date.now();
@@ -257,7 +319,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
         <div className="board-shell" data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
             <div className="board-grid overflow-hidden rounded-lg border border-[var(--border)] shadow-2xl" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }} aria-label="Game board">
-              {state.board.flatMap((row) =>
+              {displayState.board.flatMap((row) =>
                 row.map((cell) => {
                   const isSelected = selected && sameSquare(selected, cell.square);
                   const isLegal = legalTargets.has(serializeSquare(cell.square));
@@ -290,13 +352,13 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
                     >
                       {cell.square.col === 0 ? <span className="board-coordinate board-rank">{rows - cell.square.row}</span> : null}
                       {cell.square.row === rows - 1 ? <span className="board-coordinate board-file">{files[cell.square.col]}</span> : null}
-                      {cell.piece ? <PieceIcon code={cell.piece.code} owner={cell.piece.owner} variantKey={state.variantKey} promoted={cell.piece.promoted} /> : null}
+                      {cell.piece ? <PieceIcon code={cell.piece.code} owner={cell.piece.owner} variantKey={displayState.variantKey} promoted={cell.piece.promoted} /> : null}
                     </button>
                   );
                 })
               )}
             </div>
-            {outcome ? (
+            {outcome && !isReviewing ? (
               <>
                 <div className={`match-result-banner match-result-${outcome.result}`} role="status">
                   <strong>{outcome.headline}</strong>
@@ -312,7 +374,14 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
                       <button type="button" onClick={reset} className="focus-ring action-primary px-4 py-2 text-sm">
                         Play again
                       </button>
-                      <button type="button" onClick={() => setShowOutcome(false)} className="focus-ring action-secondary px-4 py-2 text-sm">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowOutcome(false);
+                          startReview();
+                        }}
+                        className="focus-ring action-secondary px-4 py-2 text-sm"
+                      >
                         Review moves
                       </button>
                       <button type="button" onClick={() => setShowOutcome(false)} className="focus-ring action-secondary px-4 py-2 text-sm">
@@ -330,7 +399,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
           <div className="flex items-center gap-2">
             <Swords size={18} className="text-[var(--accent)]" />
             <span className="text-sm font-bold capitalize">{state.turn}</span>
-            <span className="text-xs text-[var(--muted)]">{state.status}</span>
+            <span className="text-xs text-[var(--muted)]">{isReviewing ? `review ply ${displayPly}` : state.status}</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <select aria-label="Time control" className="control px-3 py-2 text-sm font-semibold" value={timeControl} onChange={(event) => changeTimeControl(event.target.value as TimeControlKey)}>
@@ -347,7 +416,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
                 </option>
               ))}
             </select>
-            <button type="button" onClick={suggestMove} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking"}>
+            <button type="button" onClick={suggestMove} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking" || isReviewing}>
               <Lightbulb size={16} />
               Suggest
             </button>
@@ -357,7 +426,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
                 Apply suggestion
               </button>
             ) : null}
-            <button type="button" onClick={() => void playBotMove("manual")} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking"}>
+            <button type="button" onClick={() => void playBotMove("manual")} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking" || isReviewing}>
               <PlayCircle size={16} />
               Move for me
             </button>
@@ -467,14 +536,84 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
             </div>
           ))}
         </div>
-        <div className="play-table-card">
-          <p className="mb-2 flex items-center gap-2 text-sm font-bold">
-            <Brain size={16} className="text-[var(--accent)]" />
-            Moves
-          </p>
-          <ol className="move-list max-h-56 space-y-1 overflow-auto text-sm text-[var(--muted)]">
-            {state.moves.length ? state.moves.map((move, index) => <li key={`${move.notation}-${index}`}>{index + 1}. {move.notation}</li>) : <li>No moves yet.</li>}
+        <div className="play-review-card">
+          <div className="review-tabs" aria-label="Review tabs">
+            <button type="button" className="is-active">Moves</button>
+            <button type="button">Info</button>
+            <button type="button">Openings</button>
+          </div>
+          <div className="review-engine-row">
+            <span className="inline-flex items-center gap-2">
+              <Brain size={16} className="text-[var(--accent)]" />
+              Analysis
+            </span>
+            <span>Stockfish 18 Lite</span>
+          </div>
+          <div className="review-position-card">
+            <p>{displayPly === 0 ? "Starting position" : `Position after ${activeReviewMove?.notation ?? "latest move"}`}</p>
+            <strong>{activeReviewMove ? `${activeReviewMove.label} - ${activeReviewMove.score}/100` : "Ready for review"}</strong>
+            <span>{activeReviewMove?.detail ?? "Make a move, then use Game Review to replay the position with move quality labels."}</span>
+            {activeReviewMove ? <small>Best line: {activeReviewMove.bestLine}</small> : null}
+          </div>
+          <ol className="review-move-list move-list max-h-64 overflow-auto text-sm">
+            <li className={displayPly === 0 ? "is-active" : ""}>
+              <button type="button" onClick={() => setReviewCursor(0)} className="focus-ring">
+                <span>0.</span>
+                <strong>Starting position</strong>
+                <em>Info</em>
+              </button>
+            </li>
+            {reviewMoves.length ? (
+              reviewMoves.map((move) => (
+                <li key={`${move.notation}-${move.ply}`} className={displayPly === move.ply ? "is-active" : ""} data-review={move.classification}>
+                  <button type="button" onClick={() => setReviewCursor(move.ply)} className="focus-ring" aria-label={`Review move ${move.ply} ${move.notation}`}>
+                    <span>{move.ply}.</span>
+                    <strong>{move.notation}</strong>
+                    <em>{move.label}</em>
+                  </button>
+                </li>
+              ))
+            ) : (
+              <li>
+                <button type="button" className="focus-ring" disabled>
+                  <span>1.</span>
+                  <strong>No moves yet</strong>
+                  <em>Info</em>
+                </button>
+              </li>
+            )}
           </ol>
+          <div className="review-summary-row">
+            <span data-review="best">{reviewSummary.best} Best</span>
+            <span data-review="excellent">{reviewSummary.excellent} Excellent</span>
+            <span data-review="blunder">{reviewSummary.blunder} Blunder</span>
+          </div>
+          <button type="button" onClick={startReview} className="focus-ring review-primary-button">
+            <Sparkles size={20} />
+            Game Review
+          </button>
+          <div className="review-controls" aria-label="Review playback controls">
+            <button type="button" onClick={() => setReviewCursor(0)} className="focus-ring" aria-label="First move" disabled={!reviewMoves.length}>
+              <SkipBack size={20} />
+            </button>
+            <button type="button" onClick={() => setReviewCursor(displayPly - 1)} className="focus-ring" aria-label="Previous move" disabled={!reviewMoves.length || displayPly === 0}>
+              <Undo2 size={20} />
+            </button>
+            <button type="button" onClick={() => setReviewPlaying((current) => !current)} className="focus-ring is-main" aria-label={reviewPlaying ? "Pause review" : "Play review"} disabled={!reviewMoves.length}>
+              {reviewPlaying ? <PauseCircle size={24} /> : <PlayCircle size={24} />}
+            </button>
+            <button type="button" onClick={() => setReviewCursor(displayPly + 1)} className="focus-ring" aria-label="Next move" disabled={!reviewMoves.length || displayPly >= timeline.length - 1}>
+              <PlayCircle size={20} />
+            </button>
+            <button type="button" onClick={() => setReviewCursor(timeline.length - 1)} className="focus-ring" aria-label="Last move" disabled={!reviewMoves.length}>
+              <SkipForward size={20} />
+            </button>
+          </div>
+          {isReviewing ? (
+            <button type="button" onClick={jumpToLive} className="focus-ring review-live-button">
+              Back to live board
+            </button>
+          ) : null}
         </div>
         <div className="play-table-card text-sm text-[var(--muted)]">
           <p className="mb-1 flex items-center gap-2 font-bold text-[var(--foreground)]">
