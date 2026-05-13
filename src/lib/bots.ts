@@ -67,10 +67,10 @@ export type BotMoveRequest = {
 export const botDifficultyLevels: BotDifficulty[] = [
   { key: "easy", label: "Easy", estimatedStrength: "Beginner practice", benchmarkVersion: "allchess-bench-v1", depth: 1, moveTimeMs: 120, skill: 2, nodeBudget: 80, beamWidth: 4, quiescenceDepth: 0, riskTolerance: 0.85 },
   { key: "normal", label: "Normal", estimatedStrength: "Club basics", benchmarkVersion: "allchess-bench-v1", depth: 2, moveTimeMs: 250, skill: 5, nodeBudget: 250, beamWidth: 8, quiescenceDepth: 0, riskTolerance: 0.65 },
-  { key: "hard", label: "Hard", estimatedStrength: "Tactical club", benchmarkVersion: "allchess-bench-v1", depth: 3, moveTimeMs: 500, skill: 8, nodeBudget: 900, beamWidth: 14, quiescenceDepth: 1, riskTolerance: 0.45 },
-  { key: "very-hard", label: "Very Hard", estimatedStrength: "Expert practice", benchmarkVersion: "allchess-bench-v1", depth: 4, moveTimeMs: 900, skill: 12, nodeBudget: 2200, beamWidth: 20, quiescenceDepth: 1, riskTolerance: 0.28 },
-  { key: "grandmaster", label: "Grandmaster", estimatedStrength: "Engine-backed master benchmark", benchmarkVersion: "allchess-bench-v1", depth: 5, moveTimeMs: 1800, skill: 18, nodeBudget: 7200, beamWidth: 32, quiescenceDepth: 2, riskTolerance: 0.12 },
-  { key: "legend", label: "Legend", estimatedStrength: "Maximum local benchmark", benchmarkVersion: "allchess-bench-v1", depth: 7, moveTimeMs: 3200, skill: 20, nodeBudget: 18000, beamWidth: 44, quiescenceDepth: 4, riskTolerance: 0.03 }
+  { key: "hard", label: "Hard", estimatedStrength: "Tactical club", benchmarkVersion: "allchess-bench-v1", depth: 3, moveTimeMs: 650, skill: 8, nodeBudget: 1400, beamWidth: 14, quiescenceDepth: 1, riskTolerance: 0.45 },
+  { key: "very-hard", label: "Very Hard", estimatedStrength: "Expert practice", benchmarkVersion: "allchess-bench-v1", depth: 4, moveTimeMs: 1200, skill: 12, nodeBudget: 3600, beamWidth: 20, quiescenceDepth: 1, riskTolerance: 0.28 },
+  { key: "grandmaster", label: "Grandmaster", estimatedStrength: "Engine-backed master benchmark", benchmarkVersion: "allchess-bench-v1", depth: 5, moveTimeMs: 2200, skill: 18, nodeBudget: 11000, beamWidth: 32, quiescenceDepth: 2, riskTolerance: 0.12 },
+  { key: "legend", label: "Legend", estimatedStrength: "Maximum local benchmark", benchmarkVersion: "allchess-bench-v1", depth: 7, moveTimeMs: 3600, skill: 20, nodeBudget: 26000, beamWidth: 44, quiescenceDepth: 4, riskTolerance: 0.03 }
 ];
 
 const pendingRequests = new Map<string, { cancelled: boolean }>();
@@ -328,8 +328,9 @@ function evaluateMove(
   const movedPiece = next.board[move.to.row]?.[move.to.col]?.piece;
   const riskPenalty = movedPiece && difficulty.skill >= 8 ? hangingPenalty(next, move.to, movedPiece) * (1 - difficulty.riskTolerance) : 0;
   const strategyBonus = difficulty.skill >= 12 ? strategicMoveScore(state, next, move, perspective, difficulty) : 0;
+  const replyPenalty = difficulty.skill >= 8 ? opponentReplyPenalty(next, perspective, difficulty, budget) * (1.15 - difficulty.riskTolerance) : 0;
   const noise = difficulty.skill >= 20 ? 0 : deterministicNoise(move) * (22 - difficulty.skill);
-  return searchScore + strategyBonus - riskPenalty + noise;
+  return searchScore + strategyBonus - riskPenalty - replyPenalty + noise;
 }
 
 function minimax(
@@ -460,8 +461,72 @@ function strategicMoveScore(state: GameState, next: GameState, move: Move, persp
   const ownSupport = nearbyFriendlySupport(next, move.to, movedPiece.owner) * 18;
   const advancement = advancementScore(state, move, movedPiece.owner, movedPiece.code) * (difficulty.skill / 10);
   const objective = variantObjectiveScore(next, move, movedPiece.owner) * (difficulty.skill / 8);
+  const constriction = mobilitySwing(state, next, perspective) * (difficulty.skill / 20);
+  const forkPressure = forkPressureScore(next, perspective) * (difficulty.skill / 18);
+  const loosePiecePressure = loosePieceScore(next, opponents) * (difficulty.skill / 18);
   const tempo = givesTurnPressure(next, perspective) ? 45 : 0;
-  return newThreats + ownSupport + advancement + objective + tempo - ownDanger;
+  return newThreats + ownSupport + advancement + objective + constriction + forkPressure + loosePiecePressure + tempo - ownDanger;
+}
+
+function opponentReplyPenalty(state: GameState, perspective: PlayerColor, difficulty: BotDifficulty, budget: { nodes: number; deadline: number }) {
+  if (state.status === "completed" || budget.nodes >= difficulty.nodeBudget || Date.now() >= budget.deadline) return 0;
+  const replies = allLegalMoves(state)
+    .map((move) => ({ move, score: staticMoveScore(state, move) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, Math.max(5, Math.floor(difficulty.beamWidth / 2)));
+  let worst = 0;
+
+  for (const { move } of replies) {
+    const target = state.board[move.to.row]?.[move.to.col]?.piece;
+    const attacker = state.board[move.from.row]?.[move.from.col]?.piece;
+    if (target?.owner === perspective) {
+      const targetValue = pieceValues[target.code] ?? 100;
+      const attackerValue = attacker ? (pieceValues[attacker.code] ?? 100) : 100;
+      worst = Math.max(worst, targetValue - attackerValue * 0.18);
+    }
+
+    const next = tryMove(state, move);
+    budget.nodes += 1;
+    if (next?.status === "completed" && next.result !== perspective && next.result !== "draw") {
+      worst = Math.max(worst, 50000);
+    }
+  }
+
+  return worst * (difficulty.skill / 20);
+}
+
+function mobilitySwing(previous: GameState, next: GameState, perspective: PlayerColor) {
+  const beforeOwn = allLegalMovesFor(previous, perspective).length;
+  const beforeOpponent = opponentColors(previous, perspective).reduce((total, color) => total + allLegalMovesFor(previous, color).length, 0);
+  const afterOwn = allLegalMovesFor(next, perspective).length;
+  const afterOpponent = opponentColors(next, perspective).reduce((total, color) => total + allLegalMovesFor(next, color).length, 0);
+  return (afterOwn - beforeOwn) * 2 + (beforeOpponent - afterOpponent) * 3;
+}
+
+function forkPressureScore(state: GameState, perspective: PlayerColor) {
+  const opponents = opponentColors(state, perspective);
+  return allLegalMovesFor(state, perspective).reduce((best, move) => {
+    const target = state.board[move.to.row]?.[move.to.col]?.piece;
+    if (!target || !opponents.includes(target.owner)) return best;
+    const value = pieceValues[target.code] ?? 100;
+    const key = serializeMoveTarget(move);
+    const duplicatePressure = allLegalMovesFor(state, perspective).filter((candidate) => serializeMoveTarget(candidate) !== key && sameSquare(candidate.from, move.from)).length;
+    return Math.max(best, value * 0.08 + duplicatePressure * 8);
+  }, 0);
+}
+
+function loosePieceScore(state: GameState, opponents: PlayerColor[]) {
+  let score = 0;
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (!cell.piece || !opponents.includes(cell.piece.owner)) continue;
+      const attackers = opponentColors(state, cell.piece.owner);
+      const attacked = isSquareAttackedBy(state, cell.square, attackers);
+      const defended = nearbyFriendlySupport(state, cell.square, cell.piece.owner) > 0;
+      if (attacked && !defended) score += (pieceValues[cell.piece.code] ?? 100) * 0.1;
+    }
+  }
+  return score;
 }
 
 function isSquareAttackedBy(state: GameState, square: { row: number; col: number }, attackers: PlayerColor[]) {
@@ -595,6 +660,10 @@ function windowSafeSetTimeout(callback: () => void, delayMs: number) {
 function deterministicNoise(move: Move) {
   const seed = (move.from.row + 1) * 17 + (move.from.col + 1) * 31 + (move.to.row + 1) * 43 + (move.to.col + 1) * 59;
   return (seed % 11) - 5;
+}
+
+function serializeMoveTarget(move: Move) {
+  return `${move.from.row},${move.from.col}->${move.to.row},${move.to.col}`;
 }
 
 function confidenceFor(score: number | null, depth: number, tier: BotTierKey) {
