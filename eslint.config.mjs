@@ -13,6 +13,7 @@ const eslintConfig = [
       "legacy/**",
       "node_modules/**",
       "playwright-report/**",
+      "public/engines/stockfish/**",
       "test-results/**"
     ]
   }
