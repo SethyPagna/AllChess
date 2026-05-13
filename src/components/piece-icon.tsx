@@ -22,21 +22,46 @@ const nativeGlyphs: Record<string, string> = {
 
 export function PieceIcon({ code, owner, variantKey, promoted = false }: PieceIconProps) {
   const normalized = code.toLowerCase();
-  if (variantKey === "classic" || variantKey === "chess960" || ["k", "q", "r", "b", "n", "p"].includes(normalized)) {
-    return <WesternPieceIcon code={normalized} owner={owner} promoted={promoted} />;
+  if (usesWesternPresentation(variantKey)) {
+    return <WesternPieceIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} />;
   }
 
+  const glyph = getNativeGlyph({ code: normalized, owner, variantKey, promoted });
+  const pieceName = getNativePieceName({ code: normalized, variantKey, promoted });
+
   return (
-    <span className="piece-symbol piece-icon native-piece-symbol" data-owner={owner} data-piece="native" data-code={normalized} data-variant={variantKey}>
-      {nativeGlyphs[normalized] ?? normalized.toUpperCase()}
+    <span
+      aria-label={pieceName}
+      className="piece-symbol piece-icon native-piece-symbol"
+      data-owner={owner}
+      data-piece="native"
+      data-code={normalized}
+      data-variant={variantKey}
+      data-promoted={promoted || undefined}
+      role="img"
+    >
+      {glyph}
     </span>
   );
 }
 
-function WesternPieceIcon({ code, owner, promoted }: { code: string; owner: PlayerColor; promoted: boolean }) {
-  const piece = westernPieceName(code);
+function usesWesternPresentation(variantKey: string) {
+  return ["classic", "chess960", "antichess", "horde", "king-of-the-hill", "three-check", "makruk"].includes(variantKey);
+}
+
+function WesternPieceIcon({ code, owner, variantKey, promoted }: { code: string; owner: PlayerColor; variantKey: string; promoted: boolean }) {
+  const piece = westernPieceName(code, variantKey);
   return (
-    <svg className="piece-symbol piece-icon piece-svg" data-owner={owner} data-piece={piece} data-promoted={promoted || undefined} viewBox="0 0 100 100" aria-hidden="true">
+    <svg
+      aria-label={piece}
+      className="piece-symbol piece-icon piece-svg"
+      data-owner={owner}
+      data-piece={piece}
+      data-promoted={promoted || undefined}
+      data-variant={variantKey}
+      role="img"
+      viewBox="0 0 100 100"
+    >
       {piece === "king" ? <KingPaths /> : null}
       {piece === "queen" ? <QueenPaths /> : null}
       {piece === "rook" ? <RookPaths /> : null}
@@ -116,7 +141,51 @@ function PawnPaths() {
   );
 }
 
-function westernPieceName(code: string) {
+function getNativeGlyph({ code, owner, variantKey, promoted }: { code: string; owner: PlayerColor; variantKey: string; promoted: boolean }) {
+  if (variantKey === "xiangqi") {
+    const red: Record<string, string> = { g: "\u5e25", a: "\u4ed5", e: "\u76f8", h: "\u509c", r: "\u4fe5", c: "\u70ae", p: "\u5175" };
+    const black: Record<string, string> = { g: "\u5c07", a: "\u58eb", e: "\u8c61", h: "\u99ac", r: "\u8eca", c: "\u7832", p: "\u5352" };
+    return (owner === "red" ? red : black)[code] ?? nativeGlyphs[code] ?? code.toUpperCase();
+  }
+  if (variantKey === "janggi") {
+    const red: Record<string, string> = { g: "\u695a", a: "\u58eb", e: "\u8c61", h: "\u99ac", r: "\u8eca", c: "\u5305", p: "\u5352" };
+    const blue: Record<string, string> = { g: "\u6f22", a: "\u58eb", e: "\u8c61", h: "\u99ac", r: "\u8eca", c: "\u5305", p: "\u5175" };
+    return (owner === "blue" ? blue : red)[code] ?? nativeGlyphs[code] ?? code.toUpperCase();
+  }
+  if (variantKey === "shogi") {
+    const base: Record<string, string> = { k: "\u738b", r: "\u98db", b: "\u89d2", g: "\u91d1", s: "\u9280", n: "\u6842", l: "\u9999", p: "\u6b69" };
+    const promotedMap: Record<string, string> = { r: "\u9f8d", b: "\u99ac", s: "\u5168", n: "\u572d", l: "\u674f", p: "\u3068" };
+    return promoted ? promotedMap[code] ?? base[code] ?? code.toUpperCase() : base[code] ?? code.toUpperCase();
+  }
+  if (variantKey === "jungle") {
+    const animals: Record<string, string> = { e: "\u8c61", l: "\u7345", t: "\u864e", p: "\u8c79", w: "\u72fc", d: "\u72ac", c: "\u8c93", r: "\u9f20" };
+    return animals[code] ?? code.toUpperCase();
+  }
+  return nativeGlyphs[code] ?? code.toUpperCase();
+}
+
+function getNativePieceName({ code, variantKey, promoted }: { code: string; variantKey: string; promoted: boolean }) {
+  const prefix = promoted ? "Promoted " : "";
+  const names: Record<string, Record<string, string>> = {
+    xiangqi: { g: "General", a: "Advisor", e: "Elephant", h: "Horse", r: "Chariot", c: "Cannon", p: "Soldier" },
+    janggi: { g: "General", a: "Guard", e: "Elephant", h: "Horse", r: "Chariot", c: "Cannon", p: "Soldier" },
+    shogi: { k: "King", r: "Rook", b: "Bishop", g: "Gold General", s: "Silver General", n: "Knight", l: "Lance", p: "Pawn" },
+    jungle: { e: "Elephant", l: "Lion", t: "Tiger", p: "Leopard", w: "Wolf", d: "Dog", c: "Cat", r: "Rat" }
+  };
+  return `${prefix}${names[variantKey]?.[code] ?? "Piece"}`;
+}
+
+function westernPieceName(code: string, variantKey: string) {
+  if (variantKey === "makruk") {
+    const makrukNames: Record<string, string> = {
+      k: "king",
+      s: "bishop",
+      n: "knight",
+      r: "rook",
+      p: "pawn"
+    };
+    return makrukNames[code] ?? "queen";
+  }
   const names: Record<string, string> = {
     k: "king",
     q: "queen",

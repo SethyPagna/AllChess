@@ -16,9 +16,15 @@ describe("PieceIcon", () => {
   });
 
   test("keeps non-western pieces as strong native symbols", () => {
-    const general = renderToStaticMarkup(<PieceIcon code="g" owner="red" variantKey="xiangqi" />);
+    const redGeneral = renderToStaticMarkup(<PieceIcon code="g" owner="red" variantKey="xiangqi" />);
+    const blackGeneral = renderToStaticMarkup(<PieceIcon code="g" owner="black" variantKey="xiangqi" />);
+    const shogiPawn = renderToStaticMarkup(<PieceIcon code="p" owner="sente" variantKey="shogi" />);
+    const jungleRat = renderToStaticMarkup(<PieceIcon code="r" owner="white" variantKey="jungle" />);
 
-    expect(general).toContain('data-piece="native"');
-    expect(general).toContain("王");
+    expect(redGeneral).toContain('data-piece="native"');
+    expect(redGeneral).toContain("帥");
+    expect(blackGeneral).toContain("將");
+    expect(shogiPawn).toContain("歩");
+    expect(jungleRat).toContain("鼠");
   });
 });
