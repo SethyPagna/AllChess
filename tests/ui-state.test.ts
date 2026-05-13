@@ -1,5 +1,8 @@
 import { describe, expect, test } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
+import { createElement } from "react";
 
+import { ThemeProvider } from "@/components/theme-provider";
 import { createDefaultStats } from "@/lib/stats";
 import { timeControls } from "@/lib/time-controls";
 import { formatClock, tickGameClock } from "@/lib/clocks";
@@ -45,5 +48,15 @@ describe("site statistics", () => {
     expect(stats.spectators.value).toBe("0");
     expect(Number(stats.variants.value)).toBeGreaterThan(11);
     expect(stats.playersOnline.isEstimated).toBe(false);
+  });
+});
+
+describe("theme shell", () => {
+  test("does not render script tags from React components", () => {
+    const markup = renderToStaticMarkup(
+      createElement(ThemeProvider, null, createElement("main", null, "AllChess"))
+    );
+
+    expect(markup).not.toContain("<script");
   });
 });
