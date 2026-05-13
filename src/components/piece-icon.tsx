@@ -75,11 +75,11 @@ function WesternPieceIcon({ code, owner, variantKey, promoted }: { code: string;
 function KingPaths() {
   return (
     <>
-      <path d="M46.5 8h7v12.5H66v7H53.5v12.2h-7V27.5H34v-7h12.5z" />
-      <path d="M34 80h32l-3.6-13.5H37.6z" />
-      <path d="M25 65.8h50L66.5 38H33.5z" />
-      <path d="M38 39c2.8-8.5 21.2-8.5 24 0l-4.4 18.5H42.4z" />
-      <path d="M22 91h56v-10.5H22z" />
+      <path d="M46.7 7.5h6.6v11.2h11.2v6.6H53.3v9.8h-6.6v-9.8H35.5v-6.6h11.2z" data-detail="king-cross" />
+      <path d="M34.6 40.2c3.3-8.8 27.5-8.8 30.8 0l-5.1 22.9H39.7z" />
+      <path d="M25.3 64.1h49.4l-7.1-25.8-10 16.1L50 35.5l-7.6 18.9-10-16.1z" />
+      <path d="M33 78.3h34l-4.2-14.2H37.2z" />
+      <path d="M21.5 91.5h57v-11.8h-57z" data-detail="king-base" />
     </>
   );
 }
@@ -87,14 +87,14 @@ function KingPaths() {
 function QueenPaths() {
   return (
     <>
-      <circle cx="17" cy="27" r="6.5" />
-      <circle cx="34" cy="16.5" r="6.2" />
-      <circle cx="50" cy="12.5" r="7" />
-      <circle cx="66" cy="16.5" r="6.2" />
-      <circle cx="83" cy="27" r="6.5" />
-      <path d="M22 37l12.5 30h31L78 37 58.5 53.5 50 25.5 41.5 53.5z" />
-      <path d="M31 81h38l-4-14H35z" />
-      <path d="M22 91h56V81H22z" />
+      <circle cx="17.5" cy="29.5" r="6.1" data-detail="queen-jewel" />
+      <circle cx="34" cy="18.7" r="5.8" data-detail="queen-jewel" />
+      <circle cx="50" cy="14.2" r="6.5" data-detail="queen-jewel" />
+      <circle cx="66" cy="18.7" r="5.8" data-detail="queen-jewel" />
+      <circle cx="82.5" cy="29.5" r="6.1" data-detail="queen-jewel" />
+      <path d="M20.8 39.1 34 67.4h32l13.2-28.3-19.5 14.6L50 26.7l-9.7 27z" />
+      <path d="M35.5 66.1h29l4.2 13.8H31.3z" />
+      <path d="M22.1 91.5h55.8V80.1H22.1z" data-detail="queen-base" />
     </>
   );
 }
@@ -102,9 +102,9 @@ function QueenPaths() {
 function RookPaths() {
   return (
     <>
-      <path d="M25 18h12v10h10V18h12v10h10V18h8v25H23V18z" />
-      <path d="M31 43h38v34H31z" />
-      <path d="M24 90h52V77H24z" />
+      <path d="M22.5 18h13.2v10.2h8.7V18h11.2v10.2h8.7V18h13.2v25.2h-55z" data-detail="rook-turrets" />
+      <path d="M30.7 42.8h38.6v35H30.7z" />
+      <path d="M24 91.5h52V77.7H24z" data-detail="rook-base" />
     </>
   );
 }
@@ -112,10 +112,10 @@ function RookPaths() {
 function BishopPaths() {
   return (
     <>
-      <path d="M50 11c12 10 20 20 20 34 0 13-9 23-20 23S30 58 30 45c0-14 8-24 20-34z" />
-      <path d="M45 27h10v26H45z" fill="var(--board-light)" />
-      <path d="M37 81h26l-3-14H40z" />
-      <path d="M25 90h50v-9H25z" />
+      <path d="M50 10.5c12.9 9.8 21.2 21.6 21.2 35.4 0 12.7-8.4 22.1-21.2 22.1s-21.2-9.4-21.2-22.1c0-13.8 8.3-25.6 21.2-35.4z" />
+      <path d="M45.3 25.5h9.4v29h-9.4z" fill="var(--piece-cutout)" stroke="var(--piece-cutout)" data-detail="bishop-mitre-slit" />
+      <path d="M37 80.3h26l-3.8-13.7H40.8z" />
+      <path d="M24.5 91.5h51v-11.2h-51z" data-detail="bishop-base" />
     </>
   );
 }
@@ -123,9 +123,10 @@ function BishopPaths() {
 function KnightPaths() {
   return (
     <>
-      <path d="M29 86h44c-4-12-8-24-8-38 0-15-12-27-28-31l-7 12 9 5-12 10c-5 5-7 12-4 19l10-6c3 8 2 18-4 29z" />
-      <circle cx="43" cy="32" r="3" fill="var(--board-light)" />
-      <path d="M24 94h54v-8H24z" />
+      <path d="M27 86.5h46.5c-4.5-11.6-8.4-23.8-8.4-38.4 0-16-12.7-27.6-31.5-31.8L27 28.7l9.7 5.4-13 10.7c-5.5 5.1-7.1 12.6-4.4 19.2l12.3-6.1c2.8 8.7 1.7 17.5-4.6 28.6z" />
+      <path d="M43.3 29.2c2.4 0 4.2 1.8 4.2 4s-1.8 4-4.2 4-4.2-1.8-4.2-4 1.8-4 4.2-4z" fill="var(--piece-cutout)" stroke="var(--piece-cutout)" data-detail="knight-eye" />
+      <path d="M49.4 43.2c-4.5 3.6-8.8 5.2-13.1 4.8" fill="none" />
+      <path d="M23.5 94h55v-8.6h-55z" data-detail="knight-base" />
     </>
   );
 }
@@ -133,10 +134,10 @@ function KnightPaths() {
 function PawnPaths() {
   return (
     <>
-      <circle cx="50" cy="28" r="13.5" />
-      <path d="M39 48.5h22l5 12.5H34z" />
-      <path d="M32 78.5h36l-6-18H38z" />
-      <path d="M22 91h56V78.5H22z" />
+      <circle cx="50" cy="27.2" r="13.2" data-detail="pawn-head" />
+      <path d="M38.5 48h23l5.3 13H33.2z" />
+      <path d="M31.7 78.5h36.6l-6.4-17.7H38.1z" />
+      <path d="M21.8 91.5h56.4v-13H21.8z" data-detail="pawn-base" />
     </>
   );
 }
