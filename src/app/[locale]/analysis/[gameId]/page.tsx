@@ -21,8 +21,8 @@ export default async function AnalysisPage({
         <div className="rounded-md bg-[var(--surface-strong)] p-4">
           <h2 className="font-bold">Model-ready report</h2>
           <p className="mt-2 text-sm leading-6 text-[var(--muted)]">
-            The AI route summarizes move history, highlights turning points, and stores structured reports in Supabase when
-            `OPENAI_API_KEY` is configured.
+            The AI route summarizes move history, highlights turning points, and stores structured reports in Cloudflare D1
+            when `OPENAI_API_KEY` is configured.
           </p>
         </div>
       </div>
