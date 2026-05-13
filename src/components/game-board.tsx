@@ -409,7 +409,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
           {playCards.map((card) => {
             const Icon = card.Icon;
             return (
-              <button key={card.label} type="button" className="play-action-card focus-ring">
+              <button key={card.label} type="button" className="play-action-card focus-ring" aria-label={card.label}>
                 <Icon size={32} />
                 <span>
                   <strong>{card.label}</strong>
