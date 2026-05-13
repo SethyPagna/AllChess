@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import { createSessionCookie, hashPassword, verifyPassword } from "@/lib/auth/session";
+import { createD1RestDatabase } from "@/lib/cloudflare/d1-rest";
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { cloudflareResourceNames, normalizeCloudflareEnv } from "@/lib/cloudflare/env";
 import { createR2Storage } from "@/lib/storage/r2";
@@ -111,6 +112,35 @@ describe("Cloudflare platform configuration", () => {
     expect(mock.calls.some((call) => call.sql.includes("insert into rooms"))).toBe(true);
     expect(mock.calls.some((call) => call.bindings.includes("ROOM42"))).toBe(true);
     expect(stats.source).toBe("durable-object");
+  });
+
+  test("creates a D1 REST adapter for Vercel when Cloudflare bindings are unavailable", async () => {
+    const calls: Array<{ url: string; body: string | null; auth: string | null }> = [];
+    const previousFetch = globalThis.fetch;
+    globalThis.fetch = (async (url, init) => {
+      calls.push({
+        url: String(url),
+        body: String(init?.body ?? ""),
+        auth: new Headers(init?.headers).get("authorization")
+      });
+      return Response.json({ success: true, result: [{ success: true, results: [{ activeRooms: 1 }] }] });
+    }) as typeof fetch;
+
+    try {
+      const db = createD1RestDatabase({
+        CLOUDFLARE_ACCOUNT_ID: "account",
+        CLOUDFLARE_D1_DATABASE_ID: "database",
+        CLOUDFLARE_API_TOKEN: "token"
+      });
+      const row = await db!.prepare("select count(*) as activeRooms from rooms where status = ?").bind("active").first<{ activeRooms: number }>();
+
+      expect(row?.activeRooms).toBe(1);
+      expect(calls[0]?.url).toContain("/accounts/account/d1/database/database/query");
+      expect(calls[0]?.body).toContain("\"params\":[\"active\"]");
+      expect(calls[0]?.auth).toBe("Bearer token");
+    } finally {
+      globalThis.fetch = previousFetch;
+    }
   });
 });
 
