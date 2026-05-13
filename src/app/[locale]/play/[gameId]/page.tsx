@@ -2,18 +2,20 @@ import { notFound } from "next/navigation";
 import { Eye, Flag, Handshake, Radio, Share2 } from "lucide-react";
 
 import { GameBoard } from "@/components/game-board";
-import { RulesPanel } from "@/components/rules-panel";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getVariantRuleSummary } from "@/lib/rules-atlas";
 import { getVariant } from "@/lib/variants";
 
 export default async function PlayPage({
-  params
+  params,
+  searchParams
 }: {
   params: Promise<{ locale: string; gameId: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale: rawLocale, gameId } = await params;
+  const query = searchParams ? await searchParams : {};
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
   let variant;
@@ -55,8 +57,7 @@ export default async function PlayPage({
           </div>
         </div>
 
-        <GameBoard variantKey={variant.key} />
-        <RulesPanel summary={getVariantRuleSummary(variant.key)} compact />
+        <GameBoard variantKey={variant.key} rulesSummary={getVariantRuleSummary(variant.key)} initialBotMode={query.bot ? "opponent" : "human"} />
       </div>
     </section>
   );

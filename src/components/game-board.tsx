@@ -23,11 +23,14 @@ import { botDifficultyLevels, cancelBotMove, requestBotMove, type BotDifficultyK
 import { formatClock, tickGameClock } from "@/lib/clocks";
 import { analyzeMoveList, summarizeReview } from "@/lib/game-review";
 import { describeGameOutcome } from "@/lib/game-outcome";
+import type { VariantRuleSummary } from "@/lib/rules-atlas";
 import { getTimeControl, timeControls, type TimeControlKey } from "@/lib/time-controls";
 import { applyMove, createInitialState, getLegalMoves, sameSquare, serializeSquare, type GameState, type Square } from "@/lib/variants";
 import { PieceIcon } from "@/components/piece-icon";
 
 type BotMode = "human" | "opponent" | "both";
+type SeatChoice = "random" | "first" | "second";
+type PanelTab = "setup" | "status" | "review";
 
 type ThinkingState = {
   status: "idle" | "thinking" | "cancelled" | "failed";
@@ -42,17 +45,31 @@ type SuggestedMove = {
   depthReached: number;
 };
 
-export function GameBoard({ variantKey, initialState }: { variantKey: string; initialState?: GameState }) {
+export function GameBoard({
+  variantKey,
+  initialState,
+  rulesSummary,
+  initialBotMode = "human"
+}: {
+  variantKey: string;
+  initialState?: GameState;
+  rulesSummary?: VariantRuleSummary;
+  initialBotMode?: BotMode;
+}) {
   const [timeControl, setTimeControl] = useState<TimeControlKey>("rapid");
   const [state, setState] = useState(() => withTimeControl(initialState ?? createInitialState(variantKey), "rapid"));
   const [history, setHistory] = useState<GameState[]>([]);
   const [selected, setSelected] = useState<Square | null>(null);
   const [botDifficulty, setBotDifficulty] = useState<BotDifficultyKey>("normal");
-  const [botMode, setBotMode] = useState<BotMode>("human");
+  const [botMode, setBotMode] = useState<BotMode>(initialBotMode);
+  const [seatChoice, setSeatChoice] = useState<SeatChoice>("random");
+  const [humanColor, setHumanColor] = useState(() => pickHumanColor(withTimeControl(initialState ?? createInitialState(variantKey), "rapid"), "random"));
   const [thinking, setThinking] = useState<ThinkingState>({ status: "idle", label: "" });
   const [suggestedMove, setSuggestedMove] = useState<SuggestedMove | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [showOutcome, setShowOutcome] = useState(true);
+  const [showRules, setShowRules] = useState(false);
+  const [panelTab, setPanelTab] = useState<PanelTab>("status");
   const [reviewPly, setReviewPly] = useState<number | null>(null);
   const [reviewPlaying, setReviewPlaying] = useState(false);
   const activeBotRequestRef = useRef<string | null>(null);
@@ -66,18 +83,22 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
   const isReviewing = reviewPly !== null;
   const legalMoves = useMemo(() => (selected ? getLegalMoves(state, selected) : []), [selected, state]);
   const legalTargets = useMemo(() => new Set(legalMoves.map((move) => serializeSquare(move.to))), [legalMoves]);
-  const botColor = state.clocks[1]?.color ?? "black";
+  const botColor = state.clocks.find((clock) => clock.color !== humanColor)?.color ?? state.clocks[1]?.color ?? "black";
   const rows = displayState.board.length;
   const cols = displayState.board[0]?.length ?? 8;
   const files = useMemo(() => Array.from({ length: cols }, (_, index) => String.fromCharCode(97 + index)), [cols]);
   const botLevel = botDifficultyLevels.find((level) => level.key === botDifficulty) ?? botDifficultyLevels[1];
-  const outcome = useMemo(() => describeGameOutcome(state, "white"), [state]);
+  const outcome = useMemo(() => describeGameOutcome(state, humanColor), [humanColor, state]);
   function choose(square: Square) {
     if (isReviewing) {
       setNotice("Review mode is showing a saved position. Jump to live to keep playing.");
       return;
     }
     if (state.status === "completed" || thinking.status === "thinking") return;
+    if (botMode === "both" || (botMode === "opponent" && state.turn !== humanColor)) {
+      setNotice(botMode === "both" ? "Both bots are controlling the board." : "Bot is to move. You can change sides or cancel bot mode.");
+      return;
+    }
     if (selected && legalTargets.has(serializeSquare(square))) {
       const move = legalMoves.find((candidate) => sameSquare(candidate.to, square));
       if (move) {
@@ -216,8 +237,10 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
     const requestId = activeBotRequestRef.current;
     if (requestId) cancelBotMove(requestId);
     activeBotRequestRef.current = null;
+    const nextState = withTimeControl(createInitialState(variantKey), timeControl);
     setHistory([]);
-    setState(withTimeControl(createInitialState(variantKey), timeControl));
+    setState(nextState);
+    setHumanColor(pickHumanColor(nextState, seatChoice));
     setSelected(null);
     setSuggestedMove(null);
     setNotice(null);
@@ -231,9 +254,11 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
     const requestId = activeBotRequestRef.current;
     if (requestId) cancelBotMove(requestId);
     activeBotRequestRef.current = null;
+    const nextState = withTimeControl(createInitialState(variantKey), nextControl);
     setTimeControl(nextControl);
     setHistory([]);
-    setState(withTimeControl(createInitialState(variantKey), nextControl));
+    setState(nextState);
+    setHumanColor(pickHumanColor(nextState, seatChoice));
     setSelected(null);
     setSuggestedMove(null);
     setNotice(null);
@@ -241,6 +266,13 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
     setShowOutcome(true);
     setReviewPly(null);
     setReviewPlaying(false);
+  }
+
+  function changeSeatChoice(nextChoice: SeatChoice) {
+    setSeatChoice(nextChoice);
+    const nextColor = pickHumanColor(state, nextChoice);
+    setHumanColor(nextColor);
+    setNotice(nextChoice === "random" ? `Random side selected: ${colorLabel(nextColor)}.` : `You are playing ${colorLabel(nextColor)}.`);
   }
 
   function startReview() {
@@ -305,28 +337,55 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
         <div className="panel board-controls play-command-bar">
           <div className="play-command-status">
             <Swords size={18} className="text-[var(--accent)]" />
-            <span className="font-bold capitalize">{state.turn}</span>
+            <span className="font-bold capitalize">{colorLabel(state.turn)} to move</span>
             <span>{isReviewing ? `review ply ${displayPly}` : state.status}</span>
-            {thinking.status === "thinking" ? <strong>{thinking.label}</strong> : null}
+            <strong>{thinking.status === "thinking" ? thinking.label : `You: ${colorLabel(humanColor)} · ${botLevel.label}`}</strong>
           </div>
           <div className="play-command-actions">
-            <button type="button" onClick={suggestMove} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking" || isReviewing}>
+            <select
+              aria-label="Side"
+              title="Choose your side. Random avoids always starting as the first side."
+              className="control play-command-select px-3 py-2 text-sm font-semibold"
+              value={seatChoice}
+              onChange={(event) => changeSeatChoice(event.target.value as SeatChoice)}
+            >
+              <option value="random">Random side</option>
+              <option value="first">{colorLabel(state.clocks[0]?.color ?? "white")}</option>
+              <option value="second">{colorLabel(state.clocks[1]?.color ?? "black")}</option>
+            </select>
+            <select
+              aria-label="Bot difficulty"
+              title={`${botLevel.label}: ${botLevel.estimatedStrength}. Depth ${botLevel.depth}, ${botLevel.moveTimeMs}ms search, ${botLevel.nodeBudget} node budget. You can change this during a game.`}
+              className="control play-command-select px-3 py-2 text-sm font-semibold"
+              value={botDifficulty}
+              onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)}
+            >
+              {botDifficultyLevels.map((level) => (
+                <option key={level.key} value={level.key}>
+                  {level.label}
+                </option>
+              ))}
+            </select>
+            <button type="button" title="Show the basic rules, win conditions, draw rules, and source links." aria-label="Rules summary" onClick={() => setShowRules(true)} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm">
+              <Flag size={16} />
+              Rules
+            </button>
+            <button type="button" title="Find and highlight a legal candidate move for the current side." onClick={suggestMove} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking" || isReviewing}>
               <Lightbulb size={16} />
               Suggest
             </button>
-            {suggestedMove ? (
-              <button type="button" aria-label="Apply suggestion" onClick={applySuggestion} className="focus-ring action-primary inline-flex items-center gap-2 px-3 py-2 text-sm">
-                <Sparkles size={16} />
-                Apply
-              </button>
-            ) : null}
-            <button type="button" onClick={() => void playBotMove("manual")} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking" || isReviewing}>
+            <button type="button" title="Apply the highlighted suggestion to the board." aria-label="Apply suggestion" onClick={applySuggestion} className="focus-ring action-primary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={!suggestedMove || thinking.status === "thinking" || isReviewing}>
+              <Sparkles size={16} />
+              Apply
+            </button>
+            <button type="button" title="Ask the bot engine to move for whichever side is currently to move." onClick={() => void playBotMove("manual")} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking" || isReviewing}>
               <PlayCircle size={16} />
               Move
             </button>
             <button
               type="button"
               aria-label="Play Bots"
+              title="Toggle bot opponent. You move your selected side; the bot replies for the other side."
               onClick={() => {
                 setBotMode((current) => {
                   const next = current === "opponent" ? "human" : "opponent";
@@ -343,6 +402,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
             </button>
             <button
               type="button"
+              title="Let bots control both sides until you turn this off."
               onClick={() => setBotMode((current) => (current === "both" ? "human" : "both"))}
               className={`focus-ring inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold ${
                 botMode === "both" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"
@@ -351,16 +411,14 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
               <Bot size={16} />
               Auto
             </button>
-            {thinking.status === "thinking" ? (
-              <button type="button" onClick={cancelThinking} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm">
-                <PauseCircle size={16} />
-                Cancel
-              </button>
-            ) : null}
-            <button type="button" onClick={undo} className="focus-ring action-secondary grid h-10 w-10 place-items-center" aria-label="Undo">
+            <button type="button" title="Stop the current bot search." onClick={cancelThinking} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status !== "thinking"}>
+              <PauseCircle size={16} />
+              Cancel
+            </button>
+            <button type="button" title="Undo the last move." onClick={undo} className="focus-ring action-secondary grid h-10 w-10 place-items-center" aria-label="Undo">
               <Undo2 size={17} />
             </button>
-            <button type="button" onClick={reset} className="focus-ring action-secondary grid h-10 w-10 place-items-center" aria-label="Reset">
+            <button type="button" title="Reset the game with the current setup." onClick={reset} className="focus-ring action-secondary grid h-10 w-10 place-items-center" aria-label="Reset">
               <RotateCcw size={17} />
             </button>
           </div>
@@ -448,76 +506,6 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
             ) : null}
           </div>
         </div>
-
-        <div className="panel board-controls hidden flex-wrap items-center justify-between gap-3 p-3">
-          <div className="flex items-center gap-2">
-            <Swords size={18} className="text-[var(--accent)]" />
-            <span className="text-sm font-bold capitalize">{state.turn}</span>
-            <span className="text-xs text-[var(--muted)]">{isReviewing ? `review ply ${displayPly}` : state.status}</span>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <select aria-label="Time control" className="control px-3 py-2 text-sm font-semibold" value={timeControl} onChange={(event) => changeTimeControl(event.target.value as TimeControlKey)}>
-              {timeControls.map((control) => (
-                <option key={control.key} value={control.key}>
-                  {control.label}
-                </option>
-              ))}
-            </select>
-            <select aria-label="Bot difficulty" className="control px-3 py-2 text-sm font-semibold" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)}>
-              {botDifficultyLevels.map((level) => (
-                <option key={level.key} value={level.key}>
-                  {level.label}
-                </option>
-              ))}
-            </select>
-            <button type="button" onClick={suggestMove} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking" || isReviewing}>
-              <Lightbulb size={16} />
-              Suggest
-            </button>
-            {suggestedMove ? (
-              <button type="button" onClick={applySuggestion} className="focus-ring action-primary inline-flex items-center gap-2 px-3 py-2 text-sm">
-                <Sparkles size={16} />
-                Apply suggestion
-              </button>
-            ) : null}
-            <button type="button" onClick={() => void playBotMove("manual")} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={thinking.status === "thinking" || isReviewing}>
-              <PlayCircle size={16} />
-              Move for me
-            </button>
-            <button
-              type="button"
-              onClick={() => setBotMode((current) => (current === "opponent" ? "human" : "opponent"))}
-              className={`focus-ring inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold ${
-                botMode === "opponent" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"
-              }`}
-            >
-              <Bot size={16} />
-              Bot opponent
-            </button>
-            <button
-              type="button"
-              onClick={() => setBotMode((current) => (current === "both" ? "human" : "both"))}
-              className={`focus-ring inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-bold ${
-                botMode === "both" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"
-              }`}
-            >
-              <Bot size={16} />
-              Both bots
-            </button>
-            {thinking.status === "thinking" ? (
-              <button type="button" onClick={cancelThinking} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm">
-                <PauseCircle size={16} />
-                Cancel thinking
-              </button>
-            ) : null}
-            <button type="button" onClick={undo} className="focus-ring action-secondary grid h-10 w-10 place-items-center" aria-label="Undo">
-              <Undo2 size={17} />
-            </button>
-            <button type="button" onClick={reset} className="focus-ring action-secondary grid h-10 w-10 place-items-center" aria-label="Reset">
-              <RotateCcw size={17} />
-            </button>
-          </div>
-        </div>
       </div>
 
       <aside className="game-side-panel play-panel grid content-start gap-4 p-4">
@@ -528,7 +516,114 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
             <h2>Game Tools</h2>
           </div>
         </div>
-        <details className="play-disclosure" open>
+        <div className="play-section-tabs" aria-label="Game tool sections">
+          {(["setup", "status", "review"] as PanelTab[]).map((tab) => (
+            <button key={tab} type="button" title={`Show ${tab} tools`} onClick={() => setPanelTab(tab)} className={`focus-ring ${panelTab === tab ? "is-active" : ""}`}>
+              {tab}
+            </button>
+          ))}
+        </div>
+        <div className="play-tab-panel">
+          {panelTab === "setup" ? (
+            <div className="play-options-card">
+              <div className="play-options-heading">
+                <Timer size={18} />
+                <span>{getTimeControl(timeControl).label}</span>
+              </div>
+              <div className="play-time-grid" aria-label="Quick time controls">
+                {timeControls.slice(0, 6).map((control) => (
+                  <button key={control.key} type="button" title={`Start a new ${control.label} game`} onClick={() => changeTimeControl(control.key)} className={`focus-ring ${timeControl === control.key ? "is-selected" : ""}`}>
+                    {control.label}
+                  </button>
+                ))}
+              </div>
+              <div className="play-options-row">
+                <SlidersHorizontal size={18} />
+                <span>Side</span>
+                <strong>{colorLabel(humanColor)}</strong>
+              </div>
+              <p className="text-xs font-bold text-[var(--muted)]">Use the top controls to change side or bot strength any time. Time controls start a fresh game.</p>
+            </div>
+          ) : null}
+          {panelTab === "status" ? (
+            <div className="grid gap-3">
+              <div className="play-table-card">
+                <p className="text-sm font-bold text-[var(--muted)]">Current position</p>
+                <p className="text-2xl font-black capitalize">{colorLabel(state.turn)} to move</p>
+                {thinking.status === "thinking" ? <p className="mt-1 text-sm font-bold text-[var(--info)]">{thinking.label}</p> : null}
+                <p className="mt-1 text-xs font-bold text-[var(--muted)]">
+                  Bot tier: {botLevel.label} · {botLevel.estimatedStrength} · {botLevel.benchmarkVersion}
+                </p>
+                <p className="mt-1 text-xs text-[var(--muted)]">
+                  Depth {botLevel.depth}, {botLevel.moveTimeMs}ms search, {botLevel.nodeBudget} nodes, risk {Math.round(botLevel.riskTolerance * 100)}%.
+                </p>
+                {suggestedMove ? (
+                  <p className="mt-1 text-sm font-bold text-[var(--accent-strong)]">
+                    Suggestion: {suggestedMove.notation} · depth {suggestedMove.depthReached}
+                  </p>
+                ) : null}
+                {notice ? <p className="mt-1 text-sm text-[var(--warning)]">{notice}</p> : null}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                {state.clocks.map((clock) => (
+                  <div key={clock.color} className="play-clock-card">
+                    <p>{colorLabel(clock.color)}</p>
+                    <strong>{formatClock(clock.remainingMs)}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {panelTab === "review" ? (
+            <div className="play-review-card">
+              <div className="review-engine-row">
+                <span className="inline-flex items-center gap-2">
+                  <Brain size={16} className="text-[var(--accent)]" />
+                  Analysis
+                </span>
+                <span>Stockfish 18 Lite</span>
+              </div>
+              <div className="review-position-card">
+                <p>{displayPly === 0 ? "Starting position" : `Position after ${activeReviewMove?.notation ?? "latest move"}`}</p>
+                <strong>{activeReviewMove ? `${activeReviewMove.label} - ${activeReviewMove.score}/100` : "Ready for review"}</strong>
+                <span>{activeReviewMove?.detail ?? "Use Game Review to replay positions with move quality labels."}</span>
+                {activeReviewMove ? <small>Best line: {activeReviewMove.bestLine}</small> : null}
+              </div>
+              <div className="review-summary-row">
+                <span data-review="best">{reviewSummary.best} Best</span>
+                <span data-review="excellent">{reviewSummary.excellent} Excellent</span>
+                <span data-review="blunder">{reviewSummary.blunder} Blunder</span>
+              </div>
+              <button type="button" title="Open move-by-move review mode." onClick={startReview} className="focus-ring review-primary-button">
+                <Sparkles size={20} />
+                Game Review
+              </button>
+              <div className="review-controls" aria-label="Review playback controls">
+                <button type="button" onClick={() => setReviewCursor(0)} className="focus-ring" aria-label="First move" disabled={!reviewMoves.length}>
+                  <SkipBack size={20} />
+                </button>
+                <button type="button" onClick={() => setReviewCursor(displayPly - 1)} className="focus-ring" aria-label="Previous move" disabled={!reviewMoves.length || displayPly === 0}>
+                  <Undo2 size={20} />
+                </button>
+                <button type="button" onClick={() => setReviewPlaying((current) => !current)} className="focus-ring is-main" aria-label={reviewPlaying ? "Pause review" : "Play review"} disabled={!reviewMoves.length}>
+                  {reviewPlaying ? <PauseCircle size={24} /> : <PlayCircle size={24} />}
+                </button>
+                <button type="button" onClick={() => setReviewCursor(displayPly + 1)} className="focus-ring" aria-label="Next move" disabled={!reviewMoves.length || displayPly >= timeline.length - 1}>
+                  <PlayCircle size={20} />
+                </button>
+                <button type="button" onClick={() => setReviewCursor(timeline.length - 1)} className="focus-ring" aria-label="Last move" disabled={!reviewMoves.length}>
+                  <SkipForward size={20} />
+                </button>
+              </div>
+              {isReviewing ? (
+                <button type="button" onClick={jumpToLive} className="focus-ring review-live-button">
+                  Back to live board
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+        <details className="hidden" open>
           <summary className="focus-ring">Setup before game</summary>
           <div className="play-options-card">
           <div className="play-options-heading">
@@ -557,7 +652,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
           </div>
           </div>
         </details>
-        <details className="play-disclosure" open>
+        <details className="hidden" open>
           <summary className="focus-ring">Status and clocks</summary>
           <div className="play-table-card">
           <p className="text-sm font-bold text-[var(--muted)]">Current position</p>
@@ -582,7 +677,7 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
           ))}
           </div>
         </details>
-        <details className="play-disclosure" open>
+        <details className="hidden" open>
           <summary className="focus-ring">Review</summary>
           <div className="play-review-card">
           <div className="review-tabs" aria-label="Review tabs">
@@ -672,6 +767,47 @@ export function GameBoard({ variantKey, initialState }: { variantKey: string; in
           Every move stays local in demo mode and is ready for D1 persistence when deployed.
         </div>
       </aside>
+      {showRules && rulesSummary ? (
+        <div className="rules-modal-backdrop" role="presentation" onClick={() => setShowRules(false)}>
+          <section className="rules-modal panel" role="dialog" aria-label="Basic rules" aria-modal="true" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">Basic rules</p>
+                <h2>{rulesSummary.variantKey}</h2>
+              </div>
+              <button type="button" title="Close rules" onClick={() => setShowRules(false)} className="focus-ring action-secondary px-3 py-2 text-sm">
+                Close
+              </button>
+            </div>
+            <ol className="rules-numbered-list">
+              {rulesSummary.numberedBasics.map((rule, index) => (
+                <li key={rule}>
+                  <span>{index + 1}</span>
+                  <p>{rule}</p>
+                </li>
+              ))}
+            </ol>
+            <div className="rules-modal-grid">
+              <p>
+                <strong>Win:</strong> {rulesSummary.winConditions.join("; ")}
+              </p>
+              <p>
+                <strong>Draw:</strong> {rulesSummary.drawConditions.join("; ")}
+              </p>
+              <p>
+                <strong>Illegal:</strong> {rulesSummary.illegalMoveNotes.join("; ")}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {rulesSummary.sourceLinks.map((source) => (
+                <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="focus-ring rounded-md border border-[var(--border)] px-2 py-1 text-xs font-bold text-[var(--muted)]">
+                  {source.name}
+                </a>
+              ))}
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -686,6 +822,26 @@ function withTimeControl(state: GameState, key: TimeControlKey): GameState {
       incrementMs: control.incrementSeconds * 1000
     }))
   };
+}
+
+function pickHumanColor(state: GameState, choice: SeatChoice) {
+  const first = state.clocks[0]?.color ?? "white";
+  const second = state.clocks[1]?.color ?? "black";
+  if (choice === "first") return first;
+  if (choice === "second") return second;
+  return Math.random() > 0.5 ? first : second;
+}
+
+function colorLabel(color: string) {
+  const labels: Record<string, string> = {
+    black: "Black",
+    blue: "Blue",
+    gote: "Gote",
+    red: "Red",
+    sente: "Sente",
+    white: "White"
+  };
+  return labels[color] ?? color;
 }
 
 function formatMove(from: Square, to: Square, files: string[], rows: number) {

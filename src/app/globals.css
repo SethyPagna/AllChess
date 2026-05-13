@@ -451,10 +451,12 @@ select {
   stroke: var(--piece-light-stroke);
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 4.4px;
+  stroke-width: 5.2px;
   paint-order: stroke fill;
   filter: none;
   shape-rendering: geometricPrecision;
+  width: 106%;
+  height: 106%;
 }
 
 .piece-svg[data-owner="black"],
@@ -725,23 +727,31 @@ select {
 
 .play-command-bar {
   display: grid;
-  grid-template-columns: minmax(10rem, 1fr) auto;
+  grid-template-columns: minmax(12rem, 1fr) minmax(0, auto);
   align-items: center;
   gap: 0.75rem;
+  min-height: 4.35rem;
   padding: 0.55rem;
+  overflow: hidden;
 }
 
 .play-command-status,
 .play-command-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0.45rem;
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding-bottom: 0.1rem;
 }
 
 .play-command-status {
   color: #f8f6ef;
   font-size: 0.9rem;
+  min-width: 0;
+  min-height: 2.55rem;
 }
 
 .play-command-status span:last-of-type {
@@ -756,6 +766,53 @@ select {
 .play-command-status strong {
   color: var(--info);
   font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.play-command-select {
+  width: auto;
+  min-width: 8.5rem;
+  max-width: 11rem;
+  flex: 0 0 auto;
+}
+
+.play-command-actions > button {
+  flex: 0 0 auto;
+}
+
+.play-command-actions > button:disabled {
+  opacity: 0.48;
+}
+
+.play-section-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+  border-radius: 8px;
+  background: #171614;
+  padding: 0.35rem;
+}
+
+.play-section-tabs button {
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #bdb6aa;
+  padding: 0.62rem 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 950;
+  text-transform: capitalize;
+}
+
+.play-section-tabs button.is-active {
+  background: #34322f;
+  color: #fffdf7;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
+}
+
+.play-tab-panel {
+  min-height: 17rem;
+}
 }
 
 .play-section-label {
@@ -1301,6 +1358,138 @@ select {
   font-weight: 950;
 }
 
+.rules-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  background: rgb(0 0 0 / 48%);
+  padding: 1rem;
+}
+
+.rules-modal {
+  display: grid;
+  width: min(100%, 42rem);
+  max-height: min(84vh, 42rem);
+  gap: 1rem;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.rules-modal h2 {
+  margin: 0.2rem 0 0;
+  font-size: 1.45rem;
+  font-weight: 950;
+}
+
+.rules-numbered-list {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rules-numbered-list li {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: start;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  padding: 0.65rem;
+}
+
+.rules-numbered-list span {
+  display: grid;
+  height: 1.55rem;
+  width: 1.55rem;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #111;
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+.rules-numbered-list p,
+.rules-modal-grid p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 750;
+  line-height: 1.35;
+}
+
+.rules-modal-grid {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.practice-page {
+  max-width: 1180px;
+}
+
+.practice-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.practice-hero h1 {
+  margin: 0.2rem 0;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 950;
+  line-height: 1;
+}
+
+.practice-hero p {
+  max-width: 45rem;
+  color: var(--muted);
+  font-weight: 750;
+}
+
+.practice-grid {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+}
+
+.practice-card {
+  display: grid;
+  gap: 0.85rem;
+  align-content: start;
+  padding: 1rem;
+}
+
+.practice-card h2 {
+  margin: 0.15rem 0;
+  font-size: 1.15rem;
+  font-weight: 950;
+}
+
+.practice-card p,
+.practice-card-meta {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 750;
+}
+
+.practice-card-meta {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.practice-card-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
 .catalog-card-meta {
   display: flex;
   flex-wrap: wrap;
@@ -1517,6 +1706,19 @@ select {
   .play-header-actions,
   .play-command-actions {
     justify-content: flex-start;
+  }
+
+  .play-command-bar {
+    min-height: 6.5rem;
+  }
+
+  .play-command-status {
+    min-height: 2rem;
+  }
+
+  .practice-hero {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 

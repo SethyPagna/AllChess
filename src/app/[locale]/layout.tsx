@@ -44,7 +44,7 @@ export default async function LocaleLayout({
       links: [
         ["lobby", t("nav.lobby"), Home],
         ["play/classic", "Play board", Swords],
-        ["play/classic?bot=normal", "Bot practice", Users]
+        ["practice", "Bot practice", Users]
       ]
     },
     {
