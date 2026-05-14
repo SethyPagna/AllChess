@@ -2,15 +2,19 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
+  BookOpen,
   Bot,
   Brain,
   Crown,
+  Eye,
   Flag,
   FlipHorizontal2,
+  Handshake,
   Lightbulb,
   PauseCircle,
   PlayCircle,
   RotateCcw,
+  Share2,
   SkipBack,
   SkipForward,
   SlidersHorizontal,
@@ -62,13 +66,19 @@ export function GameBoard({
   initialState,
   rulesSummary,
   initialBotMode = "human",
-  initialPlayMode
+  initialPlayMode,
+  title = "Game",
+  meta = "AllChess",
+  objective = "Play a legal game."
 }: {
   variantKey: string;
   initialState?: GameState;
   rulesSummary?: VariantRuleSummary;
   initialBotMode?: BotMode;
   initialPlayMode?: PlayMode;
+  title?: string;
+  meta?: string;
+  objective?: string;
 }) {
   const [timeControl, setTimeControl] = useState<TimeControlKey>("rapid");
   const [state, setState] = useState(() => withTimeControl(initialState ?? createInitialState(variantKey), "rapid"));
@@ -117,6 +127,42 @@ export function GameBoard({
     return isBoardFlipped ? rowsToRender.reverse().map((row) => row.reverse()) : rowsToRender;
   }, [displayState.board, isBoardFlipped]);
   const modeDetails = playModeOptions.find((option) => option.key === playMode) ?? playModeOptions[2];
+  const topPlayerColor = isBoardFlipped ? firstColor : secondColor;
+  const bottomPlayerColor = isBoardFlipped ? secondColor : firstColor;
+  const capturedBy = useCallback(
+    (color: string) => state.captured.filter((piece) => piece.owner !== color),
+    [state.captured]
+  );
+
+  function playerCard(color: string, placement: "top" | "bottom") {
+    const isHuman = color === humanColor;
+    const isBot = color === botColor && botMode !== "human";
+    const capturedPieces = capturedBy(color);
+    const clock = state.clocks.find((entry) => entry.color === color);
+    return (
+      <div className={`board-player-card board-player-card-${placement} ${state.turn === color ? "is-active" : ""}`}>
+        <div className="player-avatar" aria-hidden="true">{isBot ? "AI" : isHuman ? "You" : colorLabel(color).slice(0, 2)}</div>
+        <div className="player-card-main">
+          <div className="player-card-row">
+            <strong>{isHuman ? "Your profile" : isBot ? `${botLevel.label} bot` : `${colorLabel(color)} player`}</strong>
+            <span>{clock ? formatClock(clock.remainingMs) : "--:--"}</span>
+          </div>
+          <p>{isBot ? `${botLevel.estimatedStrength} · ${lastBotResult?.knowledgeSource ?? "ready"}` : isHuman ? `${colorLabel(color)} side · local profile` : `${colorLabel(color)} side`}</p>
+        </div>
+        <div className="captured-strip" aria-label={`${colorLabel(color)} captured pieces`}>
+          {capturedPieces.length ? (
+            capturedPieces.slice(0, 12).map((piece, index) => (
+              <span key={`${piece.id}-${index}`} className="captured-piece">
+                <PieceIcon code={piece.code} owner={piece.owner} variantKey={displayState.variantKey} promoted={piece.promoted} />
+              </span>
+            ))
+          ) : (
+            <span className="captured-empty">No captures</span>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   function choose(square: Square) {
     if (!gameStarted) {
@@ -410,14 +456,41 @@ export function GameBoard({
   return (
     <div className="game-board-layout grid gap-4">
       <div className="grid gap-3">
-        <div className="panel board-controls play-command-bar">
-          <div className="play-command-status">
-            <Swords size={18} className="text-[var(--accent)]" />
-            <span className="font-bold capitalize">Board controls</span>
-            <span>{gameStarted ? modeDetails.label : "setup"}</span>
-            <strong>{thinking.status === "thinking" ? thinking.label : gameStarted ? "Ready" : "Configure first"}</strong>
+        <div className="play-unified-header">
+          <div className="play-title-block">
+            <h1>{title}</h1>
+            <div className="play-title-meta">
+              <span className="inline-flex items-center gap-2">
+                <Swords size={14} />
+                {meta}
+              </span>
+              <strong>{objective}</strong>
+              <em>{thinking.status === "thinking" ? thinking.label : gameStarted ? modeDetails.label : "Setup required"}</em>
+            </div>
           </div>
-          <div className="play-command-actions">
+          <div className="play-command-actions play-header-command-actions">
+            {rulesSummary ? (
+              <button type="button" title="Open the compact rules summary." onClick={() => setShowRules(true)} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" aria-label="Rules summary">
+                <BookOpen size={16} />
+                Rules
+              </button>
+            ) : null}
+            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Create or copy a room link for this setup.">
+              <Share2 size={16} />
+              Room
+            </button>
+            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Open spectator view for live rooms.">
+              <Eye size={16} />
+              Watch
+            </button>
+            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Offer a draw when the game is active.">
+              <Handshake size={16} />
+              Draw
+            </button>
+            <button className="focus-ring inline-flex items-center gap-2 rounded-md border border-[var(--danger)] px-3 py-2 text-sm font-bold text-[var(--danger)]" title="Resign the active game.">
+              <Flag size={16} />
+              Resign
+            </button>
             <button type="button" title="Find and highlight a legal candidate move for the current side." onClick={suggestMove} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" disabled={!gameStarted || thinking.status === "thinking" || isReviewing}>
               <Lightbulb size={16} />
               Suggest
@@ -483,6 +556,7 @@ export function GameBoard({
             </button>
           </div>
         </div>
+        {playerCard(topPlayerColor, "top")}
         <div className="board-shell" data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
             <div className="board-grid overflow-hidden rounded-lg border border-[var(--border)] shadow-2xl" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }} aria-label="Game board">
@@ -572,6 +646,7 @@ export function GameBoard({
             ) : null}
           </div>
         </div>
+        {playerCard(bottomPlayerColor, "bottom")}
       </div>
 
       <aside className="game-side-panel play-panel grid content-start gap-4 p-4">
@@ -777,30 +852,6 @@ export function GameBoard({
             </div>
           ) : null}
         </div>
-        <details className="hidden" open>
-          <summary className="focus-ring">Status and clocks</summary>
-          <div className="play-table-card">
-          <p className="text-sm font-bold text-[var(--muted)]">Current position</p>
-          <p className="text-2xl font-black capitalize">{state.turn} to move</p>
-          {thinking.status === "thinking" ? <p className="mt-1 text-sm font-bold text-[var(--info)]">{thinking.label}</p> : null}
-          <p className="mt-1 text-xs font-bold text-[var(--muted)]">
-            Bot tier: {botLevel.label} · {botLevel.estimatedStrength} · {botLevel.benchmarkVersion}
-          </p>
-          {suggestedMove ? (
-            <p className="mt-1 text-sm font-bold text-[var(--accent-strong)]">
-              Suggestion: {suggestedMove.notation} - depth {suggestedMove.depthReached}
-            </p>
-          ) : null}
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-          {state.clocks.map((clock) => (
-            <div key={clock.color} className="play-clock-card">
-              <p>{clock.color}</p>
-              <strong>{formatClock(clock.remainingMs)}</strong>
-            </div>
-          ))}
-          </div>
-        </details>
         <div className="play-table-card text-sm text-[var(--muted)]">
           <p className="mb-1 flex items-center gap-2 font-bold text-[var(--foreground)]">
             <Flag size={16} className="text-[var(--warning)]" />

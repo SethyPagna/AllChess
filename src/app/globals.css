@@ -366,13 +366,180 @@ select {
   gap: 0.45rem;
 }
 
+.play-unified-header {
+  display: grid;
+  grid-template-columns: minmax(16rem, 1fr) minmax(0, auto);
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 8px;
+  background: #272623;
+  box-shadow: 0 16px 34px rgb(0 0 0 / 18%);
+  padding: 0.75rem;
+  min-width: 0;
+}
+
+.play-title-block {
+  min-width: 0;
+}
+
+.play-title-block h1 {
+  margin: 0 0 0.35rem;
+  color: #fffdf7;
+  font-size: clamp(1.45rem, 2.6vw, 2rem);
+  font-weight: 950;
+  line-height: 1;
+}
+
+.play-title-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  color: #d9d2c5;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.play-title-meta span,
+.play-title-meta em {
+  border-radius: 7px;
+  background: rgb(82 194 139 / 10%);
+  padding: 0.32rem 0.52rem;
+  color: #bfe9d1;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.play-title-meta strong {
+  color: #fff5de;
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+
+.play-title-meta em {
+  background: rgb(255 255 255 / 8%);
+  color: #d7d0c3;
+}
+
+.play-header-command-actions {
+  justify-content: flex-end;
+  max-width: min(48rem, 52vw);
+}
+
+.board-player-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(5rem, auto);
+  align-items: center;
+  gap: 0.65rem;
+  width: var(--board-fixed-size);
+  max-width: calc(100vw - 1.5rem);
+  min-height: 3.15rem;
+  margin-inline: auto;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 8px;
+  background: #24231f;
+  padding: 0.45rem 0.6rem;
+  box-shadow: 0 10px 20px rgb(0 0 0 / 14%);
+}
+
+.board-player-card.is-active {
+  border-color: rgb(115 184 80 / 62%);
+  box-shadow: 0 0 0 1px rgb(115 184 80 / 18%), 0 10px 20px rgb(0 0 0 / 14%);
+}
+
+.player-avatar {
+  display: grid;
+  width: 2.2rem;
+  height: 2.2rem;
+  place-items: center;
+  border-radius: 7px;
+  background: linear-gradient(160deg, #3c3a34, #191815);
+  color: #fffdf7;
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.player-card-main {
+  min-width: 0;
+}
+
+.player-card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.player-card-row strong {
+  overflow: hidden;
+  color: #fffdf7;
+  font-size: 0.92rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-card-row span {
+  color: var(--accent);
+  font-size: 0.95rem;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.player-card-main p {
+  margin: 0.1rem 0 0;
+  overflow: hidden;
+  color: #bbb3a4;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.captured-strip {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.1rem;
+  min-width: 4.5rem;
+  min-height: 1.65rem;
+  overflow: hidden;
+}
+
+.captured-piece {
+  display: grid;
+  width: 1.15rem;
+  height: 1.15rem;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.captured-piece .piece-symbol,
+.captured-piece .piece-svg,
+.captured-piece .native-piece-symbol {
+  width: 1.15rem;
+  height: 1.15rem;
+  font-size: 1rem;
+  stroke-width: 5px;
+}
+
+.captured-empty {
+  color: #8d8679;
+  font-size: 0.7rem;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
 .game-board-layout {
   align-items: start;
   --board-fixed-size: clamp(320px, min(58vw, calc(100vh - 8rem)), 760px);
 }
 
 .play-arena .game-board-layout {
-  --board-fixed-size: clamp(420px, min(52vw, calc(100vh - 12rem)), 820px);
+  --board-fixed-size: clamp(380px, min(52vw, calc(100vh - 14rem)), 780px);
   grid-template-columns: var(--board-fixed-size) minmax(20rem, 1fr);
   min-width: 0;
 }
@@ -1881,12 +2048,27 @@ select {
   }
 
   .play-header-compact,
-  .play-command-bar {
+  .play-command-bar,
+  .play-unified-header {
     grid-template-columns: 1fr;
   }
 
   .play-header-actions,
-  .play-command-actions {
+  .play-command-actions,
+  .play-header-command-actions {
+    justify-content: flex-start;
+  }
+
+  .play-header-command-actions {
+    max-width: 100%;
+  }
+
+  .board-player-card {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .captured-strip {
+    grid-column: 1 / -1;
     justify-content: flex-start;
   }
 
