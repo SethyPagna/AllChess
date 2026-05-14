@@ -20,6 +20,7 @@ describe("time controls", () => {
   test("includes standard speed modes for chess variants", () => {
     expect(timeControls.map((control) => control.key)).toEqual(["bullet", "blitz", "rapid", "classical", "correspondence", "freestyle"]);
     expect(timeControls.find((control) => control.key === "blitz")).toMatchObject({ baseSeconds: 300, incrementSeconds: 0 });
+    expect(timeControls.find((control) => control.key === "rapid")).toMatchObject({ baseSeconds: 600, incrementSeconds: 0, label: "Rapid 10+0" });
   });
 
   test("ticks the active player clock and flags on timeout", () => {

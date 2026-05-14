@@ -448,10 +448,11 @@ export function GameBoard({
       const now = Date.now();
       const elapsed = now - lastTick;
       lastTick = now;
+      if (!gameStarted) return;
       setState((current) => tickGameClock(current, elapsed));
     }, 250);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [gameStarted]);
 
   return (
     <div className="game-board-layout grid gap-4">
