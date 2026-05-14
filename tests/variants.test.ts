@@ -145,6 +145,39 @@ describe("variant engine", () => {
     expect(next.board[0][0].piece).toEqual(expect.objectContaining({ code: "k", owner: "black" }));
   });
 
+  test("draws classic chess when only the two kings remain", () => {
+    let state = createInitialState("classic", "bare-kings");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[7][4].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+
+    const next = applyMove(state, { from: { row: 7, col: 4 }, to: { row: 6, col: 4 } });
+
+    expect(next).toMatchObject({ status: "completed", result: "draw", outcomeReason: "insufficient-material" });
+  });
+
+  test("draws classic chess after fifty full moves without capture or pawn movement", () => {
+    let state = createInitialState("classic", "fifty-move");
+    state = {
+      ...state,
+      halfmoveClock: 99,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[7][4].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[7][0].piece = { id: "white-rook", code: "r", owner: "white", labelKey: "chess.rook" };
+    state.board[0][0].piece = { id: "black-rook", code: "r", owner: "black", labelKey: "chess.rook" };
+
+    const next = applyMove(state, { from: { row: 7, col: 0 }, to: { row: 6, col: 0 } });
+
+    expect(next).toMatchObject({ status: "completed", result: "draw", outcomeReason: "fifty-move", halfmoveClock: 100 });
+  });
+
   test("forbids moving into check", () => {
     let state = createInitialState("classic", "self-check");
     state = {

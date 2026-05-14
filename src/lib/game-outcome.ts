@@ -19,6 +19,8 @@ const reasonLabels: Record<NonNullable<GameState["outcomeReason"]>, string> = {
   objective: "variant objective",
   "royal-captured": "royal capture",
   "no-legal-moves": "no legal moves",
+  "insufficient-material": "insufficient material",
+  "fifty-move": "fifty-move rule",
   draw: "draw"
 };
 
@@ -75,6 +77,8 @@ function outcomeContext(state: GameState, reason: NonNullable<GameState["outcome
     objective: "A variant-specific objective was reached before normal checkmate or draw rules decided the game.",
     "royal-captured": "This ruleset allows the royal piece to be captured, so capture immediately decides the result.",
     "no-legal-moves": "The side to move has no legal move; this variant scores that as a loss rather than a draw.",
+    "insufficient-material": "Neither side has enough material left to force checkmate. With only the two kings, the game is immediately drawn.",
+    "fifty-move": "Fifty full moves passed without a pawn move or capture, so standard chess rules allow the game to be drawn.",
     draw: "The selected ruleset reached a drawn result with no winner."
   };
 

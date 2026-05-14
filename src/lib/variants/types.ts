@@ -40,11 +40,22 @@ export type GameState = {
   ply: number;
   status: "waiting" | "active" | "completed";
   result?: "draw" | "white" | "black" | "red" | "blue" | "sente" | "gote";
-  outcomeReason?: "checkmate" | "stalemate" | "timeout" | "three-check" | "objective" | "royal-captured" | "no-legal-moves" | "draw";
+  outcomeReason?:
+    | "checkmate"
+    | "stalemate"
+    | "timeout"
+    | "three-check"
+    | "objective"
+    | "royal-captured"
+    | "no-legal-moves"
+    | "insufficient-material"
+    | "fifty-move"
+    | "draw";
   moves: Array<Move & { notation: string }>;
   clocks: PlayerClock[];
   captured: Piece[];
   checks: Partial<Record<PlayerColor, number>>;
+  halfmoveClock: number;
 };
 
 export type VariantDefinition = {

@@ -33,6 +33,7 @@ export function createInitialState(variantKey: string, id = crypto.randomUUID())
     moves: [],
     captured: [],
     checks: {},
+    halfmoveClock: 0,
     clocks: variant.players.map((color) => ({
       color,
       remainingMs: 600000,
@@ -324,6 +325,7 @@ export function applyMove(state: GameState, move: Move): GameState {
   if (moverClock) {
     moverClock.remainingMs += moverClock.incrementMs;
   }
+  next.halfmoveClock = captured || movingPiece.code === "p" ? 0 : (state.halfmoveClock ?? 0) + 1;
 
   if (!variant.supportsCheck && captured && isRoyal(captured)) {
     next.status = "completed";
@@ -347,6 +349,14 @@ function withOutcome(state: GameState, mover: PlayerColor, destination: Square):
 
   if (!variant.supportsCheck) return state;
 
+  const drawReason = drawReasonFor(state);
+  if (drawReason) {
+    state.status = "completed";
+    state.result = "draw";
+    state.outcomeReason = drawReason;
+    return state;
+  }
+
   const defender = state.turn;
   const defenderInCheck = isInCheck(state, defender);
   if (defenderInCheck) {
@@ -366,6 +376,20 @@ function withOutcome(state: GameState, mover: PlayerColor, destination: Square):
   }
 
   return state;
+}
+
+function drawReasonFor(state: GameState): "insufficient-material" | "fifty-move" | null {
+  const variant = getVariant(state.variantKey);
+  if (variant.family === "western" && state.halfmoveClock >= 100) return "fifty-move";
+  if (!["classic", "chess960", "king-of-the-hill", "three-check"].includes(variant.key)) return null;
+
+  const pieces = state.board.flatMap((row) => row.map((cell) => cell.piece).filter(Boolean) as Piece[]);
+  const nonRoyal = pieces.filter((piece) => !isRoyal(piece));
+  if (!nonRoyal.length && variant.players.every((player) => pieces.some((piece) => piece.owner === player && isRoyal(piece)))) {
+    return "insufficient-material";
+  }
+
+  return null;
 }
 
 export function serializeSquare(square: Square) {

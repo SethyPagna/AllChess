@@ -65,4 +65,24 @@ describe("game outcome descriptions", () => {
     });
     expect(describeGameOutcome(state, "white")?.context.join(" ")).toContain("clock reached zero");
   });
+
+  test("describes bare-king draws with useful context", () => {
+    const state = {
+      ...createInitialState("classic", "bare-kings-outcome"),
+      status: "completed" as const,
+      result: "draw" as const,
+      outcomeReason: "insufficient-material" as const,
+      ply: 55
+    };
+
+    const outcome = describeGameOutcome(state, "white");
+
+    expect(outcome).toMatchObject({
+      winner: null,
+      result: "draw",
+      reason: "insufficient-material",
+      headline: "Draw by insufficient material"
+    });
+    expect(outcome?.context.join(" ")).toContain("only the two kings");
+  });
 });
