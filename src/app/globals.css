@@ -368,9 +368,12 @@ select {
 
 .play-unified-header {
   display: grid;
-  grid-template-columns: minmax(16rem, 1fr) minmax(0, auto);
+  grid-template-columns: 1fr;
   align-items: center;
   gap: 0.75rem;
+  width: var(--board-fixed-size);
+  max-width: calc(100vw - 1.5rem);
+  margin-inline: auto;
   border: 1px solid rgb(255 255 255 / 8%);
   border-radius: 8px;
   background: #272623;
@@ -423,8 +426,11 @@ select {
 }
 
 .play-header-command-actions {
-  justify-content: flex-end;
-  max-width: min(48rem, 52vw);
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  max-width: 100%;
+  overflow-x: visible;
+  padding-bottom: 0;
 }
 
 .board-player-card {

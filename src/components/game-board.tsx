@@ -147,7 +147,7 @@ export function GameBoard({
             <strong>{isHuman ? "Your profile" : isBot ? `${botLevel.label} bot` : `${colorLabel(color)} player`}</strong>
             <span>{clock ? formatClock(clock.remainingMs) : "--:--"}</span>
           </div>
-          <p>{isBot ? `${botLevel.estimatedStrength} · ${lastBotResult?.knowledgeSource ?? "ready"}` : isHuman ? `${colorLabel(color)} side · local profile` : `${colorLabel(color)} side`}</p>
+          <p>{isBot ? `${botLevel.estimatedStrength} - ${thinking.status === "thinking" ? "thinking" : "profile"}` : isHuman ? `${colorLabel(color)} side - local profile` : `${colorLabel(color)} side`}</p>
         </div>
         <div className="captured-strip" aria-label={`${colorLabel(color)} captured pieces`}>
           {capturedPieces.length ? (
