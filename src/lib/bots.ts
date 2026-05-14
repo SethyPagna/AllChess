@@ -35,6 +35,7 @@ export type BotMoveResult = {
   confidence: number;
   benchmarkVersion: string;
   legal: boolean;
+  legalValidated: boolean;
   depth: number;
   nodes: number;
   depthReached: number;
@@ -216,6 +217,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
           confidence: 0,
           benchmarkVersion: tierConfig.benchmarkVersion,
           legal: false,
+          legalValidated: false,
           depth: 0,
           nodes: 0,
           depthReached: 0,
@@ -244,6 +246,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
             confidence: knowledge.entry.confidence,
             benchmarkVersion: knowledge.entry.benchmarkVersion,
             legal: true,
+            legalValidated: true,
             depth: 0,
             nodes: 1,
             depthReached: 0,
@@ -275,6 +278,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
               confidence: confidenceFor(stockfish.evaluation, stockfish.depthReached, difficultyKey),
               benchmarkVersion: tierConfig.benchmarkVersion,
               legal: true,
+              legalValidated: true,
               depth: stockfish.depthReached,
               nodes: stockfish.nodesSearched,
               depthReached: stockfish.depthReached,
@@ -304,6 +308,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
             confidence: 0,
             benchmarkVersion: tierConfig.benchmarkVersion,
             legal: false,
+            legalValidated: false,
             depth: 0,
             nodes: 0,
             depthReached: 0,
@@ -330,6 +335,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
           confidence: validatedLegal ? confidenceFor(result.score, result.depthReached, difficultyKey) : 0,
           benchmarkVersion: tierConfig.benchmarkVersion,
           legal: validatedLegal,
+          legalValidated: validatedLegal,
           depth: result.depthReached,
           nodes: result.nodesSearched,
           depthReached: result.depthReached,
@@ -355,6 +361,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
           confidence: 0,
           benchmarkVersion: tierConfig.benchmarkVersion,
           legal: false,
+          legalValidated: false,
           depth: 0,
           nodes: 0,
           depthReached: 0,

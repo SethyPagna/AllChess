@@ -100,6 +100,7 @@ describe("bot difficulty ladder", () => {
     expect(result.move).toBeTruthy();
     expect(result.engine).toBe("internal");
     expect(result.validatedLegal).toBe(true);
+    expect(result.legalValidated).toBe(true);
     expect(result.depthReached).toBeGreaterThanOrEqual(1);
     expect(result.elapsedMs).toBeGreaterThanOrEqual(0);
     expect(result.nodesSearched).toBeGreaterThan(0);
@@ -118,6 +119,7 @@ describe("bot difficulty ladder", () => {
       tier: "legend",
       engine: "internal",
       legal: false,
+      legalValidated: false,
       validatedLegal: false
     });
   });
@@ -165,6 +167,7 @@ describe("bot difficulty ladder", () => {
     });
     expect(result.depth).toBe(result.depthReached);
     expect(result.nodes).toBe(result.nodesSearched);
+    expect(result.legalValidated).toBe(true);
     expect(result.pv).toEqual(result.principalVariation);
     expect(result.confidence).toBeGreaterThanOrEqual(0.82);
     expect(result.explanation?.plan).toContain("center");
@@ -185,6 +188,7 @@ describe("bot difficulty ladder", () => {
       status: "ok",
       knowledgeSource: "opening-book",
       nodesSearched: 1,
+      legalValidated: true,
       validatedLegal: true
     });
   });
