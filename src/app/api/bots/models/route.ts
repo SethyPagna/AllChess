@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { listBotModelManifests } from "@/lib/bot-training";
+import { listBotModelManifests, listBotToolManifests, listTrainingDataManifests } from "@/lib/bot-training";
 
 export function GET() {
   return NextResponse.json({
@@ -9,6 +9,8 @@ export function GET() {
       largeArtifacts: "R2",
       note: "Runtime gameplay consumes legal cached knowledge first; full neural training artifacts stay outside the browser bundle."
     },
-    models: listBotModelManifests()
+    models: listBotModelManifests(),
+    tools: listBotToolManifests(),
+    dataSources: listTrainingDataManifests()
   });
 }

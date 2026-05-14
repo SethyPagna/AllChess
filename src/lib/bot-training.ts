@@ -1,6 +1,7 @@
 import { moveToUci } from "@/lib/stockfish-engine";
 import { getLegalMoves, type GameState, type Move } from "@/lib/variants";
 import type { BotTierKey } from "@/lib/bots";
+import generatedKnowledge from "@/data/bot-knowledge.generated.json";
 
 export type BotKnowledgeSource = "opening-book" | "tactic-cache" | "endgame-cache" | "ml-policy" | "engine-search" | "internal-search";
 
@@ -57,10 +58,36 @@ export type BotModelManifest = {
   createdAt: string;
 };
 
+export type TrainingDataManifest = {
+  id: string;
+  path: string;
+  kind: string;
+  variantKey: string;
+  bytes: number;
+  readStatus: string;
+  sampledRecords: number;
+  license: string;
+  storagePlan: string;
+};
+
+export type BotToolManifest = {
+  id: string;
+  name: string;
+  path: string;
+  bytes: number;
+  role: string;
+  usableFor: string[];
+  runtimeUse: string;
+  storagePlan: string;
+  status: string;
+  notes: string;
+};
+
 export type BotKnowledgeEntry = {
   id: string;
   variantKey: string;
   positionKey: string;
+  boardSignature?: string;
   moveUci: string;
   source: BotKnowledgeSource;
   minTier: BotTierKey;
@@ -76,6 +103,12 @@ export type BotKnowledgeHit = {
   principalVariation: string[];
 };
 
+type GeneratedBotKnowledgeFile = {
+  entries: BotKnowledgeEntry[];
+  manifests?: TrainingDataManifest[];
+  toolManifests?: BotToolManifest[];
+};
+
 const tierRank: Record<BotTierKey, number> = {
   easy: 0,
   normal: 1,
@@ -85,7 +118,7 @@ const tierRank: Record<BotTierKey, number> = {
   legend: 5
 };
 
-const knowledgeEntries: BotKnowledgeEntry[] = [
+const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
   {
     id: "classic-start-e4",
     variantKey: "classic",
@@ -156,6 +189,10 @@ const knowledgeEntries: BotKnowledgeEntry[] = [
   }
 ];
 
+const generated = generatedKnowledge as GeneratedBotKnowledgeFile;
+const generatedKnowledgeEntries = generated.entries;
+const knowledgeEntries: BotKnowledgeEntry[] = [...curatedKnowledgeEntries, ...generatedKnowledgeEntries];
+
 const modelManifests: BotModelManifest[] = [
   {
     id: "allchess-classic-policy-v1",
@@ -189,6 +226,20 @@ export function createBotPositionKey(state: GameState) {
   return `${state.variantKey}|turn:${state.turn}|moves:${state.moves.map((move) => moveToUci(state, move)).join(" ")}`;
 }
 
+export function createBotBoardSignature(state: GameState) {
+  const board = state.board
+    .map((row) =>
+      row
+        .map((cell) => {
+          if (!cell.piece) return "--";
+          return `${cell.piece.owner.slice(0, 1)}${cell.piece.code}${cell.piece.promoted ? "+" : ""}`;
+        })
+        .join(",")
+    )
+    .join("/");
+  return `${state.variantKey}|turn:${state.turn}|board:${board}`;
+}
+
 export function listBotKnowledge(variantKey?: string) {
   return knowledgeEntries.filter((entry) => !variantKey || entry.variantKey === variantKey);
 }
@@ -197,12 +248,21 @@ export function listBotModelManifests() {
   return modelManifests;
 }
 
+export function listTrainingDataManifests() {
+  return generated.manifests ?? [];
+}
+
+export function listBotToolManifests() {
+  return generated.toolManifests ?? [];
+}
+
 export function lookupBotKnowledge(state: GameState, tier: BotTierKey): BotKnowledgeHit | null {
   if (state.status !== "active") return null;
 
   const key = createBotPositionKey(state);
+  const boardSignature = createBotBoardSignature(state);
   const entries = knowledgeEntries
-    .filter((entry) => entry.variantKey === state.variantKey && entry.positionKey === key && tierRank[tier] >= tierRank[entry.minTier])
+    .filter((entry) => entry.variantKey === state.variantKey && (entry.positionKey === key || entry.boardSignature === boardSignature) && tierRank[tier] >= tierRank[entry.minTier])
     .sort((a, b) => sourcePriority(a.source) - sourcePriority(b.source) || b.confidence - a.confidence);
 
   for (const entry of entries) {

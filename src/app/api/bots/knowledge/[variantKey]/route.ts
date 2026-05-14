@@ -11,6 +11,7 @@ export function GET(_request: Request, { params }: { params: Promise<{ variantKe
         id: entry.id,
         variantKey: entry.variantKey,
         positionKey: entry.positionKey,
+        boardSignature: entry.boardSignature,
         moveUci: entry.moveUci,
         source: entry.source,
         minTier: entry.minTier,

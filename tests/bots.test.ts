@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import { cancelBotMove, chooseBotMove, chooseBotMoveSafe, botDifficultyLevels, requestBotMove } from "@/lib/bots";
-import { createBotPositionKey, listBotKnowledge, listBotModelManifests, lookupBotKnowledge } from "@/lib/bot-training";
+import { createBotBoardSignature, createBotPositionKey, listBotKnowledge, listBotModelManifests, listBotToolManifests, listTrainingDataManifests, lookupBotKnowledge } from "@/lib/bot-training";
 import { applyMove, createInitialState, getLegalMoves } from "@/lib/variants";
 
 describe("bot difficulty ladder", () => {
@@ -189,6 +189,15 @@ describe("bot difficulty ladder", () => {
     });
   });
 
+  test("board signatures support generated tactic-cache positions", () => {
+    const state = createInitialState("classic", "signature-test");
+    const signature = createBotBoardSignature(state);
+
+    expect(signature).toContain("classic|turn:white|board:");
+    expect(signature).toContain("wr");
+    expect(signature).toContain("bk");
+  });
+
   test("bot model manifests describe D1/R2 training artifacts", () => {
     const manifests = listBotModelManifests();
 
@@ -199,6 +208,21 @@ describe("bot difficulty ladder", () => {
           storage: "r2",
           benchmarkVersion: "allchess-knowledge-v1"
         })
+      ])
+    );
+  });
+
+  test("local training manifests expose data and tool inventory without raw files", () => {
+    const dataSources = listTrainingDataManifests();
+    const tools = listBotToolManifests();
+
+    expect(dataSources.length).toBeGreaterThan(0);
+    expect(dataSources).toEqual(expect.arrayContaining([expect.objectContaining({ kind: "csv", variantKey: "classic" })]));
+    expect(tools).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ name: "Stockfish source", role: "engine-labeler" }),
+        expect.objectContaining({ name: "Lc0 ONNX DirectML", role: "neural-engine-evaluator" }),
+        expect.objectContaining({ name: "NNUE tools", role: "training-tooling" })
       ])
     );
   });
