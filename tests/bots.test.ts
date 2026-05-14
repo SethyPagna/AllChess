@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import { cancelBotMove, chooseBotMove, chooseBotMoveSafe, botDifficultyLevels, requestBotMove } from "@/lib/bots";
-import { createBotBoardSignature, createBotPositionKey, listBotKnowledge, listBotModelManifests, listBotToolManifests, listTrainingDataManifests, lookupBotKnowledge } from "@/lib/bot-training";
+import { createBotBoardSignature, createBotPositionKey, listBotEngineLabels, listBotKnowledge, listBotKnowledgeSummary, listBotModelManifests, listBotToolManifests, listTrainingDataManifests, lookupBotKnowledge } from "@/lib/bot-training";
 import { applyMove, createInitialState, getLegalMoves } from "@/lib/variants";
 
 describe("bot difficulty ladder", () => {
@@ -210,9 +210,27 @@ describe("bot difficulty ladder", () => {
         expect.objectContaining({
           variantKey: "classic",
           storage: "r2",
-          benchmarkVersion: "allchess-knowledge-v1"
+          benchmarkVersion: "allchess-local-knowledge-v1",
+          status: "active"
         })
       ])
+    );
+    expect(manifests.find((manifest) => manifest.variantKey === "classic")?.positionCount).toBeGreaterThan(0);
+  });
+
+  test("local data generation exposes engine labels separately from runtime cache entries", () => {
+    const summary = listBotKnowledgeSummary();
+    const labels = listBotEngineLabels("classic");
+
+    expect(summary.engineLabels).toBeGreaterThan(0);
+    expect(labels.length).toBeGreaterThan(0);
+    expect(labels[0]).toEqual(
+      expect.objectContaining({
+        variantKey: "classic",
+        moveUci: expect.any(String),
+        legalValidation: "runtime",
+        benchmarkVersion: "allchess-local-knowledge-v1"
+      })
     );
   });
 

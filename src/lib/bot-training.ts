@@ -24,11 +24,24 @@ export type TrainingGame = {
 };
 
 export type EngineLabel = {
+  id?: string;
+  variantKey?: string;
+  positionKey?: string;
+  boardSignature?: string;
+  moveUci?: string;
   engine: string;
+  engineVersion?: string;
   depth: number;
   nodes: number;
   bestMoves: string[];
   evaluation: number | null;
+  legalValidation?: "runtime";
+  benchmarkVersion?: string;
+  confidence?: number;
+  minTier?: BotTierKey;
+  tags?: string[];
+  sourceTool?: string;
+  explanation?: BotMoveExplanation;
   createdAt: string;
 };
 
@@ -104,7 +117,19 @@ export type BotKnowledgeHit = {
 };
 
 type GeneratedBotKnowledgeFile = {
+  version?: string;
+  generatedAt?: string;
+  summary?: {
+    filesScanned?: number;
+    toolsDiscovered?: number;
+    entries?: number;
+    openingEntries?: number;
+    tacticEntries?: number;
+    engineLabels?: number;
+    sampledBytesPerCompressedFile?: number;
+  };
   entries: BotKnowledgeEntry[];
+  engineLabels?: EngineLabel[];
   manifests?: TrainingDataManifest[];
   toolManifests?: BotToolManifest[];
 };
@@ -191,7 +216,18 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
 
 const generated = generatedKnowledge as GeneratedBotKnowledgeFile;
 const generatedKnowledgeEntries = generated.entries;
-const knowledgeEntries: BotKnowledgeEntry[] = [...curatedKnowledgeEntries, ...generatedKnowledgeEntries];
+const generatedEngineLabels = generated.engineLabels ?? [];
+const engineLabelKnowledgeEntries = generatedEngineLabels.flatMap(engineLabelToKnowledgeEntry);
+const knowledgeEntries: BotKnowledgeEntry[] = [...curatedKnowledgeEntries, ...generatedKnowledgeEntries, ...engineLabelKnowledgeEntries];
+const classicPositionCount = new Set(
+  [...generatedKnowledgeEntries, ...engineLabelKnowledgeEntries]
+    .filter((entry) => entry.variantKey === "classic")
+    .map((entry) => entry.boardSignature || entry.positionKey || entry.id)
+).size;
+const totalGeneratedPositionCount = new Set(
+  [...generatedKnowledgeEntries, ...engineLabelKnowledgeEntries].map((entry) => `${entry.variantKey}|${entry.boardSignature || entry.positionKey || entry.id}`)
+).size;
+const localBenchmarkVersion = generatedKnowledgeEntries[0]?.benchmarkVersion ?? generatedEngineLabels[0]?.benchmarkVersion ?? "allchess-local-knowledge-v1";
 
 const modelManifests: BotModelManifest[] = [
   {
@@ -199,11 +235,11 @@ const modelManifests: BotModelManifest[] = [
     variantKey: "classic",
     tier: "grandmaster",
     version: "classic-policy-v1",
-    status: "planned",
+    status: classicPositionCount > 0 ? "active" : "planned",
     storage: "r2",
     objectKey: "bot-models/classic/policy-v1/manifest.json",
-    positionCount: 0,
-    benchmarkVersion: "allchess-knowledge-v1",
+    positionCount: classicPositionCount,
+    benchmarkVersion: localBenchmarkVersion,
     sourceManifestIds: ["lichess-public-license-reviewed", "allchess-selfplay-v1"],
     createdAt: "2026-05-14T00:00:00.000Z"
   },
@@ -212,11 +248,11 @@ const modelManifests: BotModelManifest[] = [
     variantKey: "all-playable",
     tier: "legend",
     version: "universal-tactics-v1",
-    status: "planned",
+    status: totalGeneratedPositionCount > 0 ? "active" : "planned",
     storage: "r2",
     objectKey: "bot-models/universal/tactics-v1/manifest.json",
-    positionCount: 0,
-    benchmarkVersion: "allchess-knowledge-v1",
+    positionCount: totalGeneratedPositionCount,
+    benchmarkVersion: localBenchmarkVersion,
     sourceManifestIds: ["engine-generated-tactics-v1", "opt-in-user-games-v1"],
     createdAt: "2026-05-14T00:00:00.000Z"
   }
@@ -242,6 +278,25 @@ export function createBotBoardSignature(state: GameState) {
 
 export function listBotKnowledge(variantKey?: string) {
   return knowledgeEntries.filter((entry) => !variantKey || entry.variantKey === variantKey);
+}
+
+export function listBotEngineLabels(variantKey?: string) {
+  return generatedEngineLabels.filter((label) => !variantKey || label.variantKey === variantKey);
+}
+
+export function listBotKnowledgeSummary() {
+  return {
+    version: generated.version ?? "allchess-local-knowledge-v1",
+    generatedAt: generated.generatedAt,
+    filesScanned: generated.summary?.filesScanned ?? 0,
+    toolsDiscovered: generated.summary?.toolsDiscovered ?? 0,
+    entries: knowledgeEntries.length,
+    generatedEntries: generatedKnowledgeEntries.length,
+    openingEntries: generated.summary?.openingEntries ?? generatedKnowledgeEntries.filter((entry) => entry.source === "opening-book").length,
+    tacticEntries: generated.summary?.tacticEntries ?? generatedKnowledgeEntries.filter((entry) => entry.source === "tactic-cache").length,
+    engineLabels: generatedEngineLabels.length,
+    sampledBytesPerCompressedFile: generated.summary?.sampledBytesPerCompressedFile ?? 0
+  };
 }
 
 export function listBotModelManifests() {
@@ -295,4 +350,29 @@ function sourcePriority(source: BotKnowledgeSource) {
     "internal-search": 5
   };
   return priorities[source];
+}
+
+function engineLabelToKnowledgeEntry(label: EngineLabel): BotKnowledgeEntry[] {
+  if (!label.id || !label.variantKey || !label.moveUci || (!label.positionKey && !label.boardSignature)) return [];
+
+  return [
+    {
+      id: `engine-label-${label.id}`,
+      variantKey: label.variantKey,
+      positionKey: label.positionKey ?? "",
+      boardSignature: label.boardSignature,
+      moveUci: label.moveUci,
+      source: "engine-search",
+      minTier: label.minTier ?? "hard",
+      confidence: label.confidence ?? 0.78,
+      benchmarkVersion: label.benchmarkVersion ?? "allchess-local-knowledge-v1",
+      tags: ["engine-label", ...(label.tags ?? [])],
+      explanation: label.explanation ?? {
+        plan: `Use a precomputed ${label.engine} label before spending live search time.`,
+        threat: "The labelled move is replayed only when the exact position matches.",
+        risk: "Offline labels can be stale if the rules adapter changes, so runtime legal validation is mandatory.",
+        fallbackGoal: "Fall back to live engine/search if this labelled move is not legal."
+      }
+    }
+  ];
 }
