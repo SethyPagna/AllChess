@@ -1,12 +1,21 @@
 import { spawn, spawnSync } from "node:child_process";
+import { cpSync, existsSync, rmSync } from "node:fs";
 
-const prepare = spawnSync(process.execPath, ["scripts/prepare-stockfish.mjs"], { stdio: "inherit" });
-if (prepare.status !== 0) process.exit(prepare.status ?? 1);
+const build =
+  process.platform === "win32"
+    ? spawnSync(process.env.ComSpec ?? "cmd.exe", ["/d", "/s", "/c", "npm run build"], { stdio: "inherit" })
+    : spawnSync("npm", ["run", "build"], { stdio: "inherit" });
+if (build.status !== 0) process.exit(build.status ?? 1);
+
+copyStandaloneAssets();
 
 const next = spawn(
   process.execPath,
-  ["node_modules/next/dist/bin/next", "dev", "--hostname", "127.0.0.1", "--port", "3210"],
-  { stdio: "inherit" }
+  [".next/standalone/server.js"],
+  {
+    env: { ...process.env, HOSTNAME: "127.0.0.1", PORT: "3210" },
+    stdio: "inherit"
+  }
 );
 
 const shutdown = () => {
@@ -19,3 +28,14 @@ next.on("exit", (code, signal) => {
   if (signal) process.kill(process.pid, signal);
   process.exit(code ?? 0);
 });
+
+function copyStandaloneAssets() {
+  copyDirectory(".next/static", ".next/standalone/.next/static");
+  copyDirectory("public", ".next/standalone/public");
+}
+
+function copyDirectory(source, destination) {
+  if (!existsSync(source)) return;
+  rmSync(destination, { force: true, recursive: true });
+  cpSync(source, destination, { recursive: true });
+}
