@@ -82,6 +82,16 @@ export type GameCatalogEntry = {
   winConditions: string[];
   reviewFocus: string[];
   recommendations: string[];
+  verification?: PlayableGameVerification;
+};
+
+export type PlayableGameVerification = {
+  rulesComplete: boolean;
+  botComplete: boolean;
+  reviewComplete: boolean;
+  persistenceComplete: boolean;
+  e2eComplete: boolean;
+  knownGaps: string[];
 };
 
 export type BotBenchmarkRun = {

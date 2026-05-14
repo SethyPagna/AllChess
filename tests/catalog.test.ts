@@ -5,18 +5,39 @@ import { GET as catalogItemGet } from "@/app/api/catalog/[gameId]/route";
 import { GET as familiesGet } from "@/app/api/game-families/route";
 import { GET as leaderboardsGet } from "@/app/api/leaderboards/route";
 import { GET as rulesGet } from "@/app/api/rules/[variantKey]/route";
-import { displayGameName, gameCatalog, gameFamilies, getCatalogStats, getGameCatalogEntry, searchGameCatalog } from "@/lib/catalog";
-import { variantCatalog } from "@/lib/variants";
+import { displayGameName, gameCatalog, gameFamilies, getCatalogStats, getGameCatalogEntry, getPlayableGameVerification, searchGameCatalog } from "@/lib/catalog";
 
 describe("universal game catalog", () => {
   test("keeps every current playable variant in the broader catalog", () => {
     const playableIds = gameCatalog.filter((entry) => entry.playability === "playable").map((entry) => entry.id).sort();
 
-    expect(playableIds).toEqual(variantCatalog.map((variant) => variant.key).sort());
+    expect(playableIds).toEqual(["chess960", "classic", "king-of-the-hill", "three-check", "xiangqi"]);
     expect(gameCatalog.find((entry) => entry.id === "classic")).toMatchObject({
       piecePresentation: "staunton-svg",
       botAdapter: "fairy-stockfish"
     });
+  });
+
+  test("only marks games playable when the verification matrix is complete", () => {
+    const playableEntries = gameCatalog.filter((entry) => entry.playability === "playable");
+
+    for (const entry of playableEntries) {
+      expect(entry.verification).toMatchObject({
+        rulesComplete: true,
+        botComplete: true,
+        reviewComplete: true,
+        persistenceComplete: true,
+        e2eComplete: true,
+        knownGaps: []
+      });
+    }
+
+    expect(getPlayableGameVerification("shogi")).toMatchObject({
+      rulesComplete: false,
+      knownGaps: expect.arrayContaining([expect.stringContaining("drops")])
+    });
+    expect(getGameCatalogEntry("shogi")).toMatchObject({ playability: "learn" });
+    expect(getGameCatalogEntry("jungle")).toMatchObject({ playability: "learn" });
   });
 
   test("covers the wider board-game families without marking unfinished engines playable", () => {
@@ -50,7 +71,7 @@ describe("universal game catalog", () => {
   test("stats and API payloads are real catalog counts, not fake live-player estimates", async () => {
     const stats = getCatalogStats();
     expect(stats.totalGames).toBe(gameCatalog.length);
-    expect(stats.playableGames).toBe(variantCatalog.length);
+    expect(stats.playableGames).toBe(5);
     expect(stats.familyCounts.mancala).toBeGreaterThan(0);
 
     const catalog = await catalogGet(new Request("http://allchess.test/api/catalog?q=go"));

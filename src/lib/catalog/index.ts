@@ -1,7 +1,7 @@
 import { getVariantRuleSummary } from "@/lib/rules-atlas";
 import { variantCatalog, type VariantDefinition } from "@/lib/variants";
 
-import type { BoardGeometry, CatalogStats, GameCatalogEntry, GameFamilyKey, LeaderboardScope, PiecePresentationPack, PlayabilityStatus } from "./types";
+import type { BoardGeometry, CatalogStats, GameCatalogEntry, GameFamilyKey, LeaderboardScope, PiecePresentationPack, PlayabilityStatus, PlayableGameVerification } from "./types";
 
 export type {
   BoardGeometry,
@@ -13,6 +13,7 @@ export type {
   GameNamePack,
   LeaderboardScope,
   PiecePresentationPack,
+  PlayableGameVerification,
   PlayabilityStatus,
   RulesEngineAdapter
 } from "./types";
@@ -65,6 +66,69 @@ const localizedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
   "three-check": { english: "Three-check" }
 };
 
+const completeVerification: PlayableGameVerification = {
+  rulesComplete: true,
+  botComplete: true,
+  reviewComplete: true,
+  persistenceComplete: true,
+  e2eComplete: true,
+  knownGaps: []
+};
+
+const playableVerificationByVariant: Record<string, PlayableGameVerification> = {
+  classic: completeVerification,
+  chess960: completeVerification,
+  xiangqi: completeVerification,
+  "king-of-the-hill": completeVerification,
+  "three-check": completeVerification,
+  shogi: incompleteVerification([
+    "Native drops need full rules coverage, including nifu, dead-square drops, and pawn-drop mate.",
+    "Promotion choice, hands, and strict illegal-move loss need fixture-backed gameplay tests."
+  ]),
+  janggi: incompleteVerification([
+    "Janggi palace diagonals, cannon screens, facing-general policy, pass, and scoring need a dedicated rules adapter.",
+    "Current board uses the xiangqi-like scaffold and must not be advertised as fully verified."
+  ]),
+  makruk: incompleteVerification([
+    "Makruk native piece movement, promotion, and counting draw rules need fixture-backed verification.",
+    "Current movement is a simplified chess-family scaffold."
+  ]),
+  jungle: incompleteVerification([
+    "Jungle rank captures, rat river exceptions, trap weakening, and den-entry edge cases need complete fixtures.",
+    "Current adapter blocks basic river movement but is not a full Dou Shou Qi rules engine."
+  ]),
+  antichess: incompleteVerification([
+    "Compulsory capture, non-royal king behavior, and no-legal-move win conditions need complete tests.",
+    "Current adapter is not yet a full antichess rules profile."
+  ]),
+  horde: incompleteVerification([
+    "Horde elimination win condition, asymmetric check rules, and draw policies need complete tests.",
+    "Current adapter is not yet a full horde rules profile."
+  ])
+};
+
+function incompleteVerification(knownGaps: string[]): PlayableGameVerification {
+  return {
+    rulesComplete: false,
+    botComplete: false,
+    reviewComplete: false,
+    persistenceComplete: false,
+    e2eComplete: false,
+    knownGaps
+  };
+}
+
+function isVerificationComplete(verification: PlayableGameVerification) {
+  return (
+    verification.rulesComplete &&
+    verification.botComplete &&
+    verification.reviewComplete &&
+    verification.persistenceComplete &&
+    verification.e2eComplete &&
+    verification.knownGaps.length === 0
+  );
+}
+
 function boardFromVariant(variant: VariantDefinition): BoardGeometry {
   return variant.board.coordinates === "orthodox"
     ? { kind: "square-grid", rows: variant.board.rows, cols: variant.board.cols, description: `${variant.board.rows}x${variant.board.cols} square grid.` }
@@ -73,6 +137,7 @@ function boardFromVariant(variant: VariantDefinition): BoardGeometry {
 
 function playableEntryFromVariant(variant: VariantDefinition): GameCatalogEntry {
   const rules = getVariantRuleSummary(variant.key);
+  const verification = getPlayableGameVerification(variant.key);
   return {
     id: variant.key,
     variantKey: variant.key,
@@ -82,7 +147,7 @@ function playableEntryFromVariant(variant: VariantDefinition): GameCatalogEntry 
     region: playableRegion(variant.key),
     board: boardFromVariant(variant),
     piecePresentation: presentationByVariant[variant.key] ?? "staunton-svg",
-    playability: "playable",
+    playability: isVerificationComplete(verification) ? "playable" : "learn",
     rulesAdapter: variant.rulesAdapter,
     botAdapter: variant.engineProtocol === "internal" ? "internal-search" : "fairy-stockfish",
     learningStatus: "ready",
@@ -90,7 +155,8 @@ function playableEntryFromVariant(variant: VariantDefinition): GameCatalogEntry 
     shortRules: rules.numberedBasics,
     winConditions: rules.winConditions,
     reviewFocus: ["Legal moves", "Terminal result", "Bot move validation", ...rules.specialRules.slice(0, 3)],
-    recommendations: relatedFor(variant.key)
+    recommendations: relatedFor(variant.key),
+    verification
   };
 }
 
@@ -650,6 +716,14 @@ export function getGameCatalogEntry(idOrAlias: string) {
       .filter(Boolean)
       .some((candidate) => normalizeCatalogSearch(candidate ?? "") === normalized)
   );
+}
+
+export function getPlayableGameVerification(variantKey: string): PlayableGameVerification {
+  return playableVerificationByVariant[variantKey] ?? incompleteVerification(["No verification matrix is registered for this game."]);
+}
+
+export function getVerifiedPlayableVariants() {
+  return variantCatalog.filter((variant) => isVerificationComplete(getPlayableGameVerification(variant.key))).map((variant) => variant.key);
 }
 
 export function searchGameCatalog(query: string, filters: { family?: GameFamilyKey; playability?: PlayabilityStatus } = {}) {
