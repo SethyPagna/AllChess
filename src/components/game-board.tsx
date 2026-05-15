@@ -25,7 +25,8 @@ import {
   Undo2,
 } from "lucide-react";
 
-import { botDifficultyLevels, cancelBotMove, MAX_BOT_REPLY_MS, requestBotMove, type BotDifficultyKey, type BotMoveResult } from "@/lib/bots";
+import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/lib/bot-config";
+import type { BotMoveResult } from "@/lib/bots";
 import { formatClock, tickGameClock } from "@/lib/clocks";
 import { analyzeMoveList, summarizeReview } from "@/lib/game-review";
 import { describeGameOutcome } from "@/lib/game-outcome";
@@ -67,6 +68,15 @@ type SuggestedMove = {
   score: number | null;
   depthReached: number;
 };
+
+async function requestRuntimeBotMove(...args: Parameters<typeof import("@/lib/bots").requestBotMove>) {
+  const { requestBotMove } = await import("@/lib/bots");
+  return requestBotMove(...args);
+}
+
+function cancelRuntimeBotMove(requestId: string) {
+  void import("@/lib/bots").then(({ cancelBotMove }) => cancelBotMove(requestId));
+}
 
 export function GameBoard({
   variantKey,
@@ -246,7 +256,7 @@ export function GameBoard({
       setThinking({ status: "thinking", label: source === "auto" ? "Bot is replying..." : "Bot is thinking..." });
       setNotice(null);
 
-      const result = await requestBotMove(snapshot, botDifficulty, {
+      const result = await requestRuntimeBotMove(snapshot, botDifficulty, {
         requestId,
         delayMs: source === "auto" ? 80 : 0,
         maxSearchTimeMs: Math.min(botLevel.moveTimeMs, MAX_BOT_REPLY_MS - 180)
@@ -263,7 +273,7 @@ export function GameBoard({
     setThinking({ status: "thinking", label: "Finding a suggestion..." });
     setNotice(null);
 
-    const result = await requestBotMove(state, botDifficulty, { requestId, maxSearchTimeMs: Math.min(botLevel.moveTimeMs, 1800, MAX_BOT_REPLY_MS - 180) });
+    const result = await requestRuntimeBotMove(state, botDifficulty, { requestId, maxSearchTimeMs: Math.min(botLevel.moveTimeMs, 1800, MAX_BOT_REPLY_MS - 180) });
     if (activeBotRequestRef.current !== requestId) return;
     activeBotRequestRef.current = null;
     setThinking({ status: "idle", label: "" });
@@ -309,7 +319,7 @@ export function GameBoard({
   function cancelThinking() {
     const requestId = activeBotRequestRef.current;
     if (!requestId) return;
-    cancelBotMove(requestId);
+    cancelRuntimeBotMove(requestId);
     activeBotRequestRef.current = null;
     setThinking({ status: "cancelled", label: "Cancelled" });
     setNotice("Bot thinking was cancelled.");
@@ -330,7 +340,7 @@ export function GameBoard({
 
   function reset() {
     const requestId = activeBotRequestRef.current;
-    if (requestId) cancelBotMove(requestId);
+    if (requestId) cancelRuntimeBotMove(requestId);
     activeBotRequestRef.current = null;
     const nextState = withTimeControl(createInitialState(variantKey), timeControl);
     resolvedRandomSeatRef.current = false;
@@ -351,7 +361,7 @@ export function GameBoard({
 
   function changeTimeControl(nextControl: TimeControlKey) {
     const requestId = activeBotRequestRef.current;
-    if (requestId) cancelBotMove(requestId);
+    if (requestId) cancelRuntimeBotMove(requestId);
     activeBotRequestRef.current = null;
     const nextState = withTimeControl(createInitialState(variantKey), nextControl);
     resolvedRandomSeatRef.current = false;
