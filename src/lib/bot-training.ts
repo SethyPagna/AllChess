@@ -283,16 +283,13 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
 const generated = generatedKnowledge as GeneratedBotKnowledgeFile;
 const generatedKnowledgeEntries = generated.entries;
 const generatedEngineLabels = generated.engineLabels ?? [];
-const engineLabelKnowledgeEntries = generatedEngineLabels.flatMap(engineLabelToKnowledgeEntry);
-const knowledgeEntries: BotKnowledgeEntry[] = [...curatedKnowledgeEntries, ...generatedKnowledgeEntries, ...engineLabelKnowledgeEntries];
+const knowledgeEntries: BotKnowledgeEntry[] = [...curatedKnowledgeEntries, ...generatedKnowledgeEntries];
 const knowledgeIndex = createKnowledgeIndex(knowledgeEntries);
 const classicPositionCount = new Set(
-  [...generatedKnowledgeEntries, ...engineLabelKnowledgeEntries]
-    .filter((entry) => entry.variantKey === "classic")
-    .map((entry) => entry.boardSignature || entry.positionKey || entry.id)
+  generatedKnowledgeEntries.filter((entry) => entry.variantKey === "classic").map((entry) => entry.boardSignature || entry.positionKey || entry.id)
 ).size;
 const totalGeneratedPositionCount = new Set(
-  [...generatedKnowledgeEntries, ...engineLabelKnowledgeEntries].map((entry) => `${entry.variantKey}|${entry.boardSignature || entry.positionKey || entry.id}`)
+  generatedKnowledgeEntries.map((entry) => `${entry.variantKey}|${entry.boardSignature || entry.positionKey || entry.id}`)
 ).size;
 const localBenchmarkVersion = generatedKnowledgeEntries[0]?.benchmarkVersion ?? generatedEngineLabels[0]?.benchmarkVersion ?? "allchess-local-knowledge-v1";
 
@@ -348,7 +345,8 @@ export function listBotKnowledge(variantKey?: string) {
 }
 
 export function listBotEngineLabels(variantKey?: string) {
-  return generatedEngineLabels.filter((label) => !variantKey || label.variantKey === variantKey);
+  const labels = generatedEngineLabels.length ? generatedEngineLabels : generatedKnowledgeEntries.map(knowledgeEntryToEngineLabel);
+  return labels.filter((label) => !variantKey || label.variantKey === variantKey);
 }
 
 export function listBotKnowledgeSummary() {
@@ -361,7 +359,7 @@ export function listBotKnowledgeSummary() {
     generatedEntries: generatedKnowledgeEntries.length,
     openingEntries: generated.summary?.openingEntries ?? generatedKnowledgeEntries.filter((entry) => entry.source === "opening-book").length,
     tacticEntries: generated.summary?.tacticEntries ?? generatedKnowledgeEntries.filter((entry) => entry.source === "tactic-cache").length,
-    engineLabels: generatedEngineLabels.length,
+    engineLabels: generated.summary?.engineLabels ?? generatedEngineLabels.length,
     sampledBytesPerCompressedFile: generated.summary?.sampledBytesPerCompressedFile ?? 0
   };
 }
@@ -638,27 +636,41 @@ function nextTrainingJobsForVariant(variant: VariantDefinition, hasRuntimeKnowle
   return jobs;
 }
 
-function engineLabelToKnowledgeEntry(label: EngineLabel): BotKnowledgeEntry[] {
-  if (!label.id || !label.variantKey || !label.moveUci || (!label.positionKey && !label.boardSignature)) return [];
+function knowledgeEntryToEngineLabel(entry: BotKnowledgeEntry): EngineLabel {
+  const isOpening = entry.source === "opening-book";
+  return {
+    id: `label-${entry.id}`,
+    variantKey: entry.variantKey,
+    positionKey: entry.positionKey,
+    boardSignature: entry.boardSignature,
+    moveUci: entry.moveUci,
+    engine: isOpening ? "local-opening-frequency" : "lichess-puzzle-solution",
+    engineVersion: isOpening ? "sampled-public-games-v1" : "public-puzzle-line-v1",
+    depth: depthForEntry(entry),
+    nodes: 0,
+    bestMoves: [entry.moveUci],
+    evaluation: null,
+    legalValidation: "runtime",
+    benchmarkVersion: entry.benchmarkVersion,
+    confidence: Number(Math.min(0.97, entry.confidence + (isOpening ? 0.02 : 0.08)).toFixed(3)),
+    minTier: isOpening ? "hard" : entry.minTier,
+    tags: ["local-derived-label", ...entry.tags],
+    sourceTool: isOpening ? "Aix/Lichess opening sample" : "Lichess puzzle solution sample",
+    explanation: {
+      plan: isOpening ? "Use the most frequent sampled opening move before spending live search." : "Use a precomputed tactical solution label before spending live search.",
+      threat: entry.explanation.threat,
+      risk: "This compact label is derived on demand and still rejected if illegal.",
+      fallbackGoal: "If no exact label matches, use Stockfish or internal search with normal validation."
+    },
+    createdAt: generated.generatedAt ?? "2026-05-14T00:00:00.000Z"
+  };
+}
 
-  return [
-    {
-      id: `engine-label-${label.id}`,
-      variantKey: label.variantKey,
-      positionKey: label.positionKey ?? "",
-      boardSignature: label.boardSignature,
-      moveUci: label.moveUci,
-      source: "engine-search",
-      minTier: label.minTier ?? "hard",
-      confidence: label.confidence ?? 0.78,
-      benchmarkVersion: label.benchmarkVersion ?? "allchess-local-knowledge-v1",
-      tags: ["engine-label", ...(label.tags ?? [])],
-      explanation: label.explanation ?? {
-        plan: `Use a precomputed ${label.engine} label before spending live search time.`,
-        threat: "The labelled move is replayed only when the exact position matches.",
-        risk: "Offline labels can be stale if the rules adapter changes, so runtime legal validation is mandatory.",
-        fallbackGoal: "Fall back to live engine/search if this labelled move is not legal."
-      }
-    }
-  ];
+function depthForEntry(entry: BotKnowledgeEntry) {
+  if (entry.minTier === "legend") return 22;
+  if (entry.minTier === "grandmaster") return 18;
+  if (entry.minTier === "very-hard") return 16;
+  if (entry.minTier === "hard") return 14;
+  if (entry.minTier === "normal") return 10;
+  return 6;
 }

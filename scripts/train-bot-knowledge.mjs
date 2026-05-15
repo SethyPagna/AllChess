@@ -41,7 +41,6 @@ const manifests = files.map((file) => describeFile(dataRoot, file));
 const toolManifests = files.map((file) => describeTool(dataRoot, file)).filter(Boolean);
 const openingBook = new Map();
 const entries = [];
-const engineLabels = [];
 let puzzleCount = 0;
 
 for (const file of files) {
@@ -74,7 +73,7 @@ for (const file of files) {
 
 addSeededOpenings(openingBook, maxOpeningPly);
 entries.unshift(...compileOpeningEntries(openingBook));
-engineLabels.push(...compileEngineLabels(entries));
+const engineLabelCount = entries.filter((entry) => entry.variantKey === "classic" && entry.moveUci && (entry.positionKey || entry.boardSignature)).length;
 
 const output = {
   version: `allchess-local-knowledge-${new Date().toISOString().slice(0, 10)}`,
@@ -86,11 +85,10 @@ const output = {
     entries: entries.length,
     openingEntries: entries.filter((entry) => entry.source === "opening-book").length,
     tacticEntries: entries.filter((entry) => entry.source === "tactic-cache").length,
-    engineLabels: engineLabels.length,
+    engineLabels: engineLabelCount,
     sampledBytesPerCompressedFile: maxBytes
   },
   entries,
-  engineLabels,
   manifests,
   toolManifests
 };
@@ -462,50 +460,6 @@ function compilePuzzleEntries(csvText, limit) {
     });
   }
   return entries;
-}
-
-function compileEngineLabels(knowledgeEntries) {
-  return knowledgeEntries
-    .filter((entry) => entry.variantKey === "classic" && entry.moveUci && (entry.positionKey || entry.boardSignature))
-    .map((entry) => {
-      const isOpening = entry.source === "opening-book";
-      const depth = depthForEntry(entry);
-      return {
-        id: `label-${stableId(`${entry.id}|${entry.moveUci}`)}`,
-        variantKey: entry.variantKey,
-        positionKey: entry.positionKey,
-        boardSignature: entry.boardSignature,
-        moveUci: entry.moveUci,
-        engine: isOpening ? "local-opening-frequency" : "lichess-puzzle-solution",
-        engineVersion: isOpening ? "sampled-public-games-v1" : "public-puzzle-line-v1",
-        depth,
-        nodes: 0,
-        bestMoves: [entry.moveUci],
-        evaluation: null,
-        legalValidation: "runtime",
-        benchmarkVersion: entry.benchmarkVersion,
-        confidence: Number(Math.min(0.97, entry.confidence + (isOpening ? 0.02 : 0.08)).toFixed(3)),
-        minTier: isOpening ? "hard" : entry.minTier,
-        tags: ["local-derived-label", ...entry.tags],
-        sourceTool: isOpening ? "Aix/Lichess opening sample" : "Lichess puzzle solution sample",
-        explanation: {
-          plan: isOpening ? "Use the most frequent sampled opening move before spending live search." : "Use a precomputed tactical solution label before spending live search.",
-          threat: entry.explanation.threat,
-          risk: "This label is a compact runtime artifact; the move is still rejected if it is illegal in the current rules engine.",
-          fallbackGoal: "If no exact label matches, use Stockfish or internal search with normal validation."
-        },
-        createdAt: new Date().toISOString()
-      };
-    });
-}
-
-function depthForEntry(entry) {
-  if (entry.minTier === "legend") return 22;
-  if (entry.minTier === "grandmaster") return 18;
-  if (entry.minTier === "very-hard") return 16;
-  if (entry.minTier === "hard") return 14;
-  if (entry.minTier === "normal") return 10;
-  return 6;
 }
 
 function splitCsvLine(line) {
