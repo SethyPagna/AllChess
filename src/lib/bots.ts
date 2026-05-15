@@ -577,9 +577,10 @@ function evaluateMove(
   const movedPiece = next.board[move.to.row]?.[move.to.col]?.piece;
   const riskPenalty = movedPiece && difficulty.skill >= 8 ? hangingPenalty(next, move.to, movedPiece) * (1 - difficulty.riskTolerance) : 0;
   const strategyBonus = difficulty.skill >= 12 ? strategicMoveScore(state, next, move, perspective, difficulty, budget) : 0;
+  const rescueBonus = movedPiece && difficulty.skill >= 7 ? escapeOrCounterScore(state, next, move, movedPiece, difficulty, budget) : 0;
   const replyPenalty = difficulty.skill >= 8 ? opponentReplyPenalty(next, perspective, difficulty, budget) * (1.15 - difficulty.riskTolerance) : 0;
   const noise = difficulty.skill >= 20 ? 0 : deterministicNoise(move) * (22 - difficulty.skill);
-  return searchScore + strategyBonus - riskPenalty - replyPenalty + noise;
+  return searchScore + strategyBonus + rescueBonus - riskPenalty - replyPenalty + noise;
 }
 
 function selectRankedMove(ranked: Array<{ move: Move; score: number }>, difficulty: BotDifficulty) {
@@ -600,11 +601,12 @@ function beginnerMoveScore(state: GameState, move: Move, perspective: PlayerColo
   const immediateDanger = movedPiece ? hangingPenalty(next, move.to, movedPiece) * 0.9 : 0;
   const support = movedPiece ? nearbyFriendlySupport(next, move.to, movedPiece.owner) * 20 : 0;
   const objective = movedPiece ? variantObjectiveScore(next, move, movedPiece.owner) * 0.65 : 0;
+  const rescue = movedPiece ? escapeOrCounterScore(state, next, move, movedPiece, difficulty, budget) * 0.55 : 0;
   const replyPenalty = opponentReplyPenalty(next, perspective, difficulty, budget) * 0.55;
   const naiveNoise = deterministicNoise(move) * 4;
   const retreatBonus = movedPiece && movedValue >= 500 && immediateDanger === 0 ? 18 : 0;
 
-  return staticScore + support + objective + retreatBonus - immediateDanger - replyPenalty + naiveNoise;
+  return staticScore + support + objective + rescue + retreatBonus - immediateDanger - replyPenalty + naiveNoise;
 }
 
 function minimax(
@@ -740,6 +742,29 @@ function strategicMoveScore(state: GameState, next: GameState, move: Move, persp
   const loosePiecePressure = loosePieceScore(next, opponents, budget) * (difficulty.skill / 18);
   const tempo = givesTurnPressure(next, perspective) ? 45 : 0;
   return newThreats + ownSupport + advancement + objective + constriction + forkPressure + loosePiecePressure + tempo - ownDanger;
+}
+
+function escapeOrCounterScore(
+  state: GameState,
+  next: GameState,
+  move: Move,
+  movedPiece: { code: string; owner: PlayerColor },
+  difficulty: BotDifficulty,
+  budget: SearchBudget
+) {
+  const attackers = opponentColors(state, movedPiece.owner);
+  const wasAttacked = isSquareAttackedBy(state, move.from, attackers, budget);
+  if (!wasAttacked) return 0;
+
+  const value = pieceValues[movedPiece.code] ?? 100;
+  const target = state.board[move.to.row]?.[move.to.col]?.piece;
+  const capturedValue = target && attackers.includes(target.owner) ? pieceValues[target.code] ?? 100 : 0;
+  const stillAttacked = isSquareAttackedBy(next, move.to, opponentColors(next, movedPiece.owner), budget);
+  const safeLanding = stillAttacked ? -value * 0.28 : value * 0.34;
+  const counterattack = capturedValue ? capturedValue * (difficulty.skill >= 14 ? 0.42 : 0.28) : 0;
+  const support = nearbyFriendlySupport(next, move.to, movedPiece.owner) * 12;
+
+  return safeLanding + counterattack + support;
 }
 
 function opponentReplyPenalty(state: GameState, perspective: PlayerColor, difficulty: BotDifficulty, budget: SearchBudget) {

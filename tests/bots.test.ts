@@ -183,6 +183,24 @@ describe("bot difficulty ladder", () => {
     expect(chooseBotMove(state, "legend", { engine: "internal" })).toMatchObject({ from: { row: 2, col: 1 }, to: { row: 1, col: 1 } });
   });
 
+  test("normal difficulty rescues an attacked major piece instead of drifting", () => {
+    let state = createInitialState("classic", "queen-rescue");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[0][0].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[3][5].piece = { id: "black-knight", code: "n", owner: "black", labelKey: "chess.knight" };
+    state.board[4][3].piece = { id: "white-queen", code: "q", owner: "white", labelKey: "chess.queen" };
+    state.board[6][0].piece = { id: "white-pawn", code: "p", owner: "white", labelKey: "chess.pawn" };
+    state.board[7][7].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+
+    const move = chooseBotMove(state, "normal", { engine: "internal", maxSearchTimeMs: 80 });
+
+    expect(move.from).toEqual({ row: 4, col: 3 });
+  });
+
   test("legend search values variant objectives beyond raw material", () => {
     let state = createInitialState("king-of-the-hill", "hill-objective");
     state = {
