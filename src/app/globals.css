@@ -1709,6 +1709,38 @@ select {
   margin: 0;
 }
 
+.settings-stack {
+  display: grid;
+  gap: 0;
+  overflow: visible;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 4.25rem;
+  padding: 0.85rem 1rem;
+}
+
+.settings-row + .settings-row {
+  border-top: 1px solid var(--border);
+}
+
+.settings-row-title {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.settings-row-title h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 950;
+}
+
 .lobby-action-row {
   display: flex;
   flex-wrap: wrap;

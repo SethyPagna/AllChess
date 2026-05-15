@@ -3,6 +3,8 @@ import { describe, expect, test } from "vitest";
 
 import LobbyPage from "@/app/[locale]/lobby/page";
 import PlaySetupPage from "@/app/[locale]/play/page";
+import SettingsPage from "@/app/[locale]/settings/page";
+import { ThemeProvider } from "@/components/theme-provider";
 
 describe("compact page copy", () => {
   test("play setup uses info affordances instead of visible paragraph-heavy mode cards", async () => {
@@ -22,5 +24,16 @@ describe("compact page copy", () => {
     expect(markup).toContain("Game Families");
     expect(markup).toContain('class="info-hint');
     expect(markup).not.toContain("A Cloudflare-first arena for chess");
+  });
+
+  test("settings page keeps preference rows compact", async () => {
+    const element = await SettingsPage({ params: Promise.resolve({ locale: "en" }) });
+    const markup = renderToStaticMarkup(<ThemeProvider>{element}</ThemeProvider>);
+
+    expect(markup).toContain("Display");
+    expect(markup).toContain("Language");
+    expect(markup).toContain("Notifications");
+    expect(markup).toContain('class="info-hint');
+    expect(markup).not.toContain("A multilingual multiplayer chess platform");
   });
 });

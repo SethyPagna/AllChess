@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 
+import { InfoHint } from "@/components/info-hint";
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { NotificationCenter } from "@/components/notification-center";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
@@ -11,16 +13,16 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
   const t = createTranslator(locale);
 
   return (
-    <section className="mx-auto max-w-4xl space-y-6">
-      <div>
+    <section className="settings-page mx-auto max-w-4xl space-y-5">
+      <div className="compact-page-heading">
         <h1 className="text-4xl font-black">{t("settings.title")}</h1>
-        <p className="mt-2 text-[var(--muted)]">{t("app.description")}</p>
+        <InfoHint text="Manage display, language, and event alerts without leaving your current route." />
       </div>
-      <div className="panel grid gap-6 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-bold">{t("settings.theme")}</h2>
-            <p className="text-sm text-[var(--muted)]">{t("settings.light")} / {t("settings.dark")} / {t("settings.system")}</p>
+      <div className="panel settings-stack">
+        <div className="settings-row">
+          <div className="settings-row-title">
+            <h2>Display</h2>
+            <InfoHint text={`${t("settings.light")}, ${t("settings.dark")}, and ${t("settings.system")} appearance controls.`} />
           </div>
           <ThemeToggle
             labels={{
@@ -30,11 +32,21 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
             }}
           />
         </div>
-        <div className="grid gap-3">
-          <h2 className="text-lg font-bold">{t("settings.language")}</h2>
-          <Suspense fallback={<span className="action-secondary inline-flex h-10 w-fit items-center px-3 text-sm">{locale.toUpperCase()}</span>}>
+        <div className="settings-row">
+          <div className="settings-row-title">
+            <h2>{t("settings.language")}</h2>
+            <InfoHint text="Open the language menu to switch by full language name while keeping this page path." />
+          </div>
+          <Suspense fallback={<span className="action-secondary grid h-10 w-10 place-items-center text-sm">...</span>}>
             <LocaleSwitcher active={locale} />
           </Suspense>
+        </div>
+        <div className="settings-row">
+          <div className="settings-row-title">
+            <h2>Notifications</h2>
+            <InfoHint text="Room, review, account, and match alerts appear here when real events are available." />
+          </div>
+          <NotificationCenter />
         </div>
       </div>
     </section>
