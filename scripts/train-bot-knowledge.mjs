@@ -16,6 +16,7 @@ const maxGames = Number(options.maxGames ?? 250);
 const maxPuzzles = Number(options.maxPuzzles ?? 300);
 const maxBytes = Number(options.maxBytes ?? 20_000_000);
 const maxOpeningPly = Number(options.maxOpeningPly ?? 10);
+const pythonExecutable = process.env.PYTHON ?? "python";
 
 const seededOpeningLines = [
   { line: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6", weight: 8 },
@@ -306,9 +307,9 @@ function readTextSample(file, limitBytes) {
 }
 
 function readZstdTextSample(file, limitBytes) {
-  const python = spawnSync("python", ["-c", "import zstandard"], { encoding: "utf8" });
+  const python = spawnSync(pythonExecutable, ["-c", "import zstandard"], { encoding: "utf8" });
   if (python.status !== 0) {
-    return { status: "skipped: install Python package zstandard to stream .zst samples", text: "" };
+    return { status: `skipped: install Python package zstandard for ${pythonExecutable} to stream .zst samples`, text: "" };
   }
 
   const code = `
@@ -328,7 +329,7 @@ with open(path, "rb") as source:
             written += len(chunk.encode("utf-8", errors="ignore"))
 `;
 
-  const result = spawnSync("python", ["-c", code, file, String(limitBytes)], {
+  const result = spawnSync(pythonExecutable, ["-c", code, file, String(limitBytes)], {
     encoding: "utf8",
     maxBuffer: limitBytes + 1_000_000
   });
