@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, Eye, Globe2, Lock, MonitorSmartphone, Radio, Swords, Users } from "lucide-react";
+import { Bot, Clock3, Eye, Globe2, Handshake, Lock, MonitorSmartphone, Radio, Swords, Users } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
 import { displayGameName, getGameCatalog } from "@/lib/catalog";
@@ -12,6 +12,19 @@ const playModes = [
   { key: "room", label: "Room", description: "Create a shareable room code for friends.", Icon: Lock, hrefSuffix: "?mode=room" },
   { key: "matchmaking", label: "Match", description: "Pick time, rating band, and rated/casual.", Icon: Users, hrefSuffix: "?mode=matchmaking" },
   { key: "spectate", label: "Watch", description: "Watch active public rooms and bot games.", Icon: Eye, hrefSuffix: "?mode=spectate" }
+];
+
+const workflowSteps = [
+  { label: "1. Mode", detail: "Online, bot, local, room, match, or watch." },
+  { label: "2. Game", detail: "Pick Classic, Xiangqi, Shogi, Jungle, and more." },
+  { label: "3. Setup", detail: "Choose side, clock, bot tier, then start." }
+];
+
+const quickActions = [
+  { label: "Play 10 min", detail: "Rapid setup", Icon: Clock3, hrefSuffix: "?mode=online" },
+  { label: "New Game", detail: "Classic setup", Icon: Swords, hrefSuffix: "?mode=offline" },
+  { label: "Play Bots", detail: "Choose tier", Icon: Bot, hrefSuffix: "?bot=normal&mode=bot" },
+  { label: "Play a Friend", detail: "Room invite", Icon: Handshake, hrefSuffix: "?mode=room" }
 ];
 
 export default async function PlaySetupPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -34,6 +47,23 @@ export default async function PlaySetupPage({ params }: { params: Promise<{ loca
           <Bot size={18} />
           Quick bot game
         </Link>
+      </div>
+      <div className="play-workflow-strip" aria-label="Play workflow">
+        {workflowSteps.map((step) => (
+          <div key={step.label} className="play-workflow-step">
+            <strong>{step.label}</strong>
+            <span>{step.detail}</span>
+          </div>
+        ))}
+      </div>
+      <div className="play-quick-grid" aria-label="Fast play actions">
+        {quickActions.map(({ label, detail, Icon, hrefSuffix }) => (
+          <Link key={label} href={`/${locale}/play/classic${hrefSuffix}`} className="focus-ring play-quick-card">
+            <Icon size={24} />
+            <span>{label}</span>
+            <small>{detail}</small>
+          </Link>
+        ))}
       </div>
       <div className="play-setup-shell">
         <aside className="panel play-mode-rail" aria-label="Play modes">

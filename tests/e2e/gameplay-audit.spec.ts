@@ -11,6 +11,9 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   const board = page.getByLabel("Game board");
   await expect(board).toBeVisible();
   await page.getByRole("button", { name: "Start Game" }).click();
+  await expect(page.getByText("Match center")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "Game Tools" })).toHaveCount(0);
+  await expect(page.getByText("Review hook")).toHaveCount(0);
   const before = await board.boundingBox();
   expect(before).toBeTruthy();
 

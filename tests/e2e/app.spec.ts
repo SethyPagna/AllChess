@@ -17,6 +17,8 @@ test("localized game hub can open variants and a playable board", async ({ page 
 
   await page.goto("/en/play");
   await expect(page.getByRole("heading", { name: "Choose how you want to play" })).toBeVisible();
+  await expect(page.getByLabel("Play workflow")).toContainText("1. Mode");
+  await expect(page.getByLabel("Fast play actions")).toContainText("Play Bots");
   await expectNoHorizontalOverflow(page);
   await page.getByRole("link", { name: "Quick bot game" }).click();
   await expect(page.getByRole("heading", { name: "Classic Chess" })).toBeVisible();
