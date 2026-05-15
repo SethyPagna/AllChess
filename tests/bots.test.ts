@@ -159,6 +159,20 @@ describe("bot difficulty ladder", () => {
     expect(result.searchEfficiency.transpositionEntries).toBeGreaterThan(0);
   });
 
+  test("internal search reuses bounded transpositions across repeated requests", () => {
+    const state = createInitialState("classic", "repeated-search-efficiency");
+    const first = chooseBotMoveSafe(state, "very-hard", { maxSearchTimeMs: 90, engine: "internal" });
+    const second = chooseBotMoveSafe(state, "very-hard", { maxSearchTimeMs: 90, engine: "internal" });
+
+    expect(first.reason).toBe("ok");
+    expect(second.reason).toBe("ok");
+    if (!first.move) throw new Error("Expected an initial legal search move.");
+    if (!second.move) throw new Error("Expected a legal cached-search move.");
+    expect(() => applyMove(state, second.move)).not.toThrow();
+    expect(second.searchEfficiency.transpositionHits).toBeGreaterThan(first.searchEfficiency.transpositionHits);
+    expect(second.nodesSearched).toBeLessThanOrEqual(first.nodesSearched);
+  });
+
   test("cancelled async bot request never applies a stale move", async () => {
     const state = createInitialState("classic", "cancel-bot");
     const pending = requestBotMove(state, "legend", { requestId: "cancel-me", delayMs: 25, maxSearchTimeMs: 80 });
@@ -367,9 +381,9 @@ describe("bot difficulty ladder", () => {
     const labels = listBotEngineLabels("classic");
 
     expect(summary.engineLabels).toBeGreaterThan(0);
-    expect(summary.entries).toBeGreaterThanOrEqual(3000);
+    expect(summary.entries).toBeGreaterThanOrEqual(9000);
     expect(summary.openingEntries).toBeGreaterThanOrEqual(60);
-    expect(summary.tacticEntries).toBeGreaterThanOrEqual(3000);
+    expect(summary.tacticEntries).toBeGreaterThanOrEqual(9000);
     expect(labels.length).toBeGreaterThan(0);
     expect(labels[0]).toEqual(
       expect.objectContaining({
