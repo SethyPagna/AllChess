@@ -8,7 +8,7 @@ const packageJson = JSON.parse(readFileSync(join(process.cwd(), "package.json"),
 describe("deployment scripts", () => {
   test("cloudflare deploy populates OpenNext cache then publishes the patched worker with Wrangler", () => {
     expect(packageJson.scripts["cf:deploy"]).toContain("opennextjs-cloudflare populateCache remote --cacheChunkSize 1");
-    expect(packageJson.scripts["cf:deploy"]).toContain("wrangler deploy --env=");
+    expect(packageJson.scripts["cf:deploy"]).toContain("wrangler deploy .open-next/worker.js --env=");
     expect(packageJson.scripts["cf:deploy"]).not.toContain("opennextjs-cloudflare deploy");
   });
 });

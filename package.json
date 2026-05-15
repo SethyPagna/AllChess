@@ -22,7 +22,7 @@
     "deploy:prod": "npm run verify && vercel deploy --prod --name allchess",
     "cf:build": "npm run prepare:stockfish && next build --webpack && opennextjs-cloudflare build --skipNextBuild && node scripts/patch-opennext-worker.mjs",
     "cf:preview": "npm run cf:build && wrangler dev",
-    "cf:deploy": "npm run cf:build && opennextjs-cloudflare populateCache remote --cacheChunkSize 1 && wrangler deploy --env=",
+    "cf:deploy": "npm run cf:build && opennextjs-cloudflare populateCache remote --cacheChunkSize 1 && wrangler deploy .open-next/worker.js --env=",
     "cf:types": "wrangler types src/worker-configuration.d.ts",
     "db:migrate:local": "wrangler d1 migrations apply allchess --local",
     "db:migrate:remote": "wrangler d1 migrations apply allchess --remote"
