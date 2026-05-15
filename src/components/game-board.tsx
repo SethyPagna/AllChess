@@ -776,6 +776,7 @@ export function GameBoard({
                       <>
                         <span>{lastBotResult.explanation.plan}</span>
                         <span>{lastBotResult.explanation.threat}</span>
+                        <span>{lastBotResult.explanation.risk}</span>
                         <span>{lastBotResult.explanation.fallbackGoal}</span>
                       </>
                     ) : (

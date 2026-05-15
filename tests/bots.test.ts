@@ -201,6 +201,25 @@ describe("bot difficulty ladder", () => {
     expect(move.from).toEqual({ row: 4, col: 3 });
   });
 
+  test("bot explanation names rescue decisions when a piece is attacked", async () => {
+    let state = createInitialState("classic", "queen-rescue-explanation");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[0][0].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[3][5].piece = { id: "black-knight", code: "n", owner: "black", labelKey: "chess.knight" };
+    state.board[4][3].piece = { id: "white-queen", code: "q", owner: "white", labelKey: "chess.queen" };
+    state.board[6][0].piece = { id: "white-pawn", code: "p", owner: "white", labelKey: "chess.pawn" };
+    state.board[7][7].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+
+    const result = await requestBotMove(state, "normal", { engine: "internal", maxSearchTimeMs: 80 });
+
+    expect(result.explanation?.plan).toMatch(/rescues|counterattack/);
+    expect(result.explanation?.risk).toContain("queen");
+  });
+
   test("legend search values variant objectives beyond raw material", () => {
     let state = createInitialState("king-of-the-hill", "hill-objective");
     state = {

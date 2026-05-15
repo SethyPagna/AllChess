@@ -991,15 +991,60 @@ function explanationForMove(source: BotKnowledgeSource, state: GameState, move: 
   const target = state.board[move.to.row]?.[move.to.col]?.piece;
   const captureValue = target ? pieceValues[target.code] ?? 100 : 0;
   const tierPrefix = tier === "grandmaster" || tier === "legend" ? "Deep tier" : "Search";
-  const plan = target
-    ? `${tierPrefix} chooses a capture worth ${captureValue} while checking the reply tree before committing.`
-    : `${tierPrefix} improves ${moving?.code ? pieceLabel(moving.code) : "piece"} activity and keeps legal replies under review.`;
+  const attackers = moving ? opponentColors(state, moving.owner) : [];
+  const wasAttacked = moving ? isSquareAttackedBy(state, move.from, attackers) : false;
+  const next = tryMove(state, move);
+  const remainsAttacked = moving && next ? isSquareAttackedBy(next, move.to, opponentColors(next, moving.owner)) : false;
+  const movingLabel = moving?.code ? pieceLabel(moving.code) : "piece";
+  const plan = planForMove({ captureValue, movingLabel, targetCode: target?.code, tierPrefix, wasAttacked });
   const threat = target
     ? `It removes an opposing ${pieceLabel(target.code)} and looks for follow-up pressure.`
     : "It increases mobility, central control, or variant-objective pressure without relying on a single tactic.";
-  const risk = score !== null && score < -250 ? "The position is worse, so the bot favors damage control and avoids forcing a losing race." : "The move was filtered for immediate hanging-piece and terminal-state blunders.";
+  const risk = riskForMove({ movingLabel, remainsAttacked, score, wasAttacked });
   const fallbackGoal = score !== null && score < -600 ? "If the advantage cannot be recovered, steer toward draw or stalemate-saving resources." : "If the opponent parries the main idea, keep development and defended pieces intact.";
   return { plan, threat: `${source}: ${threat}`, risk, fallbackGoal };
+}
+
+function planForMove({
+  captureValue,
+  movingLabel,
+  targetCode,
+  tierPrefix,
+  wasAttacked
+}: {
+  captureValue: number;
+  movingLabel: string;
+  targetCode?: string;
+  tierPrefix: string;
+  wasAttacked: boolean;
+}) {
+  if (wasAttacked && targetCode) {
+    return `${tierPrefix} turns an attacked ${movingLabel} into a counterattack, taking a ${pieceLabel(targetCode)} worth ${captureValue}.`;
+  }
+  if (wasAttacked) {
+    return `${tierPrefix} rescues an attacked ${movingLabel} while checking the opponent's replies.`;
+  }
+  if (targetCode) {
+    return `${tierPrefix} chooses a capture worth ${captureValue} while checking the reply tree before committing.`;
+  }
+  return `${tierPrefix} improves ${movingLabel} activity and keeps legal replies under review.`;
+}
+
+function riskForMove({
+  movingLabel,
+  remainsAttacked,
+  score,
+  wasAttacked
+}: {
+  movingLabel: string;
+  remainsAttacked: boolean;
+  score: number | null;
+  wasAttacked: boolean;
+}) {
+  if (wasAttacked && !remainsAttacked) return `Risk reduced: the ${movingLabel} leaves immediate danger instead of staying loose.`;
+  if (wasAttacked && remainsAttacked) return `Risk accepted: the ${movingLabel} is still tactically exposed, so the bot expects compensation.`;
+  if (score !== null && score < -250) return "The position is worse, so the bot favors damage control and avoids forcing a losing race.";
+  return "The move was filtered for immediate hanging-piece and terminal-state blunders.";
 }
 
 function pieceLabel(code: string) {
