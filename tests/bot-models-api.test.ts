@@ -19,5 +19,18 @@ describe("bot models API", () => {
     );
     expect(body.knowledgeIndex.entries).toBeGreaterThan(0);
     expect(body.knowledgeIndex.maxBucketSize).toBeLessThan(body.knowledgeIndex.entries);
+    expect(body.trainingChecklists).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          variantKey: "classic",
+          coverageStatus: "active",
+          difficultyTiers: expect.arrayContaining([expect.objectContaining({ tier: "easy", targetBehavior: expect.stringContaining("not naive") })])
+        }),
+        expect.objectContaining({
+          variantKey: "jungle",
+          coverageStatus: "rules-gated"
+        })
+      ])
+    );
   });
 });

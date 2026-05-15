@@ -1,5 +1,5 @@
 import { moveToUci } from "@/lib/stockfish-engine";
-import { getLegalMoves, type GameState, type Move } from "@/lib/variants";
+import { getLegalMoves, variantCatalog, type GameState, type Move, type VariantDefinition } from "@/lib/variants";
 import type { BotTierKey } from "@/lib/bots";
 import generatedKnowledge from "@/data/bot-knowledge.generated.json";
 
@@ -132,6 +132,37 @@ export type BotRuntimeLanguageProfile = {
   };
 };
 
+export type BotTrainingChecklistItem = {
+  id: string;
+  label: string;
+  status: "ready" | "training" | "rules-gated";
+  evidence: string;
+};
+
+export type BotTierTrainingChecklist = {
+  tier: BotTierKey;
+  label: string;
+  targetBehavior: string;
+  search: {
+    depth: number;
+    nodeBudget: number;
+    beamWidth: number;
+    replyCheckWidth: number;
+    maxMoveTimeMs: number;
+  };
+  checklist: BotTrainingChecklistItem[];
+};
+
+export type GameBotTrainingChecklist = {
+  variantKey: string;
+  enginePlan: string;
+  coverageStatus: "active" | "training" | "rules-gated";
+  knowledgeEntries: number;
+  engineLabels: number;
+  difficultyTiers: BotTierTrainingChecklist[];
+  nextTrainingJobs: string[];
+};
+
 type GeneratedBotKnowledgeFile = {
   version?: string;
   generatedAt?: string;
@@ -158,6 +189,24 @@ const tierRank: Record<BotTierKey, number> = {
   grandmaster: 4,
   legend: 5
 };
+
+const trainingTierProfiles: Array<{
+  key: BotTierKey;
+  label: string;
+  depth: number;
+  moveTimeMs: number;
+  nodeBudget: number;
+  beamWidth: number;
+  replyCheckWidth: number;
+  knowledgeMinimumConfidence: number;
+}> = [
+  { key: "easy", label: "Easy", depth: 1, moveTimeMs: 160, nodeBudget: 180, beamWidth: 6, replyCheckWidth: 2, knowledgeMinimumConfidence: 0.82 },
+  { key: "normal", label: "Normal", depth: 2, moveTimeMs: 280, nodeBudget: 420, beamWidth: 9, replyCheckWidth: 4, knowledgeMinimumConfidence: 0.78 },
+  { key: "hard", label: "Hard", depth: 3, moveTimeMs: 650, nodeBudget: 1600, beamWidth: 14, replyCheckWidth: 7, knowledgeMinimumConfidence: 0.72 },
+  { key: "very-hard", label: "Very Hard", depth: 4, moveTimeMs: 1200, nodeBudget: 4200, beamWidth: 22, replyCheckWidth: 11, knowledgeMinimumConfidence: 0.66 },
+  { key: "grandmaster", label: "Grandmaster", depth: 5, moveTimeMs: 2200, nodeBudget: 12000, beamWidth: 34, replyCheckWidth: 17, knowledgeMinimumConfidence: 0.6 },
+  { key: "legend", label: "Legend", depth: 7, moveTimeMs: 3600, nodeBudget: 28000, beamWidth: 46, replyCheckWidth: 24, knowledgeMinimumConfidence: 0.55 }
+];
 
 const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
   {
@@ -376,6 +425,10 @@ export function getBotKnowledgeIndexStats() {
   };
 }
 
+export function listBotTrainingChecklists(variantKey?: string): GameBotTrainingChecklist[] {
+  return variantCatalog.filter((variant) => !variantKey || variant.key === variantKey).map(createGameBotTrainingChecklist);
+}
+
 export function lookupBotKnowledge(state: GameState, tier: BotTierKey): BotKnowledgeHit | null {
   if (state.status !== "active") return null;
 
@@ -461,6 +514,104 @@ function sourcePriority(source: BotKnowledgeSource) {
     "internal-search": 5
   };
   return priorities[source];
+}
+
+function createGameBotTrainingChecklist(variant: VariantDefinition): GameBotTrainingChecklist {
+  const knowledgeEntriesForVariant = listBotKnowledge(variant.key).length;
+  const engineLabelsForVariant = listBotEngineLabels(variant.key).length;
+  const hasRuntimeKnowledge = knowledgeEntriesForVariant > 0 || engineLabelsForVariant > 0;
+  const rulesGated = rulesGatedVariantKeys.has(variant.key);
+  const coverageStatus = rulesGated ? "rules-gated" : hasRuntimeKnowledge ? "active" : "training";
+
+  return {
+    variantKey: variant.key,
+    enginePlan: enginePlanForVariant(variant),
+    coverageStatus,
+    knowledgeEntries: knowledgeEntriesForVariant,
+    engineLabels: engineLabelsForVariant,
+    difficultyTiers: trainingTierProfiles.map((difficulty) => ({
+      tier: difficulty.key,
+      label: difficulty.label,
+      targetBehavior: targetBehaviorForTier(difficulty.key),
+      search: {
+        depth: difficulty.depth,
+        nodeBudget: difficulty.nodeBudget,
+        beamWidth: difficulty.beamWidth,
+        replyCheckWidth: difficulty.replyCheckWidth,
+        maxMoveTimeMs: difficulty.moveTimeMs
+      },
+      checklist: [
+        {
+          id: "legal-validation",
+          label: "Validate every selected move against the rules adapter before applying it.",
+          status: "ready",
+          evidence: "requestBotMove and lookupBotKnowledge both validate against getLegalMoves before returning a move."
+        },
+        {
+          id: "not-naive-basics",
+          label: "Take immediate wins, avoid obvious hanging-piece blunders, and prefer defended progress.",
+          status: "ready",
+          evidence: `${difficulty.label} uses terminal-state checks, reply checks, defended-piece scoring, and a reply width of ${difficulty.replyCheckWidth}.`
+        },
+        {
+          id: "knowledge-cache",
+          label: "Use precomputed opening, tactic, endgame, or label knowledge before expensive live search.",
+          status: hasRuntimeKnowledge ? "ready" : "training",
+          evidence: hasRuntimeKnowledge
+            ? `${knowledgeEntriesForVariant} cached entries and ${engineLabelsForVariant} engine labels are indexed for ${variant.key}.`
+            : `No indexed cache is active for ${variant.key} yet, so this tier falls back to engine/search.`
+        },
+        {
+          id: "tier-distinction",
+          label: "Keep the tier distinct through depth, node budget, beam width, reply checks, and confidence gates.",
+          status: "ready",
+          evidence: `${difficulty.label}: depth ${difficulty.depth}, ${difficulty.nodeBudget} nodes, beam ${difficulty.beamWidth}, confidence gate ${difficulty.knowledgeMinimumConfidence}.`
+        },
+        {
+          id: "variant-objective",
+          label: "Score the native objective instead of playing only material-count chess.",
+          status: rulesGated ? "rules-gated" : "ready",
+          evidence: rulesGated
+            ? `${variant.key} still needs complete native-rule fixtures before bot strength can be called final.`
+            : `${variant.objective} is part of the variant scoring and terminal-state checks.`
+        }
+      ]
+    })),
+    nextTrainingJobs: nextTrainingJobsForVariant(variant, hasRuntimeKnowledge, rulesGated)
+  };
+}
+
+const rulesGatedVariantKeys = new Set(["shogi", "janggi", "makruk", "jungle", "antichess", "horde"]);
+
+function enginePlanForVariant(variant: VariantDefinition) {
+  if (variant.key === "classic" || variant.key === "chess960") return "Stockfish/WASM plus indexed opening, tactic, and engine-label cache.";
+  if (variant.engineProtocol === "uci") return "Variant-compatible UCI engine when available, then indexed cache and internal search fallback.";
+  if (variant.engineProtocol === "usi") return "USI-compatible engine route planned, with rules validation and internal fallback until fixture coverage is complete.";
+  return "Internal search with variant heuristics, cache lookup, and strict legal validation.";
+}
+
+function targetBehaviorForTier(tier: BotTierKey) {
+  const targets: Record<BotTierKey, string> = {
+    easy: "Beginner-friendly, not naive: sees obvious wins, avoids free major-piece blunders, and keeps pieces defended.",
+    normal: "Looks one reply ahead, develops sensibly, and avoids simple tactic losses.",
+    hard: "Checks captures, threats, loose pieces, and basic counterattacks before choosing.",
+    "very-hard": "Balances tactics and positional pressure with stronger reply filtering.",
+    grandmaster: "Uses cache/engine knowledge first, deeper search second, and verifies tactical plans.",
+    legend: "Highest local tier: cache-first, deepest search, quiescence, reply pressure, and draw-saving fallback goals."
+  };
+  return targets[tier];
+}
+
+function nextTrainingJobsForVariant(variant: VariantDefinition, hasRuntimeKnowledge: boolean, rulesGated: boolean) {
+  const jobs = [
+    `Generate ${variant.key} tactical fixtures for win, rescue, retreat, counterattack, and draw-saving choices.`,
+    `Run bot-vs-bot gauntlets for every tier and record stronger-tier win rates in D1/R2 manifests.`,
+    `Add negative tests proving cached ${variant.key} moves are ignored when no longer legal.`
+  ];
+
+  if (!hasRuntimeKnowledge) jobs.unshift(`Create an indexed opening/tactic seed cache for ${variant.key}.`);
+  if (rulesGated) jobs.unshift(`Complete native ${variant.key} rules fixtures before marking bots final.`);
+  return jobs;
 }
 
 function engineLabelToKnowledgeEntry(label: EngineLabel): BotKnowledgeEntry[] {

@@ -10,6 +10,7 @@ import {
   listBotKnowledge,
   listBotKnowledgeSummary,
   listBotModelManifests,
+  listBotTrainingChecklists,
   listBotToolManifests,
   listTrainingDataManifests,
   lookupBotKnowledge
@@ -23,9 +24,10 @@ describe("bot difficulty ladder", () => {
 
     const budgets = botDifficultyLevels.map((level) => level.depth * level.moveTimeMs);
     expect([...budgets].sort((a, b) => a - b)).toEqual(budgets);
-    expect(botDifficultyLevels.map((level) => level.beamWidth)).toEqual([4, 8, 14, 20, 32, 44]);
+    expect(botDifficultyLevels.map((level) => level.beamWidth)).toEqual([6, 9, 14, 22, 34, 46]);
     expect(botDifficultyLevels.map((level) => level.quiescenceDepth)).toEqual([0, 0, 1, 1, 2, 4]);
-    expect(botDifficultyLevels.map((level) => level.riskTolerance)).toEqual([0.85, 0.65, 0.45, 0.28, 0.12, 0.03]);
+    expect(botDifficultyLevels.map((level) => level.riskTolerance)).toEqual([0.62, 0.5, 0.35, 0.22, 0.1, 0.03]);
+    expect(botDifficultyLevels.map((level) => level.replyCheckWidth)).toEqual([2, 4, 7, 11, 17, 24]);
   });
 
   test("always chooses a legal move for every launch variant", () => {
@@ -59,7 +61,7 @@ describe("bot difficulty ladder", () => {
     expect(applyMove(state, move)).toMatchObject({ status: "completed", result: "white" });
   });
 
-  test("difficulty changes strategy instead of only relabeling the same move", () => {
+  test("easy difficulty is weaker without being naive about immediate wins", () => {
     let state = createInitialState("classic", "difficulty-test");
     state = {
       ...state,
@@ -73,7 +75,7 @@ describe("bot difficulty ladder", () => {
     const easy = chooseBotMove(state, "easy");
     const legend = chooseBotMove(state, "legend");
 
-    expect(easy).not.toMatchObject({ from: { row: 2, col: 1 }, to: { row: 1, col: 1 } });
+    expect(easy).toMatchObject({ from: { row: 2, col: 1 }, to: { row: 1, col: 1 } });
     expect(legend.to).toEqual({ row: 1, col: 1 });
   });
 
@@ -283,5 +285,21 @@ describe("bot difficulty ladder", () => {
         expect.objectContaining({ name: "NNUE tools", role: "training-tooling" })
       ])
     );
+  });
+
+  test("training checklist covers every launch variant and every difficulty tier", () => {
+    const checklists = listBotTrainingChecklists();
+    const classic = checklists.find((checklist) => checklist.variantKey === "classic");
+    const jungle = checklists.find((checklist) => checklist.variantKey === "jungle");
+
+    expect(checklists.map((checklist) => checklist.variantKey)).toEqual(
+      expect.arrayContaining(["classic", "chess960", "xiangqi", "shogi", "janggi", "makruk", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"])
+    );
+    expect(classic?.coverageStatus).toBe("active");
+    expect(classic?.difficultyTiers.map((tier) => tier.tier)).toEqual(["easy", "normal", "hard", "very-hard", "grandmaster", "legend"]);
+    expect(classic?.difficultyTiers[0].targetBehavior).toContain("not naive");
+    expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "not-naive-basics", status: "ready" })]));
+    expect(jungle?.coverageStatus).toBe("rules-gated");
+    expect(jungle?.nextTrainingJobs[0]).toContain("Complete native jungle rules fixtures");
   });
 });

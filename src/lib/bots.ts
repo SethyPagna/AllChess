@@ -18,6 +18,8 @@ export type BotDifficulty = {
   beamWidth: number;
   quiescenceDepth: number;
   riskTolerance: number;
+  replyCheckWidth: number;
+  knowledgeMinimumConfidence: number;
 };
 
 export type BotMoveResult = {
@@ -69,12 +71,96 @@ export type BotMoveRequest = {
 };
 
 export const botDifficultyLevels: BotDifficulty[] = [
-  { key: "easy", label: "Easy", estimatedStrength: "Beginner practice", benchmarkVersion: "allchess-bench-v1", depth: 1, moveTimeMs: 120, skill: 2, nodeBudget: 80, beamWidth: 4, quiescenceDepth: 0, riskTolerance: 0.85 },
-  { key: "normal", label: "Normal", estimatedStrength: "Club basics", benchmarkVersion: "allchess-bench-v1", depth: 2, moveTimeMs: 250, skill: 5, nodeBudget: 250, beamWidth: 8, quiescenceDepth: 0, riskTolerance: 0.65 },
-  { key: "hard", label: "Hard", estimatedStrength: "Tactical club", benchmarkVersion: "allchess-bench-v1", depth: 3, moveTimeMs: 650, skill: 8, nodeBudget: 1400, beamWidth: 14, quiescenceDepth: 1, riskTolerance: 0.45 },
-  { key: "very-hard", label: "Very Hard", estimatedStrength: "Expert practice", benchmarkVersion: "allchess-bench-v1", depth: 4, moveTimeMs: 1200, skill: 12, nodeBudget: 3600, beamWidth: 20, quiescenceDepth: 1, riskTolerance: 0.28 },
-  { key: "grandmaster", label: "Grandmaster", estimatedStrength: "Engine-backed master benchmark", benchmarkVersion: "allchess-bench-v1", depth: 5, moveTimeMs: 2200, skill: 18, nodeBudget: 11000, beamWidth: 32, quiescenceDepth: 2, riskTolerance: 0.12 },
-  { key: "legend", label: "Legend", estimatedStrength: "Maximum local benchmark", benchmarkVersion: "allchess-bench-v1", depth: 7, moveTimeMs: 3600, skill: 20, nodeBudget: 26000, beamWidth: 44, quiescenceDepth: 4, riskTolerance: 0.03 }
+  {
+    key: "easy",
+    label: "Easy",
+    estimatedStrength: "Guided beginner: legal, safe, and still beatable",
+    benchmarkVersion: "allchess-bench-v2",
+    depth: 1,
+    moveTimeMs: 160,
+    skill: 4,
+    nodeBudget: 180,
+    beamWidth: 6,
+    quiescenceDepth: 0,
+    riskTolerance: 0.62,
+    replyCheckWidth: 2,
+    knowledgeMinimumConfidence: 0.82
+  },
+  {
+    key: "normal",
+    label: "Normal",
+    estimatedStrength: "Club basics with one-reply blunder checks",
+    benchmarkVersion: "allchess-bench-v2",
+    depth: 2,
+    moveTimeMs: 280,
+    skill: 7,
+    nodeBudget: 420,
+    beamWidth: 9,
+    quiescenceDepth: 0,
+    riskTolerance: 0.5,
+    replyCheckWidth: 4,
+    knowledgeMinimumConfidence: 0.78
+  },
+  {
+    key: "hard",
+    label: "Hard",
+    estimatedStrength: "Tactical club with defended-piece checks",
+    benchmarkVersion: "allchess-bench-v2",
+    depth: 3,
+    moveTimeMs: 650,
+    skill: 10,
+    nodeBudget: 1600,
+    beamWidth: 14,
+    quiescenceDepth: 1,
+    riskTolerance: 0.35,
+    replyCheckWidth: 7,
+    knowledgeMinimumConfidence: 0.72
+  },
+  {
+    key: "very-hard",
+    label: "Very Hard",
+    estimatedStrength: "Expert practice with stronger positional weighting",
+    benchmarkVersion: "allchess-bench-v2",
+    depth: 4,
+    moveTimeMs: 1200,
+    skill: 14,
+    nodeBudget: 4200,
+    beamWidth: 22,
+    quiescenceDepth: 1,
+    riskTolerance: 0.22,
+    replyCheckWidth: 11,
+    knowledgeMinimumConfidence: 0.66
+  },
+  {
+    key: "grandmaster",
+    label: "Grandmaster",
+    estimatedStrength: "Engine-backed master benchmark",
+    benchmarkVersion: "allchess-bench-v2",
+    depth: 5,
+    moveTimeMs: 2200,
+    skill: 18,
+    nodeBudget: 12000,
+    beamWidth: 34,
+    quiescenceDepth: 2,
+    riskTolerance: 0.1,
+    replyCheckWidth: 17,
+    knowledgeMinimumConfidence: 0.6
+  },
+  {
+    key: "legend",
+    label: "Legend",
+    estimatedStrength: "Maximum local benchmark with cache-first verification",
+    benchmarkVersion: "allchess-bench-v2",
+    depth: 7,
+    moveTimeMs: 3600,
+    skill: 20,
+    nodeBudget: 28000,
+    beamWidth: 46,
+    quiescenceDepth: 4,
+    riskTolerance: 0.03,
+    replyCheckWidth: 24,
+    knowledgeMinimumConfidence: 0.55
+  }
 ];
 
 const pendingRequests = new Map<string, { cancelled: boolean }>();
@@ -121,21 +207,19 @@ export function chooseBotMoveSafe(
   }
 
   const perspective = state.turn;
-  if (difficulty.key !== "easy") {
-    const terminalWin = legalMoves
-      .map((move) => ({ move, next: tryMove(state, move) }))
-      .find(({ next }) => next?.status === "completed" && next.result === perspective);
-    if (terminalWin) {
-      return {
-        move: terminalWin.move,
-        reason: "ok",
-        score: 100000 - state.ply,
-        depthReached: 1,
-        nodesSearched: legalMoves.length,
-        elapsedMs: Date.now() - startedAt,
-        validatedLegal: true
-      };
-    }
+  const terminalWin = legalMoves
+    .map((move) => ({ move, next: tryMove(state, move) }))
+    .find(({ next }) => next?.status === "completed" && next.result === perspective);
+  if (terminalWin) {
+    return {
+      move: terminalWin.move,
+      reason: "ok",
+      score: 100000 - state.ply,
+      depthReached: 1,
+      nodesSearched: legalMoves.length,
+      elapsedMs: Date.now() - startedAt,
+      validatedLegal: true
+    };
   }
 
   if (difficulty.skill >= 18) {
@@ -162,7 +246,7 @@ export function chooseBotMoveSafe(
     .map((move) => ({ move, score: evaluateMove(state, move, difficulty, perspective, budget) }))
     .sort((a, b) => b.score - a.score);
 
-  const selected = difficulty.key === "easy" ? ranked[Math.min(ranked.length - 1, Math.floor(ranked.length / 2))] : ranked[0];
+  const selected = selectRankedMove(ranked, difficulty);
   const depthReached = Math.max(1, Math.min(difficulty.depth, difficulty.depth - (Date.now() >= budget.deadline ? 1 : 0)));
 
   if (difficulty.key === "easy") {
@@ -231,32 +315,34 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
       try {
         const knowledge = lookupBotKnowledge(state, difficultyKey);
         if (knowledge && !requestState.cancelled) {
-          finish({
-            requestId,
-            status: "ok",
-            engine: "internal",
-            tier: difficultyKey,
-            move: knowledge.move,
-            uciMove: knowledge.entry.moveUci,
-            principalVariation: knowledge.principalVariation,
-            pv: knowledge.principalVariation,
-            reason: "ok",
-            score: null,
-            evaluation: null,
-            confidence: knowledge.entry.confidence,
-            benchmarkVersion: knowledge.entry.benchmarkVersion,
-            legal: true,
-            legalValidated: true,
-            depth: 0,
-            nodes: 1,
-            depthReached: 0,
-            nodesSearched: 1,
-            elapsedMs: Date.now() - startedAt,
-            validatedLegal: true,
-            knowledgeSource: knowledge.entry.source,
-            explanation: knowledge.entry.explanation
-          });
-          return;
+          if (knowledge.entry.confidence >= tierConfig.knowledgeMinimumConfidence) {
+            finish({
+              requestId,
+              status: "ok",
+              engine: "internal",
+              tier: difficultyKey,
+              move: knowledge.move,
+              uciMove: knowledge.entry.moveUci,
+              principalVariation: knowledge.principalVariation,
+              pv: knowledge.principalVariation,
+              reason: "ok",
+              score: null,
+              evaluation: null,
+              confidence: knowledge.entry.confidence,
+              benchmarkVersion: knowledge.entry.benchmarkVersion,
+              legal: true,
+              legalValidated: true,
+              depth: 0,
+              nodes: 1,
+              depthReached: 0,
+              nodesSearched: 1,
+              elapsedMs: Date.now() - startedAt,
+              validatedLegal: true,
+              knowledgeSource: knowledge.entry.source,
+              explanation: knowledge.entry.explanation
+            });
+            return;
+          }
         }
 
         if (shouldUseStockfish(state, options.engine ?? "auto")) {
@@ -392,7 +478,7 @@ function evaluateMove(
   budget: { nodes: number; deadline: number }
 ) {
   if (difficulty.key === "easy") {
-    return staticMoveScore(state, move) + deterministicNoise(move) * 20;
+    return beginnerMoveScore(state, move, perspective, difficulty, budget);
   }
 
   const next = tryMove(state, move);
@@ -409,6 +495,31 @@ function evaluateMove(
   const replyPenalty = difficulty.skill >= 8 ? opponentReplyPenalty(next, perspective, difficulty, budget) * (1.15 - difficulty.riskTolerance) : 0;
   const noise = difficulty.skill >= 20 ? 0 : deterministicNoise(move) * (22 - difficulty.skill);
   return searchScore + strategyBonus - riskPenalty - replyPenalty + noise;
+}
+
+function selectRankedMove(ranked: Array<{ move: Move; score: number }>, difficulty: BotDifficulty) {
+  if (difficulty.key !== "easy") return ranked[0];
+  const bestScore = ranked[0]?.score ?? 0;
+  const safeBand = ranked.filter((entry) => entry.score >= bestScore - 90);
+  return safeBand[Math.min(safeBand.length - 1, 1)] ?? ranked[0];
+}
+
+function beginnerMoveScore(state: GameState, move: Move, perspective: PlayerColor, difficulty: BotDifficulty, budget: { nodes: number; deadline: number }) {
+  const next = tryMove(state, move);
+  if (!next) return Number.NEGATIVE_INFINITY;
+  if (next.status === "completed") return evaluateState(next, perspective);
+
+  const movedPiece = next.board[move.to.row]?.[move.to.col]?.piece;
+  const staticScore = staticMoveScore(state, move);
+  const movedValue = movedPiece ? pieceValues[movedPiece.code] ?? 100 : 100;
+  const immediateDanger = movedPiece ? hangingPenalty(next, move.to, movedPiece) * 0.9 : 0;
+  const support = movedPiece ? nearbyFriendlySupport(next, move.to, movedPiece.owner) * 20 : 0;
+  const objective = movedPiece ? variantObjectiveScore(next, move, movedPiece.owner) * 0.65 : 0;
+  const replyPenalty = opponentReplyPenalty(next, perspective, difficulty, budget) * 0.55;
+  const naiveNoise = deterministicNoise(move) * 4;
+  const retreatBonus = movedPiece && movedValue >= 500 && immediateDanger === 0 ? 18 : 0;
+
+  return staticScore + support + objective + retreatBonus - immediateDanger - replyPenalty + naiveNoise;
 }
 
 function minimax(
