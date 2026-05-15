@@ -119,25 +119,25 @@ export default async function LocaleLayout({
                 ))}
               </nav>
               <div className="app-sidebar-bottom" aria-label="Account shortcut">
-                <div className="app-sidebar-tools" aria-label="Quick settings">
-                  <ThemeToggle
-                    labels={{
-                      light: t("settings.light"),
-                      dark: t("settings.dark"),
-                      system: t("settings.system")
-                    }}
-                  />
-                  <Suspense fallback={<span className="action-secondary grid h-10 w-10 place-items-center text-sm">...</span>}>
-                    <LocaleSwitcher active={locale as LocaleCode} />
-                  </Suspense>
-                  <NotificationCenter />
-                </div>
                 <Link href={profileHref as never} className="app-nav-link focus-ring">
                   <UserRound size={20} strokeWidth={2.5} />
                   <span>{t("nav.profile")}</span>
                 </Link>
               </div>
             </aside>
+            <div className="app-responsive-tools" aria-label="Quick settings">
+              <ThemeToggle
+                labels={{
+                  light: t("settings.light"),
+                  dark: t("settings.dark"),
+                  system: t("settings.system")
+                }}
+              />
+              <Suspense fallback={<span className="action-secondary grid h-10 w-10 place-items-center text-sm">...</span>}>
+                <LocaleSwitcher active={locale as LocaleCode} />
+              </Suspense>
+              <NotificationCenter />
+            </div>
             <div className="app-main">
               <header className="app-mobile-header">
                 <Link href={`/${locale}`} className="app-mobile-brand focus-ring">
@@ -167,19 +167,6 @@ export default async function LocaleLayout({
                     </Link>
                   </div>
                 </details>
-                <div className="app-mobile-tools" aria-label="Quick settings">
-                  <ThemeToggle
-                    labels={{
-                      light: t("settings.light"),
-                      dark: t("settings.dark"),
-                      system: t("settings.system")
-                    }}
-                  />
-                  <Suspense fallback={<span className="action-secondary grid h-10 w-10 place-items-center text-sm">...</span>}>
-                    <LocaleSwitcher active={locale as LocaleCode} />
-                  </Suspense>
-                  <NotificationCenter />
-                </div>
               </header>
               <main className="app-content">{children}</main>
             </div>

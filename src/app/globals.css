@@ -249,21 +249,15 @@ select {
   font-size: 0.86rem;
 }
 
-.app-sidebar-tools,
-.app-mobile-tools {
+.app-responsive-tools {
+  position: fixed;
+  left: 0.9rem;
+  bottom: 3.9rem;
+  z-index: 85;
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
   align-items: center;
-}
-
-.app-sidebar-tools {
-  border-top: 1px solid var(--border);
-  padding-top: 0.7rem;
-}
-
-.app-mobile-tools {
-  display: none;
 }
 
 .language-menu summary::-webkit-details-marker,
@@ -277,6 +271,13 @@ select {
   background: var(--surface-strong);
   color: var(--foreground);
   transform-origin: top right;
+}
+
+.app-responsive-tools .language-menu-panel,
+.app-responsive-tools .notification-panel {
+  top: auto;
+  bottom: calc(100% + 0.5rem);
+  transform-origin: bottom right;
 }
 
 .language-menu[open],
@@ -2209,8 +2210,18 @@ select {
     display: flex;
   }
 
-  .app-mobile-tools {
-    display: flex;
+  .app-responsive-tools {
+    top: 0.55rem;
+    right: 0.7rem;
+    bottom: auto;
+    left: auto;
+  }
+
+  .app-responsive-tools .language-menu-panel,
+  .app-responsive-tools .notification-panel {
+    top: 3rem;
+    bottom: auto;
+    transform-origin: top right;
   }
 
   .app-content {
