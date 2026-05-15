@@ -30,6 +30,8 @@ export type BotSearchEfficiency = {
   cachedPositions: number;
   moveGenerationCalls: number;
   nodes: number;
+  transpositionEntries: number;
+  transpositionHits: number;
 };
 
 export type BotMoveResult = {
@@ -201,6 +203,8 @@ type SearchBudget = {
   legalMovesCache: Map<string, Move[]>;
   moveGenerationCalls: number;
   nodes: number;
+  transpositionCache: Map<string, { depth: number; score: number }>;
+  transpositionHits: number;
 };
 
 export function chooseBotMove(state: GameState, difficultyKey: BotDifficultyKey = "normal", options: Pick<BotMoveOptions, "maxSearchTimeMs" | "engine"> = {}): Move {
@@ -512,7 +516,9 @@ function createSearchBudget(startedAt: number, searchTimeMs: number): SearchBudg
     deadline: startedAt + searchTimeMs,
     legalMovesCache: new Map(),
     moveGenerationCalls: 0,
-    nodes: 0
+    nodes: 0,
+    transpositionCache: new Map(),
+    transpositionHits: 0
   };
 }
 
@@ -521,7 +527,9 @@ function emptySearchEfficiency(nodes: number = 0): BotSearchEfficiency {
     cacheHits: 0,
     cachedPositions: 0,
     moveGenerationCalls: 0,
-    nodes
+    nodes,
+    transpositionEntries: 0,
+    transpositionHits: 0
   };
 }
 
@@ -530,7 +538,9 @@ function searchEfficiencyFromBudget(budget: SearchBudget): BotSearchEfficiency {
     cacheHits: budget.cacheHits,
     cachedPositions: budget.legalMovesCache.size,
     moveGenerationCalls: budget.moveGenerationCalls,
-    nodes: budget.nodes
+    nodes: budget.nodes,
+    transpositionEntries: budget.transpositionCache.size,
+    transpositionHits: budget.transpositionHits
   };
 }
 
@@ -553,6 +563,10 @@ function searchStateKey(state: GameState) {
     .map((row) => row.map((cell) => (cell.piece ? `${cell.piece.owner[0]}${cell.piece.code}${cell.piece.promoted ? "+" : ""}` : "--")).join(""))
     .join("/");
   return `${state.variantKey}|${state.turn}|${state.status}|${state.result ?? ""}|${state.ply}|${board}`;
+}
+
+function transpositionKey(state: GameState, perspective: PlayerColor, depth: number) {
+  return `${searchStateKey(state)}|perspective:${perspective}|depth:${depth}`;
 }
 
 function evaluateMove(
@@ -618,9 +632,18 @@ function minimax(
   difficulty: BotDifficulty,
   budget: SearchBudget
 ): number {
+  const cacheKey = transpositionKey(state, perspective, depth);
+  const cached = budget.transpositionCache.get(cacheKey);
+  if (cached && cached.depth >= depth) {
+    budget.transpositionHits += 1;
+    return cached.score;
+  }
+
   budget.nodes += 1;
   if (state.status === "completed" || depth <= 0 || budget.nodes >= difficulty.nodeBudget || Date.now() >= budget.deadline) {
-    return quiescence(state, difficulty.quiescenceDepth, perspective, alpha, beta, difficulty, budget);
+    const score = quiescence(state, difficulty.quiescenceDepth, perspective, alpha, beta, difficulty, budget);
+    budget.transpositionCache.set(cacheKey, { depth, score });
+    return score;
   }
 
   const moves = allLegalMovesCached(state, budget)
@@ -632,6 +655,7 @@ function minimax(
 
   const maximizing = state.turn === perspective;
   let best = maximizing ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
+  let pruned = false;
 
   for (const { move } of moves) {
     const next = tryMove(state, move);
@@ -644,9 +668,13 @@ function minimax(
       best = Math.min(best, score);
       beta = Math.min(beta, score);
     }
-    if (beta <= alpha) break;
+    if (beta <= alpha) {
+      pruned = true;
+      break;
+    }
   }
 
+  if (!pruned) budget.transpositionCache.set(cacheKey, { depth, score: best });
   return best;
 }
 

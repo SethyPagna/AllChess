@@ -772,6 +772,12 @@ export function GameBoard({
                     <p>
                       <strong>Bot source:</strong> {lastBotResult.knowledgeSource ?? lastBotResult.engine} · depth {lastBotResult.depthReached} · nodes {lastBotResult.nodesSearched}
                     </p>
+                    {lastBotResult.searchEfficiency ? (
+                      <span>
+                        Reused {lastBotResult.searchEfficiency.cacheHits} move buckets and {lastBotResult.searchEfficiency.transpositionHits} transpositions from{" "}
+                        {lastBotResult.searchEfficiency.transpositionEntries} stored positions.
+                      </span>
+                    ) : null}
                     {lastBotResult.explanation ? (
                       <>
                         <span>{lastBotResult.explanation.plan}</span>

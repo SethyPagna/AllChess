@@ -128,7 +128,9 @@ describe("bot difficulty ladder", () => {
         nodes: result.nodesSearched,
         cachedPositions: expect.any(Number),
         moveGenerationCalls: expect.any(Number),
-        cacheHits: expect.any(Number)
+        cacheHits: expect.any(Number),
+        transpositionEntries: expect.any(Number),
+        transpositionHits: expect.any(Number)
       })
     );
   });
@@ -144,11 +146,14 @@ describe("bot difficulty ladder", () => {
         nodes: result.nodesSearched,
         cachedPositions: expect.any(Number),
         moveGenerationCalls: expect.any(Number),
-        cacheHits: expect.any(Number)
+        cacheHits: expect.any(Number),
+        transpositionEntries: expect.any(Number),
+        transpositionHits: expect.any(Number)
       })
     );
     expect(result.searchEfficiency.cachedPositions).toBe(result.searchEfficiency.moveGenerationCalls);
     expect(result.searchEfficiency.cacheHits).toBeGreaterThan(0);
+    expect(result.searchEfficiency.transpositionEntries).toBeGreaterThan(0);
   });
 
   test("cancelled async bot request never applies a stale move", async () => {
@@ -271,7 +276,7 @@ describe("bot difficulty ladder", () => {
       nodesSearched: 1,
       legalValidated: true,
       validatedLegal: true,
-      searchEfficiency: { cacheHits: 0, cachedPositions: 0, moveGenerationCalls: 0, nodes: 1 }
+      searchEfficiency: { cacheHits: 0, cachedPositions: 0, moveGenerationCalls: 0, nodes: 1, transpositionEntries: 0, transpositionHits: 0 }
     });
   });
 
