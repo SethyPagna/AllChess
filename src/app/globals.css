@@ -196,9 +196,14 @@ select {
   transition: background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
-.app-nav-link:hover {
+.app-nav-link:hover,
+.app-nav-link.is-active {
   background: var(--surface-soft);
   color: var(--foreground);
+}
+
+.app-nav-link.is-active {
+  box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .app-nav-link svg {
@@ -236,6 +241,10 @@ select {
 .app-nav-group-summary svg:last-child {
   color: var(--muted);
   transition: transform 160ms ease;
+}
+
+.app-nav-group-summary.is-active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .app-nav-group[open] .app-nav-group-summary svg:last-child {
@@ -409,6 +418,37 @@ select {
   background: var(--surface);
   box-shadow: var(--shadow);
   padding: 0.45rem;
+}
+
+.app-menu-sections,
+.app-menu-section {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.app-menu-sections {
+  max-height: min(78vh, 34rem);
+  overflow-y: auto;
+  padding-right: 0.1rem;
+}
+
+.app-menu-section {
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 76%, transparent);
+  padding-bottom: 0.45rem;
+}
+
+.app-menu-section:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.app-menu-section-label {
+  margin: 0.2rem 0.35rem 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .app-content {
