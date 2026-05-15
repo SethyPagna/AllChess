@@ -6,19 +6,19 @@ import { displayGameName, getGameCatalog } from "@/lib/catalog";
 import { normalizeLocale } from "@/lib/i18n/locales";
 
 const playModes = [
-  { key: "online", label: "Play Online", description: "Queue for a live opponent with matching settings.", Icon: Globe2, hrefSuffix: "?mode=online" },
-  { key: "bot", label: "Play Bots", description: "Practice from Easy through Legend with side choice.", Icon: Bot, hrefSuffix: "?bot=normal&mode=bot" },
-  { key: "offline", label: "Offline Local", description: "Two players on the same device.", Icon: MonitorSmartphone, hrefSuffix: "?mode=offline" },
-  { key: "room", label: "Create Room", description: "Create a shareable room code for friends.", Icon: Lock, hrefSuffix: "?mode=room" },
-  { key: "matchmaking", label: "Matchmaking", description: "Pick time, rating band, and rated/casual.", Icon: Users, hrefSuffix: "?mode=matchmaking" },
-  { key: "spectate", label: "Spectate", description: "Watch active public rooms and bot games.", Icon: Eye, hrefSuffix: "?mode=spectate" }
+  { key: "online", label: "Online", description: "Queue for a live opponent with matching settings.", Icon: Globe2, hrefSuffix: "?mode=online" },
+  { key: "bot", label: "Bots", description: "Practice from Easy through Legend with side choice.", Icon: Bot, hrefSuffix: "?bot=normal&mode=bot" },
+  { key: "offline", label: "Local", description: "Two players on the same device.", Icon: MonitorSmartphone, hrefSuffix: "?mode=offline" },
+  { key: "room", label: "Room", description: "Create a shareable room code for friends.", Icon: Lock, hrefSuffix: "?mode=room" },
+  { key: "matchmaking", label: "Match", description: "Pick time, rating band, and rated/casual.", Icon: Users, hrefSuffix: "?mode=matchmaking" },
+  { key: "spectate", label: "Watch", description: "Watch active public rooms and bot games.", Icon: Eye, hrefSuffix: "?mode=spectate" }
 ];
 
 export default async function PlaySetupPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
   const playable = getGameCatalog().filter((entry) => entry.playability === "playable" && entry.variantKey);
-  const featured = playable.slice(0, 8);
+  const featured = playable.slice(0, 10);
 
   return (
     <section className="play-setup-page grid gap-5">
@@ -35,24 +35,48 @@ export default async function PlaySetupPage({ params }: { params: Promise<{ loca
           Quick bot game
         </Link>
       </div>
-      <div className="play-mode-browser">
-        {playModes.map(({ key, label, description, Icon, hrefSuffix }) => (
-          <article key={key} className="panel play-mode-card">
-            <div className="compact-title-row">
-              <Icon size={22} />
-              <h2>{label}</h2>
-              <InfoHint text={description} />
-            </div>
-            <div className="play-mode-card-games">
-              {featured.slice(0, 4).map((entry) => (
-                <Link key={`${key}-${entry.id}`} href={`/${locale}/play/${entry.variantKey}${hrefSuffix}`} className="focus-ring">
-                  <Radio size={14} />
-                  {displayGameName(entry)}
-                </Link>
-              ))}
-            </div>
-          </article>
-        ))}
+      <div className="play-setup-shell">
+        <aside className="panel play-mode-rail" aria-label="Play modes">
+          <div className="compact-section-heading">
+            <h2 className="section-title">Mode</h2>
+            <InfoHint text="Choose the kind of session first. The board screen still lets you adjust side, tier, and clock before the first move." />
+          </div>
+          <div className="play-mode-rail-list">
+            {playModes.map(({ key, label, description, Icon, hrefSuffix }) => (
+              <Link key={key} href={`/${locale}/play/classic${hrefSuffix}`} className="focus-ring play-mode-rail-item">
+                <Icon size={18} />
+                <span>{label}</span>
+                <InfoHint text={description} />
+              </Link>
+            ))}
+          </div>
+        </aside>
+        <div className="panel play-game-picker">
+          <div className="compact-section-heading">
+            <h2 className="section-title">Game</h2>
+            <InfoHint text="Pick a ruleset. Each row has one fast bot action and one online setup action to avoid clutter." />
+          </div>
+          <div className="play-game-list">
+            {featured.map((entry) => (
+              <article key={entry.id} className="play-game-row">
+                <div className="play-game-row-main">
+                  <Radio size={16} />
+                  <strong>{displayGameName(entry)}</strong>
+                  <span>{entry.rulesAdapter}</span>
+                  <InfoHint text={entry.winConditions[0]} />
+                </div>
+                <div className="play-game-row-actions">
+                  <Link href={`/${locale}/play/${entry.variantKey}?bot=normal&mode=bot`} className="focus-ring action-secondary">
+                    Bot
+                  </Link>
+                  <Link href={`/${locale}/play/${entry.variantKey}?mode=online`} className="focus-ring action-primary">
+                    Play
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );

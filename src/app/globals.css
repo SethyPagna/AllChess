@@ -1949,7 +1949,7 @@ select {
 }
 
 .play-setup-hero h1 {
-  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-size: clamp(1.55rem, 3.1vw, 2.45rem);
   font-weight: 950;
   line-height: 1;
 }
@@ -1997,6 +1997,107 @@ select {
   padding: 0.55rem 0.65rem;
   font-size: 0.82rem;
   font-weight: 900;
+}
+
+.play-setup-shell {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: minmax(13rem, 17rem) minmax(0, 1fr);
+  align-items: start;
+}
+
+.play-mode-rail,
+.play-game-picker {
+  display: grid;
+  gap: 0.8rem;
+  padding: 0.9rem;
+}
+
+.play-mode-rail {
+  position: sticky;
+  top: 1rem;
+}
+
+.play-mode-rail-list,
+.play-game-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.play-mode-rail-item {
+  display: grid;
+  min-height: 2.75rem;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  border-radius: 8px;
+  background: var(--surface-soft);
+  padding: 0.55rem 0.65rem;
+  color: var(--foreground);
+  font-size: 0.88rem;
+  font-weight: 950;
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.play-mode-rail-item:hover {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-soft));
+  transform: translateX(2px);
+}
+
+.play-mode-rail-item svg,
+.play-game-row-main svg {
+  color: var(--accent);
+}
+
+.play-game-row {
+  display: grid;
+  min-height: 3.25rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  padding: 0.55rem;
+}
+
+.play-game-row-main {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.play-game-row-main strong {
+  overflow: hidden;
+  font-size: 0.94rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.play-game-row-main span {
+  border-radius: 6px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  padding: 0.2rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.play-game-row-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.play-game-row-actions a {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.7rem;
+  font-size: 0.82rem;
 }
 
 .practice-hero {
@@ -2308,6 +2409,30 @@ select {
   .play-setup-hero {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .play-setup-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .play-mode-rail {
+    position: static;
+  }
+
+  .play-mode-rail-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .play-game-row {
+    grid-template-columns: 1fr;
+  }
+
+  .play-game-row-actions {
+    justify-content: stretch;
+  }
+
+  .play-game-row-actions a {
+    flex: 1;
   }
 }
 

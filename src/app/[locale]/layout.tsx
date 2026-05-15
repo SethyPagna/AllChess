@@ -96,7 +96,6 @@ export default async function LocaleLayout({
                 </span>
                 <span>
                   <span className="app-brand-name">{t("app.name")}</span>
-                  <span className="app-brand-tagline">{t("app.tagline")}</span>
                 </span>
               </Link>
               <nav className="app-nav">

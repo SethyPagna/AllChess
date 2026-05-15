@@ -12,8 +12,13 @@ describe("compact page copy", () => {
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain('aria-label="More information"');
-    expect(markup).toContain("Play Online");
+    expect(markup).toContain('aria-label="Play modes"');
+    expect(markup).toContain("Mode");
+    expect(markup).toContain("Game");
+    expect(markup).toContain("Online");
+    expect(markup).toContain("Bots");
     expect(markup).not.toContain("<p>Pick a mode first");
+    expect(markup).not.toContain("play-mode-card");
   });
 
   test("lobby keeps section titles while moving details into hover/focus hints", async () => {
