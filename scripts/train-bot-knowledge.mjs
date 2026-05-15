@@ -94,6 +94,7 @@ const output = {
   toolManifests
 };
 
+guardAgainstKnowledgeRegression(outputPath, output, options);
 writeFileSync(outputPath, `${JSON.stringify(output, null, 2)}\n`);
 console.log(`Wrote ${entries.length} knowledge entries to ${relative(repoRoot, outputPath)}`);
 console.log(`Scanned ${manifests.length} files from ${relative(repoRoot, dataRoot)}`);
@@ -113,6 +114,33 @@ function parseArgs(args) {
     index += 1;
   }
   return parsed;
+}
+
+function guardAgainstKnowledgeRegression(path, nextOutput, parsedOptions) {
+  if (parsedOptions.allowRegression === "true" || !existsSync(path)) return;
+
+  let current;
+  try {
+    current = JSON.parse(readFileSync(path, "utf8"));
+  } catch {
+    return;
+  }
+
+  const currentEntries = Number(current.summary?.entries ?? current.entries?.length ?? 0);
+  const nextEntries = Number(nextOutput.summary?.entries ?? nextOutput.entries?.length ?? 0);
+  if (nextEntries >= currentEntries) return;
+
+  const skippedSources = nextOutput.manifests
+    .filter((manifest) => String(manifest.readStatus).startsWith("skipped:") || String(manifest.readStatus).startsWith("zst-read-failed:"))
+    .map((manifest) => `${manifest.path}: ${manifest.readStatus}`);
+
+  throw new Error(
+    [
+      `Refusing to overwrite stronger bot knowledge: next run has ${nextEntries} entries, current file has ${currentEntries}.`,
+      skippedSources.length ? `Blocked sampled sources: ${skippedSources.join("; ")}` : "No skipped source details were reported.",
+      "Install the missing decompression tools or pass --allow-regression true only for an intentional reset."
+    ].join(" ")
+  );
 }
 
 function scanFiles(root) {

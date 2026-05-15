@@ -1,13 +1,19 @@
 import Link from "next/link";
-import { Bot, Brain, Play, Swords } from "lucide-react";
+import { Bot, Brain, Database, Gauge, Play, Swords } from "lucide-react";
 
+import { InfoHint } from "@/components/info-hint";
 import { displayGameName, gameFamilies, getGameCatalog } from "@/lib/catalog";
+import { listBotKnowledgeSummary } from "@/lib/bot-training";
+import { listBotStrengthBands } from "@/lib/bot-strength";
 import { normalizeLocale } from "@/lib/i18n/locales";
 
 export default async function PracticePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
   const playable = getGameCatalog().filter((entry) => entry.playability === "playable" && entry.variantKey);
+  const knowledge = listBotKnowledgeSummary();
+  const strengthBands = listBotStrengthBands();
+  const legendBand = strengthBands[strengthBands.length - 1];
 
   return (
     <section className="practice-page grid gap-5">
@@ -24,6 +30,35 @@ export default async function PracticePage({ params }: { params: Promise<{ local
           <Play size={18} />
           Quick chess bot
         </Link>
+      </div>
+      <div className="panel practice-bot-metrics" aria-label="Bot training status">
+        <div>
+          <span>
+            <Database size={16} />
+            Knowledge
+            <InfoHint text="Cached openings and tactics are checked before live search, so known positions answer faster." />
+          </span>
+          <strong>{knowledge.entries.toLocaleString()}</strong>
+          <small>{knowledge.tacticEntries.toLocaleString()} tactics</small>
+        </div>
+        <div>
+          <span>
+            <Brain size={16} />
+            Labels
+            <InfoHint text="Engine labels are compact training records distilled from local data and tools." />
+          </span>
+          <strong>{knowledge.engineLabels.toLocaleString()}</strong>
+          <small>{knowledge.toolsDiscovered} tools linked</small>
+        </div>
+        <div>
+          <span>
+            <Gauge size={16} />
+            Top tier
+            <InfoHint text={legendBand.basis} />
+          </span>
+          <strong>{legendBand.display}</strong>
+          <small>{legendBand.calibrationStatus.replace(/-/g, " ")}</small>
+        </div>
       </div>
       <div className="practice-grid">
         {playable.map((entry) => (

@@ -38,6 +38,16 @@ test("settings exposes language and theme controls", async ({ page }) => {
   await expect(page.getByRole("main").getByRole("button", { name: "Dark" })).toBeVisible();
 });
 
+test("practice page shows compact bot training status", async ({ page }) => {
+  await page.goto("/en/practice");
+
+  await expect(page.getByRole("heading", { name: "Choose a game, then train" })).toBeVisible();
+  await expect(page.getByLabel("Bot training status")).toContainText("Knowledge");
+  await expect(page.getByLabel("Bot training status")).toContainText("tactics");
+  await expect(page.getByLabel("Bot training status")).toContainText("3190+ engine Elo-style");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("language menu keeps the current route", async ({ page }) => {
   await page.goto("/en/play/classic");
 
