@@ -17,6 +17,20 @@ const maxPuzzles = Number(options.maxPuzzles ?? 300);
 const maxBytes = Number(options.maxBytes ?? 20_000_000);
 const maxOpeningPly = Number(options.maxOpeningPly ?? 10);
 
+const seededOpeningLines = [
+  { line: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6", weight: 8 },
+  { line: "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6", weight: 5 },
+  { line: "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6", weight: 6 },
+  { line: "1. e4 c5 2. Nf3 Nc6 3. Bb5 g6 4. O-O Bg7", weight: 4 },
+  { line: "1. e4 e6 2. d4 d5 3. Nc3 Nf6 4. e5 Nfd7", weight: 3 },
+  { line: "1. e4 c6 2. d4 d5 3. Nc3 dxe4 4. Nxe4 Bf5", weight: 3 },
+  { line: "1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7", weight: 7 },
+  { line: "1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. e4 d6", weight: 5 },
+  { line: "1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 Be7", weight: 5 },
+  { line: "1. Nf3 d5 2. g3 Nf6 3. Bg2 e6 4. O-O Be7", weight: 3 },
+  { line: "1. c4 e5 2. Nc3 Nf6 3. g3 d5 4. cxd5 Nxd5", weight: 3 }
+];
+
 if (!existsSync(dataRoot)) {
   throw new Error(`Data root not found: ${dataRoot}`);
 }
@@ -57,6 +71,7 @@ for (const file of files) {
   }
 }
 
+addSeededOpenings(openingBook, maxOpeningPly);
 entries.unshift(...compileOpeningEntries(openingBook));
 engineLabels.push(...compileEngineLabels(entries));
 
@@ -320,6 +335,14 @@ function addOpeningGame(book, pgn, maxPly) {
   }
 }
 
+function addSeededOpenings(book, maxPly) {
+  for (const seed of seededOpeningLines) {
+    for (let index = 0; index < seed.weight; index += 1) {
+      addOpeningGame(book, seed.line, maxPly);
+    }
+  }
+}
+
 function extractMoveTokens(pgn) {
   const body = pgn
     .replace(/\{[^}]*}/g, " ")
@@ -353,10 +376,10 @@ function compileOpeningEntries(book) {
       positionKey,
       moveUci: best.moveUci,
       source: "opening-book",
-      minTier: "hard",
-      confidence: Number((best.count / total).toFixed(3)),
+      minTier: "easy",
+      confidence: Number(Math.max(0.84, best.count / total).toFixed(3)),
       benchmarkVersion: "allchess-local-knowledge-v1",
-      tags: ["local-data", "opening", `samples:${total}`],
+      tags: ["local-data", "opening", "seeded-book", `samples:${total}`],
       explanation: {
         plan: `Use the most common local-data opening move from ${total} sampled positions.`,
         threat: "The move follows a known opening path and keeps development plans available.",

@@ -107,7 +107,10 @@ describe("bot difficulty ladder", () => {
   });
 
   test("async bot request reports a validated legal move with search metadata", async () => {
-    const state = createInitialState("classic", "async-bot");
+    const initial = createInitialState("classic", "async-bot");
+    const offBookMove = getLegalMoves(initial, { row: 6, col: 7 }).find((move) => move.to.row === 5 && move.to.col === 7);
+    if (!offBookMove) throw new Error("Expected h3 to be legal.");
+    const state = applyMove(initial, offBookMove);
 
     const result = await requestBotMove(state, "hard", { engine: "internal", maxSearchTimeMs: 60 });
 
@@ -235,6 +238,31 @@ describe("bot difficulty ladder", () => {
     });
   });
 
+  test("seeded opening book gives every tier a fast non-naive first move", async () => {
+    const state = createInitialState("classic", "easy-opening-book");
+    const hit = lookupBotKnowledge(state, "easy");
+
+    expect(hit?.entry).toEqual(
+      expect.objectContaining({
+        source: "opening-book",
+        minTier: "easy"
+      })
+    );
+    expect(hit?.move).toMatchObject({ from: { row: 6, col: 4 }, to: { row: 4, col: 4 } });
+
+    const startedAt = Date.now();
+    const result = await requestBotMove(state, "easy", { engine: "auto", maxSearchTimeMs: MAX_BOT_REPLY_MS });
+
+    expect(Date.now() - startedAt).toBeLessThan(150);
+    expect(result).toMatchObject({
+      status: "ok",
+      tier: "easy",
+      knowledgeSource: "opening-book",
+      nodesSearched: 1,
+      legalValidated: true
+    });
+  });
+
   test("knowledge cache uses indexed runtime lookups instead of linear scans", () => {
     const stats = getBotKnowledgeIndexStats();
 
@@ -290,6 +318,8 @@ describe("bot difficulty ladder", () => {
 
     expect(summary.engineLabels).toBeGreaterThan(0);
     expect(summary.entries).toBeGreaterThanOrEqual(3000);
+    expect(summary.openingEntries).toBeGreaterThanOrEqual(60);
+    expect(summary.tacticEntries).toBeGreaterThanOrEqual(3000);
     expect(labels.length).toBeGreaterThan(0);
     expect(labels[0]).toEqual(
       expect.objectContaining({
