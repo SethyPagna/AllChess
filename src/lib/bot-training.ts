@@ -1,6 +1,6 @@
 import { moveToUci } from "@/lib/stockfish-engine";
+import { getVariantBotStrengthProfile, type BotTierKey, type VariantBotStrengthProfile } from "@/lib/bot-strength";
 import { getLegalMoves, variantCatalog, type GameState, type Move, type VariantDefinition } from "@/lib/variants";
-import type { BotTierKey } from "@/lib/bots";
 import generatedKnowledge from "@/data/bot-knowledge.generated.json";
 
 export type BotKnowledgeSource = "opening-book" | "tactic-cache" | "endgame-cache" | "ml-policy" | "engine-search" | "internal-search";
@@ -142,6 +142,7 @@ export type BotTrainingChecklistItem = {
 export type BotTierTrainingChecklist = {
   tier: BotTierKey;
   label: string;
+  strength: VariantBotStrengthProfile;
   targetBehavior: string;
   search: {
     depth: number;
@@ -529,18 +530,22 @@ function createGameBotTrainingChecklist(variant: VariantDefinition): GameBotTrai
     coverageStatus,
     knowledgeEntries: knowledgeEntriesForVariant,
     engineLabels: engineLabelsForVariant,
-    difficultyTiers: trainingTierProfiles.map((difficulty) => ({
-      tier: difficulty.key,
-      label: difficulty.label,
-      targetBehavior: targetBehaviorForTier(difficulty.key),
-      search: {
-        depth: difficulty.depth,
-        nodeBudget: difficulty.nodeBudget,
-        beamWidth: difficulty.beamWidth,
-        replyCheckWidth: difficulty.replyCheckWidth,
-        maxMoveTimeMs: difficulty.moveTimeMs
-      },
-      checklist: [
+    difficultyTiers: trainingTierProfiles.map((difficulty) => {
+      const strength = getVariantBotStrengthProfile(variant.key, difficulty.key);
+
+      return {
+        tier: difficulty.key,
+        label: difficulty.label,
+        strength,
+        targetBehavior: targetBehaviorForTier(difficulty.key),
+        search: {
+          depth: difficulty.depth,
+          nodeBudget: difficulty.nodeBudget,
+          beamWidth: difficulty.beamWidth,
+          replyCheckWidth: difficulty.replyCheckWidth,
+          maxMoveTimeMs: difficulty.moveTimeMs
+        },
+        checklist: [
         {
           id: "legal-validation",
           label: "Validate every selected move against the rules adapter before applying it.",
@@ -565,7 +570,13 @@ function createGameBotTrainingChecklist(variant: VariantDefinition): GameBotTrai
           id: "tier-distinction",
           label: "Keep the tier distinct through depth, node budget, beam width, reply checks, and confidence gates.",
           status: "ready",
-          evidence: `${difficulty.label}: depth ${difficulty.depth}, ${difficulty.nodeBudget} nodes, beam ${difficulty.beamWidth}, confidence gate ${difficulty.knowledgeMinimumConfidence}.`
+          evidence: `${difficulty.label}: ${strength.display}, depth ${difficulty.depth}, ${difficulty.nodeBudget} nodes, beam ${difficulty.beamWidth}, confidence gate ${difficulty.knowledgeMinimumConfidence}.`
+        },
+        {
+          id: "strength-calibration",
+          label: "Use a consistent Elo-style strength band without pretending every variant has a human-rated Elo.",
+          status: rulesGated ? "rules-gated" : "ready",
+          evidence: strength.basis
         },
         {
           id: "resource-efficiency",
@@ -587,8 +598,9 @@ function createGameBotTrainingChecklist(variant: VariantDefinition): GameBotTrai
             ? `${variant.key} still needs complete native-rule fixtures before bot strength can be called final.`
             : `${variant.objective} is part of the variant scoring and terminal-state checks.`
         }
-      ]
-    })),
+        ]
+      };
+    }),
     nextTrainingJobs: nextTrainingJobsForVariant(variant, hasRuntimeKnowledge, rulesGated)
   };
 }

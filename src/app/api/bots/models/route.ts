@@ -10,6 +10,7 @@ import {
   listBotToolManifests,
   listTrainingDataManifests
 } from "@/lib/bot-training";
+import { listBotStrengthBands } from "@/lib/bot-strength";
 
 export function GET() {
   const labels = listBotEngineLabels();
@@ -26,6 +27,7 @@ export function GET() {
       note: "Runtime gameplay consumes legal cached knowledge first; full neural training artifacts stay outside the browser bundle."
     },
     runtime: getBotRuntimeLanguageProfile(),
+    strengthBands: listBotStrengthBands(),
     trainingSummary: listBotKnowledgeSummary(),
     knowledgeIndex: getBotKnowledgeIndexStats(),
     models: listBotModelManifests(),

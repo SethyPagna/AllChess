@@ -24,8 +24,10 @@ describe("Stockfish engine adapter", () => {
     const legend = getStockfishDifficultyConfig("legend");
 
     expect(easy.limitStrength).toBe(true);
+    expect(easy.elo).toBe(1320);
     expect(easy.elo).toBeLessThan(legend.elo);
     expect(easy.moveTimeMs).toBeLessThan(legend.moveTimeMs);
+    expect(legend.elo).toBe(3190);
     expect(legend.moveTimeMs).toBeLessThanOrEqual(2400);
     expect(legend.limitStrength).toBe(false);
   });

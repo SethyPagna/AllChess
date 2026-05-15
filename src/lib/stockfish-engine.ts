@@ -1,7 +1,8 @@
 import { getLegalMoves, type GameState, type Move } from "@/lib/variants";
-import type { BotDifficultyKey } from "@/lib/bots";
+import { getBotStrengthBand, type BotTierKey } from "@/lib/bot-strength";
 
 export type BotEngineMode = "auto" | "stockfish" | "internal";
+export type BotDifficultyKey = BotTierKey;
 
 export type StockfishDifficultyConfig = {
   limitStrength: boolean;
@@ -21,12 +22,12 @@ export type StockfishSearchResult = {
 };
 
 const configs: Record<BotDifficultyKey, StockfishDifficultyConfig> = {
-  easy: { limitStrength: true, elo: 900, skillLevel: 2, moveTimeMs: 120, depth: 2 },
-  normal: { limitStrength: true, elo: 1400, skillLevel: 6, moveTimeMs: 250, depth: 4 },
-  hard: { limitStrength: true, elo: 1900, skillLevel: 10, moveTimeMs: 500, depth: 7 },
-  "very-hard": { limitStrength: true, elo: 2300, skillLevel: 14, moveTimeMs: 900, depth: 10 },
-  grandmaster: { limitStrength: true, elo: 2850, skillLevel: 18, moveTimeMs: 1700, depth: 15 },
-  legend: { limitStrength: false, elo: 3400, skillLevel: 20, moveTimeMs: 2400, depth: 20 }
+  easy: { limitStrength: true, elo: getBotStrengthBand("easy").stockfishUciElo, skillLevel: 2, moveTimeMs: 120, depth: 2 },
+  normal: { limitStrength: true, elo: getBotStrengthBand("normal").stockfishUciElo, skillLevel: 6, moveTimeMs: 250, depth: 4 },
+  hard: { limitStrength: true, elo: getBotStrengthBand("hard").stockfishUciElo, skillLevel: 10, moveTimeMs: 500, depth: 7 },
+  "very-hard": { limitStrength: true, elo: getBotStrengthBand("very-hard").stockfishUciElo, skillLevel: 14, moveTimeMs: 900, depth: 10 },
+  grandmaster: { limitStrength: true, elo: getBotStrengthBand("grandmaster").stockfishUciElo, skillLevel: 18, moveTimeMs: 1700, depth: 15 },
+  legend: { limitStrength: false, elo: getBotStrengthBand("legend").stockfishUciElo, skillLevel: 20, moveTimeMs: 2400, depth: 20 }
 };
 
 export function shouldUseStockfish(state: GameState, engine: BotEngineMode = "auto") {

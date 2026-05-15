@@ -21,6 +21,9 @@ describe("bot difficulty ladder", () => {
   test("defines the requested six difficulty levels in increasing search budget", () => {
     expect(botDifficultyLevels.map((level) => level.key)).toEqual(["easy", "normal", "hard", "very-hard", "grandmaster", "legend"]);
     expect(botDifficultyLevels.map((level) => level.label)).toEqual(["Easy", "Normal", "Hard", "Very Hard", "Grandmaster", "Legend"]);
+    expect(botDifficultyLevels.map((level) => level.strength.targetElo)).toEqual([1050, 1450, 1900, 2300, 2850, 3190]);
+    expect(botDifficultyLevels.map((level) => level.strength.stockfishUciElo)).toEqual([1320, 1450, 1900, 2300, 2850, 3190]);
+    expect(botDifficultyLevels.every((level) => level.strength.minElo <= level.strength.targetElo)).toBe(true);
 
     const budgets = botDifficultyLevels.map((level) => level.depth * level.moveTimeMs);
     expect([...budgets].sort((a, b) => a - b)).toEqual(budgets);
@@ -399,10 +402,14 @@ describe("bot difficulty ladder", () => {
     expect(classic?.coverageStatus).toBe("active");
     expect(classic?.difficultyTiers.map((tier) => tier.tier)).toEqual(["easy", "normal", "hard", "very-hard", "grandmaster", "legend"]);
     expect(classic?.difficultyTiers[0].targetBehavior).toContain("not naive");
+    expect(classic?.difficultyTiers[0].strength.calibrationStatus).toBe("allchess-estimated");
+    expect(classic?.difficultyTiers[1].strength.calibrationStatus).toBe("stockfish-calibrated");
     expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "not-naive-basics", status: "ready" })]));
     expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "resource-efficiency", status: "ready" })]));
     expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "search-telemetry", status: "ready" })]));
+    expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "strength-calibration", status: "ready" })]));
     expect(jungle?.coverageStatus).toBe("rules-gated");
+    expect(jungle?.difficultyTiers[0].strength.calibrationStatus).toBe("rules-gated");
     expect(jungle?.nextTrainingJobs[0]).toContain("Complete native jungle rules fixtures");
   });
 });

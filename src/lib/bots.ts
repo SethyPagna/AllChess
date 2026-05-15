@@ -1,11 +1,12 @@
 import { applyMove, getLegalMoves, sameSquare, type GameState, type Move, type PlayerColor } from "@/lib/variants";
 import { lookupBotKnowledge, type BotKnowledgeSource, type BotMoveExplanation } from "@/lib/bot-training";
 import { moveToUci, requestStockfishMove, shouldUseStockfish, type BotEngineMode } from "@/lib/stockfish-engine";
+import { getBotStrengthBand, type BotStrengthBand, type BotTierKey } from "@/lib/bot-strength";
 
 export const MAX_BOT_REPLY_MS = 2800;
 const MIN_BOT_SEARCH_MS = 8;
 
-export type BotTierKey = "easy" | "normal" | "hard" | "very-hard" | "grandmaster" | "legend";
+export type { BotTierKey } from "@/lib/bot-strength";
 export type BotDifficultyKey = BotTierKey;
 export type BotPlayStyle = "balanced" | "tactical" | "positional" | "defensive" | "wild";
 
@@ -13,6 +14,7 @@ export type BotDifficulty = {
   key: BotTierKey;
   label: string;
   estimatedStrength: string;
+  strength: BotStrengthBand;
   benchmarkVersion: string;
   depth: number;
   moveTimeMs: number;
@@ -88,6 +90,7 @@ export const botDifficultyLevels: BotDifficulty[] = [
     key: "easy",
     label: "Easy",
     estimatedStrength: "Guided beginner: legal, safe, and still beatable",
+    strength: getBotStrengthBand("easy"),
     benchmarkVersion: "allchess-bench-v2",
     depth: 1,
     moveTimeMs: 160,
@@ -103,6 +106,7 @@ export const botDifficultyLevels: BotDifficulty[] = [
     key: "normal",
     label: "Normal",
     estimatedStrength: "Club basics with one-reply blunder checks",
+    strength: getBotStrengthBand("normal"),
     benchmarkVersion: "allchess-bench-v2",
     depth: 2,
     moveTimeMs: 280,
@@ -118,6 +122,7 @@ export const botDifficultyLevels: BotDifficulty[] = [
     key: "hard",
     label: "Hard",
     estimatedStrength: "Tactical club with defended-piece checks",
+    strength: getBotStrengthBand("hard"),
     benchmarkVersion: "allchess-bench-v2",
     depth: 3,
     moveTimeMs: 650,
@@ -133,6 +138,7 @@ export const botDifficultyLevels: BotDifficulty[] = [
     key: "very-hard",
     label: "Very Hard",
     estimatedStrength: "Expert practice with stronger positional weighting",
+    strength: getBotStrengthBand("very-hard"),
     benchmarkVersion: "allchess-bench-v2",
     depth: 4,
     moveTimeMs: 1200,
@@ -148,6 +154,7 @@ export const botDifficultyLevels: BotDifficulty[] = [
     key: "grandmaster",
     label: "Grandmaster",
     estimatedStrength: "Engine-backed master benchmark",
+    strength: getBotStrengthBand("grandmaster"),
     benchmarkVersion: "allchess-bench-v2",
     depth: 5,
     moveTimeMs: 2100,
@@ -163,6 +170,7 @@ export const botDifficultyLevels: BotDifficulty[] = [
     key: "legend",
     label: "Legend",
     estimatedStrength: "Fast cache-first benchmark with deepest safe search",
+    strength: getBotStrengthBand("legend"),
     benchmarkVersion: "allchess-bench-v2",
     depth: 7,
     moveTimeMs: 2600,

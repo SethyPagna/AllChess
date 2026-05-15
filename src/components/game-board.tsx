@@ -154,7 +154,7 @@ export function GameBoard({
             <strong>{isHuman ? "Your profile" : isBot ? `${botLevel.label} bot` : `${colorLabel(color)} player`}</strong>
             <span>{clock ? formatClock(clock.remainingMs) : "--:--"}</span>
           </div>
-          <p>{isBot ? `${botLevel.estimatedStrength} - ${thinking.status === "thinking" ? "thinking" : "profile"}` : isHuman ? `${colorLabel(color)} side - local profile` : `${colorLabel(color)} side`}</p>
+          <p>{isBot ? `${botLevel.strength.display} - ${botLevel.estimatedStrength} - ${thinking.status === "thinking" ? "thinking" : "profile"}` : isHuman ? `${colorLabel(color)} side - local profile` : `${colorLabel(color)} side`}</p>
         </div>
         <div className="captured-strip" aria-label={`${colorLabel(color)} captured pieces`}>
           {capturedPieces.length ? (
@@ -736,9 +736,9 @@ export function GameBoard({
                   <Bot size={18} />
                   <div>
                     <strong>{botLevel.label} bot</strong>
-                    <span>{botLevel.estimatedStrength}</span>
+                    <span>{botLevel.strength.display} - {botLevel.estimatedStrength}</span>
                   </div>
-                  <small>Under 3s</small>
+                  <small title={botLevel.strength.basis}>{botLevel.strength.calibrationStatus.replace(/-/g, " ")}</small>
                 </div>
                 <label className="play-setup-field mt-3">
                   <span>Bot difficulty</span>
