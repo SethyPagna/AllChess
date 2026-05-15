@@ -3,7 +3,7 @@ import { Bot, Brain, Database, Gauge, Play, Swords } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
 import { displayGameName, gameFamilies, getGameCatalog } from "@/lib/catalog";
-import { listBotKnowledgeSummary } from "@/lib/bot-training";
+import { listBotKnowledgeSummary, listBotTrainingReadiness } from "@/lib/bot-training";
 import { listBotStrengthBands } from "@/lib/bot-strength";
 import { normalizeLocale } from "@/lib/i18n/locales";
 
@@ -12,6 +12,7 @@ export default async function PracticePage({ params }: { params: Promise<{ local
   const locale = normalizeLocale(rawLocale);
   const playable = getGameCatalog().filter((entry) => entry.playability === "playable" && entry.variantKey);
   const knowledge = listBotKnowledgeSummary();
+  const readinessByVariant = new Map(listBotTrainingReadiness().map((readiness) => [readiness.variantKey, readiness]));
   const strengthBands = listBotStrengthBands();
   const legendBand = strengthBands[strengthBands.length - 1];
 
@@ -68,6 +69,13 @@ export default async function PracticePage({ params }: { params: Promise<{ local
               <h2>{displayGameName(entry)}</h2>
               <p>{entry.board.description}</p>
             </div>
+            {entry.variantKey ? (
+              <div className="practice-readiness" title={readinessByVariant.get(entry.variantKey)?.primaryGap}>
+                <strong>{readinessByVariant.get(entry.variantKey)?.badgeLabel ?? "Search ready"}</strong>
+                <span>{(readinessByVariant.get(entry.variantKey)?.knowledgeEntries ?? 0).toLocaleString()} cached</span>
+                <span>{(readinessByVariant.get(entry.variantKey)?.responseTargetMs ?? 2800) / 1000}s target</span>
+              </div>
+            ) : null}
             <div className="practice-card-meta">
               <span>
                 <Swords size={15} />

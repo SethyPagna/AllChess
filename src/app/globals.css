@@ -2346,6 +2346,28 @@ select {
   font-weight: 750;
 }
 
+.practice-readiness {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.practice-readiness strong,
+.practice-readiness span {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-strong));
+  padding: 0.28rem 0.55rem;
+  font-size: 0.74rem;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.practice-readiness span {
+  background: var(--surface-strong);
+  color: var(--muted);
+}
+
 .practice-card-meta {
   display: grid;
   gap: 0.35rem;
