@@ -1,5 +1,6 @@
 import { moveToUci } from "@/lib/stockfish-engine";
 import { getVariantBotStrengthProfile, type BotTierKey, type VariantBotStrengthProfile } from "@/lib/bot-strength";
+import { MAX_BOT_REPLY_MS } from "@/lib/bot-config";
 import { getLegalMoves, variantCatalog, type GameState, type Move, type VariantDefinition } from "@/lib/variants";
 import generatedKnowledge from "@/data/bot-knowledge.generated.json";
 
@@ -164,6 +165,19 @@ export type GameBotTrainingChecklist = {
   nextTrainingJobs: string[];
 };
 
+export type BotTrainingReadiness = {
+  variantKey: string;
+  coverageStatus: GameBotTrainingChecklist["coverageStatus"];
+  knowledgeEntries: number;
+  engineLabels: number;
+  indexedPositions: number;
+  topTier: BotTierKey;
+  responseTargetMs: number;
+  runtimePath: "knowledge-cache" | "engine-backed" | "internal-search" | "rules-gated";
+  badgeLabel: string;
+  primaryGap: string;
+};
+
 type GeneratedBotKnowledgeFile = {
   version?: string;
   generatedAt?: string;
@@ -284,7 +298,10 @@ const generated = generatedKnowledge as GeneratedBotKnowledgeFile;
 const generatedKnowledgeEntries = generated.entries;
 const generatedEngineLabels = generated.engineLabels ?? [];
 const knowledgeEntries: BotKnowledgeEntry[] = [...curatedKnowledgeEntries, ...generatedKnowledgeEntries];
+const runtimeEngineLabels = generatedEngineLabels.length ? generatedEngineLabels : generatedKnowledgeEntries.map(knowledgeEntryToEngineLabel);
 const knowledgeIndex = createKnowledgeIndex(knowledgeEntries);
+const knowledgeCountsByVariant = countKnowledgeByVariant(knowledgeEntries);
+const engineLabelCountsByVariant = countEngineLabelsByVariant(runtimeEngineLabels);
 const classicPositionCount = new Set(
   generatedKnowledgeEntries.filter((entry) => entry.variantKey === "classic").map((entry) => entry.boardSignature || entry.positionKey || entry.id)
 ).size;
@@ -345,8 +362,7 @@ export function listBotKnowledge(variantKey?: string) {
 }
 
 export function listBotEngineLabels(variantKey?: string) {
-  const labels = generatedEngineLabels.length ? generatedEngineLabels : generatedKnowledgeEntries.map(knowledgeEntryToEngineLabel);
-  return labels.filter((label) => !variantKey || label.variantKey === variantKey);
+  return runtimeEngineLabels.filter((label) => !variantKey || label.variantKey === variantKey);
 }
 
 export function listBotKnowledgeSummary() {
@@ -426,6 +442,26 @@ export function getBotKnowledgeIndexStats() {
 
 export function listBotTrainingChecklists(variantKey?: string): GameBotTrainingChecklist[] {
   return variantCatalog.filter((variant) => !variantKey || variant.key === variantKey).map(createGameBotTrainingChecklist);
+}
+
+export function listBotTrainingReadiness(variantKey?: string): BotTrainingReadiness[] {
+  return listBotTrainingChecklists(variantKey).map((checklist) => {
+    const indexedPositions = knowledgeIndex.byPosition.size + knowledgeIndex.byBoardSignature.size;
+    const runtimePath = runtimePathForChecklist(checklist);
+    const topTier = checklist.difficultyTiers[checklist.difficultyTiers.length - 1]?.tier ?? "legend";
+    return {
+      variantKey: checklist.variantKey,
+      coverageStatus: checklist.coverageStatus,
+      knowledgeEntries: checklist.knowledgeEntries,
+      engineLabels: checklist.engineLabels,
+      indexedPositions: checklist.coverageStatus === "active" ? indexedPositions : 0,
+      topTier,
+      responseTargetMs: MAX_BOT_REPLY_MS,
+      runtimePath,
+      badgeLabel: readinessBadgeLabel(checklist.coverageStatus, runtimePath),
+      primaryGap: checklist.nextTrainingJobs[0] ?? "Continue benchmark gauntlets and runtime audits."
+    };
+  });
 }
 
 export function lookupBotKnowledge(state: GameState, tier: BotTierKey): BotKnowledgeHit | null {
@@ -516,8 +552,8 @@ function sourcePriority(source: BotKnowledgeSource) {
 }
 
 function createGameBotTrainingChecklist(variant: VariantDefinition): GameBotTrainingChecklist {
-  const knowledgeEntriesForVariant = listBotKnowledge(variant.key).length;
-  const engineLabelsForVariant = listBotEngineLabels(variant.key).length;
+  const knowledgeEntriesForVariant = knowledgeCountsByVariant.get(variant.key) ?? 0;
+  const engineLabelsForVariant = engineLabelCountsByVariant.get(variant.key) ?? 0;
   const hasRuntimeKnowledge = knowledgeEntriesForVariant > 0 || engineLabelsForVariant > 0;
   const rulesGated = rulesGatedVariantKeys.has(variant.key);
   const coverageStatus = rulesGated ? "rules-gated" : hasRuntimeKnowledge ? "active" : "training";
@@ -604,6 +640,35 @@ function createGameBotTrainingChecklist(variant: VariantDefinition): GameBotTrai
 }
 
 const rulesGatedVariantKeys = new Set(["shogi", "janggi", "makruk", "jungle", "antichess", "horde"]);
+
+function countKnowledgeByVariant(entries: BotKnowledgeEntry[]) {
+  const counts = new Map<string, number>();
+  for (const entry of entries) counts.set(entry.variantKey, (counts.get(entry.variantKey) ?? 0) + 1);
+  return counts;
+}
+
+function countEngineLabelsByVariant(labels: EngineLabel[]) {
+  const counts = new Map<string, number>();
+  for (const label of labels) {
+    const variantKey = label.variantKey ?? "unknown";
+    counts.set(variantKey, (counts.get(variantKey) ?? 0) + 1);
+  }
+  return counts;
+}
+
+function runtimePathForChecklist(checklist: GameBotTrainingChecklist): BotTrainingReadiness["runtimePath"] {
+  if (checklist.coverageStatus === "rules-gated") return "rules-gated";
+  if (checklist.knowledgeEntries > 0 || checklist.engineLabels > 0) return "knowledge-cache";
+  if (checklist.enginePlan.toLowerCase().includes("stockfish") || checklist.enginePlan.toLowerCase().includes("uci")) return "engine-backed";
+  return "internal-search";
+}
+
+function readinessBadgeLabel(coverageStatus: GameBotTrainingChecklist["coverageStatus"], runtimePath: BotTrainingReadiness["runtimePath"]) {
+  if (coverageStatus === "rules-gated") return "Rules gated";
+  if (runtimePath === "knowledge-cache") return "Cache ready";
+  if (runtimePath === "engine-backed") return "Engine ready";
+  return "Search ready";
+}
 
 function enginePlanForVariant(variant: VariantDefinition) {
   if (variant.key === "classic" || variant.key === "chess960") return "Stockfish/WASM plus indexed opening, tactic, and engine-label cache.";

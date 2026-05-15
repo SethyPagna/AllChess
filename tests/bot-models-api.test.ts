@@ -19,6 +19,25 @@ describe("bot models API", () => {
     );
     expect(body.knowledgeIndex.entries).toBeGreaterThan(0);
     expect(body.knowledgeIndex.maxBucketSize).toBeLessThan(body.knowledgeIndex.entries);
+    expect(body.readiness).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          variantKey: "classic",
+          coverageStatus: "active",
+          runtimePath: "knowledge-cache",
+          badgeLabel: "Cache ready",
+          responseTargetMs: 2800,
+          knowledgeEntries: expect.any(Number),
+          engineLabels: expect.any(Number)
+        }),
+        expect.objectContaining({
+          variantKey: "jungle",
+          coverageStatus: "rules-gated",
+          runtimePath: "rules-gated",
+          badgeLabel: "Rules gated"
+        })
+      ])
+    );
     expect(body.strengthBands).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ tier: "easy", targetElo: 1050, stockfishUciElo: 1320 }),

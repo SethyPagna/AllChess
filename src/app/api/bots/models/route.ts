@@ -6,6 +6,7 @@ import {
   listBotEngineLabels,
   listBotKnowledgeSummary,
   listBotModelManifests,
+  listBotTrainingReadiness,
   listBotTrainingChecklists,
   listBotToolManifests,
   listTrainingDataManifests
@@ -36,6 +37,7 @@ export function GET() {
       byVariant: labelsByVariant,
       legalValidation: "runtime"
     },
+    readiness: listBotTrainingReadiness(),
     trainingChecklists: listBotTrainingChecklists(),
     tools: listBotToolManifests(),
     dataSources: listTrainingDataManifests()
