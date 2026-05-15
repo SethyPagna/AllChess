@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
+  Activity,
   BookOpen,
   Bot,
   Brain,
@@ -46,6 +47,12 @@ const playModeOptions: Array<{ key: PlayMode; label: string; description: string
   { key: "room", label: "Create Room", description: "Invite by code", Icon: Flag },
   { key: "matchmaking", label: "Matchmaking", description: "Queue by settings", Icon: Timer },
   { key: "spectate", label: "Spectate", description: "Watch live rooms", Icon: Brain }
+];
+
+const panelTabOptions: Array<{ key: PanelTab; label: string; Icon: typeof Swords }> = [
+  { key: "setup", label: "Setup", Icon: SlidersHorizontal },
+  { key: "status", label: "Status", Icon: Activity },
+  { key: "review", label: "Review", Icon: Brain }
 ];
 
 type ThinkingState = {
@@ -659,9 +666,10 @@ export function GameBoard({
           </div>
         </div>
         <div className="play-section-tabs" aria-label="Game tool sections">
-          {(["setup", "status", "review"] as PanelTab[]).map((tab) => (
-            <button key={tab} type="button" title={`Show ${tab} tools`} onClick={() => setPanelTab(tab)} className={`focus-ring ${panelTab === tab ? "is-active" : ""}`}>
-              {tab}
+          {panelTabOptions.map(({ key, label, Icon }) => (
+            <button key={key} type="button" title={`Show ${label} tools`} onClick={() => setPanelTab(key)} className={`focus-ring ${panelTab === key ? "is-active" : ""}`}>
+              <Icon size={15} />
+              <span>{label}</span>
             </button>
           ))}
         </div>
@@ -724,9 +732,14 @@ export function GameBoard({
                 <p className="text-sm font-bold text-[var(--muted)]">Current position</p>
                 <p className="text-2xl font-black capitalize">{colorLabel(state.turn)} to move</p>
                 {thinking.status === "thinking" ? <p className="mt-1 text-sm font-bold text-[var(--info)]">{thinking.label}</p> : null}
-                <p className="mt-1 text-xs font-bold text-[var(--muted)]">
-                  Bot tier: {botLevel.label} · {botLevel.estimatedStrength} · {botLevel.benchmarkVersion}
-                </p>
+                <div className="bot-profile-card">
+                  <Bot size={18} />
+                  <div>
+                    <strong>{botLevel.label} bot</strong>
+                    <span>{botLevel.estimatedStrength}</span>
+                  </div>
+                  <small>Under 3s</small>
+                </div>
                 <label className="play-setup-field mt-3">
                   <span>Bot difficulty</span>
                   <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)}>
@@ -740,9 +753,20 @@ export function GameBoard({
                 <p className="mt-1 text-xs font-bold text-[var(--muted)]">
                   You: {colorLabel(humanColor)} · View: {visualOrientation === "second" ? colorLabel(secondColor) : colorLabel(firstColor)}
                 </p>
-                <p className="mt-1 text-xs text-[var(--muted)]">
-                  Depth {botLevel.depth}, {botLevel.moveTimeMs}ms search, {botLevel.nodeBudget} nodes, risk {Math.round(botLevel.riskTolerance * 100)}%.
-                </p>
+                <div className="bot-stat-grid" aria-label="Bot search profile">
+                  <span>
+                    <small>Depth</small>
+                    <strong>{botLevel.depth}</strong>
+                  </span>
+                  <span>
+                    <small>Budget</small>
+                    <strong>{botLevel.moveTimeMs}ms</strong>
+                  </span>
+                  <span>
+                    <small>Nodes</small>
+                    <strong>{botLevel.nodeBudget}</strong>
+                  </span>
+                </div>
                 {lastBotResult ? (
                   <div className="bot-explanation-card">
                     <p>
