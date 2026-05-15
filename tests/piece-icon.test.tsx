@@ -13,6 +13,8 @@ describe("PieceIcon", () => {
     expect(king).not.toBe(queen);
     expect(king).toContain("viewBox");
     expect(queen).toContain("viewBox");
+    expect(king).toContain('data-detail="king-cross"');
+    expect(queen).toContain('data-detail="queen-jewel"');
   });
 
   test("keeps non-western pieces as strong native symbols", () => {
