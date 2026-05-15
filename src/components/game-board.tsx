@@ -144,6 +144,10 @@ export function GameBoard({
     return isBoardFlipped ? rowsToRender.reverse().map((row) => row.reverse()) : rowsToRender;
   }, [displayState.board, isBoardFlipped]);
   const modeDetails = playModeOptions.find((option) => option.key === playMode) ?? playModeOptions[2];
+  const panelDetails = panelTabOptions.find((option) => option.key === panelTab) ?? panelTabOptions[0];
+  const PanelIcon = panelDetails.Icon;
+  const phaseLabel = thinking.status === "thinking" ? thinking.label : gameStarted ? `${colorLabel(state.turn)} to move` : "Choose setup";
+  const modeSummary = gameStarted ? `${modeDetails.label} - ${getTimeControl(timeControl).label}` : `${modeDetails.label} setup`;
   const topPlayerColor = isBoardFlipped ? firstColor : secondColor;
   const bottomPlayerColor = isBoardFlipped ? secondColor : firstColor;
   const capturedBy = useCallback(
@@ -476,24 +480,26 @@ export function GameBoard({
       <div className="grid gap-3">
         <div className="play-unified-header">
           <div className="play-title-block">
-            <h1>{title}</h1>
-            <div className="play-title-meta">
+            <div className="play-title-row">
+              <h1>{title}</h1>
+              {rulesSummary ? (
+                <button type="button" title="Open rules, win conditions, and draw notes." onClick={() => setShowRules(true)} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" aria-label="Rules summary">
+                  <BookOpen size={16} />
+                  Rules
+                </button>
+              ) : null}
+            </div>
+            <div className="play-title-meta" aria-label="Match summary">
               <span className="inline-flex items-center gap-2">
                 <Swords size={14} />
                 {meta}
               </span>
-              <strong>{objective}</strong>
-              <em>{thinking.status === "thinking" ? thinking.label : gameStarted ? modeDetails.label : "Setup required"}</em>
+              <strong title={objective}>{modeSummary}</strong>
+              <em>{phaseLabel}</em>
             </div>
           </div>
           <div className="play-command-actions play-header-command-actions">
-            {rulesSummary ? (
-              <button type="button" title="Open the compact rules summary." onClick={() => setShowRules(true)} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" aria-label="Rules summary">
-                <BookOpen size={16} />
-                Rules
-              </button>
-            ) : null}
-            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Create or copy a room link for this setup.">
+            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Create or copy a room link for this setup. Available before online room play.">
               <Share2 size={16} />
               Room
             </button>
@@ -669,10 +675,10 @@ export function GameBoard({
 
       <aside className="game-side-panel play-panel grid content-start gap-4 p-4">
         <div className="play-panel-title">
-          <Crown size={34} className="text-[var(--warning)]" />
+          <PanelIcon size={28} className="text-[var(--warning)]" />
           <div>
-            <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">Match center</p>
-            <h2>Game Tools</h2>
+            <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">{title}</p>
+            <h2>{panelDetails.label}</h2>
           </div>
         </div>
         <div className="play-section-tabs" aria-label="Game tool sections">
@@ -685,56 +691,80 @@ export function GameBoard({
         </div>
         <div className="play-tab-panel">
           {panelTab === "setup" ? (
-            <div className="play-options-card">
-              <div className="play-mode-grid" aria-label="Play modes">
-                {playModeOptions.map(({ key, label, description, Icon }) => (
-                  <button key={key} type="button" onClick={() => setPlayMode(key)} className={`focus-ring play-mode-button ${playMode === key ? "is-selected" : ""}`}>
-                    <Icon size={17} />
-                    <span>{label}</span>
-                    <small>{description}</small>
+            gameStarted ? (
+              <div className="play-options-card play-active-setup-card">
+                <div className="play-options-heading">
+                  <Activity size={18} />
+                  <span>Game in progress</span>
+                </div>
+                <div className="active-setup-summary">
+                  <span>{modeDetails.label}</span>
+                  <strong>{getTimeControl(timeControl).label}</strong>
+                  <small>You are {colorLabel(humanColor)}. Open Status for side, clock, bot tier, and move details.</small>
+                </div>
+                <div className="play-action-row">
+                  <button type="button" onClick={() => setPanelTab("status")} className="focus-ring action-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-sm">
+                    <Activity size={16} />
+                    Status
                   </button>
-                ))}
+                  <button type="button" onClick={reset} className="focus-ring action-secondary inline-flex items-center justify-center gap-2 px-4 py-2 text-sm">
+                    <RotateCcw size={16} />
+                    New setup
+                  </button>
+                </div>
               </div>
-              <div className="play-options-heading">
-                <Timer size={18} />
-                <span>{getTimeControl(timeControl).label}</span>
-              </div>
-              <label className="play-setup-field">
-                <span>Side</span>
-                <select aria-label="Side" value={seatChoice} onChange={(event) => changeSeatChoice(event.target.value as SeatChoice)}>
-                  <option value="random">Random side</option>
-                  <option value="first">{colorLabel(firstColor)}</option>
-                  <option value="second">{colorLabel(secondColor)}</option>
-                </select>
-              </label>
-              <label className="play-setup-field">
-                <span>Bot difficulty</span>
-                <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)}>
-                  {botDifficultyLevels.map((level) => (
-                    <option key={level.key} value={level.key}>
-                      {level.label}
-                    </option>
+            ) : (
+              <div className="play-options-card">
+                <div className="play-mode-grid" aria-label="Play modes">
+                  {playModeOptions.map(({ key, label, description, Icon }) => (
+                    <button key={key} type="button" onClick={() => setPlayMode(key)} className={`focus-ring play-mode-button ${playMode === key ? "is-selected" : ""}`}>
+                      <Icon size={17} />
+                      <span>{label}</span>
+                      <small>{description}</small>
+                    </button>
                   ))}
-                </select>
-              </label>
-              <div className="play-time-grid" aria-label="Quick time controls">
-                {timeControls.slice(0, 6).map((control) => (
-                  <button key={control.key} type="button" title={`Start a new ${control.label} game`} onClick={() => changeTimeControl(control.key)} className={`focus-ring ${timeControl === control.key ? "is-selected" : ""}`}>
-                    {control.label}
-                  </button>
-                ))}
+                </div>
+                <div className="play-options-heading">
+                  <Timer size={18} />
+                  <span>{getTimeControl(timeControl).label}</span>
+                </div>
+                <label className="play-setup-field">
+                  <span>Side</span>
+                  <select aria-label="Side" value={seatChoice} onChange={(event) => changeSeatChoice(event.target.value as SeatChoice)}>
+                    <option value="random">Random side</option>
+                    <option value="first">{colorLabel(firstColor)}</option>
+                    <option value="second">{colorLabel(secondColor)}</option>
+                  </select>
+                </label>
+                <label className="play-setup-field">
+                  <span>Bot difficulty</span>
+                  <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)}>
+                    {botDifficultyLevels.map((level) => (
+                      <option key={level.key} value={level.key}>
+                        {level.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="play-time-grid" aria-label="Quick time controls">
+                  {timeControls.slice(0, 6).map((control) => (
+                    <button key={control.key} type="button" title={`Start a new ${control.label} game`} onClick={() => changeTimeControl(control.key)} className={`focus-ring ${timeControl === control.key ? "is-selected" : ""}`}>
+                      {control.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="play-options-row">
+                  <SlidersHorizontal size={18} />
+                  <span>Side</span>
+                  <strong>{colorLabel(humanColor)}</strong>
+                </div>
+                <button type="button" onClick={startGame} className="focus-ring action-primary inline-flex items-center justify-center gap-2 px-4 py-3 text-sm">
+                  <PlayCircle size={18} />
+                  Start Game
+                </button>
+                <p className="text-xs font-bold text-[var(--muted)]">Choose mode, side, clock, and bot tier first. During play, Status keeps the live controls compact.</p>
               </div>
-              <div className="play-options-row">
-                <SlidersHorizontal size={18} />
-                <span>Side</span>
-                <strong>{colorLabel(humanColor)}</strong>
-              </div>
-              <button type="button" onClick={startGame} className="focus-ring action-primary inline-flex items-center justify-center gap-2 px-4 py-3 text-sm">
-                <PlayCircle size={18} />
-                Start Game
-              </button>
-              <p className="text-xs font-bold text-[var(--muted)]">Choose the mode, side, clock, and bot tier before the game starts. Bot tier can still change mid-game from Status.</p>
-            </div>
+            )
           ) : null}
           {panelTab === "status" ? (
             <div className="grid gap-3">
@@ -893,13 +923,6 @@ export function GameBoard({
               ) : null}
             </div>
           ) : null}
-        </div>
-        <div className="play-table-card text-sm text-[var(--muted)]">
-          <p className="mb-1 flex items-center gap-2 font-bold text-[var(--foreground)]">
-            <Flag size={16} className="text-[var(--warning)]" />
-            Review hook
-          </p>
-          Every move stays local in demo mode and is ready for D1 persistence when deployed.
         </div>
       </aside>
       {showRules && rulesSummary ? (
