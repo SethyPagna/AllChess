@@ -120,7 +120,11 @@ export class PresenceDO extends DurableObject {
 
 const worker = await readFile(workerPath, "utf8");
 if (!worker.includes(exportMarker)) {
-  await writeFile(workerPath, `${worker.trimEnd()}\n${durableObjectExports}\n`);
+  const defaultExportIndex = worker.indexOf("export default {");
+  if (defaultExportIndex === -1) {
+    throw new Error("Could not find OpenNext default worker export to patch Durable Objects.");
+  }
+  await writeFile(workerPath, `${worker.slice(0, defaultExportIndex)}${durableObjectExports}\n${worker.slice(defaultExportIndex).trimStart()}`);
 }
 
 const defaultFunctionDir = path.join(openNextDir, "server-functions", "default");
