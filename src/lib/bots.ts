@@ -41,6 +41,7 @@ export type BotMoveResult = {
   status: "ok" | "no-legal-moves" | "cancelled" | "failed";
   engine: "stockfish" | "internal";
   tier: BotTierKey;
+  strength: BotStrengthBand;
   move: Move | null;
   uciMove?: string;
   principalVariation: string[];
@@ -337,6 +338,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
           status: "cancelled",
           engine: "internal",
           tier: difficultyKey,
+          strength: tierConfig.strength,
           move: null,
           principalVariation: [],
           pv: [],
@@ -366,6 +368,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
               status: "ok",
               engine: "internal",
               tier: difficultyKey,
+              strength: tierConfig.strength,
               move: knowledge.move,
               uciMove: knowledge.entry.moveUci,
               principalVariation: knowledge.principalVariation,
@@ -400,6 +403,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
               status: "ok",
               engine: "stockfish",
               tier: difficultyKey,
+              strength: tierConfig.strength,
               move: stockfish.move,
               uciMove: stockfish.uciMove,
               principalVariation: stockfish.principalVariation,
@@ -432,6 +436,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
             status: "no-legal-moves",
             engine: "internal",
             tier: difficultyKey,
+            strength: tierConfig.strength,
             move: null,
             principalVariation: [],
             pv: [],
@@ -458,6 +463,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
           status: validatedLegal ? "ok" : "failed",
           engine: "internal",
           tier: difficultyKey,
+          strength: tierConfig.strength,
           move: validatedLegal ? result.move : null,
           uciMove: validatedLegal ? safeUci(state, result.move) : undefined,
           principalVariation: validatedLegal ? [safeUci(state, result.move)].filter(Boolean) : [],
@@ -486,6 +492,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
           status: "failed",
           engine: "internal",
           tier: difficultyKey,
+          strength: tierConfig.strength,
           move: null,
           principalVariation: [],
           pv: [],

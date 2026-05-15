@@ -12,7 +12,7 @@ The legacy Python Jungle Chess implementation remains in `legacy/python-jungle-c
 - D1 repositories for games, moves, rooms, ratings, profiles, sessions, and analysis reports.
 - R2 object storage with `allchess/` key prefixing.
 - Launch variants declare their rules adapter: `chessops`, `xiangqiops`, `shogiops`, `makruk-js`, or owned AllChess modules.
-- Bot difficulty ladder: Easy, Normal, Hard, Very Hard, Nightmare, Hell.
+- Bot difficulty ladder: Easy, Normal, Hard, Very Hard, Grandmaster, Legend, with consistent Elo-style bands and calibration status per variant.
 - Deployment paths for GitHub, local development, Vercel hosting, Cloudflare Workers, and Docker self-deploy.
 
 ## Run Locally

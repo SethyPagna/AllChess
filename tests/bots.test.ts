@@ -250,6 +250,11 @@ describe("bot difficulty ladder", () => {
     expect(result).toMatchObject({
       status: "ok",
       tier: "grandmaster",
+      strength: expect.objectContaining({
+        display: "2700-2900 Elo-style",
+        targetElo: 2850,
+        calibrationStatus: "stockfish-calibrated"
+      }),
       legal: true,
       knowledgeSource: "opening-book",
       benchmarkVersion: "allchess-knowledge-v1"

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getBotStrengthBand } from "@/lib/bot-strength";
+
 const benchmarkSchema = z.object({
   variantKey: z.string().min(1).default("classic"),
   tier: z.enum(["easy", "normal", "hard", "very-hard", "grandmaster", "legend"]).default("normal"),
@@ -16,6 +18,7 @@ export async function POST(request: Request) {
     id: `${body.variantKey}-${body.tier}-${body.suite}-${Date.now()}`,
     variantKey: body.variantKey,
     tier: body.tier,
+    strength: getBotStrengthBand(body.tier),
     suite: body.suite,
     positions: body.positions,
     accepted: true,
