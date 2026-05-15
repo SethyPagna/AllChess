@@ -274,7 +274,14 @@ select {
 .language-menu-panel,
 .notification-panel {
   animation: menu-pop 140ms ease-out;
+  background: var(--surface-strong);
+  color: var(--foreground);
   transform-origin: top right;
+}
+
+.language-menu[open],
+.notification-menu[open] {
+  z-index: 95;
 }
 
 .language-option {
