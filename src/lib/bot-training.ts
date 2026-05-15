@@ -574,6 +574,12 @@ function createGameBotTrainingChecklist(variant: VariantDefinition): GameBotTrai
           evidence: "Internal search uses a per-request legal-move cache shared by evaluation, reply checks, minimax, quiescence, and mobility scoring."
         },
         {
+          id: "search-telemetry",
+          label: "Expose cache hits, cached positions, move-generation calls, and searched nodes for every returned bot move.",
+          status: "ready",
+          evidence: "BotMoveResult.searchEfficiency reports the live search budget so slow or wasteful tiers can be benchmarked instead of guessed."
+        },
+        {
           id: "variant-objective",
           label: "Score the native objective instead of playing only material-count chess.",
           status: rulesGated ? "rules-gated" : "ready",

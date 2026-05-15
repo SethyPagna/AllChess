@@ -119,6 +119,32 @@ describe("bot difficulty ladder", () => {
     expect(result.elapsedMs).toBeGreaterThanOrEqual(0);
     expect(result.nodesSearched).toBeGreaterThan(0);
     expect(result.evaluation).toEqual(expect.any(Number));
+    expect(result.searchEfficiency).toEqual(
+      expect.objectContaining({
+        nodes: result.nodesSearched,
+        cachedPositions: expect.any(Number),
+        moveGenerationCalls: expect.any(Number),
+        cacheHits: expect.any(Number)
+      })
+    );
+  });
+
+  test("internal search reports reusable legal-move cache efficiency", () => {
+    const state = createInitialState("classic", "search-efficiency");
+    const result = chooseBotMoveSafe(state, "legend", { maxSearchTimeMs: 90, engine: "internal" });
+
+    expect(result.reason).toBe("ok");
+    if (!result.move) throw new Error("Expected a legal bot move.");
+    expect(result.searchEfficiency).toEqual(
+      expect.objectContaining({
+        nodes: result.nodesSearched,
+        cachedPositions: expect.any(Number),
+        moveGenerationCalls: expect.any(Number),
+        cacheHits: expect.any(Number)
+      })
+    );
+    expect(result.searchEfficiency.cachedPositions).toBe(result.searchEfficiency.moveGenerationCalls);
+    expect(result.searchEfficiency.cacheHits).toBeGreaterThan(0);
   });
 
   test("cancelled async bot request never applies a stale move", async () => {
@@ -203,7 +229,8 @@ describe("bot difficulty ladder", () => {
       knowledgeSource: "opening-book",
       nodesSearched: 1,
       legalValidated: true,
-      validatedLegal: true
+      validatedLegal: true,
+      searchEfficiency: { cacheHits: 0, cachedPositions: 0, moveGenerationCalls: 0, nodes: 1 }
     });
   });
 
@@ -300,6 +327,7 @@ describe("bot difficulty ladder", () => {
     expect(classic?.difficultyTiers[0].targetBehavior).toContain("not naive");
     expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "not-naive-basics", status: "ready" })]));
     expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "resource-efficiency", status: "ready" })]));
+    expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "search-telemetry", status: "ready" })]));
     expect(jungle?.coverageStatus).toBe("rules-gated");
     expect(jungle?.nextTrainingJobs[0]).toContain("Complete native jungle rules fixtures");
   });

@@ -22,6 +22,13 @@ export type BotDifficulty = {
   knowledgeMinimumConfidence: number;
 };
 
+export type BotSearchEfficiency = {
+  cacheHits: number;
+  cachedPositions: number;
+  moveGenerationCalls: number;
+  nodes: number;
+};
+
 export type BotMoveResult = {
   requestId: string;
   status: "ok" | "no-legal-moves" | "cancelled" | "failed";
@@ -44,6 +51,7 @@ export type BotMoveResult = {
   nodesSearched: number;
   elapsedMs: number;
   validatedLegal: boolean;
+  searchEfficiency?: BotSearchEfficiency;
   knowledgeSource?: BotKnowledgeSource;
   explanation?: BotMoveExplanation;
   error?: string;
@@ -205,7 +213,16 @@ export function chooseBotMoveSafe(
   difficultyKey: BotDifficultyKey = "normal",
   options: Pick<BotMoveOptions, "maxSearchTimeMs" | "engine"> = {}
 ):
-  | { move: Move; reason: "ok"; score: number; depthReached: number; nodesSearched: number; elapsedMs: number; validatedLegal: true }
+  | {
+      move: Move;
+      reason: "ok";
+      score: number;
+      depthReached: number;
+      nodesSearched: number;
+      elapsedMs: number;
+      validatedLegal: true;
+      searchEfficiency: BotSearchEfficiency;
+    }
   | { move: null; reason: "no-legal-moves" } {
   const startedAt = Date.now();
   const difficulty = botDifficultyLevels.find((level) => level.key === difficultyKey) ?? botDifficultyLevels[1];
@@ -228,7 +245,8 @@ export function chooseBotMoveSafe(
       depthReached: 1,
       nodesSearched: legalMoves.length,
       elapsedMs: Date.now() - startedAt,
-      validatedLegal: true
+      validatedLegal: true,
+      searchEfficiency: searchEfficiencyFromBudget(budget)
     };
   }
 
@@ -245,7 +263,8 @@ export function chooseBotMoveSafe(
         depthReached: 1,
         nodesSearched: legalMoves.length,
         elapsedMs: Date.now() - startedAt,
-        validatedLegal: true
+        validatedLegal: true,
+        searchEfficiency: searchEfficiencyFromBudget(budget)
       };
     }
   }
@@ -265,7 +284,8 @@ export function chooseBotMoveSafe(
       depthReached,
       nodesSearched: budget.nodes,
       elapsedMs: Date.now() - startedAt,
-      validatedLegal: true
+      validatedLegal: true,
+      searchEfficiency: searchEfficiencyFromBudget(budget)
     };
   }
 
@@ -276,7 +296,8 @@ export function chooseBotMoveSafe(
     depthReached,
     nodesSearched: budget.nodes,
     elapsedMs: Date.now() - startedAt,
-    validatedLegal: true
+    validatedLegal: true,
+    searchEfficiency: searchEfficiencyFromBudget(budget)
   };
 }
 
@@ -346,6 +367,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
               nodesSearched: 1,
               elapsedMs: Date.now() - startedAt,
               validatedLegal: true,
+              searchEfficiency: emptySearchEfficiency(1),
               knowledgeSource: knowledge.entry.source,
               explanation: knowledge.entry.explanation
             });
@@ -379,6 +401,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
               nodesSearched: stockfish.nodesSearched,
               elapsedMs: Date.now() - startedAt,
               validatedLegal: true,
+              searchEfficiency: emptySearchEfficiency(stockfish.nodesSearched),
               knowledgeSource: "engine-search",
               explanation: explanationForMove("engine-search", state, stockfish.move, stockfish.evaluation, difficultyKey)
             });
@@ -436,6 +459,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
           nodesSearched: result.nodesSearched,
           elapsedMs: Date.now() - startedAt,
           validatedLegal,
+          searchEfficiency: result.searchEfficiency,
           knowledgeSource: "internal-search",
           explanation: validatedLegal ? explanationForMove("internal-search", state, result.move, result.score, difficultyKey) : undefined,
           error: validatedLegal ? undefined : "Bot selected an illegal move."
@@ -485,6 +509,24 @@ function createSearchBudget(startedAt: number, searchTimeMs: number): SearchBudg
     legalMovesCache: new Map(),
     moveGenerationCalls: 0,
     nodes: 0
+  };
+}
+
+function emptySearchEfficiency(nodes: number = 0): BotSearchEfficiency {
+  return {
+    cacheHits: 0,
+    cachedPositions: 0,
+    moveGenerationCalls: 0,
+    nodes
+  };
+}
+
+function searchEfficiencyFromBudget(budget: SearchBudget): BotSearchEfficiency {
+  return {
+    cacheHits: budget.cacheHits,
+    cachedPositions: budget.legalMovesCache.size,
+    moveGenerationCalls: budget.moveGenerationCalls,
+    nodes: budget.nodes
   };
 }
 
@@ -734,12 +776,17 @@ function mobilitySwing(previous: GameState, next: GameState, perspective: Player
 function forkPressureScore(state: GameState, perspective: PlayerColor, budget: SearchBudget) {
   const opponents = opponentColors(state, perspective);
   const moves = allLegalMovesFor(state, perspective, budget);
+  const moveCountBySource = new Map<string, number>();
+  for (const move of moves) {
+    const key = serializeMoveSource(move);
+    moveCountBySource.set(key, (moveCountBySource.get(key) ?? 0) + 1);
+  }
+
   return moves.reduce((best, move) => {
     const target = state.board[move.to.row]?.[move.to.col]?.piece;
     if (!target || !opponents.includes(target.owner)) return best;
     const value = pieceValues[target.code] ?? 100;
-    const key = serializeMoveTarget(move);
-    const duplicatePressure = moves.filter((candidate) => serializeMoveTarget(candidate) !== key && sameSquare(candidate.from, move.from)).length;
+    const duplicatePressure = Math.max(0, (moveCountBySource.get(serializeMoveSource(move)) ?? 0) - 1);
     return Math.max(best, value * 0.08 + duplicatePressure * 8);
   }, 0);
 }
@@ -892,8 +939,8 @@ function deterministicNoise(move: Move) {
   return (seed % 11) - 5;
 }
 
-function serializeMoveTarget(move: Move) {
-  return `${move.from.row},${move.from.col}->${move.to.row},${move.to.col}`;
+function serializeMoveSource(move: Move) {
+  return `${move.from.row},${move.from.col}`;
 }
 
 function confidenceFor(score: number | null, depth: number, tier: BotTierKey) {
