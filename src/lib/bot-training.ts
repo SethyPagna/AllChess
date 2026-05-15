@@ -204,8 +204,8 @@ const trainingTierProfiles: Array<{
   { key: "normal", label: "Normal", depth: 2, moveTimeMs: 280, nodeBudget: 420, beamWidth: 9, replyCheckWidth: 4, knowledgeMinimumConfidence: 0.78 },
   { key: "hard", label: "Hard", depth: 3, moveTimeMs: 650, nodeBudget: 1600, beamWidth: 14, replyCheckWidth: 7, knowledgeMinimumConfidence: 0.72 },
   { key: "very-hard", label: "Very Hard", depth: 4, moveTimeMs: 1200, nodeBudget: 4200, beamWidth: 22, replyCheckWidth: 11, knowledgeMinimumConfidence: 0.66 },
-  { key: "grandmaster", label: "Grandmaster", depth: 5, moveTimeMs: 2200, nodeBudget: 12000, beamWidth: 34, replyCheckWidth: 17, knowledgeMinimumConfidence: 0.6 },
-  { key: "legend", label: "Legend", depth: 7, moveTimeMs: 3600, nodeBudget: 28000, beamWidth: 46, replyCheckWidth: 24, knowledgeMinimumConfidence: 0.55 }
+  { key: "grandmaster", label: "Grandmaster", depth: 5, moveTimeMs: 2100, nodeBudget: 12000, beamWidth: 34, replyCheckWidth: 17, knowledgeMinimumConfidence: 0.6 },
+  { key: "legend", label: "Legend", depth: 7, moveTimeMs: 2600, nodeBudget: 28000, beamWidth: 46, replyCheckWidth: 24, knowledgeMinimumConfidence: 0.55 }
 ];
 
 const curatedKnowledgeEntries: BotKnowledgeEntry[] = [

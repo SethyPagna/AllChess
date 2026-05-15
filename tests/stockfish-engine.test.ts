@@ -26,6 +26,7 @@ describe("Stockfish engine adapter", () => {
     expect(easy.limitStrength).toBe(true);
     expect(easy.elo).toBeLessThan(legend.elo);
     expect(easy.moveTimeMs).toBeLessThan(legend.moveTimeMs);
+    expect(legend.moveTimeMs).toBeLessThanOrEqual(2400);
     expect(legend.limitStrength).toBe(false);
   });
 

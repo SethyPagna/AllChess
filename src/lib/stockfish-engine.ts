@@ -25,8 +25,8 @@ const configs: Record<BotDifficultyKey, StockfishDifficultyConfig> = {
   normal: { limitStrength: true, elo: 1400, skillLevel: 6, moveTimeMs: 250, depth: 4 },
   hard: { limitStrength: true, elo: 1900, skillLevel: 10, moveTimeMs: 500, depth: 7 },
   "very-hard": { limitStrength: true, elo: 2300, skillLevel: 14, moveTimeMs: 900, depth: 10 },
-  grandmaster: { limitStrength: true, elo: 2850, skillLevel: 18, moveTimeMs: 1800, depth: 16 },
-  legend: { limitStrength: false, elo: 3400, skillLevel: 20, moveTimeMs: 3200, depth: 22 }
+  grandmaster: { limitStrength: true, elo: 2850, skillLevel: 18, moveTimeMs: 1700, depth: 15 },
+  legend: { limitStrength: false, elo: 3400, skillLevel: 20, moveTimeMs: 2400, depth: 20 }
 };
 
 export function shouldUseStockfish(state: GameState, engine: BotEngineMode = "auto") {
@@ -68,7 +68,7 @@ export async function requestStockfishMove(state: GameState, difficultyKey: BotD
     let nodesSearched = 0;
     let evaluation: number | null = null;
     let principalVariation: string[] = [];
-    const timer = setTimeout(() => finish(null), Math.max(timeoutMs + 800, 1500));
+    const timer = setTimeout(() => finish(null), Math.min(Math.max(timeoutMs + 350, 1500), 2950));
 
     const finish = (result: StockfishSearchResult | null) => {
       if (finished) return;

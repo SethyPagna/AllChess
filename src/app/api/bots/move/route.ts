@@ -8,7 +8,7 @@ const botMoveSchema = z.object({
   state: z.custom<GameState>(),
   tier: z.enum(["easy", "normal", "hard", "very-hard", "grandmaster", "legend"]).default("normal"),
   engineMode: z.enum(["auto", "stockfish", "internal"]).default("auto"),
-  maxSearchTimeMs: z.number().int().positive().max(5000).default(900),
+  maxSearchTimeMs: z.number().int().positive().max(3000).default(900),
   roomId: z.string().optional(),
   rated: z.boolean().optional()
 });

@@ -24,7 +24,7 @@ import {
   Undo2,
 } from "lucide-react";
 
-import { botDifficultyLevels, cancelBotMove, requestBotMove, type BotDifficultyKey, type BotMoveResult } from "@/lib/bots";
+import { botDifficultyLevels, cancelBotMove, MAX_BOT_REPLY_MS, requestBotMove, type BotDifficultyKey, type BotMoveResult } from "@/lib/bots";
 import { formatClock, tickGameClock } from "@/lib/clocks";
 import { analyzeMoveList, summarizeReview } from "@/lib/game-review";
 import { describeGameOutcome } from "@/lib/game-outcome";
@@ -241,8 +241,8 @@ export function GameBoard({
 
       const result = await requestBotMove(snapshot, botDifficulty, {
         requestId,
-        delayMs: source === "auto" ? 180 : 0,
-        maxSearchTimeMs: botLevel.moveTimeMs
+        delayMs: source === "auto" ? 80 : 0,
+        maxSearchTimeMs: Math.min(botLevel.moveTimeMs, MAX_BOT_REPLY_MS - 180)
       });
       finishBotRequest(snapshot, result, source);
     },
@@ -256,7 +256,7 @@ export function GameBoard({
     setThinking({ status: "thinking", label: "Finding a suggestion..." });
     setNotice(null);
 
-    const result = await requestBotMove(state, botDifficulty, { requestId, maxSearchTimeMs: Math.min(botLevel.moveTimeMs, 1800) });
+    const result = await requestBotMove(state, botDifficulty, { requestId, maxSearchTimeMs: Math.min(botLevel.moveTimeMs, 1800, MAX_BOT_REPLY_MS - 180) });
     if (activeBotRequestRef.current !== requestId) return;
     activeBotRequestRef.current = null;
     setThinking({ status: "idle", label: "" });

@@ -2,6 +2,9 @@ import { applyMove, getLegalMoves, sameSquare, type GameState, type Move, type P
 import { lookupBotKnowledge, type BotKnowledgeSource, type BotMoveExplanation } from "@/lib/bot-training";
 import { moveToUci, requestStockfishMove, shouldUseStockfish, type BotEngineMode } from "@/lib/stockfish-engine";
 
+export const MAX_BOT_REPLY_MS = 2800;
+const MIN_BOT_SEARCH_MS = 8;
+
 export type BotTierKey = "easy" | "normal" | "hard" | "very-hard" | "grandmaster" | "legend";
 export type BotDifficultyKey = BotTierKey;
 export type BotPlayStyle = "balanced" | "tactical" | "positional" | "defensive" | "wild";
@@ -145,7 +148,7 @@ export const botDifficultyLevels: BotDifficulty[] = [
     estimatedStrength: "Engine-backed master benchmark",
     benchmarkVersion: "allchess-bench-v2",
     depth: 5,
-    moveTimeMs: 2200,
+    moveTimeMs: 2100,
     skill: 18,
     nodeBudget: 12000,
     beamWidth: 34,
@@ -157,10 +160,10 @@ export const botDifficultyLevels: BotDifficulty[] = [
   {
     key: "legend",
     label: "Legend",
-    estimatedStrength: "Maximum local benchmark with cache-first verification",
+    estimatedStrength: "Fast cache-first benchmark with deepest safe search",
     benchmarkVersion: "allchess-bench-v2",
     depth: 7,
-    moveTimeMs: 3600,
+    moveTimeMs: 2600,
     skill: 20,
     nodeBudget: 28000,
     beamWidth: 46,
@@ -226,7 +229,7 @@ export function chooseBotMoveSafe(
   | { move: null; reason: "no-legal-moves" } {
   const startedAt = Date.now();
   const difficulty = botDifficultyLevels.find((level) => level.key === difficultyKey) ?? botDifficultyLevels[1];
-  const searchTimeMs = Math.max(8, Math.min(options.maxSearchTimeMs ?? difficulty.moveTimeMs, difficulty.moveTimeMs));
+  const searchTimeMs = boundedSearchTime(options.maxSearchTimeMs ?? difficulty.moveTimeMs, difficulty.moveTimeMs);
   const budget = createSearchBudget(startedAt, searchTimeMs);
   const legalMoves = allLegalMovesCached(state, budget);
   if (!legalMoves.length) {
@@ -307,6 +310,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
   pendingRequests.set(requestId, requestState);
   const startedAt = Date.now();
   const tierConfig = difficultyFor(difficultyKey);
+  const searchTimeMs = boundedSearchTime(options.maxSearchTimeMs ?? tierConfig.moveTimeMs, tierConfig.moveTimeMs);
 
   return new Promise((resolve) => {
     const finish = (result: BotMoveResult) => {
@@ -377,7 +381,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
 
         if (shouldUseStockfish(state, options.engine ?? "auto")) {
           const playedMoves = state.moves.map((move) => moveToUci(state, move));
-          const stockfish = await requestStockfishMove(state, difficultyKey, playedMoves, options.maxSearchTimeMs ?? difficultyFor(difficultyKey).moveTimeMs);
+          const stockfish = await requestStockfishMove(state, difficultyKey, playedMoves, searchTimeMs);
           if (stockfish && !requestState.cancelled) {
             finish({
               requestId,
@@ -409,7 +413,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
           }
         }
 
-        const result = chooseBotMoveSafe(state, difficultyKey, options);
+        const result = chooseBotMoveSafe(state, difficultyKey, { ...options, maxSearchTimeMs: searchTimeMs });
         if (!result.move) {
           finish({
             requestId,
@@ -581,8 +585,8 @@ function evaluateMove(
 function selectRankedMove(ranked: Array<{ move: Move; score: number }>, difficulty: BotDifficulty) {
   if (difficulty.key !== "easy") return ranked[0];
   const bestScore = ranked[0]?.score ?? 0;
-  const safeBand = ranked.filter((entry) => entry.score >= bestScore - 90);
-  return safeBand[Math.min(safeBand.length - 1, 1)] ?? ranked[0];
+  const safeMoves = ranked.filter((entry) => entry.score >= bestScore - 45);
+  return safeMoves[0] ?? ranked[0];
 }
 
 function beginnerMoveScore(state: GameState, move: Move, perspective: PlayerColor, difficulty: BotDifficulty, budget: SearchBudget) {
@@ -1005,4 +1009,8 @@ function safeUci(state: GameState, move: Move) {
   } catch {
     return "";
   }
+}
+
+function boundedSearchTime(requestedMs: number, tierMs: number) {
+  return Math.max(MIN_BOT_SEARCH_MS, Math.min(requestedMs, tierMs, MAX_BOT_REPLY_MS));
 }

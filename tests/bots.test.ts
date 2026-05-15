@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { cancelBotMove, chooseBotMove, chooseBotMoveSafe, botDifficultyLevels, requestBotMove } from "@/lib/bots";
+import { cancelBotMove, chooseBotMove, chooseBotMoveSafe, botDifficultyLevels, MAX_BOT_REPLY_MS, requestBotMove } from "@/lib/bots";
 import {
   createBotBoardSignature,
   createBotPositionKey,
@@ -28,6 +28,7 @@ describe("bot difficulty ladder", () => {
     expect(botDifficultyLevels.map((level) => level.quiescenceDepth)).toEqual([0, 0, 1, 1, 2, 4]);
     expect(botDifficultyLevels.map((level) => level.riskTolerance)).toEqual([0.62, 0.5, 0.35, 0.22, 0.1, 0.03]);
     expect(botDifficultyLevels.map((level) => level.replyCheckWidth)).toEqual([2, 4, 7, 11, 17, 24]);
+    expect(Math.max(...botDifficultyLevels.map((level) => level.moveTimeMs))).toBeLessThanOrEqual(MAX_BOT_REPLY_MS);
   });
 
   test("always chooses a legal move for every launch variant", () => {
@@ -288,6 +289,7 @@ describe("bot difficulty ladder", () => {
     const labels = listBotEngineLabels("classic");
 
     expect(summary.engineLabels).toBeGreaterThan(0);
+    expect(summary.entries).toBeGreaterThanOrEqual(3000);
     expect(labels.length).toBeGreaterThan(0);
     expect(labels[0]).toEqual(
       expect.objectContaining({
