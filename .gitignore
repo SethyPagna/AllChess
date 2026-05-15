@@ -20,3 +20,4 @@ public/engines/stockfish/
 *.log
 *.tsbuildinfo
 .vercel
+CHESS DATA/
