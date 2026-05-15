@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Bot, Eye, Globe2, Lock, MonitorSmartphone, Radio, Swords, Users } from "lucide-react";
 
+import { InfoHint } from "@/components/info-hint";
 import { displayGameName, getGameCatalog } from "@/lib/catalog";
 import { normalizeLocale } from "@/lib/i18n/locales";
 
@@ -23,12 +24,11 @@ export default async function PlaySetupPage({ params }: { params: Promise<{ loca
     <section className="play-setup-page grid gap-5">
       <div className="panel play-setup-hero">
         <div>
-          <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wide text-[var(--muted)]">
-            <Swords size={16} />
-            Play setup
-          </p>
-          <h1>Choose how you want to play</h1>
-          <p>Pick a mode first, then choose the game, side, time control, and bot tier before the board starts.</p>
+          <div className="compact-title-row">
+            <Swords size={18} />
+            <h1>Choose how you want to play</h1>
+            <InfoHint text="Pick a mode, then choose game, side, time, and bot tier before the board starts." />
+          </div>
         </div>
         <Link href={`/${locale}/play/classic?bot=normal&mode=bot`} className="focus-ring action-primary inline-flex items-center gap-2 px-4 py-3">
           <Bot size={18} />
@@ -38,10 +38,10 @@ export default async function PlaySetupPage({ params }: { params: Promise<{ loca
       <div className="play-mode-browser">
         {playModes.map(({ key, label, description, Icon, hrefSuffix }) => (
           <article key={key} className="panel play-mode-card">
-            <Icon size={24} />
-            <div>
+            <div className="compact-title-row">
+              <Icon size={22} />
               <h2>{label}</h2>
-              <p>{description}</p>
+              <InfoHint text={description} />
             </div>
             <div className="play-mode-card-games">
               {featured.slice(0, 4).map((entry) => (

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BarChart3, Bot, Clock, Eye, Library, Lock, Radio, Swords, Trophy, Users } from "lucide-react";
 
+import { InfoHint } from "@/components/info-hint";
 import { displayGameName, gameFamilies, getCatalogStats, getGameCatalog } from "@/lib/catalog";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
@@ -27,9 +28,9 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
   return (
     <section className="lobby-dashboard">
       <div className="space-y-5">
-        <div>
+        <div className="compact-page-heading">
           <h1 className="text-4xl font-black sm:text-5xl">{t("lobby.title")}</h1>
-          <p className="mt-2 text-[var(--muted)]">{t("app.description")}</p>
+          <InfoHint text={t("app.description")} />
         </div>
         <div className="panel lobby-action-row">
           <Link href={`/${locale}/play` as never} className="focus-ring action-primary inline-flex items-center gap-2 px-4 py-2 text-sm">
@@ -70,9 +71,9 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
             <span>learning paths</span>
           </div>
         </div>
-        <div>
+        <div className="compact-section-heading">
           <h2 className="section-title">Play Now</h2>
-          <p className="section-subtitle">Playable boards, grouped tightly so the lobby reads at a glance.</p>
+          <InfoHint text="Playable boards, grouped tightly so the lobby reads at a glance." />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {featured.map((entry) => (
@@ -85,9 +86,9 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
             </Link>
           ))}
         </div>
-        <div>
+        <div className="compact-section-heading">
           <h2 className="section-title">Game Families</h2>
-          <p className="section-subtitle">Explore the wider catalog by lineage and rules family.</p>
+          <InfoHint text="Explore the wider catalog by lineage and rules family." />
         </div>
         <div className="panel lobby-family-strip">
           {familyHighlights.map((family) => (
@@ -99,17 +100,17 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
         </div>
       </div>
       <aside className="panel grid content-start gap-4 p-5">
-        <div>
+        <div className="compact-section-heading">
           <h2 className="section-title">Lobby Tools</h2>
-          <p className="section-subtitle">Rooms, live watching, bot practice, and presence.</p>
+          <InfoHint text="Rooms, live watching, bot practice, and presence." />
         </div>
         {lobbyActions.map(({ Icon, title, body }) => (
-          <div key={title} className="rounded-md bg-[var(--surface-strong)] p-4">
+          <div key={title} className="lobby-tool-row rounded-md bg-[var(--surface-strong)] p-3">
             <h2 className="flex items-center gap-2 font-bold">
               <Icon size={16} className="text-[var(--accent)]" />
               {title}
+              <InfoHint text={body} />
             </h2>
-            <p className="mt-1 text-sm text-[var(--muted)]">{body}</p>
           </div>
         ))}
       </aside>

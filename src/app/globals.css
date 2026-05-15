@@ -1626,6 +1626,89 @@ select {
   line-height: 1.35;
 }
 
+.compact-page-heading,
+.compact-section-heading,
+.compact-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.compact-page-heading {
+  justify-content: space-between;
+}
+
+.compact-section-heading {
+  justify-content: flex-start;
+}
+
+.compact-title-row h1,
+.compact-title-row h2 {
+  margin: 0;
+}
+
+.info-hint {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.info-hint-trigger {
+  display: grid;
+  width: 1.65rem;
+  height: 1.65rem;
+  cursor: help;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--muted);
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.info-hint:hover .info-hint-trigger,
+.info-hint:focus-visible .info-hint-trigger,
+.info-hint:focus-within .info-hint-trigger {
+  background: var(--accent);
+  color: #07140c;
+  transform: translateY(-1px);
+}
+
+.info-hint-bubble {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.45rem);
+  z-index: 45;
+  width: min(17rem, calc(100vw - 2rem));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  box-shadow: var(--shadow);
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.35;
+  opacity: 0;
+  padding: 0.65rem;
+  pointer-events: none;
+  transform: translateY(0.25rem);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.info-hint:hover .info-hint-bubble,
+.info-hint:focus-visible .info-hint-bubble,
+.info-hint:focus-within .info-hint-bubble {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.lobby-tool-row h2 {
+  justify-content: space-between;
+  margin: 0;
+}
+
 .lobby-action-row {
   display: flex;
   flex-wrap: wrap;
@@ -1826,7 +1909,6 @@ select {
 }
 
 .play-setup-hero h1 {
-  margin: 0.2rem 0;
   font-size: clamp(1.8rem, 4vw, 3rem);
   font-weight: 950;
   line-height: 1;
@@ -1851,21 +1933,13 @@ select {
   padding: 1rem;
 }
 
-.play-mode-card > svg {
+.play-mode-card svg {
   color: var(--accent);
 }
 
 .play-mode-card h2 {
-  margin: 0;
   font-size: 1.15rem;
   font-weight: 950;
-}
-
-.play-mode-card p {
-  margin: 0.25rem 0 0;
-  color: var(--muted);
-  font-size: 0.88rem;
-  font-weight: 750;
 }
 
 .play-mode-card-games {
