@@ -1,7 +1,19 @@
 import { describe, expect, test } from "vitest";
 
 import { cancelBotMove, chooseBotMove, chooseBotMoveSafe, botDifficultyLevels, requestBotMove } from "@/lib/bots";
-import { createBotBoardSignature, createBotPositionKey, listBotEngineLabels, listBotKnowledge, listBotKnowledgeSummary, listBotModelManifests, listBotToolManifests, listTrainingDataManifests, lookupBotKnowledge } from "@/lib/bot-training";
+import {
+  createBotBoardSignature,
+  createBotPositionKey,
+  getBotKnowledgeIndexStats,
+  getBotRuntimeLanguageProfile,
+  listBotEngineLabels,
+  listBotKnowledge,
+  listBotKnowledgeSummary,
+  listBotModelManifests,
+  listBotToolManifests,
+  listTrainingDataManifests,
+  lookupBotKnowledge
+} from "@/lib/bot-training";
 import { applyMove, createInitialState, getLegalMoves } from "@/lib/variants";
 
 describe("bot difficulty ladder", () => {
@@ -191,6 +203,30 @@ describe("bot difficulty ladder", () => {
       legalValidated: true,
       validatedLegal: true
     });
+  });
+
+  test("knowledge cache uses indexed runtime lookups instead of linear scans", () => {
+    const stats = getBotKnowledgeIndexStats();
+
+    expect(stats.entries).toBeGreaterThan(0);
+    expect(stats.positionKeys + stats.boardSignatures).toBeGreaterThan(0);
+    expect(stats.maxBucketSize).toBeLessThan(stats.entries);
+  });
+
+  test("runtime language strategy keeps TypeScript orchestration with native hot paths", () => {
+    const profile = getBotRuntimeLanguageProfile();
+
+    expect(profile.primaryRuntime).toBe("typescript");
+    expect(profile.hotPathStrategy).toBe("indexed-typescript-plus-wasm-engines");
+    expect(profile.runtimeLanguages).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ language: "TypeScript", status: "active" }),
+        expect.objectContaining({ language: "WebAssembly/C++", status: "active" }),
+        expect.objectContaining({ language: "Python", status: "offline" }),
+        expect.objectContaining({ language: "Rust/WASM", status: "candidate" })
+      ])
+    );
+    expect(profile.migrationDecision.nextGate).toContain("benchmark");
   });
 
   test("board signatures support generated tactic-cache positions", () => {

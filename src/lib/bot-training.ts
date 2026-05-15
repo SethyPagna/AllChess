@@ -116,6 +116,22 @@ export type BotKnowledgeHit = {
   principalVariation: string[];
 };
 
+export type BotRuntimeLanguageProfile = {
+  primaryRuntime: "typescript";
+  hotPathStrategy: "indexed-typescript-plus-wasm-engines";
+  runtimeLanguages: Array<{
+    language: "TypeScript" | "WebAssembly/C++" | "Python" | "Rust/WASM";
+    role: string;
+    status: "active" | "offline" | "candidate";
+    reason: string;
+  }>;
+  migrationDecision: {
+    recommendation: "keep-typescript-orchestration-and-use-native-engine-hot-paths";
+    reason: string;
+    nextGate: string;
+  };
+};
+
 type GeneratedBotKnowledgeFile = {
   version?: string;
   generatedAt?: string;
@@ -219,6 +235,7 @@ const generatedKnowledgeEntries = generated.entries;
 const generatedEngineLabels = generated.engineLabels ?? [];
 const engineLabelKnowledgeEntries = generatedEngineLabels.flatMap(engineLabelToKnowledgeEntry);
 const knowledgeEntries: BotKnowledgeEntry[] = [...curatedKnowledgeEntries, ...generatedKnowledgeEntries, ...engineLabelKnowledgeEntries];
+const knowledgeIndex = createKnowledgeIndex(knowledgeEntries);
 const classicPositionCount = new Set(
   [...generatedKnowledgeEntries, ...engineLabelKnowledgeEntries]
     .filter((entry) => entry.variantKey === "classic")
@@ -311,14 +328,60 @@ export function listBotToolManifests() {
   return generated.toolManifests ?? [];
 }
 
+export function getBotRuntimeLanguageProfile(): BotRuntimeLanguageProfile {
+  return {
+    primaryRuntime: "typescript",
+    hotPathStrategy: "indexed-typescript-plus-wasm-engines",
+    runtimeLanguages: [
+      {
+        language: "TypeScript",
+        role: "Rules validation, UI state, Durable Object orchestration, D1/R2 manifests, and cache routing.",
+        status: "active",
+        reason: "This keeps gameplay portable across Next.js, Workers, Vercel, and local development while preserving type safety."
+      },
+      {
+        language: "WebAssembly/C++",
+        role: "Stockfish and future Fairy-Stockfish style engine search for chess-family hot paths.",
+        status: "active",
+        reason: "Native engine code is much faster for deep search than rewriting the same search in application TypeScript."
+      },
+      {
+        language: "Python",
+        role: "Offline data ingestion, compressed dataset streaming, label generation, and long-running training jobs.",
+        status: "offline",
+        reason: "Python has better ecosystem support for parquet, zstd, model experiments, and dataset batch work."
+      },
+      {
+        language: "Rust/WASM",
+        role: "Candidate for future universal rules/search kernels if benchmarks show TypeScript rule adapters are the bottleneck.",
+        status: "candidate",
+        reason: "A Rust migration should be gated by benchmarks because it adds build complexity across Workers, Vercel, and Docker."
+      }
+    ],
+    migrationDecision: {
+      recommendation: "keep-typescript-orchestration-and-use-native-engine-hot-paths",
+      reason:
+        "The fastest useful combination is TypeScript for product/runtime glue, WebAssembly/native engines for search, and offline Python/native tools for training. A wholesale TypeScript rewrite would slow delivery without proving a runtime win.",
+      nextGate: "Move a rules/search kernel to Rust/WASM only after benchmark data shows indexed cache lookup plus engine fallback is still too slow."
+    }
+  };
+}
+
+export function getBotKnowledgeIndexStats() {
+  return {
+    entries: knowledgeEntries.length,
+    positionKeys: knowledgeIndex.byPosition.size,
+    boardSignatures: knowledgeIndex.byBoardSignature.size,
+    maxBucketSize: knowledgeIndex.maxBucketSize
+  };
+}
+
 export function lookupBotKnowledge(state: GameState, tier: BotTierKey): BotKnowledgeHit | null {
   if (state.status !== "active") return null;
 
   const key = createBotPositionKey(state);
   const boardSignature = createBotBoardSignature(state);
-  const entries = knowledgeEntries
-    .filter((entry) => entry.variantKey === state.variantKey && (entry.positionKey === key || entry.boardSignature === boardSignature) && tierRank[tier] >= tierRank[entry.minTier])
-    .sort((a, b) => sourcePriority(a.source) - sourcePriority(b.source) || b.confidence - a.confidence);
+  const entries = indexedKnowledgeCandidates(state.variantKey, key, boardSignature).filter((entry) => tierRank[tier] >= tierRank[entry.minTier]);
 
   for (const entry of entries) {
     const move = legalMoveByUci(state, entry.moveUci);
@@ -328,6 +391,54 @@ export function lookupBotKnowledge(state: GameState, tier: BotTierKey): BotKnowl
   }
 
   return null;
+}
+
+function createKnowledgeIndex(entries: BotKnowledgeEntry[]) {
+  const byPosition = new Map<string, BotKnowledgeEntry[]>();
+  const byBoardSignature = new Map<string, BotKnowledgeEntry[]>();
+
+  for (const entry of entries) {
+    if (entry.positionKey) addIndexedEntry(byPosition, knowledgeIndexKey(entry.variantKey, entry.positionKey), entry);
+    if (entry.boardSignature) addIndexedEntry(byBoardSignature, knowledgeIndexKey(entry.variantKey, entry.boardSignature), entry);
+  }
+
+  let maxBucketSize = 0;
+  for (const bucket of [...byPosition.values(), ...byBoardSignature.values()]) {
+    bucket.sort(compareKnowledgeEntries);
+    maxBucketSize = Math.max(maxBucketSize, bucket.length);
+  }
+
+  return { byPosition, byBoardSignature, maxBucketSize };
+}
+
+function indexedKnowledgeCandidates(variantKey: string, positionKey: string, boardSignature: string) {
+  const candidates = [
+    ...(knowledgeIndex.byPosition.get(knowledgeIndexKey(variantKey, positionKey)) ?? []),
+    ...(knowledgeIndex.byBoardSignature.get(knowledgeIndexKey(variantKey, boardSignature)) ?? [])
+  ];
+  const seen = new Set<string>();
+  return candidates.filter((entry) => {
+    if (seen.has(entry.id)) return false;
+    seen.add(entry.id);
+    return true;
+  });
+}
+
+function addIndexedEntry(index: Map<string, BotKnowledgeEntry[]>, key: string, entry: BotKnowledgeEntry) {
+  const bucket = index.get(key);
+  if (bucket) {
+    bucket.push(entry);
+    return;
+  }
+  index.set(key, [entry]);
+}
+
+function knowledgeIndexKey(variantKey: string, key: string) {
+  return `${variantKey}\u0000${key}`;
+}
+
+function compareKnowledgeEntries(a: BotKnowledgeEntry, b: BotKnowledgeEntry) {
+  return sourcePriority(a.source) - sourcePriority(b.source) || b.confidence - a.confidence;
 }
 
 function legalMoveByUci(state: GameState, uci: string) {
