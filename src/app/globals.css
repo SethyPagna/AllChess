@@ -249,15 +249,113 @@ select {
   font-size: 0.86rem;
 }
 
-.app-universal-tools {
+.app-sidebar-tools,
+.app-mobile-tools {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
-  position: fixed;
-  z-index: 75;
-  top: 0.9rem;
-  right: 0.9rem;
-  width: auto;
+  align-items: center;
+}
+
+.app-sidebar-tools {
+  border-top: 1px solid var(--border);
+  padding-top: 0.7rem;
+}
+
+.app-mobile-tools {
+  display: none;
+}
+
+.language-menu summary::-webkit-details-marker,
+.notification-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.language-menu-panel,
+.notification-panel {
+  animation: menu-pop 140ms ease-out;
+  transform-origin: top right;
+}
+
+.language-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.55rem;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+
+.language-option:hover {
+  transform: translateX(-2px);
+}
+
+.notification-menu summary {
+  position: relative;
+}
+
+.notification-dot {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  width: 0.48rem;
+  height: 0.48rem;
+  border: 2px solid var(--surface);
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.notification-panel-heading,
+.notification-row {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.notification-panel-heading {
+  padding: 0.45rem 0.55rem;
+}
+
+.notification-panel-heading strong,
+.notification-row strong {
+  color: var(--foreground);
+  font-weight: 950;
+}
+
+.notification-panel-heading span,
+.notification-row small {
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.notification-row {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  border-radius: 8px;
+  background: var(--surface-soft);
+  padding: 0.65rem;
+}
+
+.notification-row svg {
+  color: var(--accent);
+  margin-top: 0.1rem;
+}
+
+.notification-row span {
+  display: grid;
+  gap: 0.12rem;
+}
+
+@keyframes menu-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .app-main {
@@ -1998,12 +2096,8 @@ select {
     display: flex;
   }
 
-  .app-universal-tools {
-    top: 0.55rem;
-    right: 3.35rem;
-    bottom: auto;
-    left: auto;
-    width: auto;
+  .app-mobile-tools {
+    display: flex;
   }
 
   .app-content {

@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { BookOpen, ChevronDown, Crown, Eye, History, Home, Library, LogIn, Menu, Settings, Swords, Trophy, UserRound, Users } from "lucide-react";
 
 import { LocaleSwitcher } from "@/components/locale-switcher";
+import { NotificationCenter } from "@/components/notification-center";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { createTranslator } from "@/lib/i18n/dictionary";
@@ -43,8 +44,8 @@ export default async function LocaleLayout({
       Icon: Swords,
       links: [
         ["lobby", t("nav.lobby"), Home],
-        ["play", "Play board", Swords],
-        ["practice", "Bot practice", Users]
+        ["play", "Play", Swords],
+        ["practice", "Practice", Users]
       ]
     },
     {
@@ -118,6 +119,19 @@ export default async function LocaleLayout({
                 ))}
               </nav>
               <div className="app-sidebar-bottom" aria-label="Account shortcut">
+                <div className="app-sidebar-tools" aria-label="Quick settings">
+                  <ThemeToggle
+                    labels={{
+                      light: t("settings.light"),
+                      dark: t("settings.dark"),
+                      system: t("settings.system")
+                    }}
+                  />
+                  <Suspense fallback={<span className="action-secondary grid h-10 w-10 place-items-center text-sm">...</span>}>
+                    <LocaleSwitcher active={locale as LocaleCode} />
+                  </Suspense>
+                  <NotificationCenter />
+                </div>
                 <Link href={profileHref as never} className="app-nav-link focus-ring">
                   <UserRound size={20} strokeWidth={2.5} />
                   <span>{t("nav.profile")}</span>
@@ -153,19 +167,20 @@ export default async function LocaleLayout({
                     </Link>
                   </div>
                 </details>
+                <div className="app-mobile-tools" aria-label="Quick settings">
+                  <ThemeToggle
+                    labels={{
+                      light: t("settings.light"),
+                      dark: t("settings.dark"),
+                      system: t("settings.system")
+                    }}
+                  />
+                  <Suspense fallback={<span className="action-secondary grid h-10 w-10 place-items-center text-sm">...</span>}>
+                    <LocaleSwitcher active={locale as LocaleCode} />
+                  </Suspense>
+                  <NotificationCenter />
+                </div>
               </header>
-              <div className="app-universal-tools">
-                <ThemeToggle
-                  labels={{
-                    light: t("settings.light"),
-                    dark: t("settings.dark"),
-                    system: t("settings.system")
-                  }}
-                />
-                <Suspense fallback={<span className="action-secondary inline-flex h-10 items-center px-3 text-sm">{locale.toUpperCase()}</span>}>
-                  <LocaleSwitcher active={locale as LocaleCode} />
-                </Suspense>
-              </div>
               <main className="app-content">{children}</main>
             </div>
           </div>
