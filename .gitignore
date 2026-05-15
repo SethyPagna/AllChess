@@ -11,6 +11,7 @@ test-results/
 .vercel/
 .open-next/
 .wrangler/
+.wrangler-dry-run/
 public/engines/stockfish/
 .env
 .env.local
