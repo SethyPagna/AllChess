@@ -184,6 +184,14 @@ const pieceValues: Record<string, number> = {
   t: 700
 };
 
+type SearchBudget = {
+  cacheHits: number;
+  deadline: number;
+  legalMovesCache: Map<string, Move[]>;
+  moveGenerationCalls: number;
+  nodes: number;
+};
+
 export function chooseBotMove(state: GameState, difficultyKey: BotDifficultyKey = "normal", options: Pick<BotMoveOptions, "maxSearchTimeMs" | "engine"> = {}): Move {
   const safe = chooseBotMoveSafe(state, difficultyKey, options);
   if (!safe.move) {
@@ -201,7 +209,9 @@ export function chooseBotMoveSafe(
   | { move: null; reason: "no-legal-moves" } {
   const startedAt = Date.now();
   const difficulty = botDifficultyLevels.find((level) => level.key === difficultyKey) ?? botDifficultyLevels[1];
-  const legalMoves = allLegalMoves(state);
+  const searchTimeMs = Math.max(8, Math.min(options.maxSearchTimeMs ?? difficulty.moveTimeMs, difficulty.moveTimeMs));
+  const budget = createSearchBudget(startedAt, searchTimeMs);
+  const legalMoves = allLegalMovesCached(state, budget);
   if (!legalMoves.length) {
     return { move: null, reason: "no-legal-moves" };
   }
@@ -240,8 +250,6 @@ export function chooseBotMoveSafe(
     }
   }
 
-  const searchTimeMs = Math.max(8, Math.min(options.maxSearchTimeMs ?? difficulty.moveTimeMs, difficulty.moveTimeMs));
-  const budget = { nodes: 0, deadline: startedAt + searchTimeMs };
   const ranked = legalMoves
     .map((move) => ({ move, score: evaluateMove(state, move, difficulty, perspective, budget) }))
     .sort((a, b) => b.score - a.score);
@@ -470,12 +478,43 @@ export function allLegalMoves(state: GameState) {
   return state.board.flatMap((row) => row.flatMap((cell) => getLegalMoves(state, cell.square)));
 }
 
+function createSearchBudget(startedAt: number, searchTimeMs: number): SearchBudget {
+  return {
+    cacheHits: 0,
+    deadline: startedAt + searchTimeMs,
+    legalMovesCache: new Map(),
+    moveGenerationCalls: 0,
+    nodes: 0
+  };
+}
+
+function allLegalMovesCached(state: GameState, budget: SearchBudget) {
+  const key = searchStateKey(state);
+  const cached = budget.legalMovesCache.get(key);
+  if (cached) {
+    budget.cacheHits += 1;
+    return cached;
+  }
+
+  const moves = allLegalMoves(state);
+  budget.moveGenerationCalls += 1;
+  budget.legalMovesCache.set(key, moves);
+  return moves;
+}
+
+function searchStateKey(state: GameState) {
+  const board = state.board
+    .map((row) => row.map((cell) => (cell.piece ? `${cell.piece.owner[0]}${cell.piece.code}${cell.piece.promoted ? "+" : ""}` : "--")).join(""))
+    .join("/");
+  return `${state.variantKey}|${state.turn}|${state.status}|${state.result ?? ""}|${state.ply}|${board}`;
+}
+
 function evaluateMove(
   state: GameState,
   move: Move,
   difficulty: BotDifficulty,
   perspective: PlayerColor,
-  budget: { nodes: number; deadline: number }
+  budget: SearchBudget
 ) {
   if (difficulty.key === "easy") {
     return beginnerMoveScore(state, move, perspective, difficulty, budget);
@@ -484,14 +523,14 @@ function evaluateMove(
   const next = tryMove(state, move);
   if (!next) return Number.NEGATIVE_INFINITY;
   if (next.status === "completed") {
-    return evaluateState(next, perspective);
+    return evaluateState(next, perspective, budget);
   }
 
   const searchDepth = Math.max(0, difficulty.depth - 1);
   const searchScore = minimax(next, searchDepth, perspective, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, difficulty, budget);
   const movedPiece = next.board[move.to.row]?.[move.to.col]?.piece;
   const riskPenalty = movedPiece && difficulty.skill >= 8 ? hangingPenalty(next, move.to, movedPiece) * (1 - difficulty.riskTolerance) : 0;
-  const strategyBonus = difficulty.skill >= 12 ? strategicMoveScore(state, next, move, perspective, difficulty) : 0;
+  const strategyBonus = difficulty.skill >= 12 ? strategicMoveScore(state, next, move, perspective, difficulty, budget) : 0;
   const replyPenalty = difficulty.skill >= 8 ? opponentReplyPenalty(next, perspective, difficulty, budget) * (1.15 - difficulty.riskTolerance) : 0;
   const noise = difficulty.skill >= 20 ? 0 : deterministicNoise(move) * (22 - difficulty.skill);
   return searchScore + strategyBonus - riskPenalty - replyPenalty + noise;
@@ -504,10 +543,10 @@ function selectRankedMove(ranked: Array<{ move: Move; score: number }>, difficul
   return safeBand[Math.min(safeBand.length - 1, 1)] ?? ranked[0];
 }
 
-function beginnerMoveScore(state: GameState, move: Move, perspective: PlayerColor, difficulty: BotDifficulty, budget: { nodes: number; deadline: number }) {
+function beginnerMoveScore(state: GameState, move: Move, perspective: PlayerColor, difficulty: BotDifficulty, budget: SearchBudget) {
   const next = tryMove(state, move);
   if (!next) return Number.NEGATIVE_INFINITY;
-  if (next.status === "completed") return evaluateState(next, perspective);
+  if (next.status === "completed") return evaluateState(next, perspective, budget);
 
   const movedPiece = next.board[move.to.row]?.[move.to.col]?.piece;
   const staticScore = staticMoveScore(state, move);
@@ -529,19 +568,19 @@ function minimax(
   alpha: number,
   beta: number,
   difficulty: BotDifficulty,
-  budget: { nodes: number; deadline: number }
+  budget: SearchBudget
 ): number {
   budget.nodes += 1;
   if (state.status === "completed" || depth <= 0 || budget.nodes >= difficulty.nodeBudget || Date.now() >= budget.deadline) {
     return quiescence(state, difficulty.quiescenceDepth, perspective, alpha, beta, difficulty, budget);
   }
 
-  const moves = allLegalMoves(state)
+  const moves = allLegalMovesCached(state, budget)
     .map((move) => ({ move, score: staticMoveScore(state, move) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, difficulty.beamWidth);
 
-  if (!moves.length) return evaluateState(state, perspective);
+  if (!moves.length) return evaluateState(state, perspective, budget);
 
   const maximizing = state.turn === perspective;
   let best = maximizing ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
@@ -570,12 +609,12 @@ function quiescence(
   alpha: number,
   beta: number,
   difficulty: BotDifficulty,
-  budget: { nodes: number; deadline: number }
+  budget: SearchBudget
 ): number {
-  let best = evaluateState(state, perspective);
+  let best = evaluateState(state, perspective, budget);
   if (depth <= 0 || state.status === "completed" || budget.nodes >= difficulty.nodeBudget || Date.now() >= budget.deadline) return best;
 
-  const tacticalMoves = allLegalMoves(state)
+  const tacticalMoves = allLegalMovesCached(state, budget)
     .filter((move) => isCapture(state, move) || staticMoveScore(state, move) >= 700)
     .map((move) => ({ move, score: staticMoveScore(state, move) }))
     .sort((a, b) => b.score - a.score)
@@ -599,7 +638,7 @@ function quiescence(
   return best;
 }
 
-function evaluateState(state: GameState, perspective: PlayerColor) {
+function evaluateState(state: GameState, perspective: PlayerColor, budget?: SearchBudget) {
   if (state.status === "completed") {
     if (state.result === "draw") return 0;
     return state.result === perspective ? 100000 - state.ply : -100000 + state.ply;
@@ -616,7 +655,7 @@ function evaluateState(state: GameState, perspective: PlayerColor) {
     );
   }, 0);
 
-  const activeMobility = allLegalMoves(state).length * (state.turn === perspective ? 5 : -5);
+  const activeMobility = (budget ? allLegalMovesCached(state, budget) : allLegalMoves(state)).length * (state.turn === perspective ? 5 : -5);
   const position = positionalScore(state, perspective);
   const royalSafety = royalSafetyScore(state, perspective);
   return material + activeMobility + position + royalSafety;
@@ -637,11 +676,11 @@ function staticMoveScore(state: GameState, move: Move) {
   return captureScore + promotionScore + castlingScore + developmentScore + centerScore;
 }
 
-function strategicMoveScore(state: GameState, next: GameState, move: Move, perspective: PlayerColor, difficulty: BotDifficulty) {
+function strategicMoveScore(state: GameState, next: GameState, move: Move, perspective: PlayerColor, difficulty: BotDifficulty, budget: SearchBudget) {
   const movedPiece = next.board[move.to.row]?.[move.to.col]?.piece;
   if (!movedPiece) return 0;
   const opponents = opponentColors(next, perspective);
-  const attacksAfter = allLegalMovesFor(next, perspective);
+  const attacksAfter = allLegalMovesFor(next, perspective, budget);
   const newThreats = attacksAfter.reduce((total, candidate) => {
     const target = next.board[candidate.to.row]?.[candidate.to.col]?.piece;
     return total + (target && opponents.includes(target.owner) ? (pieceValues[target.code] ?? 100) * 0.12 : 0);
@@ -650,19 +689,19 @@ function strategicMoveScore(state: GameState, next: GameState, move: Move, persp
   const ownSupport = nearbyFriendlySupport(next, move.to, movedPiece.owner) * 18;
   const advancement = advancementScore(state, move, movedPiece.owner, movedPiece.code) * (difficulty.skill / 10);
   const objective = variantObjectiveScore(next, move, movedPiece.owner) * (difficulty.skill / 8);
-  const constriction = mobilitySwing(state, next, perspective) * (difficulty.skill / 20);
-  const forkPressure = forkPressureScore(next, perspective) * (difficulty.skill / 18);
-  const loosePiecePressure = loosePieceScore(next, opponents) * (difficulty.skill / 18);
+  const constriction = mobilitySwing(state, next, perspective, budget) * (difficulty.skill / 20);
+  const forkPressure = forkPressureScore(next, perspective, budget) * (difficulty.skill / 18);
+  const loosePiecePressure = loosePieceScore(next, opponents, budget) * (difficulty.skill / 18);
   const tempo = givesTurnPressure(next, perspective) ? 45 : 0;
   return newThreats + ownSupport + advancement + objective + constriction + forkPressure + loosePiecePressure + tempo - ownDanger;
 }
 
-function opponentReplyPenalty(state: GameState, perspective: PlayerColor, difficulty: BotDifficulty, budget: { nodes: number; deadline: number }) {
+function opponentReplyPenalty(state: GameState, perspective: PlayerColor, difficulty: BotDifficulty, budget: SearchBudget) {
   if (state.status === "completed" || budget.nodes >= difficulty.nodeBudget || Date.now() >= budget.deadline) return 0;
-  const replies = allLegalMoves(state)
+  const replies = allLegalMovesCached(state, budget)
     .map((move) => ({ move, score: staticMoveScore(state, move) }))
     .sort((a, b) => b.score - a.score)
-    .slice(0, Math.max(5, Math.floor(difficulty.beamWidth / 2)));
+    .slice(0, difficulty.replyCheckWidth);
   let worst = 0;
 
   for (const { move } of replies) {
@@ -684,33 +723,34 @@ function opponentReplyPenalty(state: GameState, perspective: PlayerColor, diffic
   return worst * (difficulty.skill / 20);
 }
 
-function mobilitySwing(previous: GameState, next: GameState, perspective: PlayerColor) {
-  const beforeOwn = allLegalMovesFor(previous, perspective).length;
-  const beforeOpponent = opponentColors(previous, perspective).reduce((total, color) => total + allLegalMovesFor(previous, color).length, 0);
-  const afterOwn = allLegalMovesFor(next, perspective).length;
-  const afterOpponent = opponentColors(next, perspective).reduce((total, color) => total + allLegalMovesFor(next, color).length, 0);
+function mobilitySwing(previous: GameState, next: GameState, perspective: PlayerColor, budget: SearchBudget) {
+  const beforeOwn = allLegalMovesFor(previous, perspective, budget).length;
+  const beforeOpponent = opponentColors(previous, perspective).reduce((total, color) => total + allLegalMovesFor(previous, color, budget).length, 0);
+  const afterOwn = allLegalMovesFor(next, perspective, budget).length;
+  const afterOpponent = opponentColors(next, perspective).reduce((total, color) => total + allLegalMovesFor(next, color, budget).length, 0);
   return (afterOwn - beforeOwn) * 2 + (beforeOpponent - afterOpponent) * 3;
 }
 
-function forkPressureScore(state: GameState, perspective: PlayerColor) {
+function forkPressureScore(state: GameState, perspective: PlayerColor, budget: SearchBudget) {
   const opponents = opponentColors(state, perspective);
-  return allLegalMovesFor(state, perspective).reduce((best, move) => {
+  const moves = allLegalMovesFor(state, perspective, budget);
+  return moves.reduce((best, move) => {
     const target = state.board[move.to.row]?.[move.to.col]?.piece;
     if (!target || !opponents.includes(target.owner)) return best;
     const value = pieceValues[target.code] ?? 100;
     const key = serializeMoveTarget(move);
-    const duplicatePressure = allLegalMovesFor(state, perspective).filter((candidate) => serializeMoveTarget(candidate) !== key && sameSquare(candidate.from, move.from)).length;
+    const duplicatePressure = moves.filter((candidate) => serializeMoveTarget(candidate) !== key && sameSquare(candidate.from, move.from)).length;
     return Math.max(best, value * 0.08 + duplicatePressure * 8);
   }, 0);
 }
 
-function loosePieceScore(state: GameState, opponents: PlayerColor[]) {
+function loosePieceScore(state: GameState, opponents: PlayerColor[], budget: SearchBudget) {
   let score = 0;
   for (const row of state.board) {
     for (const cell of row) {
       if (!cell.piece || !opponents.includes(cell.piece.owner)) continue;
       const attackers = opponentColors(state, cell.piece.owner);
-      const attacked = isSquareAttackedBy(state, cell.square, attackers);
+      const attacked = isSquareAttackedBy(state, cell.square, attackers, budget);
       const defended = nearbyFriendlySupport(state, cell.square, cell.piece.owner) > 0;
       if (attacked && !defended) score += (pieceValues[cell.piece.code] ?? 100) * 0.1;
     }
@@ -718,8 +758,8 @@ function loosePieceScore(state: GameState, opponents: PlayerColor[]) {
   return score;
 }
 
-function isSquareAttackedBy(state: GameState, square: { row: number; col: number }, attackers: PlayerColor[]) {
-  return attackers.some((attacker) => allLegalMovesFor(state, attacker).some((move) => move.to.row === square.row && move.to.col === square.col));
+function isSquareAttackedBy(state: GameState, square: { row: number; col: number }, attackers: PlayerColor[], budget?: SearchBudget) {
+  return attackers.some((attacker) => allLegalMovesFor(state, attacker, budget).some((move) => move.to.row === square.row && move.to.col === square.col));
 }
 
 function nearbyFriendlySupport(state: GameState, square: { row: number; col: number }, owner: PlayerColor) {
@@ -809,8 +849,9 @@ function hangingPenalty(state: GameState, square: { row: number; col: number }, 
   return canBeCaptured ? (pieceValues[piece.code] ?? 100) * 0.45 : 0;
 }
 
-function allLegalMovesFor(state: GameState, color: PlayerColor) {
-  return allLegalMoves({ ...state, turn: color });
+function allLegalMovesFor(state: GameState, color: PlayerColor, budget?: SearchBudget) {
+  const colorState = state.turn === color ? state : { ...state, turn: color };
+  return budget ? allLegalMovesCached(colorState, budget) : allLegalMoves(colorState);
 }
 
 function opponentColors(state: GameState, perspective: PlayerColor) {

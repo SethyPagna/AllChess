@@ -282,6 +282,11 @@ select {
   transform-origin: top right;
 }
 
+.language-menu:not([open]) .language-menu-panel,
+.notification-menu:not([open]) .notification-panel {
+  display: none;
+}
+
 .app-responsive-tools .language-menu-panel,
 .app-responsive-tools .notification-panel {
   top: auto;
@@ -418,6 +423,10 @@ select {
   background: var(--surface);
   box-shadow: var(--shadow);
   padding: 0.45rem;
+}
+
+.app-menu:not([open]) .app-menu-panel {
+  display: none;
 }
 
 .app-menu-sections,
@@ -688,6 +697,19 @@ select {
 .game-board-layout {
   align-items: start;
   --board-fixed-size: clamp(320px, min(58vw, calc(100vh - 8rem)), 760px);
+}
+
+.home-board-preview {
+  overflow: hidden;
+}
+
+.home-board-preview .game-board-layout {
+  grid-template-columns: minmax(0, 1fr);
+  --board-fixed-size: min(100%, 38rem);
+}
+
+.home-board-preview .game-side-panel {
+  display: none;
 }
 
 .play-arena .game-board-layout {
@@ -1745,9 +1767,14 @@ select {
   transition: opacity 140ms ease, transform 140ms ease;
 }
 
+.info-hint:not(:hover):not(:focus-within) .info-hint-bubble {
+  display: none;
+}
+
 .info-hint:hover .info-hint-bubble,
 .info-hint:focus-visible .info-hint-bubble,
 .info-hint:focus-within .info-hint-bubble {
+  display: block;
   opacity: 1;
   transform: translateY(0);
 }

@@ -25,7 +25,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   return (
     <div className="grid gap-7">
-      <section className="grid items-center gap-6 lg:grid-cols-[0.82fr_1.18fr]">
+      <section className="grid min-w-0 items-center gap-6 lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
         <div className="space-y-6">
           <h1 className="max-w-3xl text-5xl font-black leading-tight sm:text-7xl">{t("app.name")}</h1>
           <p className="max-w-2xl text-xl leading-9 text-[var(--muted)]">{t("app.tagline")}</p>
@@ -46,7 +46,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             ))}
           </div>
         </div>
-        <div className="glass rounded-lg p-3">
+        <div className="home-board-preview glass min-w-0 rounded-lg p-3">
           <GameBoard variantKey="classic" />
         </div>
       </section>

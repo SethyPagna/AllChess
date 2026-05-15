@@ -568,6 +568,12 @@ function createGameBotTrainingChecklist(variant: VariantDefinition): GameBotTrai
           evidence: `${difficulty.label}: depth ${difficulty.depth}, ${difficulty.nodeBudget} nodes, beam ${difficulty.beamWidth}, confidence gate ${difficulty.knowledgeMinimumConfidence}.`
         },
         {
+          id: "resource-efficiency",
+          label: "Reuse legal-move generation inside nested search loops instead of recomputing the same board repeatedly.",
+          status: "ready",
+          evidence: "Internal search uses a per-request legal-move cache shared by evaluation, reply checks, minimax, quiescence, and mobility scoring."
+        },
+        {
           id: "variant-objective",
           label: "Score the native objective instead of playing only material-count chess.",
           status: rulesGated ? "rules-gated" : "ready",
