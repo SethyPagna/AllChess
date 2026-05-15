@@ -5,6 +5,7 @@ import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficulty, type BotDiff
 import type { BotStrengthBand, BotTierKey } from "@/lib/bot-strength";
 
 const MIN_BOT_SEARCH_MS = 8;
+const MAX_GLOBAL_TRANSPOSITIONS = 6000;
 
 export { botDifficultyLevels, MAX_BOT_REPLY_MS };
 export type { BotDifficulty, BotDifficultyKey, BotPlayStyle };
@@ -70,6 +71,7 @@ export type BotMoveRequest = {
 };
 
 const pendingRequests = new Map<string, { cancelled: boolean }>();
+const globalTranspositionCache = new Map<string, { depth: number; score: number }>();
 
 const pieceValues: Record<string, number> = {
   k: 10000,
@@ -537,11 +539,17 @@ function minimax(
     budget.transpositionHits += 1;
     return cached.score;
   }
+  const globalCached = getGlobalTransposition(cacheKey, depth);
+  if (globalCached) {
+    budget.transpositionHits += 1;
+    budget.transpositionCache.set(cacheKey, globalCached);
+    return globalCached.score;
+  }
 
   budget.nodes += 1;
   if (state.status === "completed" || depth <= 0 || budget.nodes >= difficulty.nodeBudget || Date.now() >= budget.deadline) {
     const score = quiescence(state, difficulty.quiescenceDepth, perspective, alpha, beta, difficulty, budget);
-    budget.transpositionCache.set(cacheKey, { depth, score });
+    rememberTransposition(budget, cacheKey, depth, score);
     return score;
   }
 
@@ -573,8 +581,27 @@ function minimax(
     }
   }
 
-  if (!pruned) budget.transpositionCache.set(cacheKey, { depth, score: best });
+  if (!pruned) rememberTransposition(budget, cacheKey, depth, best);
   return best;
+}
+
+function getGlobalTransposition(key: string, minimumDepth: number) {
+  const cached = globalTranspositionCache.get(key);
+  if (!cached || cached.depth < minimumDepth) return null;
+  globalTranspositionCache.delete(key);
+  globalTranspositionCache.set(key, cached);
+  return cached;
+}
+
+function rememberTransposition(budget: SearchBudget, key: string, depth: number, score: number) {
+  const entry = { depth, score };
+  budget.transpositionCache.set(key, entry);
+  globalTranspositionCache.set(key, entry);
+  while (globalTranspositionCache.size > MAX_GLOBAL_TRANSPOSITIONS) {
+    const oldestKey = globalTranspositionCache.keys().next().value;
+    if (!oldestKey) break;
+    globalTranspositionCache.delete(oldestKey);
+  }
 }
 
 function quiescence(
