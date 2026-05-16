@@ -8,6 +8,10 @@ async function expectNoHorizontalOverflow(page: Page) {
 test("localized game hub can open variants and a playable board", async ({ page }) => {
   await page.goto("/en");
   await expect(page.getByRole("heading", { name: "AllChess" })).toBeVisible();
+  await expect(page.getByLabel("AllChess intro")).toContainText("Play first");
+  await expect(page.getByRole("link", { name: "Start playing" })).toHaveAttribute("href", "/en/play");
+  await expect(page.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/en/login");
+  await expect(page.getByLabel("How AllChess works")).toContainText("Pick a board");
   await expectNoHorizontalOverflow(page);
 
   await page.goto("/en/variants");
