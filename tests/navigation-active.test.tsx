@@ -18,13 +18,14 @@ const groups: AppNavGroup[] = [
     ]
   },
   {
+    icon: "library",
+    label: "Games & rules",
+    links: [{ href: "variants", icon: "library", label: "Games & rules" }]
+  },
+  {
     icon: "settings",
-    label: "Account",
-    links: [
-      { href: "profile/player", icon: "user", label: "Profile" },
-      { href: "history", icon: "history", label: "History" },
-      { href: "settings", icon: "settings", label: "Settings" }
-    ]
+    label: "Settings",
+    links: [{ href: "settings", icon: "settings", label: "Settings" }]
   }
 ];
 
@@ -42,14 +43,24 @@ describe("app navigation", () => {
 
     expect(markup).toContain("app-menu-section-label");
     expect(markup).toContain(">Play<");
-    expect(markup).toContain(">Account<");
+    expect(markup).toContain(">Play<");
+    expect(markup).toContain(">Games &amp; rules<");
+    expect(markup).not.toContain(">Account<");
   });
 
-  test("keeps profile and history under account instead of community", () => {
-    const markup = renderToStaticMarkup(createElement(AppSidebarNavigation, { groups, locale: "en" }));
+  test("keeps profile history as the single account shortcut", () => {
+    const markup = renderToStaticMarkup(
+      createElement(AppSidebarNavigation, {
+        account: { href: "/en/profile/player", icon: "user", label: "Profile & history" },
+        auth: { href: "/en/login", icon: "login", label: "Sign in" },
+        groups,
+        locale: "en"
+      })
+    );
 
-    expect(markup).toContain(">Profile<");
-    expect(markup).toContain(">History<");
+    expect(markup).toContain(">Profile &amp; history<");
+    expect(markup).toContain('aria-label="Sign in"');
+    expect(markup).not.toContain(">History<");
     expect(markup).not.toContain(">Community<");
   });
 });

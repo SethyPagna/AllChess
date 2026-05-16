@@ -2,11 +2,11 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vitest";
 
 import LobbyPage from "@/app/[locale]/lobby/page";
-import HistoryPage from "@/app/[locale]/history/page";
 import LoginPage from "@/app/[locale]/login/page";
 import PlaySetupPage from "@/app/[locale]/play/page";
 import ProfilePage from "@/app/[locale]/profile/[username]/page";
 import SettingsPage from "@/app/[locale]/settings/page";
+import VariantsPage from "@/app/[locale]/variants/page";
 import { ThemeProvider } from "@/components/theme-provider";
 
 describe("compact page copy", () => {
@@ -29,10 +29,21 @@ describe("compact page copy", () => {
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain("Play Now");
-    expect(markup).toContain("Learn by Family");
+    expect(markup).toContain("Games &amp; Rules");
     expect(markup).toContain("Rooms &amp; Activity");
     expect(markup).toContain('class="info-hint');
     expect(markup).not.toContain("A Cloudflare-first arena for chess");
+  });
+
+  test("games and rules owns practice, rules, and training status", async () => {
+    const element = await VariantsPage({ params: Promise.resolve({ locale: "en" }), searchParams: Promise.resolve({}) });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("Games, rules, and practice");
+    expect(markup).toContain("Bot training status");
+    expect(markup).toContain("Book &amp; tactics");
+    expect(markup).toContain("Quick bot game");
+    expect(markup).toContain("Games &amp; rules");
   });
 
   test("settings page keeps preference rows compact", async () => {
@@ -47,16 +58,10 @@ describe("compact page copy", () => {
   });
 
   test("account pages keep empty states concise", async () => {
-    const history = await HistoryPage({ params: Promise.resolve({ locale: "en" }) });
     const profile = await ProfilePage({ params: Promise.resolve({ locale: "en", username: "player" }) });
-    const markup = renderToStaticMarkup(
-      <>
-        {history}
-        {profile}
-      </>
-    );
+    const markup = renderToStaticMarkup(profile);
 
-    expect(markup).toContain("No saved matches yet");
+    expect(markup).toContain("Profile &amp; history");
     expect(markup).toContain("No profile history yet");
     expect(markup).toContain('class="info-hint');
     expect(markup).toContain("Guest-ready");
