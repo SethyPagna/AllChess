@@ -499,6 +499,10 @@ export function GameBoard({
             </div>
           </div>
           <div className="play-command-actions play-header-command-actions">
+            <button type="button" title="Reset the game with the current setup." onClick={reset} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" aria-label="Reset">
+              <RotateCcw size={16} />
+              New
+            </button>
             <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Create or copy a room link for this setup. Available before online room play.">
               <Share2 size={16} />
               Room
