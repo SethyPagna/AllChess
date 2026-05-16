@@ -835,7 +835,7 @@ export function GameBoard({
                 {lastBotResult ? (
                   <div className="bot-explanation-card">
                     <p>
-                      <strong>Bot source:</strong> {lastBotResult.knowledgeSource ?? lastBotResult.engine} · depth {lastBotResult.depthReached} · nodes {lastBotResult.nodesSearched}
+                      <strong>Bot source:</strong> {lastBotResult.knowledgeSource ?? lastBotResult.engine} - depth {lastBotResult.depthReached} - nodes {lastBotResult.nodesSearched}
                     </p>
                     {lastBotResult.searchEfficiency ? (
                       <span>
@@ -857,7 +857,7 @@ export function GameBoard({
                 ) : null}
                 {suggestedMove ? (
                   <p className="mt-1 text-sm font-bold text-[var(--accent-strong)]">
-                    Suggestion: {suggestedMove.notation} · depth {suggestedMove.depthReached}
+                    Suggestion: {suggestedMove.notation} - depth {suggestedMove.depthReached}
                   </p>
                 ) : null}
                 {notice ? <p className="mt-1 text-sm text-[var(--warning)]">{notice}</p> : null}
@@ -880,7 +880,7 @@ export function GameBoard({
                   <Brain size={16} className="text-[var(--accent)]" />
                   Analysis
                 </span>
-                <span>Stockfish 18 Lite</span>
+                <span>Engine review</span>
               </div>
               <div className="review-position-card">
                 <p>{displayPly === 0 ? "Starting position" : `Position after ${activeReviewMove?.notation ?? "latest move"}`}</p>

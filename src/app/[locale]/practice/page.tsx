@@ -36,8 +36,8 @@ export default async function PracticePage({ params }: { params: Promise<{ local
         <div>
           <span>
             <Database size={16} />
-            Knowledge
-            <InfoHint text="Cached openings and tactics are checked before live search, so known positions answer faster." />
+            Book & tactics
+            <InfoHint text="Cached openings and tactical patterns are checked before live search, so known positions answer faster." />
           </span>
           <strong>{knowledge.entries.toLocaleString()}</strong>
           <small>{knowledge.tacticEntries.toLocaleString()} tactics</small>
@@ -45,8 +45,8 @@ export default async function PracticePage({ params }: { params: Promise<{ local
         <div>
           <span>
             <Brain size={16} />
-            Labels
-            <InfoHint text="Engine labels are compact training records distilled from local data and tools." />
+            Move labels
+            <InfoHint text="Compact records from local tools rank candidate moves before the bot spends time searching." />
           </span>
           <strong>{knowledge.engineLabels.toLocaleString()}</strong>
           <small>{knowledge.toolsDiscovered} tools linked</small>
@@ -54,7 +54,7 @@ export default async function PracticePage({ params }: { params: Promise<{ local
         <div>
           <span>
             <Gauge size={16} />
-            Top tier
+            Legend
             <InfoHint text={legendBand.basis} />
           </span>
           <strong>{legendBand.display}</strong>

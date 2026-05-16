@@ -18,7 +18,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ var
       numberedBasics: entry.shortRules,
       specialRules: entry.reviewFocus,
       winConditions: entry.winConditions,
-      drawConditions: entry.playability === "playable" ? ["See the playable rules adapter for draw handling."] : ["Draw handling is locked before a game becomes playable."],
+      drawConditions: entry.playability === "playable" ? ["Draw handling is enforced by the verified rules engine for this game."] : ["Draw handling is locked before a game becomes playable."],
       illegalMoveNotes: entry.playability === "playable" ? ["All moves are validated by the authoritative rules engine."] : ["This game is not marked playable until illegal-move tests pass."]
     });
   }

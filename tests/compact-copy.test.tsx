@@ -27,6 +27,7 @@ describe("compact page copy", () => {
 
     expect(markup).toContain("Play Now");
     expect(markup).toContain("Learn by Family");
+    expect(markup).toContain("Rooms &amp; Activity");
     expect(markup).toContain('class="info-hint');
     expect(markup).not.toContain("A Cloudflare-first arena for chess");
   });

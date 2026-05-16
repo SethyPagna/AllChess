@@ -17,12 +17,12 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
   const familyHighlights = gameFamilies.slice(0, 6);
   const siteStats = createDefaultStats();
   const lobbyActions = [
-    { Icon: Swords, title: t("lobby.quickPair"), body: "Find an even opponent by rating and preferred time control." },
-    { Icon: Lock, title: t("lobby.privateRoom"), body: "Create a shareable room code for friends." },
-    { Icon: Clock, title: t("lobby.correspondence"), body: "Play long-form games across time zones." },
-    { Icon: Eye, title: "Watch rooms", body: "Spectate public rooms when Cloudflare room presence reports active games." },
-    { Icon: Bot, title: t("lobby.aiPractice"), body: "Practice against Easy through Legend bot levels." },
-    { Icon: Users, title: "Live presence", body: `${siteStats.playersOnline.value} online / ${siteStats.activeRooms.value} rooms / ${siteStats.spectators.value} spectators.` }
+    { Icon: Swords, title: t("lobby.quickPair"), href: `/${locale}/play?mode=matchmaking`, body: "Find an even opponent by rating and preferred time control." },
+    { Icon: Lock, title: t("lobby.privateRoom"), href: `/${locale}/play?mode=room`, body: "Create a shareable room code for friends." },
+    { Icon: Clock, title: t("lobby.correspondence"), href: `/${locale}/play?time=daily`, body: "Play long-form games across time zones." },
+    { Icon: Eye, title: "Watch rooms", href: `/${locale}/watch`, body: "Spectate public rooms when Cloudflare room presence reports active games." },
+    { Icon: Bot, title: t("lobby.aiPractice"), href: `/${locale}/practice`, body: "Practice against Easy through Legend bot levels." },
+    { Icon: Users, title: "Presence", href: `/${locale}/watch`, body: `${siteStats.playersOnline.value} online / ${siteStats.activeRooms.value} rooms / ${siteStats.spectators.value} spectators.` }
   ];
 
   return (
@@ -101,16 +101,21 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
       </div>
       <aside className="panel grid content-start gap-4 p-5">
         <div className="compact-section-heading">
-          <h2 className="section-title">Lobby Tools</h2>
-          <InfoHint text="Rooms, live watching, bot practice, and presence." />
+          <h2 className="section-title">Rooms & Activity</h2>
+          <InfoHint text="Every row opens the matching flow; room and presence counts stay empty until Cloudflare reports real activity." />
         </div>
-        {lobbyActions.map(({ Icon, title, body }) => (
+        {lobbyActions.map(({ Icon, title, href, body }) => (
           <div key={title} className="lobby-tool-row rounded-md bg-[var(--surface-strong)] p-3">
-            <h2 className="flex items-center gap-2 font-bold">
-              <Icon size={16} className="text-[var(--accent)]" />
-              {title}
+            <Link href={href as never} className="focus-ring lobby-tool-link">
+              <span>
+                <Icon size={16} className="text-[var(--accent)]" />
+                {title}
+              </span>
+              <span aria-hidden="true">Open</span>
+            </Link>
+            <div className="lobby-tool-info">
               <InfoHint text={body} />
-            </h2>
+            </div>
           </div>
         ))}
       </aside>

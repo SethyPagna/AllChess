@@ -2137,9 +2137,42 @@ select {
   transform: translateY(0);
 }
 
-.lobby-tool-row h2 {
+.lobby-tool-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lobby-tool-link {
+  display: flex;
+  min-width: 0;
+  align-items: center;
   justify-content: space-between;
-  margin: 0;
+  gap: 0.75rem;
+  color: var(--foreground);
+  font-weight: 900;
+}
+
+.lobby-tool-link span:first-child {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.lobby-tool-link span:last-child {
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 950;
+  padding: 0.18rem 0.5rem;
+}
+
+.lobby-tool-info {
+  display: inline-flex;
+  justify-content: flex-end;
 }
 
 .settings-stack {
