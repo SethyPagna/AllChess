@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
@@ -14,5 +14,12 @@ describe("performance boundaries", () => {
     expect(boardSource).toContain('await import("@/lib/bots")');
     expect(configSource).not.toContain("@/lib/bot-training");
     expect(configSource).not.toContain("bot-knowledge.generated.json");
+  });
+
+  test("compact bot knowledge stays within Cloudflare asset limits", () => {
+    const generatedPath = join(repoRoot, "src", "data", "bot-knowledge.generated.json");
+    const size = statSync(generatedPath).size;
+
+    expect(size).toBeLessThan(28 * 1024 * 1024);
   });
 });
