@@ -13,8 +13,8 @@ const options = parseArgs(process.argv.slice(2));
 const dataRoot = options.dataRoot ?? defaultDataRoot;
 const outputPath = options.output ?? defaultOutput;
 const maxGames = Number(options.maxGames ?? 250);
-const maxPuzzles = Number(options.maxPuzzles ?? 300);
-const maxBytes = Number(options.maxBytes ?? 20_000_000);
+const maxPuzzles = Number(options.maxPuzzles ?? 9000);
+const maxBytes = Number(options.maxBytes ?? 120_000_000);
 const maxOpeningPly = Number(options.maxOpeningPly ?? 10);
 const pythonExecutable = process.env.PYTHON ?? "python";
 
