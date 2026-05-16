@@ -43,7 +43,7 @@ const en = {
   "auth.email": "Email",
   "auth.password": "Password",
   "auth.magic": "Send magic link",
-  "auth.demo": "Continue in demo mode",
+  "auth.demo": "Continue as guest",
   "lobby.title": "Game lobby",
   "lobby.quickPair": "Quick pair",
   "lobby.privateRoom": "Private room",

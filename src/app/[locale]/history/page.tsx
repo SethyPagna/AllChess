@@ -1,13 +1,8 @@
 import Link from "next/link";
+import { BarChart3, History, Play, Search } from "lucide-react";
 
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
-
-const demoRecords = [
-  { id: "classic", white: "Sethy", black: "Codex", result: "1-0", moves: 42 },
-  { id: "xiangqi", white: "Red Lotus", black: "River Guard", result: "0-1", moves: 67 },
-  { id: "shogi", white: "Sente", black: "Gote", result: "draw", moves: 112 }
-];
 
 export default async function HistoryPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
@@ -15,38 +10,34 @@ export default async function HistoryPage({ params }: { params: Promise<{ locale
   const t = createTranslator(locale);
 
   return (
-    <section className="grid gap-6">
-      <div>
+    <section className="records-page grid gap-5">
+      <div className="compact-page-heading">
         <h1 className="text-4xl font-black">{t("history.title")}</h1>
-        <p className="mt-2 text-[var(--muted)]">{t("history.subtitle")}</p>
+        <p className="max-w-2xl text-[var(--muted)]">{t("history.subtitle")}</p>
       </div>
-      <div className="panel overflow-hidden">
-        <table className="w-full border-collapse text-left text-sm">
-          <thead className="bg-[var(--surface-strong)] text-[var(--muted)]">
-            <tr>
-              <th className="p-4">Game</th>
-              <th className="p-4">Players</th>
-              <th className="p-4">Result</th>
-              <th className="p-4">Moves</th>
-              <th className="p-4">Replay</th>
-            </tr>
-          </thead>
-          <tbody>
-            {demoRecords.map((record) => (
-              <tr key={record.id} className="border-t border-[var(--border)]">
-                <td className="p-4 font-bold">{record.id}</td>
-                <td className="p-4">{record.white} vs {record.black}</td>
-                <td className="p-4">{record.result}</td>
-                <td className="p-4">{record.moves}</td>
-                <td className="p-4">
-                  <Link className="font-bold text-[var(--accent-strong)]" href={`/${locale}/play/${record.id}`}>
-                    {t("chess.replay")}
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="record-filter-row panel">
+        <label className="catalog-search focus-within:ring-2 focus-within:ring-[var(--accent)]">
+          <Search size={18} />
+          <span className="sr-only">Search history</span>
+          <input placeholder="Search game, opponent, result" />
+        </label>
+        <span className="record-filter-chip">All games</span>
+        <span className="record-filter-chip">Recent first</span>
+      </div>
+      <div className="panel account-empty-state">
+        <History size={26} />
+        <h2>No saved matches yet</h2>
+        <p>Finished games will appear here after Cloudflare D1 records a real match result. Replays, review links, ratings, and exports stay empty until there is real account data.</p>
+        <div className="watch-actions">
+          <Link className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2" href={`/${locale}/play`}>
+            <Play size={16} />
+            Play a game
+          </Link>
+          <Link className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-2" href={`/${locale}/leaderboards`}>
+            <BarChart3 size={16} />
+            View ratings
+          </Link>
+        </div>
       </div>
     </section>
   );

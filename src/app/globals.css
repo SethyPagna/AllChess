@@ -2152,6 +2152,89 @@ select {
   gap: 0.55rem;
 }
 
+.record-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem;
+}
+
+.record-filter-row .catalog-search {
+  flex: 1 1 18rem;
+}
+
+.record-filter-chip {
+  display: inline-flex;
+  min-height: 2.3rem;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  padding: 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.account-profile-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.account-stat-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.account-stat-card {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.9rem;
+}
+
+.account-stat-card svg,
+.account-empty-state svg {
+  color: var(--accent);
+}
+
+.account-stat-card span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.account-stat-card strong {
+  font-size: 1.4rem;
+  font-weight: 950;
+  line-height: 1.1;
+}
+
+.account-empty-state {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1rem;
+}
+
+.account-empty-state h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 950;
+}
+
+.account-empty-state p {
+  margin: 0;
+  max-width: 54rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
 .catalog-browser {
   display: grid;
   gap: 0.85rem;
@@ -2855,8 +2938,18 @@ select {
 
   .lobby-stat-grid,
   .lobby-family-strip,
+  .account-stat-grid,
   .practice-bot-metrics {
     grid-template-columns: 1fr;
+  }
+
+  .account-profile-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .account-profile-hero > a {
+    width: 100%;
+    justify-content: center;
   }
 
   .game-detail-hero {
