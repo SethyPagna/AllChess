@@ -5,7 +5,7 @@ import { createElement } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { createDefaultStats } from "@/lib/stats";
 import { timeControls } from "@/lib/time-controls";
-import { formatClock, tickGameClock } from "@/lib/clocks";
+import { formatClock, settleTurnClockElapsed, tickGameClock } from "@/lib/clocks";
 import { createInitialState } from "@/lib/variants";
 import { localizePath } from "@/lib/i18n/navigation";
 
@@ -31,6 +31,43 @@ describe("time controls", () => {
 
     expect(next.clocks.find((clock) => clock.color === "white")?.remainingMs).toBe(0);
     expect(next.status).toBe("completed");
+    expect(next.result).toBe("black");
+  });
+
+  test("settles missed bot thinking time before applying a move", () => {
+    const snapshot = createInitialState("classic", "bot-clock-settle");
+    snapshot.clocks = snapshot.clocks.map((clock) => (clock.color === "white" ? { ...clock, remainingMs: 10_000 } : clock));
+    const current = {
+      ...snapshot,
+      clocks: snapshot.clocks.map((clock) => (clock.color === "white" ? { ...clock, remainingMs: 9_800 } : clock))
+    };
+
+    const next = settleTurnClockElapsed(current, snapshot, 1_700);
+
+    expect(next.clocks.find((clock) => clock.color === "white")?.remainingMs).toBe(8_300);
+  });
+
+  test("does not add time back if the live interval already charged more thinking time", () => {
+    const snapshot = createInitialState("classic", "bot-clock-no-refund");
+    snapshot.clocks = snapshot.clocks.map((clock) => (clock.color === "white" ? { ...clock, remainingMs: 10_000 } : clock));
+    const current = {
+      ...snapshot,
+      clocks: snapshot.clocks.map((clock) => (clock.color === "white" ? { ...clock, remainingMs: 8_000 } : clock))
+    };
+
+    const next = settleTurnClockElapsed(current, snapshot, 1_000);
+
+    expect(next.clocks.find((clock) => clock.color === "white")?.remainingMs).toBe(8_000);
+  });
+
+  test("flags timeout if bot thinking consumes the active clock", () => {
+    const snapshot = createInitialState("classic", "bot-clock-timeout");
+    snapshot.clocks = snapshot.clocks.map((clock) => (clock.color === "white" ? { ...clock, remainingMs: 900 } : clock));
+
+    const next = settleTurnClockElapsed(snapshot, snapshot, 1_200);
+
+    expect(next.status).toBe("completed");
+    expect(next.outcomeReason).toBe("timeout");
     expect(next.result).toBe("black");
   });
 

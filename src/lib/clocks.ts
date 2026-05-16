@@ -20,6 +20,31 @@ export function tickGameClock(state: GameState, elapsedMs: number): GameState {
   return next;
 }
 
+export function settleTurnClockElapsed(current: GameState, reference: GameState, elapsedMs: number): GameState {
+  if (current.status !== "active" || reference.status !== "active" || elapsedMs <= 0) return current;
+
+  const activeColor = reference.turn;
+  const referenceClock = reference.clocks.find((clock) => clock.color === activeColor);
+  const currentClock = current.clocks.find((clock) => clock.color === activeColor);
+  if (!referenceClock || !currentClock || referenceClock.remainingMs <= 0) return current;
+
+  const expectedRemainingMs = Math.max(0, referenceClock.remainingMs - elapsedMs);
+  if (currentClock.remainingMs <= expectedRemainingMs) return current;
+
+  const next: GameState = structuredClone(current);
+  const nextClock = next.clocks.find((clock) => clock.color === activeColor);
+  if (!nextClock) return current;
+
+  nextClock.remainingMs = expectedRemainingMs;
+  if (nextClock.remainingMs === 0) {
+    next.status = "completed";
+    next.result = opponentOf(next, activeColor);
+    next.outcomeReason = "timeout";
+  }
+
+  return next;
+}
+
 export function formatClock(ms: number) {
   if (ms <= 0) return "∞";
   const totalSeconds = Math.ceil(ms / 1000);
