@@ -193,6 +193,19 @@ export type BotTrainingReadiness = {
   primaryGap: string;
 };
 
+export type BotTrainingGateSummary = {
+  claimPolicy: "verified-playable-only";
+  requiredCompletionGates: string[];
+  playableVariants: string[];
+  gatedVariants: Array<{
+    variantKey: string;
+    coverageStatus: GameBotTrainingChecklist["coverageStatus"];
+    claim: "not-fully-trained";
+    remainingGates: string[];
+  }>;
+  notice: string;
+};
+
 type GeneratedBotKnowledgeFile = {
   version?: string;
   generatedAt?: string;
@@ -514,6 +527,33 @@ export function listBotTrainingReadiness(variantKey?: string): BotTrainingReadin
       primaryGap: checklist.nextTrainingJobs[0] ?? "Continue benchmark gauntlets and runtime audits."
     };
   });
+}
+
+export function getBotTrainingGateSummary(): BotTrainingGateSummary {
+  const checklists = listBotTrainingChecklists();
+  const playableVariants = checklists.filter((checklist) => checklist.coverageStatus === "active").map((checklist) => checklist.variantKey);
+  const gatedVariants = checklists
+    .filter((checklist) => checklist.coverageStatus !== "active")
+    .map((checklist) => ({
+      variantKey: checklist.variantKey,
+      coverageStatus: checklist.coverageStatus,
+      claim: "not-fully-trained" as const,
+      remainingGates:
+        checklist.rulesCompletion.status === "verified-playable"
+          ? checklist.nextTrainingJobs
+          : checklist.rulesCompletion.remainingGates.length
+            ? checklist.rulesCompletion.remainingGates
+            : checklist.nextTrainingJobs
+    }));
+
+  return {
+    claimPolicy: "verified-playable-only",
+    requiredCompletionGates: ["native rules", "legal bot moves", "review", "persistence", "E2E fixtures"],
+    playableVariants,
+    gatedVariants,
+    notice:
+      "AllChess only labels a bot/game as ready when native rules, legal bot moves, review, persistence, and E2E fixtures are complete. Gated variants remain learn/practice previews, not fully trained release bots."
+  };
 }
 
 export function lookupBotKnowledge(state: GameState, tier: BotTierKey): BotKnowledgeHit | null {

@@ -6,6 +6,7 @@ import {
   createBotPositionKey,
   getBotKnowledgeIndexStats,
   getBotRuntimeLanguageProfile,
+  getBotTrainingGateSummary,
   listBotEngineLabels,
   listBotKnowledge,
   listBotKnowledgeSummary,
@@ -449,5 +450,23 @@ describe("bot difficulty ladder", () => {
     expect(jungle?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "rule-completion", status: "rules-gated" })]));
     expect(jungle?.difficultyTiers[0].strength.calibrationStatus).toBe("rules-gated");
     expect(jungle?.nextTrainingJobs[0]).toContain("Complete native jungle rules fixtures");
+  });
+
+  test("training gate summary does not claim unfinished variants are fully trained", () => {
+    const summary = getBotTrainingGateSummary();
+
+    expect(summary.claimPolicy).toBe("verified-playable-only");
+    expect(summary.requiredCompletionGates).toEqual(expect.arrayContaining(["native rules", "legal bot moves", "review", "persistence", "E2E fixtures"]));
+    expect(summary.playableVariants).toEqual(expect.arrayContaining(["classic"]));
+    expect(summary.gatedVariants).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          variantKey: "jungle",
+          claim: "not-fully-trained",
+          remainingGates: expect.arrayContaining([expect.stringContaining("Trap")])
+        })
+      ])
+    );
+    expect(summary.notice).toContain("not fully trained release bots");
   });
 });

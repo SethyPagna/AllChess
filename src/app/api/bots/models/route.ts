@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import {
   getBotKnowledgeIndexStats,
   getBotRuntimeLanguageProfile,
+  getBotTrainingGateSummary,
   listBotEngineLabels,
   listBotKnowledgeSummary,
   listBotModelManifests,
@@ -12,6 +13,7 @@ import {
   listTrainingDataManifests
 } from "@/lib/bot-training";
 import { listBotStrengthBands } from "@/lib/bot-strength";
+import { getValidationRuntimeProfile } from "@/lib/validation-runtime";
 
 export function GET() {
   const labels = listBotEngineLabels();
@@ -28,6 +30,8 @@ export function GET() {
       note: "Runtime gameplay consumes legal cached knowledge first; full neural training artifacts stay outside the browser bundle."
     },
     runtime: getBotRuntimeLanguageProfile(),
+    validationRuntime: getValidationRuntimeProfile(),
+    trainingGate: getBotTrainingGateSummary(),
     strengthBands: listBotStrengthBands(),
     trainingSummary: listBotKnowledgeSummary(),
     knowledgeIndex: getBotKnowledgeIndexStats(),

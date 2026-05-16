@@ -29,6 +29,30 @@ describe("bot models API", () => {
       offlineTraining: true
     });
     expect(body.runtime.cleanupFindings).toEqual(expect.arrayContaining([expect.stringContaining("S3 client dependency")]));
+    expect(body.validationRuntime).toMatchObject({
+      browserAutomation: {
+        status: "unavailable",
+        missingClient: "scripts/browser-client.mjs",
+        fallback: "playwright-plus-live-http-smoke"
+      },
+      releaseGate: {
+        policy: "pass-fallback-validation-when-browser-plugin-unavailable"
+      }
+    });
+    expect(body.trainingGate).toMatchObject({
+      claimPolicy: "verified-playable-only",
+      requiredCompletionGates: expect.arrayContaining(["native rules", "legal bot moves", "review", "persistence", "E2E fixtures"]),
+      notice: expect.stringContaining("not fully trained release bots")
+    });
+    expect(body.trainingGate.gatedVariants).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          variantKey: "jungle",
+          claim: "not-fully-trained",
+          remainingGates: expect.arrayContaining([expect.stringContaining("Trap")])
+        })
+      ])
+    );
     expect(body.knowledgeIndex.entries).toBeGreaterThan(0);
     expect(body.knowledgeIndex.maxBucketSize).toBeLessThan(body.knowledgeIndex.entries);
     expect(body.readiness).toEqual(
