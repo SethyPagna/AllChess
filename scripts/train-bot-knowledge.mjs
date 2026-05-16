@@ -385,7 +385,7 @@ function parsePgnGames(text) {
     .filter(Boolean);
 }
 
-function inspectParquetReadiness(_file) {
+function inspectParquetReadiness() {
   const python = spawnSync(pythonExecutable, ["-c", "import pyarrow.parquet"], { encoding: "utf8" });
   if (python.status !== 0) {
     return { status: `skipped-pyarrow: install pyarrow for ${pythonExecutable} to stream parquet training records`, records: 0 };
