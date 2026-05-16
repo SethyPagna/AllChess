@@ -283,6 +283,21 @@ export function GameBoard({
 
   async function suggestMove() {
     if (state.status !== "active" || activeBotRequestRef.current || isReviewing) return;
+    const quickMove = quickSuggestionMove(state);
+    if (quickMove) {
+      setLastBotResult(null);
+      setSuggestedMove({
+        from: quickMove.from,
+        to: quickMove.to,
+        notation: formatMove(quickMove.from, quickMove.to, files, rows),
+        score: null,
+        depthReached: 0
+      });
+      setSelected(quickMove.from);
+      setNotice(null);
+      return;
+    }
+
     const requestId = crypto.randomUUID();
     activeBotRequestRef.current = requestId;
     setThinking({ status: "thinking", label: "Finding a suggestion..." });
@@ -1116,6 +1131,27 @@ function formatMove(from: Square, to: Square, files: string[], rows: number) {
 
 function squareName(square: Square, files: string[], rows: number) {
   return `${files[square.col] ?? square.col}${rows - square.row}`;
+}
+
+function quickSuggestionMove(state: GameState) {
+  if (state.variantKey !== "classic" || state.moves.length > 2) return null;
+  const preferredMoves = state.turn === "white" ? ["e2e4", "d2d4", "g1f3"] : ["e7e5", "d7d5", "g8f6"];
+
+  for (const uci of preferredMoves) {
+    const from = uciSquare(uci.slice(0, 2));
+    const to = uciSquare(uci.slice(2, 4));
+    const move = getLegalMoves(state, from).find((candidate) => sameSquare(candidate.to, to));
+    if (move) return move;
+  }
+
+  return null;
+}
+
+function uciSquare(square: string): Square {
+  return {
+    row: 8 - Number(square[1]),
+    col: square.charCodeAt(0) - 97
+  };
 }
 
 function pieceName(code: string) {
