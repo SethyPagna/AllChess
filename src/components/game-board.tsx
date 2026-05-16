@@ -645,7 +645,7 @@ export function GameBoard({
             </div>
           </div>
           <div className="play-command-actions play-header-command-actions">
-            <button type="button" title="Reset the game with the current setup." onClick={reset} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" aria-label="Reset">
+            <button type="button" title="Reset the game with the current setup." onClick={reset} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm">
               <RotateCcw size={16} />
               <span className="button-label">New</span>
             </button>

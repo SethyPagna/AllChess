@@ -106,7 +106,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
                 <h2>{displayGameName(entry)}</h2>
                 <p>{gameFamilies.find((item) => item.key === entry.family)?.label}</p>
               </div>
-              <button type="button" className="catalog-icon-button focus-ring" aria-label={`Rules for ${displayGameName(entry)}`} title="Rules, status, and practice" onClick={() => setSelectedEntry(entry)}>
+              <button type="button" className="catalog-icon-button focus-ring" aria-label={`Open info for ${displayGameName(entry)}`} title="Info, rules, and actions" onClick={() => setSelectedEntry(entry)}>
                 <Info size={16} />
               </button>
             </div>
@@ -159,22 +159,33 @@ function CatalogRulesOverlay({ entry, locale, onClose }: { entry: GameCatalogEnt
 
   return (
     <div className="catalog-rules-backdrop" role="presentation" onClick={onClose}>
-      <section className="catalog-rules-sheet panel" role="dialog" aria-modal="true" aria-label={`${displayGameName(entry)} rules`} onClick={(event) => event.stopPropagation()}>
+      <section className="catalog-rules-sheet panel" role="dialog" aria-modal="true" aria-label={`${displayGameName(entry)} info`} onClick={(event) => event.stopPropagation()}>
         <div className="catalog-rules-head">
           <div>
             <span>{gameFamilies.find((item) => item.key === entry.family)?.label}</span>
             <h2>{displayGameName(entry)}</h2>
           </div>
-          <button type="button" className="catalog-icon-button focus-ring" aria-label="Close rules" onClick={onClose}>
+          <button type="button" className="catalog-icon-button focus-ring" aria-label="Close info" onClick={onClose}>
             <X size={17} />
           </button>
         </div>
-        <div className="catalog-card-meta">
-          <span>{entry.board.description}</span>
-          <span>{displayPiecePresentation(entry)}</span>
-          <span>{displayRulesReadiness(entry)}</span>
-          <span>{displayReleaseReadiness(entry)}</span>
-          <span>{entry.botAdapter !== "none" ? displayBotReadiness(entry) : "Rules only"}</span>
+        <div className="catalog-rules-actions">
+          {entry.playability === "playable" && entry.variantKey ? (
+            <Link href={playHref as never} className="action-primary focus-ring">
+              <Play size={16} />
+              Play
+            </Link>
+          ) : null}
+          {entry.playability === "playable" && entry.variantKey ? (
+            <Link href={`/${locale}/play/${entry.variantKey}?mode=bot`} className="action-secondary focus-ring">
+              <Bot size={16} />
+              Bot Mode
+            </Link>
+          ) : null}
+          <Link href={`/${locale}/games/${entry.id}` as never} className="action-secondary focus-ring">
+            <BookOpen size={16} />
+            Full Guide
+          </Link>
         </div>
         <div className="catalog-rules-grid">
           <article>
@@ -197,24 +208,16 @@ function CatalogRulesOverlay({ entry, locale, onClose }: { entry: GameCatalogEnt
             </ul>
           </article>
         </div>
-        <div className="catalog-rules-actions">
-          {entry.playability === "playable" && entry.variantKey ? (
-            <Link href={playHref as never} className="action-primary focus-ring">
-              <Play size={16} />
-              Play
-            </Link>
-          ) : null}
-          <Link href={`/${locale}/games/${entry.id}` as never} className="action-secondary focus-ring">
-            <BookOpen size={16} />
-            Full guide
-          </Link>
-          {entry.playability === "playable" && entry.variantKey ? (
-            <Link href={`/${locale}/play/${entry.variantKey}?mode=bot`} className="action-secondary focus-ring">
-              <Bot size={16} />
-              Bot mode
-            </Link>
-          ) : null}
-        </div>
+        <section className="catalog-rules-status" aria-label={`${displayGameName(entry)} status`}>
+          <h3>Status</h3>
+          <div className="catalog-card-meta">
+            <span>{entry.board.description}</span>
+            <span>{displayPiecePresentation(entry)}</span>
+            <span>{displayRulesReadiness(entry)}</span>
+            <span>{displayReleaseReadiness(entry)}</span>
+            <span>{entry.botAdapter !== "none" ? displayBotReadiness(entry) : "Rules only"}</span>
+          </div>
+        </section>
       </section>
     </div>
   );
