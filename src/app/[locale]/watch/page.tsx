@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Eye, Radio, Swords, Trophy } from "lucide-react";
 
+import { InfoHint } from "@/components/info-hint";
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
 import { normalizeLocale } from "@/lib/i18n/locales";
@@ -17,9 +18,7 @@ export default async function WatchPage({ params }: { params: Promise<{ locale: 
     <section className="watch-page grid gap-5">
       <div className="compact-page-heading">
         <h1 className="text-4xl font-black sm:text-5xl">Watch rooms</h1>
-        <p className="max-w-2xl text-[var(--muted)]">
-          Public games appear here only when room presence reports real activity. No filler matches, fake players, or guessed counts.
-        </p>
+        <InfoHint text="Public games appear here only when room presence reports real activity. No filler matches, fake players, or guessed counts." />
       </div>
       <div className="lobby-stat-grid">
         <div className="panel lobby-stat-card">
@@ -42,12 +41,12 @@ export default async function WatchPage({ params }: { params: Promise<{ locale: 
         {hasLiveRooms ? (
           <>
             <h2>Live room list is syncing</h2>
-            <p>Room presence is active. The detailed spectator table will fill from Durable Object room snapshots as public rooms publish visibility.</p>
+            <p>Room presence is active. Public room snapshots will appear as games publish visibility.</p>
           </>
         ) : (
           <>
             <h2>No public rooms right now</h2>
-            <p>Start a game or create a room, then this page can show real watchable games once presence is available.</p>
+            <p>Start a room or check back when a public game is live.</p>
           </>
         )}
         <div className="watch-actions">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BarChart3, Brain, ChevronLeft, Play } from "lucide-react";
 
+import { InfoHint } from "@/components/info-hint";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 
@@ -17,7 +18,7 @@ export default async function AnalysisPage({
     <section className="analysis-page mx-auto grid max-w-5xl gap-5">
       <div className="compact-page-heading">
         <h1 className="text-4xl font-black">{t("analysis.title")}</h1>
-        <p className="max-w-2xl text-[var(--muted)]">{t("analysis.subtitle")}</p>
+        <InfoHint text={t("analysis.subtitle")} />
       </div>
       <div className="panel analysis-command-bar">
         <span>Game {gameId}</span>
@@ -30,7 +31,7 @@ export default async function AnalysisPage({
         <article className="panel account-empty-state">
           <Brain size={26} />
           <h2>No saved review yet</h2>
-          <p>Game review appears after a finished game has move history saved. The review can show best moves, excellent moves, mistakes, blunders, turning points, and training notes when a real record exists.</p>
+          <p>Finish a game to unlock move labels, turning points, and replay controls.</p>
           <div className="watch-actions">
             <Link href={`/${locale}/play/classic`} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
               <Play size={16} />

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Filter, Play, Trophy } from "lucide-react";
 
+import { InfoHint } from "@/components/info-hint";
 import { getLeaderboardScopes } from "@/lib/catalog";
 import { normalizeLocale } from "@/lib/i18n/locales";
 
@@ -15,7 +16,7 @@ export default async function LeaderboardsPage({ params }: { params: Promise<{ l
     <section className="leaderboards-page grid gap-5">
       <div className="compact-page-heading">
         <h1 className="text-4xl font-black sm:text-5xl">Leaderboards</h1>
-        <p className="max-w-2xl text-[var(--muted)]">Rated tables stay empty until real Cloudflare room results are recorded. No seeded players or guessed rankings.</p>
+        <InfoHint text="Rated tables stay empty until real Cloudflare room results are recorded. No seeded players or guessed rankings." />
       </div>
       <div className="panel leaderboard-filter-bar">
         <span>

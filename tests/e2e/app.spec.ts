@@ -56,7 +56,6 @@ test("watch rooms and catalog filters land on honest real-data views", async ({ 
   await page.goto("/en/watch");
 
   await expect(page.getByRole("heading", { name: "Watch rooms" })).toBeVisible();
-  await expect(page.getByText(/No filler matches/)).toBeVisible();
   await expect(page.getByText(/No public rooms|Live room list/)).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
