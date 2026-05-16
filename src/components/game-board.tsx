@@ -864,9 +864,10 @@ export function GameBoard({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {state.clocks.map((clock) => (
-                  <div key={clock.color} className="play-clock-card">
+                  <div key={clock.color} className={`play-clock-card ${state.turn === clock.color ? "is-active" : ""}`}>
                     <p>{colorLabel(clock.color)}</p>
                     <strong>{formatClock(clock.remainingMs)}</strong>
+                    <span>{state.turn === clock.color ? "to move" : clock.color === humanColor ? "you" : botMode !== "human" && clock.color === botColor ? "bot" : "waiting"}</span>
                   </div>
                 ))}
               </div>
