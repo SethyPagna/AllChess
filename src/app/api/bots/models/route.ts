@@ -2,14 +2,18 @@ import { NextResponse } from "next/server";
 
 import {
   getBotKnowledgeIndexStats,
+  getBotKnowledgeCoverage,
   getBotRuntimeLanguageProfile,
   getBotTrainingGateSummary,
   listBotEngineLabels,
   listBotKnowledgeSummary,
   listBotModelManifests,
+  listTierBenchmarkResults,
   listBotTrainingReadiness,
   listBotTrainingChecklists,
   listBotToolManifests,
+  listTrainingRunManifests,
+  listVariantTrainingCoverage,
   listTrainingDataManifests
 } from "@/lib/bot-training";
 import { listBotStrengthBands } from "@/lib/bot-strength";
@@ -35,6 +39,10 @@ export function GET() {
     strengthBands: listBotStrengthBands(),
     trainingSummary: listBotKnowledgeSummary(),
     knowledgeIndex: getBotKnowledgeIndexStats(),
+    knowledgeCoverage: getBotKnowledgeCoverage(),
+    trainingRuns: listTrainingRunManifests(),
+    trainingCoverage: listVariantTrainingCoverage(),
+    tierBenchmarks: listTierBenchmarkResults(),
     models: listBotModelManifests(),
     engineLabels: {
       total: labels.length,

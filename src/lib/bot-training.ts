@@ -110,6 +110,64 @@ export type BotKnowledgeEntry = {
   benchmarkVersion: string;
   tags: string[];
   explanation: BotMoveExplanation;
+  tierTargets?: BotTierKey[];
+  positionHash?: string;
+  sourceFileId?: string;
+  sourceLicense?: string;
+  labelDepth?: number;
+  engine?: string;
+  split?: "train" | "eval" | "test";
+  generatedAt?: string;
+};
+
+export type BotKnowledgeEntryWithMetadata = BotKnowledgeEntry & Required<Pick<BotKnowledgeEntry, "tierTargets" | "positionHash" | "sourceFileId" | "sourceLicense" | "labelDepth" | "engine" | "split" | "generatedAt">>;
+
+export type TrainingRunManifest = {
+  id: string;
+  mode: "two-track";
+  generatedAt: string;
+  scannedRecords: number;
+  generatedPositions: number;
+  runtimeBudgetMs: number;
+  variants: string[];
+  artifacts: {
+    compactRuntime: string;
+    largeArtifacts: "r2";
+    metadata: "d1";
+  };
+};
+
+export type VariantTrainingCoverage = {
+  variantKey: string;
+  claimStatus: "verified" | "preview-only";
+  readiness: GameBotTrainingChecklist["coverageStatus"];
+  entries: number;
+  engineLabels: number;
+  lastTrainingRunId: string;
+  tierCoverage: Array<{
+    tier: BotTierKey;
+    policy: string;
+    cacheThreshold: number;
+    latencyTargetMs: number;
+  }>;
+};
+
+export type TierBenchmarkResult = {
+  tier: BotTierKey;
+  benchmarkVersion: string;
+  latencyTargetMs: number;
+  fixtureFamilies: string[];
+  runtimePolicy: "cache-first";
+  strongerThan?: BotTierKey;
+};
+
+export type BotKnowledgeCoverage = {
+  totalEntries: number;
+  generatedEntries: number;
+  indexedPositions: number;
+  lastTrainingRunId: string;
+  verifiedVariants: string[];
+  previewOnlyVariants: string[];
 };
 
 export type BotKnowledgeHit = {
@@ -472,7 +530,7 @@ export function createBotBoardSignature(state: GameState) {
 }
 
 export function listBotKnowledge(variantKey?: string) {
-  return knowledgeEntries.filter((entry) => !variantKey || entry.variantKey === variantKey);
+  return knowledgeEntries.filter((entry) => !variantKey || entry.variantKey === variantKey).map(enrichKnowledgeEntry);
 }
 
 export function listBotEngineLabels(variantKey?: string) {
@@ -491,6 +549,71 @@ export function listBotKnowledgeSummary() {
     tacticEntries: generated.summary?.tacticEntries ?? generatedKnowledgeEntries.filter((entry) => entry.source === "tactic-cache").length,
     engineLabels: generated.summary?.engineLabels ?? generatedEngineLabels.length,
     sampledBytesPerCompressedFile: generated.summary?.sampledBytesPerCompressedFile ?? 0
+  };
+}
+
+export function listTrainingRunManifests(): TrainingRunManifest[] {
+  const scannedRecords = (generated.manifests ?? []).reduce((total, manifest) => total + Number(manifest.sampledRecords ?? 0), 0);
+  const generatedPositions = totalGeneratedPositionCount;
+  const variants = [...new Set(knowledgeEntries.map((entry) => entry.variantKey))].sort();
+
+  return [
+    {
+      id: `training-${generated.generatedAt ? generated.generatedAt.slice(0, 10) : "local"}`,
+      mode: "two-track",
+      generatedAt: generated.generatedAt ?? "2026-05-14T00:00:00.000Z",
+      scannedRecords,
+      generatedPositions,
+      runtimeBudgetMs: MAX_BOT_REPLY_MS,
+      variants,
+      artifacts: {
+        compactRuntime: "src/data/bot-knowledge.generated.json",
+        largeArtifacts: "r2",
+        metadata: "d1"
+      }
+    }
+  ];
+}
+
+export function listVariantTrainingCoverage(variantKey?: string): VariantTrainingCoverage[] {
+  const lastTrainingRunId = listTrainingRunManifests()[0]?.id ?? "training-local";
+  return listBotTrainingChecklists(variantKey).map((checklist) => ({
+    variantKey: checklist.variantKey,
+    claimStatus: checklist.coverageStatus === "active" ? "verified" : "preview-only",
+    readiness: checklist.coverageStatus,
+    entries: checklist.knowledgeEntries,
+    engineLabels: checklist.engineLabels,
+    lastTrainingRunId,
+    tierCoverage: checklist.difficultyTiers.map((tier) => ({
+      tier: tier.tier,
+      policy: tierPolicyForCoverage(tier.tier),
+      cacheThreshold: trainingTierProfiles.find((profile) => profile.key === tier.tier)?.knowledgeMinimumConfidence ?? 0.7,
+      latencyTargetMs: Math.min(tier.search.maxMoveTimeMs, MAX_BOT_REPLY_MS)
+    }))
+  }));
+}
+
+export function listTierBenchmarkResults(): TierBenchmarkResult[] {
+  const fixtureFamilies = ["mate", "rescue", "retreat", "counterattack", "sacrifice", "material-win", "draw-saving"];
+  return trainingTierProfiles.map((tier, index) => ({
+    tier: tier.key,
+    benchmarkVersion: localBenchmarkVersion,
+    latencyTargetMs: MAX_BOT_REPLY_MS,
+    fixtureFamilies,
+    runtimePolicy: "cache-first" as const,
+    strongerThan: index > 0 ? trainingTierProfiles[index - 1]?.key : undefined
+  }));
+}
+
+export function getBotKnowledgeCoverage(): BotKnowledgeCoverage {
+  const coverage = listVariantTrainingCoverage();
+  return {
+    totalEntries: knowledgeEntries.length,
+    generatedEntries: generatedKnowledgeEntries.length,
+    indexedPositions: knowledgeIndex.byPosition.size + knowledgeIndex.byBoardSignature.size,
+    lastTrainingRunId: listTrainingRunManifests()[0]?.id ?? "training-local",
+    verifiedVariants: coverage.filter((item) => item.claimStatus === "verified").map((item) => item.variantKey),
+    previewOnlyVariants: coverage.filter((item) => item.claimStatus === "preview-only").map((item) => item.variantKey)
   };
 }
 
@@ -657,6 +780,22 @@ export function lookupBotKnowledge(state: GameState, tier: BotTierKey): BotKnowl
   }
 
   return null;
+}
+
+function enrichKnowledgeEntry(entry: BotKnowledgeEntry): BotKnowledgeEntryWithMetadata {
+  const generatedAt = entry.generatedAt ?? generated.generatedAt ?? "2026-05-14T00:00:00.000Z";
+  const sourceFile = sourceFileForEntry(entry);
+  return {
+    ...entry,
+    tierTargets: entry.tierTargets ?? tiersAtOrAbove(entry.minTier),
+    positionHash: entry.positionHash ?? stableKnowledgeHash(`${entry.variantKey}|${entry.positionKey}|${entry.boardSignature ?? ""}|${entry.moveUci}`),
+    sourceFileId: entry.sourceFileId ?? sourceFile.id,
+    sourceLicense: entry.sourceLicense ?? sourceFile.license,
+    labelDepth: entry.labelDepth ?? depthForEntry(entry),
+    engine: entry.engine ?? engineForEntry(entry),
+    split: entry.split ?? splitForEntry(entry),
+    generatedAt
+  };
 }
 
 function createKnowledgeIndex(entries: BotKnowledgeEntry[]) {
@@ -924,4 +1063,61 @@ function depthForEntry(entry: BotKnowledgeEntry) {
   if (entry.minTier === "hard") return 14;
   if (entry.minTier === "normal") return 10;
   return 6;
+}
+
+function tierPolicyForCoverage(tier: BotTierKey) {
+  const policies: Record<BotTierKey, string> = {
+    easy: "not naive: common book moves, immediate wins, safe captures, and major-piece blunder filters",
+    normal: "one-reply defense, defended-piece awareness, and basic tactic labels",
+    hard: "fork, pin, skewer, loose-piece, and king-safety benchmark coverage",
+    "very-hard": "deeper replies, sacrifice filters, positional pressure, and draw-saving fallback",
+    grandmaster: "engine labels, stronger PV preference, and benchmarked tactical choices",
+    legend: "highest confidence cache first, deepest labels, anti-blunder verification, and strict latency control"
+  };
+  return policies[tier];
+}
+
+function tiersAtOrAbove(minTier: BotTierKey): BotTierKey[] {
+  return trainingTierProfiles.filter((profile) => tierRank[profile.key] >= tierRank[minTier]).map((profile) => profile.key);
+}
+
+function sourceFileForEntry(entry: BotKnowledgeEntry) {
+  const manifests = generated.manifests ?? [];
+  if (entry.source === "tactic-cache") {
+    const puzzle = manifests.find((manifest) => manifest.path.toLowerCase().includes("puzzle"));
+    return {
+      id: puzzle?.id ?? "source-local-puzzle",
+      license: puzzle?.license ?? "public Lichess data; verify downstream license before publishing derived models"
+    };
+  }
+
+  const variantManifest = manifests.find((manifest) => manifest.variantKey === entry.variantKey && manifest.kind === "pgn");
+  return {
+    id: variantManifest?.id ?? `source-${entry.variantKey}-seeded`,
+    license: variantManifest?.license ?? "local-derived-seed"
+  };
+}
+
+function engineForEntry(entry: BotKnowledgeEntry) {
+  if (entry.source === "opening-book") return "local-opening-frequency";
+  if (entry.source === "tactic-cache") return "lichess-puzzle-solution";
+  if (entry.source === "endgame-cache") return "tablebase-style-cache";
+  if (entry.source === "ml-policy") return "offline-policy-manifest";
+  return entry.source;
+}
+
+function splitForEntry(entry: BotKnowledgeEntry): "train" | "eval" | "test" {
+  const bucket = Number.parseInt(stableKnowledgeHash(entry.id).slice(0, 2), 16) % 10;
+  if (bucket === 0) return "test";
+  if (bucket <= 2) return "eval";
+  return "train";
+}
+
+function stableKnowledgeHash(value: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
 }

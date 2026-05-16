@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import { GET } from "@/app/api/bots/models/route";
+import { GET as knowledgeGet } from "@/app/api/bots/knowledge/[variantKey]/route";
 
 describe("bot models API", () => {
   test("reports runtime language strategy and indexed knowledge status", async () => {
@@ -100,6 +101,87 @@ describe("bot models API", () => {
         expect.objectContaining({
           variantKey: "jungle",
           coverageStatus: "rules-gated"
+        })
+      ])
+    );
+    expect(body.trainingRuns).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: expect.stringMatching(/^training-/),
+          mode: "two-track",
+          scannedRecords: expect.any(Number),
+          generatedPositions: expect.any(Number),
+          runtimeBudgetMs: 2800,
+          artifacts: expect.objectContaining({
+            compactRuntime: "src/data/bot-knowledge.generated.json",
+            largeArtifacts: "r2"
+          })
+        })
+      ])
+    );
+    expect(body.trainingCoverage).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          variantKey: "classic",
+          claimStatus: "verified",
+          tierCoverage: expect.arrayContaining([
+            expect.objectContaining({ tier: "easy", policy: expect.stringContaining("not naive") }),
+            expect.objectContaining({ tier: "legend", policy: expect.stringContaining("highest confidence") })
+          ])
+        }),
+        expect.objectContaining({
+          variantKey: "jungle",
+          claimStatus: "preview-only",
+          readiness: "rules-gated"
+        })
+      ])
+    );
+    expect(body.tierBenchmarks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          tier: "grandmaster",
+          benchmarkVersion: expect.any(String),
+          latencyTargetMs: 2800,
+          fixtureFamilies: expect.arrayContaining(["mate", "rescue", "counterattack", "draw-saving"])
+        }),
+        expect.objectContaining({
+          tier: "legend",
+          strongerThan: "grandmaster",
+          runtimePolicy: "cache-first"
+        })
+      ])
+    );
+  });
+
+  test("knowledge API reports coverage and richer source metadata", async () => {
+    const response = await knowledgeGet(new Request("http://allchess.test/api/bots/knowledge/classic"), {
+      params: Promise.resolve({ variantKey: "classic" })
+    });
+    const body = await response.json();
+
+    expect(body.coverage).toMatchObject({
+      variantKey: "classic",
+      claimStatus: "verified",
+      readiness: "active",
+      lastTrainingRunId: expect.stringMatching(/^training-/)
+    });
+    expect(body.entries[0]).toEqual(
+      expect.objectContaining({
+        positionHash: expect.any(String),
+        sourceFileId: expect.any(String),
+        sourceLicense: expect.any(String),
+        tierTargets: expect.arrayContaining(["legend"]),
+        labelDepth: expect.any(Number),
+        engine: expect.any(String),
+        split: expect.stringMatching(/train|eval|test/),
+        generatedAt: expect.any(String)
+      })
+    );
+    expect(body.entries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: "opening-book",
+          tierTargets: expect.arrayContaining(["easy", "legend"])
         })
       ])
     );
