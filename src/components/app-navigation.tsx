@@ -110,7 +110,7 @@ export function AppSidebarNavigation({ account, groups, locale }: AppNavigationP
   const accountRoute = account ? hrefToRoute(locale, account.href) : "";
 
   return (
-    <>
+    <div className="app-sidebar-nav-stack">
       <nav className="app-nav">
         {groups.map((group, index) => {
           const GroupIcon = iconMap[group.icon];
@@ -137,7 +137,7 @@ export function AppSidebarNavigation({ account, groups, locale }: AppNavigationP
           <AccountLink account={account} active={isActiveHref(accountRoute)} iconSize={20} />
         </div>
       ) : null}
-    </>
+    </div>
   );
 }
 

@@ -124,7 +124,7 @@ select {
   z-index: 60;
   display: grid;
   height: 100vh;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   gap: 1rem;
   border-right: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface) 96%, transparent);
@@ -184,6 +184,20 @@ select {
   display: grid;
   align-content: start;
   gap: 0.35rem;
+}
+
+.app-sidebar-nav-stack {
+  display: grid;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 0.65rem;
+}
+
+.app-nav {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.15rem;
+  scrollbar-width: thin;
 }
 
 .app-nav-link {
@@ -259,14 +273,19 @@ select {
 }
 
 .app-responsive-tools {
-  position: fixed;
-  left: 0.9rem;
-  bottom: 3.9rem;
-  z-index: 85;
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
   align-items: center;
+  align-self: end;
+  border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  padding-top: 0.65rem;
+}
+
+.app-mobile-tools {
+  display: none;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .language-menu summary::-webkit-details-marker,
@@ -3249,15 +3268,12 @@ select {
     display: flex;
   }
 
-  .app-responsive-tools {
-    top: 0.55rem;
-    right: 0.7rem;
-    bottom: auto;
-    left: auto;
+  .app-mobile-tools {
+    display: flex;
   }
 
-  .app-responsive-tools .language-menu-panel,
-  .app-responsive-tools .notification-panel {
+  .app-mobile-tools .language-menu-panel,
+  .app-mobile-tools .notification-panel {
     top: 3rem;
     bottom: auto;
     transform-origin: top right;

@@ -93,20 +93,20 @@ export default async function LocaleLayout({
                 </span>
               </Link>
               <AppSidebarNavigation account={{ href: profileHref, icon: "user", label: t("nav.profile") }} groups={navGroups} locale={locale} />
+              <div className="app-responsive-tools" aria-label="Quick settings">
+                <ThemeToggle
+                  labels={{
+                    light: t("settings.light"),
+                    dark: t("settings.dark"),
+                    system: t("settings.system")
+                  }}
+                />
+                <Suspense fallback={<span className="action-secondary grid h-10 w-10 place-items-center text-sm">...</span>}>
+                  <LocaleSwitcher active={locale as LocaleCode} />
+                </Suspense>
+                <NotificationCenter />
+              </div>
             </aside>
-            <div className="app-responsive-tools" aria-label="Quick settings">
-              <ThemeToggle
-                labels={{
-                  light: t("settings.light"),
-                  dark: t("settings.dark"),
-                  system: t("settings.system")
-                }}
-              />
-              <Suspense fallback={<span className="action-secondary grid h-10 w-10 place-items-center text-sm">...</span>}>
-                <LocaleSwitcher active={locale as LocaleCode} />
-              </Suspense>
-              <NotificationCenter />
-            </div>
             <div className="app-main">
               <header className="app-mobile-header">
                 <Link href={`/${locale}`} className="app-mobile-brand focus-ring">
@@ -115,6 +115,19 @@ export default async function LocaleLayout({
                   </span>
                   <span>{t("app.name")}</span>
                 </Link>
+                <div className="app-mobile-tools" aria-label="Quick settings">
+                  <ThemeToggle
+                    labels={{
+                      light: t("settings.light"),
+                      dark: t("settings.dark"),
+                      system: t("settings.system")
+                    }}
+                  />
+                  <Suspense fallback={<span className="action-secondary grid h-10 w-10 place-items-center text-sm">...</span>}>
+                    <LocaleSwitcher active={locale as LocaleCode} />
+                  </Suspense>
+                  <NotificationCenter />
+                </div>
                 <details className="app-menu">
                   <summary className="focus-ring grid h-10 w-10 cursor-pointer list-none place-items-center rounded-md border border-[var(--border)]">
                     <Menu size={18} />
