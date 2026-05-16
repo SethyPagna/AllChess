@@ -1606,6 +1606,62 @@ select {
   line-height: 1;
 }
 
+.play-control-groups {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.play-control-group {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.play-control-group-primary {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr);
+}
+
+.play-control-group-bots {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.play-control-group-utility {
+  grid-template-columns: repeat(4, minmax(2.4rem, 1fr));
+  border-top: 1px solid rgb(255 255 255 / 8%);
+  padding-top: 0.55rem;
+}
+
+.play-control-button,
+.play-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-width: 0;
+  min-height: 2.45rem;
+  border-radius: 7px;
+  padding: 0.55rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.play-control-button.is-main {
+  min-height: 2.65rem;
+  font-size: 0.84rem;
+}
+
+.play-icon-button {
+  padding-inline: 0.45rem;
+}
+
+.play-control-button:disabled,
+.play-icon-button:disabled,
+.play-header-command-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+  filter: grayscale(0.35);
+}
+
 .play-options-heading,
 .play-options-row {
   display: flex;
@@ -3508,6 +3564,11 @@ select {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .play-control-group-primary,
+  .play-control-group-bots {
+    grid-template-columns: 1fr;
+  }
+
   .board-player-card {
     grid-template-columns: auto minmax(0, 1fr);
   }
@@ -3567,7 +3628,9 @@ select {
 @media (max-width: 420px) {
   .play-quick-grid,
   .play-mode-rail-list,
-  .play-control-grid {
+  .play-control-grid,
+  .play-control-group-primary,
+  .play-control-group-bots {
     grid-template-columns: 1fr;
   }
 

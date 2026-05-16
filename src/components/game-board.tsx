@@ -141,6 +141,13 @@ export function GameBoard({
   const outcome = useMemo(() => describeGameOutcome(state, humanColor), [humanColor, state]);
   const firstColor = state.clocks[0]?.color ?? "white";
   const secondColor = state.clocks[1]?.color ?? "black";
+  const isThinking = thinking.status === "thinking";
+  const isOnlineMode = playMode === "online" || playMode === "matchmaking" || playMode === "room";
+  const isSpectating = playMode === "spectate";
+  const canUseAssist = gameStarted && state.status === "active" && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
+  const canUseBots = gameStarted && state.status === "active" && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
+  const canUndo = history.length > 0 && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
+  const canEndGame = gameStarted && state.status === "active" && !isReviewing && !isSpectating;
   const visualOrientation = boardOrientation === "auto" ? (humanColor === secondColor ? "second" : "first") : boardOrientation;
   const isBoardFlipped = visualOrientation === "second";
   const orientedRows = useMemo(() => {
@@ -329,6 +336,31 @@ export function GameBoard({
     activeBotRequestRef.current = null;
     setThinking({ status: "cancelled", label: "Cancelled" });
     setNotice("Bot thinking was cancelled.");
+  }
+
+  function offerDraw() {
+    if (!canEndGame) return;
+    setState((current) => ({
+      ...current,
+      status: "completed",
+      result: "draw",
+      outcomeReason: "draw"
+    }));
+    setShowOutcome(true);
+    setNotice("Game ended by agreed draw.");
+  }
+
+  function resignGame() {
+    if (!canEndGame) return;
+    const winner = state.clocks.find((clock) => clock.color !== state.turn)?.color;
+    setState((current) => ({
+      ...current,
+      status: "completed",
+      result: winner ?? "draw",
+      outcomeReason: "resignation"
+    }));
+    setShowOutcome(true);
+    setNotice("Resignation recorded.");
   }
 
   function undo() {
@@ -600,19 +632,19 @@ export function GameBoard({
               <RotateCcw size={16} />
               New
             </button>
-            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Create or copy a room link for this setup. Available before online room play.">
+            <button type="button" onClick={() => { setPlayMode("room"); setPanelTab("setup"); setNotice("Room setup selected. Choose settings, then start or create a room."); }} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Switch to room setup for a shareable game.">
               <Share2 size={16} />
               Room
             </button>
-            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Open spectator view for live rooms.">
+            <button type="button" onClick={() => { setPlayMode("spectate"); setPanelTab("setup"); setNotice("Spectate mode selected. Live public rooms appear from Watch when available."); }} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Switch to spectator mode for live rooms.">
               <Eye size={16} />
               Watch
             </button>
-            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Offer a draw when the game is active.">
+            <button type="button" onClick={offerDraw} disabled={!canEndGame} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title={canEndGame ? "End this local game as a draw." : "Draw is unavailable until an active playable game starts."}>
               <Handshake size={16} />
               Draw
             </button>
-            <button className="focus-ring inline-flex items-center gap-2 rounded-md border border-[var(--danger)] px-3 py-2 text-sm font-bold text-[var(--danger)]" title="Resign the active game.">
+            <button type="button" onClick={resignGame} disabled={!canEndGame} className="focus-ring inline-flex items-center gap-2 rounded-md border border-[var(--danger)] px-3 py-2 text-sm font-bold text-[var(--danger)]" title={canEndGame ? "Resign the active game." : "Resign is unavailable until an active game starts."}>
               <Flag size={16} />
               Resign
             </button>
@@ -711,72 +743,128 @@ export function GameBoard({
                   <strong>Board controls</strong>
                   <span>{gameStarted ? "Live" : "Start first"}</span>
                 </div>
-                <div className="play-control-grid">
-                  <button type="button" title="Find and highlight a legal candidate move for the current side." onClick={suggestMove} className="focus-ring action-secondary inline-flex items-center justify-center gap-2 px-3 py-2 text-sm" disabled={!gameStarted || thinking.status === "thinking" || isReviewing}>
-                    <Lightbulb size={16} />
-                    Suggest
-                  </button>
-                  <button
-                    type="button"
-                    title="Apply the highlighted suggestion to the board."
-                    aria-label={suggestedMove ? "Apply suggestion" : "Apply disabled"}
-                    onClick={applySuggestion}
-                    className="focus-ring action-primary inline-flex items-center justify-center gap-2 px-3 py-2 text-sm"
-                    disabled={!gameStarted || !suggestedMove || thinking.status === "thinking" || isReviewing}
-                  >
-                    <Sparkles size={16} />
-                    Apply
-                  </button>
-                  <button type="button" title="Ask the bot engine to move for whichever side is currently to move." onClick={() => void playBotMove("manual")} className="focus-ring action-secondary inline-flex items-center justify-center gap-2 px-3 py-2 text-sm" disabled={!gameStarted || thinking.status === "thinking" || isReviewing}>
-                    <PlayCircle size={16} />
-                    Move
-                  </button>
-                  <button
-                    type="button"
-                    aria-label="Play Bots"
-                    title="Toggle bot opponent. You move your selected side; the bot replies for the other side."
-                    onClick={() => {
-                      setBotMode((current) => {
-                        const next = current === "opponent" ? "human" : "opponent";
-                        setNotice(next === "opponent" ? "Bot opponent is on. Make a move and the bot will reply automatically." : "Bot opponent is off.");
-                        setPanelTab("status");
-                        return next;
-                      });
-                    }}
-                    className={`focus-ring inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-bold ${
-                      botMode === "opponent" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"
-                    }`}
-                  >
-                    <Bot size={16} />
-                    Bot
-                  </button>
-                  <button
-                    type="button"
-                    title="Let bots control both sides until you turn this off."
-                    onClick={() => setBotMode((current) => (current === "both" ? "human" : "both"))}
-                    className={`focus-ring inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-bold ${
-                      botMode === "both" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"
-                    }`}
-                  >
-                    <Bot size={16} />
-                    Auto
-                  </button>
-                  <button type="button" title="Flip the visual board orientation without changing sides." onClick={flipBoard} className="focus-ring action-secondary inline-flex items-center justify-center gap-2 px-3 py-2 text-sm" aria-label="Flip board">
-                    <FlipHorizontal2 size={16} />
-                    Flip
-                  </button>
-                  <button type="button" title="Stop the current bot search." onClick={cancelThinking} className="focus-ring action-secondary inline-flex items-center justify-center gap-2 px-3 py-2 text-sm" disabled={thinking.status !== "thinking"}>
-                    <PauseCircle size={16} />
-                    Cancel
-                  </button>
-                  <button type="button" title="Undo the last move." onClick={undo} className="focus-ring action-secondary inline-flex items-center justify-center gap-2 px-3 py-2 text-sm" aria-label="Undo">
-                    <Undo2 size={16} />
-                    Undo
-                  </button>
-                  <button type="button" title="Reset the game with the current setup." onClick={reset} className="focus-ring action-secondary inline-flex items-center justify-center gap-2 px-3 py-2 text-sm" aria-label="Reset">
-                    <RotateCcw size={16} />
-                    Reset
-                  </button>
+                <div className="play-control-groups">
+                  <div className="play-control-group play-control-group-primary" aria-label="Move help">
+                    <button
+                      type="button"
+                      title={
+                        canUseAssist
+                          ? "Find and highlight a legal candidate move for the current side."
+                          : "Suggestions are disabled for online, room, spectate, review, completed, or not-started states."
+                      }
+                      onClick={suggestMove}
+                      className="focus-ring action-secondary play-control-button"
+                      disabled={!canUseAssist}
+                    >
+                      <Lightbulb size={16} />
+                      <span>Suggest</span>
+                    </button>
+                    <button
+                      type="button"
+                      title={suggestedMove ? "Apply the highlighted suggestion to the board." : "Generate a suggestion first."}
+                      aria-label={suggestedMove ? "Apply suggestion" : "Apply disabled"}
+                      onClick={applySuggestion}
+                      className="focus-ring action-primary play-control-button is-main"
+                      disabled={!canUseAssist || !suggestedMove}
+                    >
+                      <Sparkles size={16} />
+                      <span>Apply</span>
+                    </button>
+                    <button
+                      type="button"
+                      title={
+                        canUseAssist
+                          ? "Ask the bot engine to move for whichever side is currently to move."
+                          : "Move for me is disabled for online, room, spectate, review, completed, or not-started states."
+                      }
+                      onClick={() => void playBotMove("manual")}
+                      className="focus-ring action-secondary play-control-button"
+                      disabled={!canUseAssist}
+                    >
+                      <PlayCircle size={16} />
+                      <span>Move</span>
+                    </button>
+                  </div>
+                  <div className="play-control-group play-control-group-bots" aria-label="Bot automation">
+                    <button
+                      type="button"
+                      aria-label="Play Bots"
+                      title={
+                        canUseBots
+                          ? "Toggle bot opponent. You move your selected side; the bot replies for the other side."
+                          : "Bot opponent is disabled for online, room, spectate, review, completed, or not-started states."
+                      }
+                      onClick={() => {
+                        setBotMode((current) => {
+                          const next = current === "opponent" ? "human" : "opponent";
+                          setNotice(
+                            next === "opponent" ? "Bot opponent is on. Make a move and the bot will reply automatically." : "Bot opponent is off."
+                          );
+                          setPanelTab("status");
+                          return next;
+                        });
+                      }}
+                      disabled={!canUseBots}
+                      className={`focus-ring play-control-button ${
+                        botMode === "opponent" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"
+                      }`}
+                    >
+                      <Bot size={16} />
+                      <span>Bot</span>
+                    </button>
+                    <button
+                      type="button"
+                      title={canUseBots ? "Let bots control both sides until you turn this off." : "Auto is disabled for online, room, spectate, review, completed, or not-started states."}
+                      onClick={() => setBotMode((current) => (current === "both" ? "human" : "both"))}
+                      disabled={!canUseBots}
+                      className={`focus-ring play-control-button ${
+                        botMode === "both" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"
+                      }`}
+                    >
+                      <Bot size={16} />
+                      <span>Auto</span>
+                    </button>
+                  </div>
+                  <div className="play-control-group play-control-group-utility" aria-label="Board utilities">
+                    <button
+                      type="button"
+                      title="Flip the visual board orientation without changing sides."
+                      onClick={flipBoard}
+                      className="focus-ring action-secondary play-icon-button"
+                      aria-label="Flip board"
+                    >
+                      <FlipHorizontal2 size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      title={isThinking ? "Stop the current bot search." : "Cancel is available only while the bot is thinking."}
+                      onClick={cancelThinking}
+                      className="focus-ring action-secondary play-icon-button"
+                      disabled={!isThinking}
+                      aria-label="Cancel thinking"
+                    >
+                      <PauseCircle size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      title={canUndo ? "Undo the last local move." : "Undo is disabled for online, room, spectate, review, thinking, or empty history states."}
+                      onClick={undo}
+                      className="focus-ring action-secondary play-icon-button"
+                      aria-label="Undo"
+                      disabled={!canUndo}
+                    >
+                      <Undo2 size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      title="Reset the game with the current setup."
+                      onClick={reset}
+                      className="focus-ring action-secondary play-icon-button"
+                      aria-label="Reset"
+                    >
+                      <RotateCcw size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className="play-table-card">
