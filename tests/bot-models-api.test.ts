@@ -41,7 +41,7 @@ describe("bot models API", () => {
     expect(body.strengthBands).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ tier: "easy", targetElo: 1050, stockfishUciElo: 1320 }),
-        expect.objectContaining({ tier: "legend", targetElo: 3190, display: "3190+ engine Elo-style" })
+        expect.objectContaining({ tier: "legend", targetElo: 3190, display: "3190+ benchmark" })
       ])
     );
     expect(body.trainingChecklists).toEqual(

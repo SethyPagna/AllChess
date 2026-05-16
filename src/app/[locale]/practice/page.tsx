@@ -49,7 +49,7 @@ export default async function PracticePage({ params }: { params: Promise<{ local
             <InfoHint text="Compact records from local tools rank candidate moves before the bot spends time searching." />
           </span>
           <strong>{knowledge.engineLabels.toLocaleString()}</strong>
-          <small>{knowledge.toolsDiscovered} tools linked</small>
+          <small>{knowledge.toolsDiscovered} sources indexed</small>
         </div>
         <div>
           <span>

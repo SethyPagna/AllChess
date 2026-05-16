@@ -46,7 +46,7 @@ test("practice page shows compact bot training status", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Choose a game, then train" })).toBeVisible();
   await expect(page.getByLabel("Bot training status")).toContainText("Book & tactics");
   await expect(page.getByLabel("Bot training status")).toContainText("tactics");
-  await expect(page.getByLabel("Bot training status")).toContainText("3190+ engine Elo-style");
+  await expect(page.getByLabel("Bot training status")).toContainText("3190+ benchmark");
   await expect(page.getByText("Cache ready").first()).toBeVisible();
   await expect(page.getByText("2.8s target").first()).toBeVisible();
   await expectNoHorizontalOverflow(page);

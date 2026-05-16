@@ -23,7 +23,7 @@ describe("bot benchmark API", () => {
       positions: 12,
       accepted: true,
       strength: {
-        display: "3190+ engine Elo-style",
+        display: "3190+ benchmark",
         targetElo: 3190,
         stockfishUciElo: 3190
       }

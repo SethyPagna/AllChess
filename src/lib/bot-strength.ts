@@ -83,9 +83,9 @@ const baseStrengthBands: Record<BotTierKey, BotStrengthBand> = {
     minElo: stockfishUciMaxElo,
     targetElo: stockfishUciMaxElo,
     stockfishUciElo: stockfishUciMaxElo,
-    display: "3190+ engine Elo-style",
+    display: "3190+ benchmark",
     calibrationStatus: "stockfish-calibrated",
-    basis: "Full-strength Stockfish path where supported; UCI_Elo tops out at 3190, so full strength is labelled 3190+ instead of a fake precise Elo."
+    basis: "Highest calibrated band for supported chess rules. The exact public rating stays benchmark-based instead of pretending to be a human rating."
   }
 };
 
