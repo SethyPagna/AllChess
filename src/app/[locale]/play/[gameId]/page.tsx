@@ -35,10 +35,15 @@ export default async function PlayPage({
           initialBotMode={query.bot || initialPlayMode === "bot" ? "opponent" : "human"}
           initialPlayMode={initialPlayMode as "online" | "bot" | "offline" | "room" | "matchmaking" | "spectate" | undefined}
           title={t(variant.nameKey)}
-          meta={`${variant.rulesAdapter} / ${variant.engineProtocol.toUpperCase()}`}
+          meta={formatPlayMeta(variant)}
           objective={variant.objective}
         />
       </div>
     </section>
   );
+}
+
+function formatPlayMeta(variant: ReturnType<typeof getVariant>) {
+  const engineLabel = variant.engineProtocol === "internal" ? "AllChess bot" : "Engine-assisted bot";
+  return `Rules checked / ${engineLabel}`;
 }
