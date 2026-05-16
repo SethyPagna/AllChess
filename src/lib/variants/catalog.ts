@@ -111,7 +111,7 @@ export const variantCatalog: VariantDefinition[] = [
     supportsCastling: false,
     supportsCheck: false,
     objective: "Enter the opponent den or capture all animals.",
-    setup: ["L.....T", ".D...C.", "R.P.W.E", ".......", ".......", ".......", "E.W.P.R", ".C...D.", "T.....L"],
+    setup: ["l.....t", ".d...c.", "r.p.w.e", ".......", ".......", ".......", "E.W.P.R", ".C...D.", "T.....L"],
     aliases: ["dou-shou-qi"]
   },
   {

@@ -230,8 +230,11 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
   },
   jungle: {
     status: "rules-gated",
-    verifiedEdgeCases: ["Board terrain, den/trap/river tiles, and basic movement scaffold are present."],
-    remainingGates: ["Rat river exceptions", "Trap weakening captures", "Den-entry win fixtures", "No-progress/repetition policy"]
+    verifiedEdgeCases: [
+      "Opposing animal ownership, board terrain, den/trap/river tiles, and native animal ranks are covered.",
+      "Rat river entry, rat-elephant exception, trap weakening, lion/tiger river jumps, den-entry wins, and all-animal-capture wins have fixtures."
+    ],
+    remainingGates: ["No-progress/repetition policy", "Bot/review/persistence/E2E completion"]
   },
   antichess: {
     status: "verified-playable",

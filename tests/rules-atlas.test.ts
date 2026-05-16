@@ -26,7 +26,8 @@ describe("rules atlas", () => {
     expect(getVariantRuleSummary("shogi").numberedBasics[1]).toContain("Drops");
     expect(getVariantRuleSummary("shogi").completion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("Nifu")]));
     expect(getVariantRuleSummary("jungle").numberedBasics[3]).toContain("No check/checkmate");
-    expect(getVariantRuleSummary("jungle").completion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("Rat river")]));
+    expect(getVariantRuleSummary("jungle").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Rat river")]));
+    expect(getVariantRuleSummary("jungle").completion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("E2E")]));
     expect(getVariantRuleSummary("antichess").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Mandatory captures")]));
     expect(getVariantRuleSummary("horde").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("horde-elimination")]));
     expect(getVariantRuleSummary("horde").completion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("E2E")]));

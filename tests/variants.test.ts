@@ -405,10 +405,89 @@ describe("variant engine", () => {
     expect(next.result).toBe("red");
   });
 
-  test("blocks non-rat pieces from entering Jungle Chess rivers", () => {
-    const state = createInitialState("jungle", "jungle-test");
-    const tigerMoves = getLegalMoves(state, { row: 0, col: 6 });
+  test("sets up Jungle Chess with opposing sides and blocks non-rats from rivers", () => {
+    let state = createInitialState("jungle", "jungle-test");
+    expect(state.board[0][0].piece).toMatchObject({ code: "l", owner: "black" });
+    expect(state.board[8][6].piece).toMatchObject({ code: "l", owner: "white" });
 
-    expect(tigerMoves.some((move) => state.board[move.to.row][move.to.col].terrain === "river")).toBe(false);
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[6][1].piece = { id: "white-dog", code: "d", owner: "white", labelKey: "chess.pawn" };
+    state.board[6][2].piece = { id: "white-rat", code: "r", owner: "white", labelKey: "chess.pawn" };
+
+    expect(getLegalMoves(state, { row: 6, col: 1 })).not.toContainEqual({ from: { row: 6, col: 1 }, to: { row: 5, col: 1 } });
+    expect(getLegalMoves(state, { row: 6, col: 2 })).toContainEqual({ from: { row: 6, col: 2 }, to: { row: 5, col: 2 } });
+  });
+
+  test("handles Jungle Chess lion and tiger river jumps with rat blockers", () => {
+    let state = createInitialState("jungle", "jungle-jump");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[6][1].piece = { id: "white-tiger", code: "t", owner: "white", labelKey: "chess.rook" };
+    state.board[2][1].piece = { id: "black-cat", code: "c", owner: "black", labelKey: "chess.pawn" };
+
+    expect(getLegalMoves(state, { row: 6, col: 1 })).toContainEqual({ from: { row: 6, col: 1 }, to: { row: 2, col: 1 } });
+
+    state.board[4][1].piece = { id: "river-rat", code: "r", owner: "black", labelKey: "chess.pawn" };
+    expect(getLegalMoves(state, { row: 6, col: 1 })).not.toContainEqual({ from: { row: 6, col: 1 }, to: { row: 2, col: 1 } });
+  });
+
+  test("applies Jungle Chess rank, rat-elephant, trap, and den objectives", () => {
+    let state = createInitialState("jungle", "jungle-ranks");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[4][0].piece = { id: "white-rat", code: "r", owner: "white", labelKey: "chess.pawn" };
+    state.board[3][0].piece = { id: "black-elephant", code: "e", owner: "black", labelKey: "chess.elephant" };
+    expect(getLegalMoves(state, { row: 4, col: 0 })).toContainEqual({ from: { row: 4, col: 0 }, to: { row: 3, col: 0 } });
+
+    state = { ...state, turn: "black" };
+    expect(getLegalMoves(state, { row: 3, col: 0 })).not.toContainEqual({ from: { row: 3, col: 0 }, to: { row: 4, col: 0 } });
+
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[1][1].piece = { id: "white-cat", code: "c", owner: "white", labelKey: "chess.pawn" };
+    state.board[1][2].piece = { id: "black-elephant-trapped", code: "e", owner: "black", labelKey: "chess.elephant" };
+    expect(getLegalMoves(state, { row: 1, col: 1 })).toContainEqual({ from: { row: 1, col: 1 }, to: { row: 1, col: 2 } });
+
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[8][2].piece = { id: "white-dog", code: "d", owner: "white", labelKey: "chess.pawn" };
+    expect(getLegalMoves(state, { row: 8, col: 2 })).not.toContainEqual({ from: { row: 8, col: 2 }, to: { row: 8, col: 3 } });
+
+    state.board[1][3].piece = { id: "white-den-runner", code: "d", owner: "white", labelKey: "chess.pawn" };
+    const denWin = applyMove({ ...state, turn: "white" }, { from: { row: 1, col: 3 }, to: { row: 0, col: 3 } });
+    expect(denWin).toMatchObject({ status: "completed", result: "white", outcomeReason: "objective" });
+  });
+
+  test("ends Jungle Chess when the last opposing animal is captured", () => {
+    let state = createInitialState("jungle", "jungle-capture-all");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[1][0].piece = { id: "white-elephant", code: "e", owner: "white", labelKey: "chess.elephant" };
+    state.board[0][0].piece = { id: "black-cat", code: "c", owner: "black", labelKey: "chess.pawn" };
+
+    expect(applyMove(state, { from: { row: 1, col: 0 }, to: { row: 0, col: 0 } })).toMatchObject({
+      status: "completed",
+      result: "white",
+      outcomeReason: "objective"
+    });
   });
 });

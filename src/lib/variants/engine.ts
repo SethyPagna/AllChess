@@ -90,6 +90,9 @@ function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
   if (variant.key === "xiangqi" || variant.key === "janggi") {
     return eastAsianPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
   }
+  if (variant.key === "jungle") {
+    return junglePieceMoves(state, piece, from);
+  }
   if (piece.code === "p" && ["western", "southeast-asian"].includes(variant.family)) {
     return westernPawnMoves(state, piece, from, variant.family === "western").filter((move) => terrainAllows(state, piece, move.to));
   }
@@ -295,6 +298,61 @@ function flyingGeneralMoves(state: GameState, piece: Piece, from: Square) {
   return moves;
 }
 
+function junglePieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
+  const stepMoves = steppingMoves(state, piece, from, [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1]
+  ]).filter((move) => canJungleMoveTo(state, piece, from, move.to));
+
+  if (!["l", "t"].includes(piece.code)) return stepMoves;
+
+  return [
+    ...stepMoves,
+    ...jungleJumpMoves(state, piece, from)
+  ];
+}
+
+function jungleJumpMoves(state: GameState, piece: Piece, from: Square): Move[] {
+  return [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1]
+  ].flatMap(([dr, dc]) => {
+    const first = { row: from.row + dr, col: from.col + dc };
+    if (!isInside(state, first) || cellAt(state, first)?.terrain !== "river") return [];
+
+    let to = first;
+    while (isInside(state, to) && cellAt(state, to)?.terrain === "river") {
+      if (cellAt(state, to)?.piece?.code === "r") return [];
+      to = { row: to.row + dr, col: to.col + dc };
+    }
+
+    return canJungleMoveTo(state, piece, from, to) ? [{ from, to }] : [];
+  });
+}
+
+function canJungleMoveTo(state: GameState, piece: Piece, from: Square, to: Square) {
+  const target = cellAt(state, to);
+  if (!target || isJungleOwnDen(piece.owner, to)) return false;
+  if (target.terrain === "river" && piece.code !== "r") return false;
+  if (!target.piece) return true;
+  return target.piece.owner !== piece.owner && canJungleCapture(state, piece, from, target.piece, to);
+}
+
+function canJungleCapture(state: GameState, attacker: Piece, from: Square, defender: Piece, to: Square) {
+  const fromTerrain = cellAt(state, from)?.terrain;
+  const toTerrain = cellAt(state, to)?.terrain;
+  if (attacker.code === "r" && defender.code === "e" && fromTerrain !== "river" && toTerrain !== "river") return true;
+  if (attacker.code === "e" && defender.code === "r") return false;
+  if (defender.code === "r" && toTerrain === "river") return attacker.code === "r";
+
+  const defenderRank = isJungleOwnTrap(defender.owner, to) ? 0 : jungleRank(defender.code);
+  return jungleRank(attacker.code) >= defenderRank;
+}
+
 export function applyMove(state: GameState, move: Move): GameState {
   if (state.status !== "active") {
     throw new Error("errors.gameCompleted");
@@ -344,6 +402,10 @@ export function applyMove(state: GameState, move: Move): GameState {
     return withAntichessOutcome(next);
   }
 
+  if (variant.key === "jungle") {
+    return withJungleOutcome(next, movingPiece.owner, move.to);
+  }
+
   if (!variant.supportsCheck && captured && isRoyal(captured)) {
     next.status = "completed";
     next.result = movingPiece.owner;
@@ -368,6 +430,25 @@ function withAntichessOutcome(state: GameState): GameState {
     state.status = "completed";
     state.result = playerToMove;
     state.outcomeReason = "no-legal-moves";
+  }
+
+  return state;
+}
+
+function withJungleOutcome(state: GameState, mover: PlayerColor, destination: Square): GameState {
+  const movedPiece = cellAt(state, destination)?.piece;
+  if (movedPiece && isJungleOpponentDen(movedPiece.owner, destination)) {
+    state.status = "completed";
+    state.result = mover;
+    state.outcomeReason = "objective";
+    return state;
+  }
+
+  const opponent = getVariant(state.variantKey).players.find((player) => player !== mover);
+  if (opponent && countPieces(state, opponent) === 0) {
+    state.status = "completed";
+    state.result = mover;
+    state.outcomeReason = "objective";
   }
 
   return state;
@@ -579,6 +660,23 @@ function isCenterSquare(state: GameState, square: Square) {
   return centerRows.includes(square.row) && centerCols.includes(square.col);
 }
 
+function jungleRank(code: string) {
+  return ({ r: 1, c: 2, d: 3, w: 4, p: 5, t: 6, l: 7, e: 8 } as Record<string, number>)[code] ?? 0;
+}
+
+function isJungleOwnDen(owner: PlayerColor, square: Square) {
+  return owner === "white" ? square.row === 8 && square.col === 3 : owner === "black" && square.row === 0 && square.col === 3;
+}
+
+function isJungleOpponentDen(owner: PlayerColor, square: Square) {
+  return owner === "white" ? square.row === 0 && square.col === 3 : owner === "black" && square.row === 8 && square.col === 3;
+}
+
+function isJungleOwnTrap(owner: PlayerColor, square: Square) {
+  if (![2, 3, 4].includes(square.col)) return false;
+  return owner === "white" ? square.row >= 7 : owner === "black" && square.row <= 1;
+}
+
 function makePiece(token: string, owner: PlayerColor, row: number, col: number): Piece {
   const code = token.toLowerCase();
   return {
@@ -647,6 +745,11 @@ function orient(owner: PlayerColor, deltaRow: number) {
 function terrainAllows(state: GameState, piece: Piece, to: Square) {
   const target = cellAt(state, to);
   if (!target) return false;
+  if (state.variantKey === "jungle") {
+    if (isJungleOwnDen(piece.owner, to)) return false;
+    if (target.terrain === "river" && piece.code !== "r") return false;
+    return true;
+  }
   if (target.terrain === "river" && piece.code !== "r") return false;
   if (target.terrain === "den" && piece.owner === state.turn) return false;
   return true;
