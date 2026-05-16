@@ -35,7 +35,7 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   expect(afterSuggestion?.width).toBeCloseTo(before!.width, 1);
   expect(afterSuggestion?.height).toBeCloseTo(before!.height, 1);
 
-  await page.getByRole("button", { name: "Reset" }).click();
+  await page.locator(".play-header-command-actions").getByRole("button", { name: "New" }).click();
   await page.getByLabel("Side").selectOption("first");
   await page.getByRole("button", { name: /Play Bots/ }).last().click();
   await page.getByRole("button", { name: "Start Game" }).click();
