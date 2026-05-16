@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BarChart3, History, Play, Settings } from "lucide-react";
 
+import { InfoHint } from "@/components/info-hint";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 
@@ -22,7 +23,11 @@ export default async function ProfilePage({
         </div>
         <div className="min-w-0">
           <h1 className="truncate text-4xl font-black">@{displayName}</h1>
-          <p className="text-[var(--muted)]">Ratings and records sync here after signed-in games are saved.</p>
+          <div className="account-profile-meta">
+            <span>Guest-ready</span>
+            <span>Unrated</span>
+            <InfoHint text="Ratings, records, favorite games, and review highlights sync here after signed-in games are saved." />
+          </div>
         </div>
         <Link href={`/${locale}/settings`} className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-2">
           <Settings size={16} />
@@ -45,7 +50,8 @@ export default async function ProfilePage({
       <div className="panel account-empty-state">
         <History size={26} />
         <h2>No profile history yet</h2>
-        <p>AllChess will show real per-game ratings, recent matches, favorite variants, and review highlights once this profile has saved games in Cloudflare D1.</p>
+        <p>Start a game to build recent matches, favorite games, and review highlights.</p>
+        <InfoHint text="Profile history uses saved game data only, so this area stays empty until real matches are recorded." />
         <div className="watch-actions">
           <Link href={`/${locale}/play`} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
             <Play size={16} />

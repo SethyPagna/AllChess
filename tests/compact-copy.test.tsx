@@ -2,7 +2,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vitest";
 
 import LobbyPage from "@/app/[locale]/lobby/page";
+import HistoryPage from "@/app/[locale]/history/page";
 import PlaySetupPage from "@/app/[locale]/play/page";
+import ProfilePage from "@/app/[locale]/profile/[username]/page";
 import SettingsPage from "@/app/[locale]/settings/page";
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -41,5 +43,23 @@ describe("compact page copy", () => {
     expect(markup).toContain("Notifications");
     expect(markup).toContain('class="info-hint');
     expect(markup).not.toContain("A multilingual multiplayer chess platform");
+  });
+
+  test("account pages keep empty states concise", async () => {
+    const history = await HistoryPage({ params: Promise.resolve({ locale: "en" }) });
+    const profile = await ProfilePage({ params: Promise.resolve({ locale: "en", username: "player" }) });
+    const markup = renderToStaticMarkup(
+      <>
+        {history}
+        {profile}
+      </>
+    );
+
+    expect(markup).toContain("No saved matches yet");
+    expect(markup).toContain("No profile history yet");
+    expect(markup).toContain('class="info-hint');
+    expect(markup).toContain("Guest-ready");
+    expect(markup).not.toContain("Finished games will appear here after Cloudflare D1 records");
+    expect(markup).not.toContain("AllChess will show real per-game ratings");
   });
 });

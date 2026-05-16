@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BarChart3, History, Play, Search } from "lucide-react";
 
+import { InfoHint } from "@/components/info-hint";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 
@@ -13,7 +14,7 @@ export default async function HistoryPage({ params }: { params: Promise<{ locale
     <section className="records-page grid gap-5">
       <div className="compact-page-heading">
         <h1 className="text-4xl font-black">{t("history.title")}</h1>
-        <p className="max-w-2xl text-[var(--muted)]">{t("history.subtitle")}</p>
+        <InfoHint text={t("history.subtitle")} />
       </div>
       <div className="record-filter-row panel">
         <label className="catalog-search focus-within:ring-2 focus-within:ring-[var(--accent)]">
@@ -27,7 +28,8 @@ export default async function HistoryPage({ params }: { params: Promise<{ locale
       <div className="panel account-empty-state">
         <History size={26} />
         <h2>No saved matches yet</h2>
-        <p>Finished games will appear here after Cloudflare D1 records a real match result. Replays, review links, ratings, and exports stay empty until there is real account data.</p>
+        <p>Play a game to start building records, reviews, and rating history.</p>
+        <InfoHint text="Finished games appear here after the database records a real match result. Replays, review links, ratings, and exports stay empty until there is real account data." />
         <div className="watch-actions">
           <Link className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2" href={`/${locale}/play`}>
             <Play size={16} />

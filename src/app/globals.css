@@ -2329,6 +2329,23 @@ select {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.account-profile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+
+.account-profile-meta span {
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 0.24rem 0.55rem;
+}
+
 .account-stat-card {
   display: grid;
   gap: 0.25rem;
