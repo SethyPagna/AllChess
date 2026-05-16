@@ -20,4 +20,17 @@ describe("game review", () => {
     expect(moves[0].detail).toContain("Move 1");
     expect(summarizeReview(moves).best).toBeGreaterThan(0);
   });
+
+  test("adds native context for variant reviews", () => {
+    const moves = analyzeMoveList(
+      [
+        { from: { row: 8, col: 0 }, to: { row: 7, col: 0 }, notation: "T8,0-7,0" },
+        { from: { row: 0, col: 0 }, to: { row: 1, col: 0 }, notation: "L0,0-1,0" }
+      ],
+      { variantKey: "jungle" }
+    );
+
+    expect(moves[0].detail).toContain("animal rank");
+    expect(moves[0].bestLine).toContain("den-race");
+  });
 });

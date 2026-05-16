@@ -479,7 +479,8 @@ describe("bot difficulty ladder", () => {
       expect(checklist?.difficultyTiers.map((tier) => tier.search.maxMoveTimeMs)).toEqual([160, 280, 650, 1200, 2100, 2600]);
     }
     expect(jungle?.coverageStatus).toBe("rules-gated");
-    expect(jungle?.rulesCompletion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("Rat river")]));
+    expect(jungle?.rulesCompletion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Rat river")]));
+    expect(jungle?.rulesCompletion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("E2E")]));
     expect(jungle?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "rule-completion", status: "rules-gated" })]));
     expect(jungle?.difficultyTiers[0].strength.calibrationStatus).toBe("rules-gated");
     expect(jungle?.nextTrainingJobs[0]).toContain("Complete native jungle rules fixtures");
@@ -496,7 +497,7 @@ describe("bot difficulty ladder", () => {
         expect.objectContaining({
           variantKey: "jungle",
           claim: "not-fully-trained",
-          remainingGates: expect.arrayContaining([expect.stringContaining("Trap")])
+          remainingGates: expect.arrayContaining([expect.stringContaining("E2E")])
         })
       ])
     );
