@@ -22,6 +22,11 @@ describe("bot benchmark API", () => {
       tier: "legend",
       positions: 12,
       accepted: true,
+      claimStatus: "verified",
+      runtimePolicy: "cache-first",
+      latencyTargetMs: 2800,
+      strongerThan: "grandmaster",
+      fixtureFamilies: expect.arrayContaining(["mate", "rescue", "counterattack", "draw-saving"]),
       strength: {
         display: "3190+ benchmark",
         targetElo: 3190,
