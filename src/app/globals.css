@@ -2235,6 +2235,112 @@ select {
   line-height: 1.45;
 }
 
+.leaderboard-filter-bar,
+.analysis-command-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.75rem;
+}
+
+.leaderboard-filter-bar span,
+.analysis-command-bar span {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  padding: 0 0.75rem;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.leaderboard-feature-grid {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.leaderboard-family-list {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.leaderboard-family-list h2,
+.analysis-review-shell h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 950;
+}
+
+.leaderboard-family-list > div {
+  display: grid;
+  gap: 0.45rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.leaderboard-family-list article,
+.analysis-review-rows span {
+  display: flex;
+  min-height: 2.6rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  padding: 0.65rem 0.75rem;
+}
+
+.leaderboard-family-list strong {
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.leaderboard-family-list span {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.analysis-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.15fr) minmax(18rem, 0.85fr);
+}
+
+.analysis-review-shell {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+  padding: 1rem;
+}
+
+.analysis-review-shell svg {
+  color: var(--accent);
+}
+
+.analysis-review-rows {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.analysis-review-rows span {
+  justify-content: flex-start;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
 .catalog-browser {
   display: grid;
   gap: 0.85rem;
@@ -2928,6 +3034,7 @@ select {
   }
 
   .lobby-dashboard,
+  .analysis-grid,
   .game-detail-grid {
     grid-template-columns: 1fr;
   }
@@ -2938,6 +3045,8 @@ select {
 
   .lobby-stat-grid,
   .lobby-family-strip,
+  .leaderboard-feature-grid,
+  .leaderboard-family-list > div,
   .account-stat-grid,
   .practice-bot-metrics {
     grid-template-columns: 1fr;

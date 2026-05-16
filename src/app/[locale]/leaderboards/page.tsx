@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Trophy } from "lucide-react";
+import { Filter, Play, Trophy } from "lucide-react";
 
 import { getLeaderboardScopes } from "@/lib/catalog";
 import { normalizeLocale } from "@/lib/i18n/locales";
@@ -8,15 +8,25 @@ export default async function LeaderboardsPage({ params }: { params: Promise<{ l
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
   const scopes = getLeaderboardScopes();
+  const primaryScopes = scopes.slice(0, 4);
+  const familyScopes = scopes.slice(4);
 
   return (
-    <section className="grid gap-5">
-      <div>
+    <section className="leaderboards-page grid gap-5">
+      <div className="compact-page-heading">
         <h1 className="text-4xl font-black sm:text-5xl">Leaderboards</h1>
-        <p className="mt-2 text-[var(--muted)]">Rated tables appear after Cloudflare room results are recorded.</p>
+        <p className="max-w-2xl text-[var(--muted)]">Rated tables stay empty until real Cloudflare room results are recorded. No seeded players or guessed rankings.</p>
       </div>
-      <div className="catalog-grid">
-        {scopes.map((scope) => (
+      <div className="panel leaderboard-filter-bar">
+        <span>
+          <Filter size={16} />
+          Scope
+        </span>
+        <span>Rated only</span>
+        <span>Real results</span>
+      </div>
+      <div className="leaderboard-feature-grid">
+        {primaryScopes.map((scope) => (
           <article key={scope.id} className="panel leaderboard-card">
             <Trophy size={24} />
             <h2>{scope.label}</h2>
@@ -24,9 +34,26 @@ export default async function LeaderboardsPage({ params }: { params: Promise<{ l
           </article>
         ))}
       </div>
-      <Link href={`/${locale}/lobby`} className="action-secondary focus-ring inline-flex w-fit items-center gap-2 px-4 py-2">
-        Back to lobby
-      </Link>
+      <div className="panel leaderboard-family-list">
+        <h2>Game-family boards</h2>
+        <div>
+          {familyScopes.map((scope) => (
+            <article key={scope.id}>
+              <strong>{scope.label}</strong>
+              <span>Waiting for rated games</span>
+            </article>
+          ))}
+        </div>
+      </div>
+      <div className="watch-actions">
+        <Link href={`/${locale}/play`} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
+          <Play size={16} />
+          Play rated
+        </Link>
+        <Link href={`/${locale}/lobby`} className="action-secondary focus-ring inline-flex w-fit items-center gap-2 px-4 py-2">
+          Back to lobby
+        </Link>
+      </div>
     </section>
   );
 }
