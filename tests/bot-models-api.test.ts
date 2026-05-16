@@ -49,7 +49,7 @@ describe("bot models API", () => {
         expect.objectContaining({
           variantKey: "jungle",
           claim: "not-fully-trained",
-          remainingGates: expect.arrayContaining([expect.stringContaining("Trap")])
+          remainingGates: expect.arrayContaining([expect.stringContaining("E2E")])
         })
       ])
     );
