@@ -14,8 +14,8 @@ const notifications = [
     Icon: CheckCircle2
   },
   {
-    title: "No fake alerts",
-    detail: "AllChess only shows real account, room, and analysis events.",
+    title: "Real alerts only",
+    detail: "Account, room, and review events appear only when they exist.",
     Icon: Sparkles
   }
 ];

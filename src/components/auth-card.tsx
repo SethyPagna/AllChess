@@ -1,4 +1,5 @@
 import { continueAsGuest, signInWithGoogle, signInWithPassword, signUpWithPassword } from "@/app/actions";
+import { InfoHint } from "@/components/info-hint";
 import type { LocaleCode } from "@/lib/i18n/locales";
 
 export function AuthCard({
@@ -11,8 +12,15 @@ export function AuthCard({
   return (
     <section className="auth-page mx-auto grid max-w-5xl gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
       <div className="auth-intro panel">
-        <h1>{copy.title}</h1>
-        <p>{copy.subtitle}</p>
+        <div className="compact-title-row">
+          <h1>{copy.title}</h1>
+          <InfoHint text={copy.subtitle} />
+        </div>
+        <div className="auth-benefits" aria-label="Account benefits">
+          <span>Ratings</span>
+          <span>Reviews</span>
+          <span>Preferences</span>
+        </div>
         <form action={continueAsGuest}>
           <input type="hidden" name="locale" value={locale} />
           <button className="focus-ring action-primary inline-flex px-5 py-3">{copy.demo}</button>

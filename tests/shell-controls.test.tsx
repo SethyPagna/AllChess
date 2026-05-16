@@ -26,6 +26,6 @@ describe("shell controls", () => {
     expect(markup).toContain('aria-label="Notifications"');
     expect(markup).toContain("Match ready");
     expect(markup).toContain("Review complete");
-    expect(markup).toContain("No fake alerts");
+    expect(markup).toContain("Real alerts only");
   });
 });

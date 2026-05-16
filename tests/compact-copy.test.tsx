@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 
 import LobbyPage from "@/app/[locale]/lobby/page";
 import HistoryPage from "@/app/[locale]/history/page";
+import LoginPage from "@/app/[locale]/login/page";
 import PlaySetupPage from "@/app/[locale]/play/page";
 import ProfilePage from "@/app/[locale]/profile/[username]/page";
 import SettingsPage from "@/app/[locale]/settings/page";
@@ -61,5 +62,16 @@ describe("compact page copy", () => {
     expect(markup).toContain("Guest-ready");
     expect(markup).not.toContain("Finished games will appear here after Cloudflare D1 records");
     expect(markup).not.toContain("AllChess will show real per-game ratings");
+  });
+
+  test("login keeps account benefits compact", async () => {
+    const element = await LoginPage({ params: Promise.resolve({ locale: "en" }) });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("Ratings");
+    expect(markup).toContain("Reviews");
+    expect(markup).toContain("Preferences");
+    expect(markup).toContain('class="info-hint');
+    expect(markup).not.toContain("<p>Sign in with AllChess auth");
   });
 });

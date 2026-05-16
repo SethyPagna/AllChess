@@ -2525,6 +2525,22 @@ select {
   line-height: 1.55;
 }
 
+.auth-benefits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.auth-benefits span {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 900;
+  padding: 0.3rem 0.65rem;
+}
+
 .catalog-browser {
   display: grid;
   gap: 0.85rem;
