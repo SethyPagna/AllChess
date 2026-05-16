@@ -32,7 +32,9 @@ test("localized game hub can open variants and a playable board", async ({ page 
   await page.goto("/en/variants");
   await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Xiangqi / Xiàngqí / 象棋" })).toBeVisible();
-  await expect(page.locator(".catalog-release").filter({ hasText: "Not fully trained" }).first()).toBeVisible();
+  await page.getByRole("button", { name: /Rules for Xiangqi/ }).click();
+  await expect(page.getByRole("dialog", { name: /Xiangqi/ })).toContainText("Verified ready");
+  await page.getByRole("button", { name: "Close rules" }).click();
   await expectNoHorizontalOverflow(page);
 
   await page.goto("/en/play");
@@ -93,13 +95,18 @@ test("games and rules shows compact bot training status", async ({ page }) => {
   await page.goto("/en/variants?playability=playable");
 
   await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
-  await expect(page.getByText("Games, rules, and practice")).toBeVisible();
   await expect(page.getByLabel("Bot training status")).toContainText("Book & tactics");
   await expect(page.getByLabel("Bot training status")).toContainText("tactics");
   await expect(page.getByLabel("Bot training status")).toContainText("3190+ benchmark");
   await expect(page.getByLabel("Bot training status")).toContainText("not fully trained");
-  await expect(page.getByRole("link", { name: "Practice" }).first()).toBeVisible();
-  await expect(page.locator(".catalog-release").filter({ hasText: "Ready" }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Play" }).first()).toBeVisible();
+  await expect(page.locator(".catalog-status").filter({ hasText: "Ready to play" }).first()).toBeVisible();
+  await page.getByRole("button", { name: /Rules for Classic Chess/ }).click();
+  await expect(page.getByRole("dialog", { name: /Classic Chess rules/ })).toBeVisible();
+  await expect(page.getByRole("dialog")).toContainText("Verified");
+  await expect(page.getByRole("dialog").getByRole("link", { name: "Bot mode" })).toBeVisible();
+  await page.getByRole("button", { name: "Close rules" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
 
@@ -139,7 +146,8 @@ test("catalog search finds native and romanized game names", async ({ page }) =>
   await expectNoHorizontalOverflow(page);
 
   await page.getByPlaceholder("Search names, aliases, native names").fill("Oware");
-  await expect(page.getByRole("main").getByRole("link", { name: "Rules" }).first()).toHaveAttribute("href", "/en/games/oware");
+  await page.getByRole("button", { name: /Rules for Oware/ }).click();
+  await expect(page.getByRole("dialog").getByRole("link", { name: "Full guide" })).toHaveAttribute("href", "/en/games/oware");
   await page.goto("/en/games/oware");
   await expect(page.getByRole("heading", { name: /Oware/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Basic rules" })).toBeVisible();

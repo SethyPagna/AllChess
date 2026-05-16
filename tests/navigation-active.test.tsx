@@ -23,6 +23,11 @@ const groups: AppNavGroup[] = [
     links: [{ href: "variants", icon: "library", label: "Games & rules" }]
   },
   {
+    icon: "history",
+    label: "History",
+    links: [{ href: "history", icon: "history", label: "History" }]
+  },
+  {
     icon: "settings",
     label: "Settings",
     links: [{ href: "settings", icon: "settings", label: "Settings" }]
@@ -43,8 +48,9 @@ describe("app navigation", () => {
 
     expect(markup).toContain("app-menu-section-label");
     expect(markup).toContain(">Play<");
-    expect(markup).toContain(">Play<");
     expect(markup).toContain(">Games &amp; rules<");
+    expect(markup).toContain(">History<");
+    expect(markup).toContain(">Settings<");
     expect(markup).not.toContain(">Account<");
   });
 
@@ -60,7 +66,8 @@ describe("app navigation", () => {
 
     expect(markup).toContain(">Profile &amp; history<");
     expect(markup).toContain('aria-label="Sign in"');
-    expect(markup).not.toContain(">History<");
+    expect(markup).toContain(">History<");
+    expect(markup).not.toContain(">Account<");
     expect(markup).not.toContain(">Community<");
   });
 });

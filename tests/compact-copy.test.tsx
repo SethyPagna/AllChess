@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vitest";
 
+import HistoryPage from "@/app/[locale]/history/page";
 import LobbyPage from "@/app/[locale]/lobby/page";
 import LoginPage from "@/app/[locale]/login/page";
 import PlaySetupPage from "@/app/[locale]/play/page";
@@ -39,11 +40,21 @@ describe("compact page copy", () => {
     const element = await VariantsPage({ params: Promise.resolve({ locale: "en" }), searchParams: Promise.resolve({}) });
     const markup = renderToStaticMarkup(element);
 
-    expect(markup).toContain("Games, rules, and practice");
+    expect(markup).toContain("Games &amp; rules");
     expect(markup).toContain("Bot training status");
     expect(markup).toContain("Book &amp; tactics");
-    expect(markup).toContain("Quick bot game");
+    expect(markup).toContain("Rules for Classic Chess");
     expect(markup).toContain("Games &amp; rules");
+  });
+
+  test("history is its own compact records page", async () => {
+    const element = await HistoryPage({ params: Promise.resolve({ locale: "en" }) });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("Match records");
+    expect(markup).toContain("No saved matches yet");
+    expect(markup).toContain("Saved games, review links, and rating changes");
+    expect(markup).not.toContain("redirect");
   });
 
   test("settings page keeps preference rows compact", async () => {
