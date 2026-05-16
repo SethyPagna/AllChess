@@ -647,23 +647,23 @@ export function GameBoard({
           <div className="play-command-actions play-header-command-actions">
             <button type="button" title="Reset the game with the current setup." onClick={reset} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" aria-label="Reset">
               <RotateCcw size={16} />
-              New
+              <span className="button-label">New</span>
             </button>
             <button type="button" onClick={() => { setPlayMode("room"); setPanelTab("setup"); setNotice("Room setup selected. Choose settings, then start or create a room."); }} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Switch to room setup for a shareable game.">
               <Share2 size={16} />
-              Room
+              <span className="button-label">Room</span>
             </button>
             <button type="button" onClick={() => { setPlayMode("spectate"); setPanelTab("setup"); setNotice("Spectate mode selected. Live public rooms appear from Watch when available."); }} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Switch to spectator mode for live rooms.">
               <Eye size={16} />
-              Watch
+              <span className="button-label">Watch</span>
             </button>
             <button type="button" onClick={offerDraw} disabled={!canEndGame} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title={canEndGame ? "End this local game as a draw." : "Draw is unavailable until an active playable game starts."}>
               <Handshake size={16} />
-              Draw
+              <span className="button-label">Draw</span>
             </button>
             <button type="button" onClick={resignGame} disabled={!canEndGame} className="focus-ring inline-flex items-center gap-2 rounded-md border border-[var(--danger)] px-3 py-2 text-sm font-bold text-[var(--danger)]" title={canEndGame ? "Resign the active game." : "Resign is unavailable until an active game starts."}>
               <Flag size={16} />
-              Resign
+              <span className="button-label">Resign</span>
             </button>
           </div>
         </div>

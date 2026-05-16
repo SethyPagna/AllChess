@@ -1298,16 +1298,26 @@ select {
 
 .play-panel-match-header .play-header-command-actions {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(2.35rem, 1fr));
   gap: 0.4rem;
   overflow: visible;
   padding: 0;
 }
 
 .play-panel-match-header .play-header-command-actions button {
+  aspect-ratio: 1;
   min-width: 0;
   justify-content: center;
-  padding-inline: 0.5rem;
+  padding: 0.48rem;
+}
+
+.play-panel-match-header .play-header-command-actions .button-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .play-command-bar {
@@ -1683,6 +1693,19 @@ select {
   line-height: 1;
 }
 
+.play-control-button span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.play-control-button svg,
+.play-icon-button svg,
+.play-header-command-actions svg {
+  flex: 0 0 auto;
+}
+
 .play-control-button.is-main {
   min-height: 2.65rem;
   font-size: 0.84rem;
@@ -1698,6 +1721,12 @@ select {
   cursor: not-allowed;
   opacity: 0.42;
   filter: grayscale(0.35);
+}
+
+.play-control-button:disabled:hover,
+.play-icon-button:disabled:hover,
+.play-header-command-actions button:disabled:hover {
+  transform: none;
 }
 
 .play-options-heading,

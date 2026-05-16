@@ -41,6 +41,26 @@ test("settings exposes language and theme controls", async ({ page }) => {
   await expect(page.getByRole("main").getByRole("button", { name: "Dark" })).toBeVisible();
 });
 
+test("mobile shell notifications and board controls stay in bounds", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.goto("/en/play/classic");
+
+  await expect(page.getByRole("heading", { name: "Classic Chess" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  const mobileHeader = page.locator(".app-mobile-header");
+  await mobileHeader.getByLabel(/Notifications/).click();
+  await expect(mobileHeader.getByText("3 unread")).toBeVisible();
+  await expect(mobileHeader.getByRole("button", { name: "Mark read" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  await page.getByRole("button", { name: "Status" }).click();
+  await expect(page.getByLabel("Board controls")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Apply disabled" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Undo" })).toBeDisabled();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("practice page shows compact bot training status", async ({ page }) => {
   await page.goto("/en/practice");
 
