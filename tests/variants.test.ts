@@ -291,6 +291,24 @@ describe("variant engine", () => {
     });
   });
 
+  test("horde lets black win by eliminating the pawn army without marking the variant complete", () => {
+    let state = createInitialState("horde", "horde-elimination");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "black"
+    };
+    state.board[0][0].piece = { id: "black-rook", code: "r", owner: "black", labelKey: "chess.rook" };
+    state.board[0][4].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[1][0].piece = { id: "last-horde-pawn", code: "p", owner: "white", labelKey: "chess.pawn" };
+
+    expect(applyMove(state, { from: { row: 0, col: 0 }, to: { row: 1, col: 0 } })).toMatchObject({
+      status: "completed",
+      result: "black",
+      outcomeReason: "objective"
+    });
+  });
+
   test("xiangqi general and advisors stay inside the palace", () => {
     let state = createInitialState("xiangqi", "palace");
     state = {

@@ -28,7 +28,8 @@ describe("rules atlas", () => {
     expect(getVariantRuleSummary("jungle").numberedBasics[3]).toContain("No check/checkmate");
     expect(getVariantRuleSummary("jungle").completion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("Rat river")]));
     expect(getVariantRuleSummary("antichess").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Mandatory captures")]));
-    expect(getVariantRuleSummary("horde").completion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("Horde elimination")]));
+    expect(getVariantRuleSummary("horde").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("horde-elimination")]));
+    expect(getVariantRuleSummary("horde").completion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("E2E")]));
   });
 
   test("rules API returns a variant summary and rejects unknown variants", async () => {

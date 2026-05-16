@@ -333,6 +333,13 @@ export function applyMove(state: GameState, move: Move): GameState {
   }
   next.halfmoveClock = captured || movingPiece.code === "p" ? 0 : (state.halfmoveClock ?? 0) + 1;
 
+  if (variant.key === "horde" && countPieces(next, "white") === 0) {
+    next.status = "completed";
+    next.result = "black";
+    next.outcomeReason = "objective";
+    return next;
+  }
+
   if (variant.key === "antichess") {
     return withAntichessOutcome(next);
   }
