@@ -148,8 +148,6 @@ export function GameBoard({
     return isBoardFlipped ? rowsToRender.reverse().map((row) => row.reverse()) : rowsToRender;
   }, [displayState.board, isBoardFlipped]);
   const modeDetails = playModeOptions.find((option) => option.key === playMode) ?? playModeOptions[2];
-  const panelDetails = panelTabOptions.find((option) => option.key === panelTab) ?? panelTabOptions[0];
-  const PanelIcon = panelDetails.Icon;
   const phaseLabel = thinking.status === "thinking" ? thinking.label : gameStarted ? `${colorLabel(state.turn)} to move` : "Choose setup";
   const modeSummary = gameStarted ? `${modeDetails.label} - ${getTimeControl(timeControl).label}` : `${modeDetails.label} setup`;
   const topPlayerColor = isBoardFlipped ? firstColor : secondColor;
@@ -482,49 +480,6 @@ export function GameBoard({
   return (
     <div className="game-board-layout grid gap-4">
       <div className="grid gap-3">
-        <div className="play-unified-header">
-          <div className="play-title-block">
-            <div className="play-title-row">
-              <h1>{title}</h1>
-              {rulesSummary ? (
-                <button type="button" title="Open rules, win conditions, and draw notes." onClick={() => setShowRules(true)} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" aria-label="Rules summary">
-                  <BookOpen size={16} />
-                  Rules
-                </button>
-              ) : null}
-            </div>
-            <div className="play-title-meta" aria-label="Match summary">
-              <span className="inline-flex items-center gap-2">
-                <Swords size={14} />
-                {meta}
-              </span>
-              <strong title={objective}>{modeSummary}</strong>
-              <em>{phaseLabel}</em>
-            </div>
-          </div>
-          <div className="play-command-actions play-header-command-actions">
-            <button type="button" title="Reset the game with the current setup." onClick={reset} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" aria-label="Reset">
-              <RotateCcw size={16} />
-              New
-            </button>
-            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Create or copy a room link for this setup. Available before online room play.">
-              <Share2 size={16} />
-              Room
-            </button>
-            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Open spectator view for live rooms.">
-              <Eye size={16} />
-              Watch
-            </button>
-            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Offer a draw when the game is active.">
-              <Handshake size={16} />
-              Draw
-            </button>
-            <button className="focus-ring inline-flex items-center gap-2 rounded-md border border-[var(--danger)] px-3 py-2 text-sm font-bold text-[var(--danger)]" title="Resign the active game.">
-              <Flag size={16} />
-              Resign
-            </button>
-          </div>
-        </div>
         {playerCard(topPlayerColor, "top")}
         <div className="board-shell" data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
@@ -619,11 +574,47 @@ export function GameBoard({
       </div>
 
       <aside className="game-side-panel play-panel grid content-start gap-4 p-4">
-        <div className="play-panel-title">
-          <PanelIcon size={28} className="text-[var(--warning)]" />
-          <div>
-            <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">{title}</p>
-            <h2>{panelDetails.label}</h2>
+        <div className="play-panel-match-header">
+          <div className="play-title-block">
+            <div className="play-title-row">
+              <h1>{title}</h1>
+              {rulesSummary ? (
+                <button type="button" title="Open rules, win conditions, and draw notes." onClick={() => setShowRules(true)} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" aria-label="Rules summary">
+                  <BookOpen size={16} />
+                  Rules
+                </button>
+              ) : null}
+            </div>
+            <div className="play-title-meta" aria-label="Match summary">
+              <span className="inline-flex items-center gap-2">
+                <Swords size={14} />
+                {meta}
+              </span>
+              <strong title={objective}>{modeSummary}</strong>
+              <em>{phaseLabel}</em>
+            </div>
+          </div>
+          <div className="play-command-actions play-header-command-actions">
+            <button type="button" title="Reset the game with the current setup." onClick={reset} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" aria-label="Reset">
+              <RotateCcw size={16} />
+              New
+            </button>
+            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Create or copy a room link for this setup. Available before online room play.">
+              <Share2 size={16} />
+              Room
+            </button>
+            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Open spectator view for live rooms.">
+              <Eye size={16} />
+              Watch
+            </button>
+            <button className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Offer a draw when the game is active.">
+              <Handshake size={16} />
+              Draw
+            </button>
+            <button className="focus-ring inline-flex items-center gap-2 rounded-md border border-[var(--danger)] px-3 py-2 text-sm font-bold text-[var(--danger)]" title="Resign the active game.">
+              <Flag size={16} />
+              Resign
+            </button>
           </div>
         </div>
         <div className="play-section-tabs" aria-label="Game tool sections">
