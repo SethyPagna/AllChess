@@ -14,6 +14,7 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await expect(page.getByText("Match center")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Game Tools" })).toHaveCount(0);
   await expect(page.getByText("Review hook")).toHaveCount(0);
+  await expect(page.getByLabel("Bot response profile")).toContainText("cache first");
   const before = await board.boundingBox();
   expect(before).toBeTruthy();
 

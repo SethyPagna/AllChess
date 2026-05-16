@@ -1609,6 +1609,32 @@ select {
   white-space: nowrap;
 }
 
+.bot-tier-note {
+  margin: 0.55rem 0 0;
+  color: #c9c3b6;
+  font-size: 0.78rem;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
+.bot-readiness-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+.bot-readiness-row span {
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 999px;
+  background: #171614;
+  color: #d7d0c3;
+  padding: 0.22rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
 .bot-stat-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

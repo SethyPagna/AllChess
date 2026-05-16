@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 
 import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/lib/bot-config";
+import { getVariantBotStrengthProfile } from "@/lib/bot-strength";
 import type { BotMoveResult } from "@/lib/bots";
 import { formatClock, tickGameClock } from "@/lib/clocks";
 import { analyzeMoveList, summarizeReview } from "@/lib/game-review";
@@ -134,6 +135,9 @@ export function GameBoard({
   const cols = displayState.board[0]?.length ?? 8;
   const files = useMemo(() => Array.from({ length: cols }, (_, index) => String.fromCharCode(97 + index)), [cols]);
   const botLevel = botDifficultyLevels.find((level) => level.key === botDifficulty) ?? botDifficultyLevels[1];
+  const botStrength = useMemo(() => getVariantBotStrengthProfile(variantKey, botDifficulty), [botDifficulty, variantKey]);
+  const botCalibrationLabel = botStrength.calibrationStatus.replace(/-/g, " ");
+  const botResponseBudget = Math.min(botLevel.moveTimeMs, MAX_BOT_REPLY_MS - 180);
   const outcome = useMemo(() => describeGameOutcome(state, humanColor), [humanColor, state]);
   const firstColor = state.clocks[0]?.color ?? "white";
   const secondColor = state.clocks[1]?.color ?? "black";
@@ -168,7 +172,7 @@ export function GameBoard({
             <strong>{isHuman ? "Your profile" : isBot ? `${botLevel.label} bot` : `${colorLabel(color)} player`}</strong>
             <span>{clock ? formatClock(clock.remainingMs) : "--:--"}</span>
           </div>
-          <p>{isBot ? `${botLevel.strength.display} - ${botLevel.estimatedStrength} - ${thinking.status === "thinking" ? "thinking" : "profile"}` : isHuman ? `${colorLabel(color)} side - local profile` : `${colorLabel(color)} side`}</p>
+          <p>{isBot ? `${botStrength.display} - ${botCalibrationLabel} - ${thinking.status === "thinking" ? "thinking" : "ready"}` : isHuman ? `${colorLabel(color)} side - local profile` : `${colorLabel(color)} side`}</p>
         </div>
         <div className="captured-strip" aria-label={`${colorLabel(color)} captured pieces`}>
           {capturedPieces.length ? (
@@ -791,9 +795,15 @@ export function GameBoard({
                   <Bot size={18} />
                   <div>
                     <strong>{botLevel.label} bot</strong>
-                    <span>{botLevel.strength.display} - {botLevel.estimatedStrength}</span>
+                    <span title={botStrength.basis}>{botStrength.display} - {botCalibrationLabel}</span>
                   </div>
-                  <small title={botLevel.strength.basis}>{botLevel.strength.calibrationStatus.replace(/-/g, " ")}</small>
+                  <small title={botStrength.basis}>target {botStrength.targetElo}</small>
+                </div>
+                <p className="bot-tier-note" title={botStrength.basis}>{botLevel.estimatedStrength}</p>
+                <div className="bot-readiness-row" aria-label="Bot response profile">
+                  <span title="Maximum reply time for this tier in the browser.">under {botResponseBudget}ms</span>
+                  <span title="Opening and tactical knowledge are checked before live search.">cache first</span>
+                  <span title={botStrength.basis}>{botCalibrationLabel}</span>
                 </div>
                 <label className="play-setup-field mt-3">
                   <span>Bot difficulty</span>
