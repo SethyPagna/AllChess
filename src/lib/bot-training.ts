@@ -555,7 +555,12 @@ export function listBotKnowledgeSummary() {
 export function listTrainingRunManifests(): TrainingRunManifest[] {
   const scannedRecords = (generated.manifests ?? []).reduce((total, manifest) => total + Number(manifest.sampledRecords ?? 0), 0);
   const generatedPositions = totalGeneratedPositionCount;
-  const variants = [...new Set(knowledgeEntries.map((entry) => entry.variantKey))].sort();
+  const variants = [
+    ...new Set([
+      ...knowledgeEntries.map((entry) => entry.variantKey),
+      ...(generated.manifests ?? []).map((manifest) => manifest.variantKey).filter((variantKey) => variantKey && variantKey !== "unknown")
+    ])
+  ].sort();
 
   return [
     {

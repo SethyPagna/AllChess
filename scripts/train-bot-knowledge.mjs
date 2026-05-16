@@ -112,7 +112,7 @@ const output = {
       scannedRecords,
       generatedPositions,
       runtimeBudgetMs,
-      variants: [...new Set(entries.map((entry) => entry.variantKey))].sort(),
+      variants: sourceVariants(entries, manifests),
       artifacts: {
         compactRuntime: "src/data/bot-knowledge.generated.json",
         largeArtifacts: "r2",
@@ -554,6 +554,15 @@ function buildVariantCoverage(entries, manifests) {
       }))
     };
   });
+}
+
+function sourceVariants(entries, manifests) {
+  return [
+    ...new Set([
+      ...entries.map((entry) => entry.variantKey),
+      ...manifests.map((manifest) => manifest.variantKey).filter((variantKey) => variantKey && variantKey !== "unknown")
+    ])
+  ].sort();
 }
 
 function sourceFileForEntry(entry, manifests) {
