@@ -29,7 +29,6 @@
     "db:migrate:remote": "wrangler d1 migrations apply allchess --remote"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.984.0",
     "@kaisukez/makruk-js": "^4.0.2",
     "chess.js": "^1.4.0",
     "chessops": "^0.15.0",
