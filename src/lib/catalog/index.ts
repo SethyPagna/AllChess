@@ -75,38 +75,6 @@ const completeVerification: PlayableGameVerification = {
   knownGaps: []
 };
 
-const playableVerificationByVariant: Record<string, PlayableGameVerification> = {
-  classic: completeVerification,
-  chess960: completeVerification,
-  xiangqi: completeVerification,
-  "king-of-the-hill": completeVerification,
-  "three-check": completeVerification,
-  shogi: incompleteVerification([
-    "Native drops need full rules coverage, including nifu, dead-square drops, and pawn-drop mate.",
-    "Promotion choice, hands, and strict illegal-move loss need fixture-backed gameplay tests."
-  ]),
-  janggi: incompleteVerification([
-    "Janggi palace diagonals, cannon screens, facing-general policy, pass, and scoring need a dedicated rules adapter.",
-    "Current board uses the xiangqi-like scaffold and must not be advertised as fully verified."
-  ]),
-  makruk: incompleteVerification([
-    "Makruk native piece movement, promotion, and counting draw rules need fixture-backed verification.",
-    "Current movement is a simplified chess-family scaffold."
-  ]),
-  jungle: incompleteVerification([
-    "Jungle rank captures, rat river exceptions, trap weakening, and den-entry edge cases need complete fixtures.",
-    "Current adapter blocks basic river movement but is not a full Dou Shou Qi rules engine."
-  ]),
-  antichess: incompleteVerification([
-    "Compulsory capture, non-royal king behavior, and no-legal-move win conditions need complete tests.",
-    "Current adapter is not yet a full antichess rules profile."
-  ]),
-  horde: incompleteVerification([
-    "Horde elimination win condition, asymmetric check rules, and draw policies need complete tests.",
-    "Current adapter is not yet a full horde rules profile."
-  ])
-};
-
 function incompleteVerification(knownGaps: string[]): PlayableGameVerification {
   return {
     rulesComplete: false,
@@ -719,7 +687,13 @@ export function getGameCatalogEntry(idOrAlias: string) {
 }
 
 export function getPlayableGameVerification(variantKey: string): PlayableGameVerification {
-  return playableVerificationByVariant[variantKey] ?? incompleteVerification(["No verification matrix is registered for this game."]);
+  try {
+    const completion = getVariantRuleSummary(variantKey).completion;
+    if (completion.status === "verified-playable") return completeVerification;
+    return incompleteVerification(completion.remainingGates);
+  } catch {
+    return incompleteVerification(["No verification matrix is registered for this game."]);
+  }
 }
 
 export function getVerifiedPlayableVariants() {

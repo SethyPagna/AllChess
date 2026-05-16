@@ -34,7 +34,7 @@ describe("universal game catalog", () => {
 
     expect(getPlayableGameVerification("shogi")).toMatchObject({
       rulesComplete: false,
-      knownGaps: expect.arrayContaining([expect.stringContaining("drops")])
+      knownGaps: expect.arrayContaining([expect.stringContaining("pawn-drop")])
     });
     expect(getGameCatalogEntry("shogi")).toMatchObject({ playability: "learn" });
     expect(getGameCatalogEntry("jungle")).toMatchObject({ playability: "learn" });
