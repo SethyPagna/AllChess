@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, Brain, Database, Gauge, Play, Swords } from "lucide-react";
+import { BookOpen, Bot, Brain, Database, Gauge, Play, Swords } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
 import { displayBotReadiness, displayGameName, displayRulesReadiness, gameFamilies, getGameCatalog } from "@/lib/catalog";
@@ -10,7 +10,7 @@ import { normalizeLocale } from "@/lib/i18n/locales";
 export default async function PracticePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
-  const playable = getGameCatalog().filter((entry) => entry.playability === "playable" && entry.variantKey);
+  const variantEntries = getGameCatalog().filter((entry) => entry.variantKey);
   const knowledge = listBotKnowledgeSummary();
   const readinessByVariant = new Map(listBotTrainingReadiness().map((readiness) => [readiness.variantKey, readiness]));
   const strengthBands = listBotStrengthBands();
@@ -62,36 +62,47 @@ export default async function PracticePage({ params }: { params: Promise<{ local
         </div>
       </div>
       <div className="practice-grid">
-        {playable.map((entry) => (
-          <article key={entry.id} className="panel practice-card">
-            <div>
-              <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">{gameFamilies.find((family) => family.key === entry.family)?.label}</p>
-              <h2>{displayGameName(entry)}</h2>
-              <p>{entry.board.description}</p>
-            </div>
-            {entry.variantKey ? (
-              <div className="practice-readiness" title={readinessByVariant.get(entry.variantKey)?.primaryGap}>
-                <strong>{readinessByVariant.get(entry.variantKey)?.badgeLabel ?? "Search ready"}</strong>
-                <span>{(readinessByVariant.get(entry.variantKey)?.knowledgeEntries ?? 0).toLocaleString()} cached</span>
-                <span>{(readinessByVariant.get(entry.variantKey)?.responseTargetMs ?? 2800) / 1000}s target</span>
+        {variantEntries.map((entry) => {
+          const variantKey = entry.variantKey;
+          if (!variantKey) return null;
+          const readiness = readinessByVariant.get(variantKey);
+
+          return (
+            <article key={entry.id} className="panel practice-card">
+              <div>
+                <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">{gameFamilies.find((family) => family.key === entry.family)?.label}</p>
+                <h2>{displayGameName(entry)}</h2>
+                <p>{entry.board.description}</p>
               </div>
-            ) : null}
-            <div className="practice-card-meta">
-              <span>
-                <Swords size={15} />
-                {displayRulesReadiness(entry)}
-              </span>
-              <span>
-                <Brain size={15} />
-                {displayBotReadiness(entry)}
-              </span>
-            </div>
-            <Link href={`/${locale}/play/${entry.variantKey}?bot=normal`} className="focus-ring action-secondary inline-flex items-center justify-center gap-2 px-3 py-2 text-sm">
-              <Bot size={16} />
-              Practice
-            </Link>
-          </article>
-        ))}
+              <div className="practice-readiness" title={readiness?.primaryGap}>
+                <strong>{readiness?.badgeLabel ?? "Search ready"}</strong>
+                <span>{readiness?.coverageStatus === "rules-gated" ? "rules gated" : `${(readiness?.knowledgeEntries ?? 0).toLocaleString()} cached`}</span>
+                <span>{(readiness?.responseTargetMs ?? 2800) / 1000}s target</span>
+              </div>
+              <div className="practice-card-meta">
+                <span>
+                  <Swords size={15} />
+                  {displayRulesReadiness(entry)}
+                </span>
+                <span>
+                  <Brain size={15} />
+                  {displayBotReadiness(entry)}
+                </span>
+              </div>
+              {entry.playability === "playable" ? (
+                <Link href={`/${locale}/play/${variantKey}?bot=normal`} className="focus-ring action-secondary inline-flex items-center justify-center gap-2 px-3 py-2 text-sm">
+                  <Bot size={16} />
+                  Practice
+                </Link>
+              ) : (
+                <Link href={`/${locale}/games/${entry.id}`} className="focus-ring action-secondary inline-flex items-center justify-center gap-2 px-3 py-2 text-sm">
+                  <BookOpen size={16} />
+                  Rules gate
+                </Link>
+              )}
+            </article>
+          );
+        })}
       </div>
     </section>
   );

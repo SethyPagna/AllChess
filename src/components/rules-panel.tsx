@@ -22,6 +22,10 @@ export function RulesPanel({ summary, compact = false }: { summary: VariantRuleS
         <p>
           <strong className="text-[var(--foreground)]">Draw:</strong> {summary.drawConditions.join("; ")}
         </p>
+        <p>
+          <strong className="text-[var(--foreground)]">{summary.completion.status === "verified-playable" ? "Verified:" : "Gate:"}</strong>{" "}
+          {(summary.completion.status === "verified-playable" ? summary.completion.verifiedEdgeCases : summary.completion.remainingGates).slice(0, 2).join("; ")}
+        </p>
       </div>
       <div className="flex flex-wrap gap-2">
         {summary.sourceLinks.map((source) => (

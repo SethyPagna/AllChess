@@ -5,6 +5,7 @@ import { ArrowLeft, BookOpen, Bot, ExternalLink, Play } from "lucide-react";
 import { InfoHint } from "@/components/info-hint";
 import { displayBotReadiness, displayGameName, displayPiecePresentation, displayPlayabilityStatus, displayRulesReadiness, gameFamilies, getGameCatalogEntry } from "@/lib/catalog";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { getVariantRuleSummary } from "@/lib/rules-atlas";
 
 export default async function GameDetailPage({ params }: { params: Promise<{ locale: string; gameId: string }> }) {
   const { locale: rawLocale, gameId } = await params;
@@ -12,6 +13,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
   const entry = getGameCatalogEntry(decodeURIComponent(gameId));
   if (!entry) notFound();
   const family = gameFamilies.find((item) => item.key === entry.family);
+  const completion = entry.variantKey ? getVariantRuleSummary(entry.variantKey).completion : null;
 
   return (
     <section className="game-detail">
@@ -83,6 +85,16 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
             ))}
           </ul>
         </article>
+        {completion ? (
+          <article className="panel game-detail-section">
+            <h2>{completion.status === "verified-playable" ? "Verified rules" : "Rules gate"}</h2>
+            <ul>
+              {(completion.status === "verified-playable" ? completion.verifiedEdgeCases : completion.remainingGates).slice(0, 4).map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </article>
+        ) : null}
         <article className="panel game-detail-section">
           <div className="game-detail-source-head">
             <h2>Sources</h2>
