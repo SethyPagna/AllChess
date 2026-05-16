@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, BookOpen, Bot, ExternalLink, Play } from "lucide-react";
 
+import { InfoHint } from "@/components/info-hint";
 import { displayBotReadiness, displayGameName, displayPiecePresentation, displayPlayabilityStatus, displayRulesReadiness, gameFamilies, getGameCatalogEntry } from "@/lib/catalog";
 import { normalizeLocale } from "@/lib/i18n/locales";
 
@@ -20,12 +21,16 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
       </Link>
       <div className="game-detail-hero panel">
         <div>
-          <p>{family?.label}</p>
+          <p className="inline-flex items-center gap-2">
+            {family?.label}
+            <InfoHint text={family?.description ?? "Game family and rule lineage."} />
+          </p>
           <h1>{displayGameName(entry)}</h1>
           <div className="game-detail-tags">
             <span>{displayPlayabilityStatus(entry.playability)}</span>
             <span>{entry.board.description}</span>
-            <span>{displayPiecePresentation(entry)}</span>
+            <span>{displayRulesReadiness(entry)}</span>
+            <span>{displayBotReadiness(entry)}</span>
           </div>
         </div>
         {entry.playability === "playable" && entry.variantKey ? (
@@ -68,9 +73,10 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
         </article>
         <article className="panel game-detail-section">
           <h2>Practice focus</h2>
-          <p className="game-detail-note">
-            {displayRulesReadiness(entry)} / {displayBotReadiness(entry)}
-          </p>
+          <div className="game-detail-note">
+            <span>{displayPiecePresentation(entry)}</span>
+            <span>{displayBotReadiness(entry)}</span>
+          </div>
           <ul>
             {entry.reviewFocus.map((item) => (
               <li key={item}>{item}</li>
@@ -78,9 +84,12 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
           </ul>
         </article>
         <article className="panel game-detail-section">
-          <h2>Sources</h2>
+          <div className="game-detail-source-head">
+            <h2>Sources</h2>
+            <InfoHint text="Rule guides stay linked here so playable games can be checked against credible references." />
+          </div>
           <ul>
-            {entry.ruleSourceLinks.map((source) => (
+            {entry.ruleSourceLinks.slice(0, 3).map((source) => (
               <li key={source.url}>
                 <a className="focus-ring inline-flex items-center gap-2" href={source.url} rel="noreferrer" target="_blank">
                   {source.name}
@@ -89,6 +98,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
               </li>
             ))}
           </ul>
+          {entry.ruleSourceLinks.length > 3 ? <p className="game-detail-source-more">+{entry.ruleSourceLinks.length - 3} more references kept in the catalog record.</p> : null}
         </article>
       </div>
     </section>

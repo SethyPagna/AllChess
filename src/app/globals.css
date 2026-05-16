@@ -3085,10 +3085,36 @@ select {
 }
 
 .game-detail-note {
-  margin: -0.15rem 0 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: -0.15rem 0 0.15rem;
+}
+
+.game-detail-note span,
+.game-detail-source-more {
+  border-radius: 999px;
+  background: var(--surface-soft);
   color: var(--muted);
-  font-size: 0.86rem;
-  font-weight: 800;
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 0.22rem 0.55rem;
+}
+
+.game-detail-source-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.game-detail-source-head h2 {
+  margin: 0;
+}
+
+.game-detail-source-more {
+  width: fit-content;
+  margin: 0;
 }
 
 .game-detail-grid {
