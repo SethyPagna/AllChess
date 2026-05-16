@@ -16,7 +16,7 @@ export default async function LeaderboardsPage({ params }: { params: Promise<{ l
     <section className="leaderboards-page grid gap-5">
       <div className="compact-page-heading">
         <h1 className="text-4xl font-black sm:text-5xl">Leaderboards</h1>
-        <InfoHint text="Rated tables stay empty until real Cloudflare room results are recorded. No seeded players or guessed rankings." />
+        <InfoHint text="Rated tables stay empty until real match results are recorded. No seeded players or guessed rankings." />
       </div>
       <div className="panel leaderboard-filter-bar">
         <span>

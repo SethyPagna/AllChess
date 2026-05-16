@@ -39,7 +39,7 @@ const en = {
   "nav.login": "Sign in",
   "nav.profile": "Profile",
   "auth.title": "Welcome back",
-  "auth.subtitle": "Sign in with AllChess auth to keep ratings, records, and preferences synced in Cloudflare D1.",
+  "auth.subtitle": "Sign in to keep ratings, records, reviews, and preferences synced across devices.",
   "auth.email": "Email",
   "auth.password": "Password",
   "auth.magic": "Send magic link",

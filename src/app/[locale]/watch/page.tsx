@@ -18,7 +18,7 @@ export default async function WatchPage({ params }: { params: Promise<{ locale: 
     <section className="watch-page grid gap-5">
       <div className="compact-page-heading">
         <h1 className="text-4xl font-black sm:text-5xl">Watch rooms</h1>
-        <InfoHint text="Public games appear here only when room presence reports real activity. No filler matches, fake players, or guessed counts." />
+        <InfoHint text="Public games appear here only when live room activity exists. No filler matches, seeded players, or guessed counts." />
       </div>
       <div className="lobby-stat-grid">
         <div className="panel lobby-stat-card">

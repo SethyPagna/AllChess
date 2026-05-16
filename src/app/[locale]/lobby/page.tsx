@@ -20,7 +20,7 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
     { Icon: Swords, title: t("lobby.quickPair"), href: `/${locale}/play?mode=matchmaking`, body: "Find an even opponent by rating and preferred time control." },
     { Icon: Lock, title: t("lobby.privateRoom"), href: `/${locale}/play?mode=room`, body: "Create a shareable room code for friends." },
     { Icon: Clock, title: t("lobby.correspondence"), href: `/${locale}/play?time=daily`, body: "Play long-form games across time zones." },
-    { Icon: Eye, title: "Watch rooms", href: `/${locale}/watch`, body: "Spectate public rooms when Cloudflare room presence reports active games." },
+    { Icon: Eye, title: "Watch rooms", href: `/${locale}/watch`, body: "Spectate public rooms when real games are active." },
     { Icon: Bot, title: t("lobby.aiPractice"), href: `/${locale}/practice`, body: "Practice against Easy through Legend bot levels." },
     { Icon: Users, title: "Presence", href: `/${locale}/watch`, body: `${siteStats.playersOnline.value} online / ${siteStats.activeRooms.value} rooms / ${siteStats.spectators.value} spectators.` }
   ];
