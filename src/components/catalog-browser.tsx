@@ -4,25 +4,37 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { BookOpen, Bot, Filter, Play, Search } from "lucide-react";
 
-import { displayGameName, gameFamilies, type GameCatalogEntry, type GameFamilyKey, type PlayabilityStatus } from "@/lib/catalog";
+import {
+  displayBotReadiness,
+  displayGameName,
+  displayPiecePresentation,
+  displayPlayabilityStatus,
+  displayRulesReadiness,
+  gameFamilies,
+  type GameCatalogEntry,
+  type GameFamilyKey,
+  type PlayabilityStatus
+} from "@/lib/catalog";
 import type { LocaleCode } from "@/lib/i18n/locales";
 
 type CatalogBrowserProps = {
   entries: GameCatalogEntry[];
+  initialFamily?: GameFamilyKey | "all";
+  initialStatus?: PlayabilityStatus | "all";
   locale: LocaleCode;
 };
 
 const playabilityLabels: Record<PlayabilityStatus | "all", string> = {
   all: "All",
-  playable: "Playable",
-  learn: "Learn",
-  "coming-soon": "Coming soon"
+  playable: "Ready to play",
+  learn: "Learn first",
+  "coming-soon": "In progress"
 };
 
-export function CatalogBrowser({ entries, locale }: CatalogBrowserProps) {
+export function CatalogBrowser({ entries, initialFamily = "all", initialStatus = "all", locale }: CatalogBrowserProps) {
   const [query, setQuery] = useState("");
-  const [family, setFamily] = useState<GameFamilyKey | "all">("all");
-  const [status, setStatus] = useState<PlayabilityStatus | "all">("all");
+  const [family, setFamily] = useState<GameFamilyKey | "all">(initialFamily);
+  const [status, setStatus] = useState<PlayabilityStatus | "all">(initialStatus);
 
   const filtered = useMemo(() => {
     const normalized = normalize(query);
@@ -78,7 +90,7 @@ export function CatalogBrowser({ entries, locale }: CatalogBrowserProps) {
             </div>
             <div className="catalog-card-meta">
               <span>{entry.board.description}</span>
-              <span>{entry.piecePresentation.replaceAll("-", " ")}</span>
+              <span>{displayPiecePresentation(entry)}</span>
             </div>
             <ol>
               {entry.shortRules.slice(0, 3).map((rule, index) => (
@@ -101,14 +113,16 @@ export function CatalogBrowser({ entries, locale }: CatalogBrowserProps) {
                 </Link>
               )}
               <span className="catalog-status" data-status={entry.playability}>
-                {playabilityLabels[entry.playability]}
+                {displayPlayabilityStatus(entry.playability)}
               </span>
               {entry.botAdapter !== "none" ? (
                 <span className="catalog-engine">
                   <Bot size={14} />
-                  {entry.botAdapter}
+                  {displayBotReadiness(entry)}
                 </span>
-              ) : null}
+              ) : (
+                <span className="catalog-engine">{displayRulesReadiness(entry)}</span>
+              )}
             </div>
           </article>
         ))}

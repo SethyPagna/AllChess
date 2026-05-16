@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Bot, Clock3, Eye, Globe2, Handshake, Lock, MonitorSmartphone, Radio, Swords, Users } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
-import { displayGameName, getGameCatalog } from "@/lib/catalog";
+import { displayGameName, displayRulesReadiness, getGameCatalog } from "@/lib/catalog";
 import { normalizeLocale } from "@/lib/i18n/locales";
 
 const playModes = [
@@ -92,7 +92,7 @@ export default async function PlaySetupPage({ params }: { params: Promise<{ loca
                 <div className="play-game-row-main">
                   <Radio size={16} />
                   <strong>{displayGameName(entry)}</strong>
-                  <span>{entry.rulesAdapter}</span>
+                  <span>{displayRulesReadiness(entry)}</span>
                   <InfoHint text={entry.winConditions[0]} />
                 </div>
                 <div className="play-game-row-actions">

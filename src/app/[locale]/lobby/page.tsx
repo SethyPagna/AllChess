@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BarChart3, Bot, Clock, Eye, Library, Lock, Radio, Swords, Trophy, Users } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
-import { displayGameName, gameFamilies, getCatalogStats, getGameCatalog } from "@/lib/catalog";
+import { displayGameName, displayRulesReadiness, gameFamilies, getCatalogStats, getGameCatalog } from "@/lib/catalog";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { createDefaultStats } from "@/lib/stats";
@@ -20,7 +20,7 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
     { Icon: Swords, title: t("lobby.quickPair"), body: "Find an even opponent by rating and preferred time control." },
     { Icon: Lock, title: t("lobby.privateRoom"), body: "Create a shareable room code for friends." },
     { Icon: Clock, title: t("lobby.correspondence"), body: "Play long-form games across time zones." },
-    { Icon: Eye, title: "Watch live", body: "Spectate public rooms with read-only board, clocks, and move list." },
+    { Icon: Eye, title: "Watch rooms", body: "Spectate public rooms when Cloudflare room presence reports active games." },
     { Icon: Bot, title: t("lobby.aiPractice"), body: "Practice against Easy through Legend bot levels." },
     { Icon: Users, title: "Live presence", body: `${siteStats.playersOnline.value} online / ${siteStats.activeRooms.value} rooms / ${siteStats.spectators.value} spectators.` }
   ];
@@ -41,13 +41,13 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
             <Bot size={16} />
             Bot practice
           </Link>
-          <Link href={`/${locale}/lobby?watch=live`} className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2 text-sm">
+          <Link href={`/${locale}/watch` as never} className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2 text-sm">
             <Eye size={16} />
-            Watch live
+            Watch rooms
           </Link>
           <Link href={`/${locale}/variants`} className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2 text-sm">
             <Library size={16} />
-            Catalog
+            Games & rules
           </Link>
           <Link href={`/${locale}/leaderboards` as never} className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2 text-sm">
             <Trophy size={16} />
@@ -58,7 +58,7 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
           <div className="panel lobby-stat-card">
             <BarChart3 size={18} />
             <strong>{stats.totalGames}</strong>
-            <span>cataloged games</span>
+            <span>games & rules</span>
           </div>
           <div className="panel lobby-stat-card">
             <Swords size={18} />
@@ -68,7 +68,7 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
           <div className="panel lobby-stat-card">
             <Radio size={18} />
             <strong>{stats.learnGames + stats.comingSoonGames}</strong>
-            <span>learning paths</span>
+            <span>guides & drafts</span>
           </div>
         </div>
         <div className="compact-section-heading">
@@ -80,15 +80,15 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
             <Link key={entry.id} href={`/${locale}/play/${entry.variantKey}`} className="panel focus-ring grid gap-2 p-4 transition hover:border-[var(--accent)]">
               <span className="flex items-center justify-between gap-3 text-lg font-black">
                 {displayGameName(entry)}
-                <span className="rounded-md bg-[var(--surface-soft)] px-2 py-1 text-xs font-bold text-[var(--muted)]">{entry.rulesAdapter}</span>
+                <span className="rounded-md bg-[var(--surface-soft)] px-2 py-1 text-xs font-bold text-[var(--muted)]">{displayRulesReadiness(entry)}</span>
               </span>
               <span className="text-sm text-[var(--muted)]">{entry.winConditions[0]}</span>
             </Link>
           ))}
         </div>
         <div className="compact-section-heading">
-          <h2 className="section-title">Game Families</h2>
-          <InfoHint text="Explore the wider catalog by lineage and rules family." />
+          <h2 className="section-title">Learn by Family</h2>
+          <InfoHint text="Browse related games together, then open a short rule guide or a verified practice board." />
         </div>
         <div className="panel lobby-family-strip">
           {familyHighlights.map((family) => (

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Bot, Brain, Database, Gauge, Play, Swords } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
-import { displayGameName, gameFamilies, getGameCatalog } from "@/lib/catalog";
+import { displayBotReadiness, displayGameName, displayRulesReadiness, gameFamilies, getGameCatalog } from "@/lib/catalog";
 import { listBotKnowledgeSummary, listBotTrainingReadiness } from "@/lib/bot-training";
 import { listBotStrengthBands } from "@/lib/bot-strength";
 import { normalizeLocale } from "@/lib/i18n/locales";
@@ -79,11 +79,11 @@ export default async function PracticePage({ params }: { params: Promise<{ local
             <div className="practice-card-meta">
               <span>
                 <Swords size={15} />
-                {entry.rulesAdapter}
+                {displayRulesReadiness(entry)}
               </span>
               <span>
                 <Brain size={15} />
-                {entry.botAdapter}
+                {displayBotReadiness(entry)}
               </span>
             </div>
             <Link href={`/${locale}/play/${entry.variantKey}?bot=normal`} className="focus-ring action-secondary inline-flex items-center justify-center gap-2 px-3 py-2 text-sm">

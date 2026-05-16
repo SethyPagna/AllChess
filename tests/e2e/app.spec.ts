@@ -11,7 +11,7 @@ test("localized game hub can open variants and a playable board", async ({ page 
   await expectNoHorizontalOverflow(page);
 
   await page.goto("/en/variants");
-  await expect(page.getByRole("heading", { name: "Global variant atlas" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Xiangqi / Xiàngqí / 象棋" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
@@ -52,6 +52,20 @@ test("practice page shows compact bot training status", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("watch rooms and catalog filters land on honest real-data views", async ({ page }) => {
+  await page.goto("/en/watch");
+
+  await expect(page.getByRole("heading", { name: "Watch rooms" })).toBeVisible();
+  await expect(page.getByText(/No filler matches/)).toBeVisible();
+  await expect(page.getByText(/No public rooms|Live room list/)).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  await page.goto("/en/variants?playability=learn");
+  await expect(page.getByLabel("Playability")).toHaveValue("learn");
+  await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("language menu keeps the current route", async ({ page }) => {
   await page.goto("/en/play/classic");
 
@@ -75,6 +89,6 @@ test("catalog search finds native and romanized game names", async ({ page }) =>
   await page.getByPlaceholder("Search names, aliases, native names").fill("Oware");
   await page.getByRole("link", { name: "Learn" }).first().click();
   await expect(page.getByRole("heading", { name: /Oware/ })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Rules" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Basic rules" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });

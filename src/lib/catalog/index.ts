@@ -742,6 +742,45 @@ export function displayGameName(entry: GameCatalogEntry) {
   return [entry.name.english, entry.name.romanization, entry.name.native].filter(Boolean).join(" / ");
 }
 
+export function displayPlayabilityStatus(status: PlayabilityStatus) {
+  const labels: Record<PlayabilityStatus, string> = {
+    playable: "Ready to play",
+    learn: "Learn first",
+    "coming-soon": "In progress"
+  };
+  return labels[status];
+}
+
+export function displayPiecePresentation(entry: GameCatalogEntry) {
+  const labels: Record<PiecePresentationPack, string> = {
+    "staunton-svg": "Western chess pieces",
+    "shogi-koma": "Native shogi pieces",
+    "xiangqi-disk": "Chinese chess disks",
+    "makruk-carved": "Thai chess pieces",
+    "jungle-animals": "Animal rank pieces",
+    "draughts-stacks": "Stacking checkers",
+    "mancala-seeds": "Seeds and pits",
+    "go-stones": "Stones on lines",
+    "backgammon-checkers": "Table checkers",
+    "tafl-runes": "King and army pieces",
+    "race-pawns": "Race tokens",
+    "mill-stones": "Line game stones"
+  };
+  return labels[entry.piecePresentation];
+}
+
+export function displayRulesReadiness(entry: GameCatalogEntry) {
+  if (entry.playability === "playable") return "Rules verified";
+  if (entry.playability === "learn") return "Rule guide";
+  return "Rule draft";
+}
+
+export function displayBotReadiness(entry: GameCatalogEntry) {
+  if (entry.botAdapter === "none") return "No bot yet";
+  if (entry.playability === "playable") return "Bot ready";
+  return "Bot planned";
+}
+
 export function getCatalogStats(entries: GameCatalogEntry[] = gameCatalog): CatalogStats {
   const familyCounts = Object.fromEntries(gameFamilies.map((family) => [family.key, 0])) as CatalogStats["familyCounts"];
   for (const entry of entries) {
