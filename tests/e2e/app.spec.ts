@@ -87,7 +87,7 @@ test("catalog search finds native and romanized game names", async ({ page }) =>
   await expectNoHorizontalOverflow(page);
 
   await page.getByPlaceholder("Search names, aliases, native names").fill("Oware");
-  await page.getByRole("link", { name: "Rules" }).first().click();
+  await Promise.all([page.waitForURL(/\/en\/games\/oware$/), page.getByRole("link", { name: "Rules" }).first().click()]);
   await expect(page.getByRole("heading", { name: /Oware/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Basic rules" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
