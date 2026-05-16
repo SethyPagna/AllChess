@@ -45,38 +45,32 @@ export default async function LocaleLayout({
       icon: "swords",
       links: [
         { href: "lobby", icon: "home", label: t("nav.lobby") },
-        { href: "play", icon: "swords", label: "Play" },
-        { href: "practice", icon: "users", label: "Practice" }
+        { href: "play", icon: "swords", label: t("nav.play") }
       ]
     },
     {
-      label: t("nav.learn"),
+      label: t("nav.learnPractice"),
       icon: "book",
       links: [
-        { href: "variants", icon: "library", label: t("nav.variants") },
-        { href: "variants?playability=learn", icon: "book", label: "Rules atlas" }
+        { href: "practice", icon: "users", label: t("nav.practice") },
+        { href: "variants", icon: "library", label: t("nav.gamesRules") },
+        { href: "variants?playability=learn", icon: "book", label: t("nav.learnRules") }
       ]
     },
     {
       label: t("nav.watch"),
       icon: "eye",
       links: [
-        { href: "lobby?watch=live", icon: "eye", label: "Watch live" },
+        { href: "watch", icon: "eye", label: t("nav.watchRooms") },
         { href: "leaderboards", icon: "trophy", label: t("nav.leaderboards") }
       ]
     },
     {
-      label: t("nav.community"),
-      icon: "users",
-      links: [
-        { href: "history", icon: "history", label: t("nav.history") },
-        { href: "profile/player", icon: "user", label: t("nav.profile") }
-      ]
-    },
-    {
-      label: "Account",
+      label: t("nav.account"),
       icon: "settings",
       links: [
+        { href: "profile/player", icon: "user", label: t("nav.profile") },
+        { href: "history", icon: "history", label: t("nav.history") },
         { href: "settings", icon: "settings", label: t("nav.settings") },
         { href: "login", icon: "login", label: t("nav.login") }
       ]

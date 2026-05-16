@@ -20,7 +20,11 @@ const groups: AppNavGroup[] = [
   {
     icon: "settings",
     label: "Account",
-    links: [{ href: "settings", icon: "settings", label: "Settings" }]
+    links: [
+      { href: "profile/player", icon: "user", label: "Profile" },
+      { href: "history", icon: "history", label: "History" },
+      { href: "settings", icon: "settings", label: "Settings" }
+    ]
   }
 ];
 
@@ -39,5 +43,13 @@ describe("app navigation", () => {
     expect(markup).toContain("app-menu-section-label");
     expect(markup).toContain(">Play<");
     expect(markup).toContain(">Account<");
+  });
+
+  test("keeps profile and history under account instead of community", () => {
+    const markup = renderToStaticMarkup(createElement(AppSidebarNavigation, { groups, locale: "en" }));
+
+    expect(markup).toContain(">Profile<");
+    expect(markup).toContain(">History<");
+    expect(markup).not.toContain(">Community<");
   });
 });
