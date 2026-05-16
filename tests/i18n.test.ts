@@ -29,6 +29,8 @@ describe("i18n dictionaries", () => {
 
   test("defines visible language names and RTL metadata", () => {
     expect(localeNames.ar).toBe("العربية");
+    expect(localeNames.fr).toBe("Français");
+    expect(localeNames["zh-CN"]).toBe("简体中文");
     expect(rtlLocales.has("ar")).toBe(true);
     expect(rtlLocales.has("en")).toBe(false);
   });

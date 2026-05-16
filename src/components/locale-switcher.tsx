@@ -18,7 +18,7 @@ export function LocaleSwitcher({ active }: { active: LocaleCode }) {
       <summary aria-label="Languages" title="Languages" className="focus-ring action-secondary grid h-10 w-10 cursor-pointer list-none place-items-center text-[var(--muted)]">
         <Languages aria-hidden="true" size={17} />
       </summary>
-      <div className="language-menu-panel panel absolute right-0 top-12 z-40 grid max-h-80 w-72 gap-1 overflow-auto p-2 shadow-xl">
+      <div className="language-menu-panel panel grid gap-1 overflow-auto p-2 shadow-xl">
         {locales.map((locale) => (
           <Link
             key={locale}

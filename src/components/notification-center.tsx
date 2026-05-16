@@ -35,7 +35,7 @@ export function NotificationCenter() {
         <Bell aria-hidden="true" size={17} />
         {unreadCount ? <span className="notification-dot" aria-hidden="true" /> : null}
       </summary>
-      <div className="notification-panel panel absolute right-0 top-12 z-40 grid w-80 max-w-[calc(100vw-1rem)] gap-2 p-2 shadow-xl">
+      <div className="notification-panel panel grid gap-2 p-2 shadow-xl">
         <div className="notification-panel-heading">
           <span>
             <strong>Notifications</strong>

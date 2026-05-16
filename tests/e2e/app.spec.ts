@@ -1,8 +1,19 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 async function expectNoHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(() => Math.ceil(document.documentElement.scrollWidth - document.documentElement.clientWidth));
   expect(overflow).toBeLessThanOrEqual(1);
+}
+
+async function expectWithinViewport(page: Page, locator: Locator) {
+  const box = await locator.boundingBox();
+  const viewport = page.viewportSize();
+  expect(box).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  expect(Math.floor(box!.x)).toBeGreaterThanOrEqual(0);
+  expect(Math.ceil(box!.x + box!.width)).toBeLessThanOrEqual(viewport!.width);
+  expect(Math.floor(box!.y)).toBeGreaterThanOrEqual(0);
+  expect(Math.ceil(box!.y + box!.height)).toBeLessThanOrEqual(viewport!.height);
 }
 
 test("localized game hub can open variants and a playable board", async ({ page }) => {
@@ -49,7 +60,7 @@ test("settings exposes language and theme controls", async ({ page }) => {
   await expect(page.getByRole("main").getByRole("button", { name: "Dark" })).toBeVisible();
 });
 
-test("mobile shell notifications and board controls stay in bounds", async ({ page }) => {
+test("mobile shell language, notifications, and board controls stay in bounds", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
   await page.goto("/en/play/classic");
 
@@ -57,9 +68,18 @@ test("mobile shell notifications and board controls stay in bounds", async ({ pa
   await expectNoHorizontalOverflow(page);
 
   const mobileHeader = page.locator(".app-mobile-header");
+  await mobileHeader.getByLabel("Languages").click();
+  await expect(mobileHeader.getByRole("link", { name: "Français" })).toBeVisible();
+  await expectWithinViewport(page, mobileHeader.locator(".language-menu-panel"));
+  await Promise.all([page.waitForURL(/\/fr\/play\/classic$/), mobileHeader.getByRole("link", { name: "Français" }).click()]);
+  await expect(page).toHaveURL(/\/fr\/play\/classic$/);
+  await expectNoHorizontalOverflow(page);
+
+  await page.goto("/en/play/classic");
   await mobileHeader.getByLabel(/Notifications/).click();
   await expect(mobileHeader.getByText("3 unread")).toBeVisible();
   await expect(mobileHeader.getByRole("button", { name: "Mark read" })).toBeVisible();
+  await expectWithinViewport(page, mobileHeader.locator(".notification-panel"));
   await expectNoHorizontalOverflow(page);
 
   await page.getByRole("button", { name: "Status" }).click();
@@ -103,9 +123,10 @@ test("language menu keeps the current route", async ({ page }) => {
 
   const visibleShell = page.locator(".app-sidebar:visible, .app-mobile-header:visible");
   await visibleShell.getByLabel("Languages").click();
-  const french = visibleShell.getByRole("link", { name: "Francais" }).or(visibleShell.getByRole("link", { name: "Français" }));
+  await expectWithinViewport(page, visibleShell.locator(".language-menu-panel"));
+  const french = visibleShell.getByRole("link", { name: "Français" });
   await expect(french).toHaveAttribute("href", "/fr/play/classic");
-  await Promise.all([page.waitForURL(/\/fr\/play\/classic$/), french.click({ force: true })]);
+  await Promise.all([page.waitForURL(/\/fr\/play\/classic$/), french.click()]);
 
   await expect(page).toHaveURL(/\/fr\/play\/classic$/);
   await expect(page.getByRole("heading", { name: "Classic Chess" })).toBeVisible();

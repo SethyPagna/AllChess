@@ -296,10 +296,21 @@ select {
 
 .language-menu-panel,
 .notification-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 95;
+  width: min(18rem, calc(100vw - 1rem));
+  max-height: min(24rem, calc(100vh - 5rem));
   animation: menu-pop 140ms ease-out;
   background: var(--surface-strong);
   color: var(--foreground);
+  overflow: auto;
   transform-origin: top right;
+}
+
+.notification-panel {
+  width: min(20rem, calc(100vw - 1rem));
 }
 
 .language-menu:not([open]) .language-menu-panel,
@@ -309,9 +320,14 @@ select {
 
 .app-responsive-tools .language-menu-panel,
 .app-responsive-tools .notification-panel {
+  position: fixed;
   top: auto;
-  bottom: calc(100% + 0.5rem);
-  transform-origin: bottom right;
+  right: auto;
+  bottom: 4.65rem;
+  left: 0.85rem;
+  width: min(20rem, calc(100vw - 1.7rem));
+  max-height: min(70vh, 28rem);
+  transform-origin: bottom left;
 }
 
 .language-menu[open],
@@ -3763,6 +3779,9 @@ select {
     top: 3.35rem;
     right: 0.55rem;
     bottom: auto;
+    left: auto;
+    width: min(20rem, calc(100vw - 1.1rem));
+    max-height: calc(100vh - 4.2rem);
     max-width: calc(100vw - 1.1rem);
     transform-origin: top right;
   }

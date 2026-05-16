@@ -17,6 +17,7 @@ describe("shell controls", () => {
     expect(markup).toContain('aria-label="Languages"');
     expect(markup).toContain("English");
     expect(markup).toContain("Français");
+    expect(markup).toContain("简体中文");
     expect(markup).not.toContain(">EN<");
   });
 
