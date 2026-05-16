@@ -55,7 +55,7 @@ for (const file of files) {
     manifest.readStatus = sample.status;
     if (sample.text) {
       const games = parsePgnGames(sample.text).slice(0, maxGames);
-      if (manifest.variantKey === "classic" || manifest.variantKey === "chess960") {
+      if (manifest.variantKey === "classic") {
         for (const game of games) {
           addOpeningGame(openingBook, game, maxOpeningPly, manifest.variantKey, manifest.id, manifest.license);
         }
@@ -400,7 +400,12 @@ function addOpeningGame(book, pgn, maxPly, variantKey = "classic", sourceFileId 
   const played = [];
   for (const token of tokens.slice(0, maxPly)) {
     const beforeKey = `${variantKey}|turn:${chess.turn() === "w" ? "white" : "black"}|moves:${played.join(" ")}`;
-    const move = chess.move(token);
+    let move;
+    try {
+      move = chess.move(token);
+    } catch {
+      break;
+    }
     if (!move) break;
     const uci = `${move.from}${move.to}${move.promotion ?? ""}`;
     const countKey = `${beforeKey}|move:${uci}|source:${sourceFileId}|license:${sourceLicense}`;
