@@ -226,6 +226,71 @@ describe("variant engine", () => {
     expect(next.result).toBe("white");
   });
 
+  test("antichess enforces mandatory captures across the whole side", () => {
+    let state = createInitialState("antichess", "antichess-capture");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[4][3].piece = { id: "white-pawn", code: "p", owner: "white", labelKey: "chess.pawn" };
+    state.board[3][4].piece = { id: "black-pawn", code: "p", owner: "black", labelKey: "chess.pawn" };
+    state.board[7][4].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+
+    expect(getLegalMoves(state, { row: 4, col: 3 })).toEqual([{ from: { row: 4, col: 3 }, to: { row: 3, col: 4 } }]);
+    expect(getLegalMoves(state, { row: 7, col: 4 })).toEqual([]);
+    expect(() => applyMove(state, { from: { row: 4, col: 3 }, to: { row: 3, col: 3 } })).toThrow("errors.invalidMove");
+  });
+
+  test("antichess treats the king as a non-royal capturable piece", () => {
+    let state = createInitialState("antichess", "antichess-king-capture");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[1][4].piece = { id: "white-queen", code: "q", owner: "white", labelKey: "chess.queen" };
+    state.board[0][4].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[0][0].piece = { id: "black-pawn", code: "p", owner: "black", labelKey: "chess.pawn" };
+
+    const capture = { from: { row: 1, col: 4 }, to: { row: 0, col: 4 } };
+    expect(getLegalMoves(state, capture.from)).toContainEqual(capture);
+    expect(applyMove(state, capture).status).toBe("active");
+  });
+
+  test("antichess wins by losing all pieces or having no legal move", () => {
+    let lostAllPieces = createInitialState("antichess", "antichess-no-pieces");
+    lostAllPieces = {
+      ...lostAllPieces,
+      board: lostAllPieces.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    lostAllPieces.board[1][1].piece = { id: "white-queen", code: "q", owner: "white", labelKey: "chess.queen" };
+    lostAllPieces.board[0][0].piece = { id: "black-pawn", code: "p", owner: "black", labelKey: "chess.pawn" };
+
+    expect(applyMove(lostAllPieces, { from: { row: 1, col: 1 }, to: { row: 0, col: 0 } })).toMatchObject({
+      status: "completed",
+      result: "black",
+      outcomeReason: "lost-all-pieces"
+    });
+
+    let noLegalMove = createInitialState("antichess", "antichess-no-legal-move");
+    noLegalMove = {
+      ...noLegalMove,
+      board: noLegalMove.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    noLegalMove.board[0][0].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    noLegalMove.board[7][7].piece = { id: "black-pawn", code: "p", owner: "black", labelKey: "chess.pawn" };
+
+    expect(applyMove(noLegalMove, { from: { row: 0, col: 0 }, to: { row: 0, col: 1 } })).toMatchObject({
+      status: "completed",
+      result: "black",
+      outcomeReason: "no-legal-moves"
+    });
+  });
+
   test("xiangqi general and advisors stay inside the palace", () => {
     let state = createInitialState("xiangqi", "palace");
     state = {

@@ -234,9 +234,13 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
     remainingGates: ["Rat river exceptions", "Trap weakening captures", "Den-entry win fixtures", "No-progress/repetition policy"]
   },
   antichess: {
-    status: "rules-gated",
-    verifiedEdgeCases: ["Variant is cataloged with no-check intent and compulsory-capture objective."],
-    remainingGates: ["Mandatory capture enforcement", "No-legal-move win fixtures", "Non-royal king movement fixtures"]
+    status: "verified-playable",
+    verifiedEdgeCases: [
+      "Mandatory captures are enforced across the whole side.",
+      "The king is non-royal and capturable without ending the game by checkmate logic.",
+      "Lose-all-pieces and no-legal-move wins are covered by terminal-state fixtures."
+    ],
+    remainingGates: []
   },
   horde: {
     status: "rules-gated",

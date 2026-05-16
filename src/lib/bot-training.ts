@@ -355,6 +355,23 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
     }
   },
   {
+    id: "antichess-start-trade-lanes",
+    variantKey: "antichess",
+    positionKey: "antichess|turn:white|moves:",
+    moveUci: "e2e4",
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.85,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "antichess", "compulsory-capture", "trade-lanes"],
+    explanation: {
+      plan: "Open central trade lanes so forced captures can be steered instead of accepted blindly.",
+      threat: "White prepares exchanges that may shed material while keeping enough mobility to avoid being trapped too early.",
+      risk: "A careless center push can let the opponent choose the capture sequence, so the bot checks forced replies first.",
+      fallbackGoal: "If the trade line is unfavorable, keep legal mobility and aim for a no-legal-move conversion."
+    }
+  },
+  {
     id: "king-of-the-hill-start-center",
     variantKey: "king-of-the-hill",
     positionKey: "king-of-the-hill|turn:white|moves:",

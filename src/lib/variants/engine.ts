@@ -67,12 +67,18 @@ export function getLegalMoves(state: GameState, from: Square): Move[] {
       ? [...getPseudoLegalMoves(state, from), ...castlingMoves(state, from, cell.piece)]
       : getPseudoLegalMoves(state, from);
 
-  return pseudoMoves.filter((move) => {
+  const legalMoves = pseudoMoves.filter((move) => {
     const target = cellAt(state, move.to)?.piece;
     if (variant.supportsCheck && target && isRoyal(target)) return false;
     if (!variant.supportsCheck) return true;
     return !wouldLeaveRoyalInCheck(state, move, cell.piece!.owner);
   });
+
+  if (variant.key === "antichess" && hasAnyCaptureMove(state, state.turn)) {
+    return legalMoves.filter((move) => isCaptureMove(state, move));
+  }
+
+  return legalMoves;
 }
 
 function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
@@ -327,6 +333,10 @@ export function applyMove(state: GameState, move: Move): GameState {
   }
   next.halfmoveClock = captured || movingPiece.code === "p" ? 0 : (state.halfmoveClock ?? 0) + 1;
 
+  if (variant.key === "antichess") {
+    return withAntichessOutcome(next);
+  }
+
   if (!variant.supportsCheck && captured && isRoyal(captured)) {
     next.status = "completed";
     next.result = movingPiece.owner;
@@ -334,6 +344,26 @@ export function applyMove(state: GameState, move: Move): GameState {
     return next;
   }
   return withOutcome(next, movingPiece.owner, move.to);
+}
+
+function withAntichessOutcome(state: GameState): GameState {
+  const variant = getVariant(state.variantKey);
+  const winnerWithNoPieces = variant.players.find((player) => countPieces(state, player) === 0);
+  if (winnerWithNoPieces) {
+    state.status = "completed";
+    state.result = winnerWithNoPieces;
+    state.outcomeReason = "lost-all-pieces";
+    return state;
+  }
+
+  const playerToMove = state.turn;
+  if (!hasAnyLegalMove(state, playerToMove)) {
+    state.status = "completed";
+    state.result = playerToMove;
+    state.outcomeReason = "no-legal-moves";
+  }
+
+  return state;
 }
 
 function withOutcome(state: GameState, mover: PlayerColor, destination: Square): GameState {
@@ -510,6 +540,25 @@ function findRoyal(state: GameState, color: PlayerColor) {
 function hasAnyLegalMove(state: GameState, color: PlayerColor) {
   if (state.turn !== color) return false;
   return state.board.some((row) => row.some((cell) => cell.piece?.owner === color && getLegalMoves(state, cell.square).length > 0));
+}
+
+function hasAnyCaptureMove(state: GameState, color: PlayerColor) {
+  return state.board.some((row) =>
+    row.some((cell) => cell.piece?.owner === color && getPseudoLegalMoves(state, cell.square).some((move) => isCaptureMove(state, move)))
+  );
+}
+
+function isCaptureMove(state: GameState, move: Move) {
+  const movingPiece = cellAt(state, move.from)?.piece;
+  const targetPiece = cellAt(state, move.to)?.piece;
+  return Boolean(movingPiece && targetPiece && targetPiece.owner !== movingPiece.owner);
+}
+
+function countPieces(state: GameState, owner: PlayerColor) {
+  return state.board.reduce(
+    (count, row) => count + row.filter((cell) => cell.piece?.owner === owner).length,
+    0
+  );
 }
 
 function isRoyal(piece: Piece) {

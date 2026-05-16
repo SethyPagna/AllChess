@@ -47,6 +47,7 @@ export type GameState = {
     | "three-check"
     | "objective"
     | "royal-captured"
+    | "lost-all-pieces"
     | "no-legal-moves"
     | "insufficient-material"
     | "fifty-move"
