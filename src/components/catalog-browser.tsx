@@ -93,7 +93,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
               <span>{displayPiecePresentation(entry)}</span>
             </div>
             <ol>
-              {entry.shortRules.slice(0, 3).map((rule, index) => (
+              {entry.shortRules.slice(0, 2).map((rule, index) => (
                 <li key={rule}>
                   <strong>{index + 1}.</strong>
                   <span>{rule}</span>
@@ -102,14 +102,20 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
             </ol>
             <div className="catalog-card-actions">
               {entry.playability === "playable" && entry.variantKey ? (
-                <Link href={`/${locale}/play/${entry.variantKey}`} className="action-primary focus-ring">
-                  <Play size={16} />
-                  Play
-                </Link>
+                <>
+                  <Link href={`/${locale}/play/${entry.variantKey}`} className="action-primary focus-ring">
+                    <Play size={16} />
+                    Play
+                  </Link>
+                  <Link href={`/${locale}/games/${entry.id}` as never} className="action-secondary focus-ring">
+                    <BookOpen size={16} />
+                    Rules
+                  </Link>
+                </>
               ) : (
                 <Link href={`/${locale}/games/${entry.id}` as never} className="action-secondary focus-ring">
                   <BookOpen size={16} />
-                  Learn
+                  Rules
                 </Link>
               )}
               <span className="catalog-status" data-status={entry.playability}>
