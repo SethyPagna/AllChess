@@ -2805,6 +2805,12 @@ select {
   transform: translateX(2px);
 }
 
+.play-mode-rail-item.is-selected {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface-soft));
+  box-shadow: inset 3px 0 0 var(--accent);
+  color: var(--foreground);
+}
+
 .play-mode-rail-item svg,
 .play-game-row-main svg {
   color: var(--accent);
@@ -2856,6 +2862,7 @@ select {
   display: inline-flex;
   min-height: 2.25rem;
   align-items: center;
+  gap: 0.35rem;
   justify-content: center;
   padding: 0 0.7rem;
   font-size: 0.82rem;
