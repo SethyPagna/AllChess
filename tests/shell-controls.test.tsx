@@ -23,9 +23,10 @@ describe("shell controls", () => {
   test("notification center exposes a compact menu with actionable states", () => {
     const markup = renderToStaticMarkup(createElement(NotificationCenter));
 
-    expect(markup).toContain('aria-label="Notifications"');
+    expect(markup).toContain('aria-label="Notifications, 3 unread"');
     expect(markup).toContain("Match ready");
     expect(markup).toContain("Review complete");
     expect(markup).toContain("Real alerts only");
+    expect(markup).toContain("Mark read");
   });
 });

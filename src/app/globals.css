@@ -286,6 +286,7 @@ select {
   display: none;
   align-items: center;
   gap: 0.35rem;
+  min-width: 0;
 }
 
 .language-menu summary::-webkit-details-marker,
@@ -353,7 +354,16 @@ select {
 }
 
 .notification-panel-heading {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
   padding: 0.45rem 0.55rem;
+}
+
+.notification-panel-heading > span {
+  display: grid;
+  min-width: 0;
+  gap: 0.1rem;
 }
 
 .notification-panel-heading strong,
@@ -385,7 +395,29 @@ select {
 
 .notification-row span {
   display: grid;
+  min-width: 0;
   gap: 0.12rem;
+}
+
+.notification-read-button {
+  min-height: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--foreground);
+  padding: 0 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.notification-read-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.notification-row[data-read="true"] {
+  opacity: 0.72;
 }
 
 @keyframes menu-pop {
@@ -408,6 +440,7 @@ select {
   top: 0;
   z-index: 70;
   display: none;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0.45rem;
   border-bottom: 1px solid var(--border);
@@ -419,8 +452,13 @@ select {
 .app-mobile-brand {
   min-width: 0;
   gap: 0.5rem;
-  margin-right: auto;
   font-weight: 950;
+}
+
+.app-mobile-brand > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .app-mobile-brand .app-brand-mark {
@@ -3443,7 +3481,7 @@ select {
   }
 
   .app-mobile-header {
-    display: flex;
+    display: grid;
   }
 
   .app-mobile-tools {
@@ -3452,8 +3490,11 @@ select {
 
   .app-mobile-tools .language-menu-panel,
   .app-mobile-tools .notification-panel {
-    top: 3rem;
+    position: fixed;
+    top: 3.35rem;
+    right: 0.55rem;
     bottom: auto;
+    max-width: calc(100vw - 1.1rem);
     transform-origin: top right;
   }
 
@@ -3626,6 +3667,24 @@ select {
 }
 
 @media (max-width: 420px) {
+  .app-mobile-header {
+    gap: 0.32rem;
+    padding-inline: 0.5rem;
+  }
+
+  .app-mobile-brand > span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .app-mobile-tools {
+    gap: 0.25rem;
+  }
+
   .play-quick-grid,
   .play-mode-rail-list,
   .play-control-grid,

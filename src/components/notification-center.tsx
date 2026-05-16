@@ -1,6 +1,7 @@
 "use client";
 
 import { Bell, CheckCircle2, Radio, Sparkles } from "lucide-react";
+import { useState } from "react";
 
 const notifications = [
   {
@@ -21,19 +22,31 @@ const notifications = [
 ];
 
 export function NotificationCenter() {
+  const [read, setRead] = useState(false);
+  const unreadCount = read ? 0 : notifications.length;
+
   return (
     <details className="notification-menu relative inline-block">
-      <summary aria-label="Notifications" title="Notifications" className="focus-ring action-secondary grid h-10 w-10 cursor-pointer list-none place-items-center text-[var(--muted)]">
+      <summary
+        aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
+        title={unreadCount ? `${unreadCount} unread notifications` : "Notifications"}
+        className="focus-ring action-secondary grid h-10 w-10 cursor-pointer list-none place-items-center text-[var(--muted)]"
+      >
         <Bell aria-hidden="true" size={17} />
-        <span className="notification-dot" aria-hidden="true" />
+        {unreadCount ? <span className="notification-dot" aria-hidden="true" /> : null}
       </summary>
       <div className="notification-panel panel absolute right-0 top-12 z-40 grid w-80 max-w-[calc(100vw-1rem)] gap-2 p-2 shadow-xl">
         <div className="notification-panel-heading">
-          <strong>Notifications</strong>
-          <span>Live events</span>
+          <span>
+            <strong>Notifications</strong>
+            <small>{unreadCount ? `${unreadCount} unread` : "All caught up"}</small>
+          </span>
+          <button type="button" className="focus-ring notification-read-button" onClick={() => setRead(true)} disabled={!unreadCount}>
+            Mark read
+          </button>
         </div>
         {notifications.map(({ title, detail, Icon }) => (
-          <div key={title} className="notification-row">
+          <div key={title} className="notification-row" data-read={read ? "true" : "false"}>
             <Icon aria-hidden="true" size={16} />
             <span>
               <strong>{title}</strong>
