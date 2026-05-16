@@ -30,6 +30,23 @@ const configs: Record<BotDifficultyKey, StockfishDifficultyConfig> = {
   legend: { limitStrength: false, elo: getBotStrengthBand("legend").stockfishUciElo, skillLevel: 20, moveTimeMs: 2400, depth: 20 }
 };
 
+const stockfishScriptPath = "/engines/stockfish/stockfish-18-lite-single.js";
+const stockfishWasmPath = "/engines/stockfish/stockfish-18-lite-single.wasm";
+
+type StockfishRuntime = {
+  ccall: (name: string, returnType: null, argTypes: string[], args: string[], options?: { async?: boolean }) => unknown;
+  listener?: (line: string) => void;
+};
+
+type StockfishScriptElement = HTMLScriptElement & {
+  _exports?: (options: {
+    locateFile: (path: string) => string;
+    listener: (line: string) => void;
+  }) => Promise<StockfishRuntime>;
+};
+
+let stockfishRuntimePromise: Promise<StockfishRuntime> | null = null;
+
 export function shouldUseStockfish(state: GameState, engine: BotEngineMode = "auto") {
   if (engine === "internal") return false;
   if (engine === "stockfish") return true;
@@ -58,10 +75,11 @@ export function buildStockfishCommands(state: GameState, difficultyKey: BotDiffi
 }
 
 export async function requestStockfishMove(state: GameState, difficultyKey: BotDifficultyKey, playedMoves: string[], timeoutMs: number): Promise<StockfishSearchResult | null> {
-  if (!canCreateWorker()) return null;
+  if (!canUseStockfishRuntime()) return null;
 
   const commands = buildStockfishCommands(state, difficultyKey, playedMoves);
-  const worker = new Worker("/engines/stockfish/stockfish-18-lite-single.js");
+  const runtime = await getStockfishRuntime().catch(() => null);
+  if (!runtime) return null;
 
   return await new Promise((resolve) => {
     let finished = false;
@@ -75,12 +93,11 @@ export async function requestStockfishMove(state: GameState, difficultyKey: BotD
       if (finished) return;
       finished = true;
       clearTimeout(timer);
-      worker.terminate();
+      runtime.listener = undefined;
       resolve(result);
     };
 
-    worker.addEventListener("message", (event) => {
-      const line = String(event.data ?? "");
+    runtime.listener = (line) => {
       if (line.startsWith("info ")) {
         const depth = line.match(/\bdepth\s+(\d+)/);
         const nodes = line.match(/\bnodes\s+(\d+)/);
@@ -97,10 +114,9 @@ export async function requestStockfishMove(state: GameState, difficultyKey: BotD
       const uciMove = line.split(/\s+/)[1] ?? "";
       const move = uciToLegalMove(state, uciMove);
       finish(move ? { move, uciMove, principalVariation, depthReached, nodesSearched, evaluation } : null);
-    });
+    };
 
-    worker.addEventListener("error", () => finish(null));
-    for (const command of commands) worker.postMessage(command);
+    for (const command of commands) sendStockfishCommand(runtime, command);
   });
 }
 
@@ -131,6 +147,45 @@ function uciSquareToSquare(state: GameState, value: string) {
   return { row, col: file };
 }
 
-function canCreateWorker() {
-  return typeof Worker !== "undefined";
+function canUseStockfishRuntime() {
+  return typeof document !== "undefined";
+}
+
+async function getStockfishRuntime() {
+  stockfishRuntimePromise ??= loadStockfishRuntime();
+  return stockfishRuntimePromise;
+}
+
+async function loadStockfishRuntime() {
+  const factory = await loadStockfishFactory();
+  return await factory({
+    locateFile: (path: string) => (path.includes(".wasm") ? stockfishWasmPath : path),
+    listener: () => undefined
+  });
+}
+
+async function loadStockfishFactory() {
+  const existing = document.querySelector<StockfishScriptElement>(`script[data-allchess-stockfish="true"]`);
+  if (existing?._exports) return existing._exports;
+
+  const script = (existing ?? document.createElement("script")) as StockfishScriptElement;
+  script.dataset.allchessStockfish = "true";
+  script.src = stockfishScriptPath;
+  if (!existing) document.head.appendChild(script);
+
+  await new Promise<void>((resolve, reject) => {
+    if (script._exports) {
+      resolve();
+      return;
+    }
+    script.addEventListener("load", () => resolve(), { once: true });
+    script.addEventListener("error", () => reject(new Error("Stockfish script failed to load.")), { once: true });
+  });
+
+  if (!script._exports) throw new Error("Stockfish factory was not exported by the engine script.");
+  return script._exports;
+}
+
+function sendStockfishCommand(runtime: StockfishRuntime, command: string) {
+  runtime.ccall("command", null, ["string"], [command], { async: /^go\b/.test(command) });
 }

@@ -117,3 +117,25 @@ test("setup flow supports bot practice as black with an automatic first reply", 
   expect(after?.height).toBeCloseTo(before!.height, 1);
   expect(runtimeErrors).toEqual([]);
 });
+
+test("classic grandmaster uses Stockfish on off-book replies", async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
+  });
+
+  await page.goto("/en/play/classic?mode=bot&bot=grandmaster");
+  const board = page.getByLabel("Game board");
+  await expect(board).toBeVisible();
+
+  await page.getByLabel("Side").selectOption("first");
+  await page.getByLabel("Bot difficulty").first().selectOption("grandmaster");
+  await page.getByRole("button", { name: "Start Game" }).click();
+  await page.getByRole("button", { name: /h2.*white.*pawn/i }).click();
+  await page.getByRole("button", { name: "h3" }).click();
+
+  await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 7000 });
+  await expect(page.getByText(/Bot source:\s*engine-search/i)).toBeVisible();
+  expect(runtimeErrors).toEqual([]);
+});
