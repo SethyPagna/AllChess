@@ -22,6 +22,7 @@ const reasonLabels: Record<NonNullable<GameState["outcomeReason"]>, string> = {
   "no-legal-moves": "no legal moves",
   "insufficient-material": "insufficient material",
   "fifty-move": "fifty-move rule",
+  resignation: "resignation",
   draw: "draw"
 };
 
@@ -81,6 +82,7 @@ function outcomeContext(state: GameState, reason: NonNullable<GameState["outcome
     "no-legal-moves": "The side to move has no legal move; this variant-specific ending is applied instead of standard stalemate.",
     "insufficient-material": "Neither side has enough material left to force checkmate. With only the two kings, the game is immediately drawn.",
     "fifty-move": "Fifty full moves passed without a pawn move or capture, so standard chess rules allow the game to be drawn.",
+    resignation: "A player resigned, so the opponent receives the win without more moves being played.",
     draw: "The selected ruleset reached a drawn result with no winner."
   };
 

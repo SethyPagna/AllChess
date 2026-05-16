@@ -52,6 +52,7 @@ export type GameState = {
     | "no-legal-moves"
     | "insufficient-material"
     | "fifty-move"
+    | "resignation"
     | "draw";
   moves: Array<Move & { notation: string }>;
   clocks: PlayerClock[];
