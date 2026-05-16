@@ -28,7 +28,7 @@ import {
 import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/lib/bot-config";
 import { getVariantBotStrengthProfile } from "@/lib/bot-strength";
 import type { BotMoveResult } from "@/lib/bots";
-import { formatClock, tickGameClock } from "@/lib/clocks";
+import { formatClock, settleTurnClockElapsed, tickGameClock } from "@/lib/clocks";
 import { analyzeMoveList, summarizeReview } from "@/lib/game-review";
 import { describeGameOutcome } from "@/lib/game-outcome";
 import type { VariantRuleSummary } from "@/lib/rules-atlas";
@@ -250,7 +250,9 @@ export function GameBoard({
       setHistory((current) => [...current, snapshot]);
       setState((current) => {
         if (current.id !== snapshot.id || current.ply !== snapshot.ply || current.turn !== snapshot.turn) return current;
-        return applyMove(current, move);
+        const clockSettled = settleTurnClockElapsed(current, snapshot, result.elapsedMs);
+        if (clockSettled.status !== "active") return clockSettled;
+        return applyMove(clockSettled, move);
       });
       setSuggestedMove(null);
       setNotice(source === "auto" ? "Bot replied automatically." : "Bot played the current side.");
