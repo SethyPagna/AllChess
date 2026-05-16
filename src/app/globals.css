@@ -976,27 +976,46 @@ select {
 
 .intro-board {
   display: grid;
-  width: 78%;
+  width: 86%;
   aspect-ratio: 1;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 24px 70px rgb(0 0 0 / 20%);
   transform: rotate(-4deg);
+  --board-fixed-size: min(20rem, 86vw);
+  --board-cols: 8;
+  --board-rows: 8;
 }
 
-.intro-board span:nth-child(odd) {
+.intro-board > span {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  place-items: center;
+}
+
+.intro-board > span.is-dark {
   background: #71934f;
 }
 
-.intro-board span:nth-child(even) {
+.intro-board > span.is-light {
   background: #e9ebcf;
 }
 
-.intro-board span:nth-child(4n + 1),
-.intro-board span:nth-child(4n + 3) {
-  filter: brightness(0.94);
+.intro-board .piece-svg {
+  width: 112%;
+  height: 112%;
+  stroke-width: 6px;
+}
+
+.intro-board .piece-svg[data-owner="white"] {
+  filter: drop-shadow(0 1px 0 rgb(0 0 0 / 24%));
+}
+
+.intro-board .piece-svg[data-owner="black"] {
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 12%));
 }
 
 .intro-orbit-piece {
@@ -1064,7 +1083,15 @@ select {
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
+  color: var(--foreground);
   padding: 0.85rem;
+  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+
+.intro-workflow-step:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: var(--surface-soft);
+  transform: translateY(-1px);
 }
 
 .intro-workflow-step svg,

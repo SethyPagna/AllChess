@@ -1,9 +1,46 @@
 import Link from "next/link";
 import { Bot, Eye, Library, LogIn, Play, Swords } from "lucide-react";
 
+import { PieceIcon } from "@/components/piece-icon";
 import { getCatalogStats, getGameCatalog } from "@/lib/catalog";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import type { PlayerColor } from "@/lib/variants";
+
+const introPieces: Record<number, { code: string; owner: PlayerColor }> = {
+  0: { code: "r", owner: "black" },
+  1: { code: "n", owner: "black" },
+  2: { code: "b", owner: "black" },
+  3: { code: "q", owner: "black" },
+  4: { code: "k", owner: "black" },
+  5: { code: "b", owner: "black" },
+  6: { code: "n", owner: "black" },
+  7: { code: "r", owner: "black" },
+  8: { code: "p", owner: "black" },
+  9: { code: "p", owner: "black" },
+  10: { code: "p", owner: "black" },
+  11: { code: "p", owner: "black" },
+  12: { code: "p", owner: "black" },
+  13: { code: "p", owner: "black" },
+  14: { code: "p", owner: "black" },
+  15: { code: "p", owner: "black" },
+  48: { code: "p", owner: "white" },
+  49: { code: "p", owner: "white" },
+  50: { code: "p", owner: "white" },
+  51: { code: "p", owner: "white" },
+  52: { code: "p", owner: "white" },
+  53: { code: "p", owner: "white" },
+  54: { code: "p", owner: "white" },
+  55: { code: "p", owner: "white" },
+  56: { code: "r", owner: "white" },
+  57: { code: "n", owner: "white" },
+  58: { code: "b", owner: "white" },
+  59: { code: "q", owner: "white" },
+  60: { code: "k", owner: "white" },
+  61: { code: "b", owner: "white" },
+  62: { code: "n", owner: "white" },
+  63: { code: "r", owner: "white" }
+};
 
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
@@ -11,9 +48,9 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const t = createTranslator(locale);
   const catalogStats = getCatalogStats(getGameCatalog());
   const workflows = [
-    { Icon: Play, label: "Pick a board", detail: "Chess, variants, and rules in one place." },
-    { Icon: Bot, label: "Train fast", detail: "Bots explain source, tier, and threat." },
-    { Icon: Eye, label: "Watch or review", detail: "Rooms, history, and analysis stay connected." }
+    { Icon: Play, label: "Pick a board", detail: "Chess, variants, and rules in one place.", href: `/${locale}/play` },
+    { Icon: Bot, label: "Train fast", detail: "Bots explain source, tier, and threat.", href: `/${locale}/practice` },
+    { Icon: Eye, label: "Watch or review", detail: "Rooms, history, and analysis stay connected.", href: `/${locale}/watch` }
   ];
 
   return (
@@ -39,25 +76,31 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
         </div>
 
-        <div className="intro-board-orbit" aria-hidden="true">
+        <div className="intro-board-orbit" aria-label="Classic chess board preview" role="img">
           <div className="intro-board">
-            {Array.from({ length: 16 }, (_, index) => (
-              <span key={index} />
-            ))}
+            {Array.from({ length: 64 }, (_, index) => {
+              const piece = introPieces[index];
+              const row = Math.floor(index / 8);
+              const col = index % 8;
+              const isLight = (row + col) % 2 === 0;
+
+              return (
+                <span key={index} className={isLight ? "is-light" : "is-dark"}>
+                  {piece ? <PieceIcon code={piece.code} owner={piece.owner} variantKey="classic" /> : null}
+                </span>
+              );
+            })}
           </div>
-          <div className="intro-orbit-piece is-king">K</div>
-          <div className="intro-orbit-piece is-knight">N</div>
-          <div className="intro-orbit-piece is-pawn">P</div>
         </div>
       </section>
 
       <section className="intro-workflow" aria-label="How AllChess works">
-        {workflows.map(({ Icon, detail, label }) => (
-          <article key={label} className="intro-workflow-step">
+        {workflows.map(({ Icon, detail, href, label }) => (
+          <Link key={label} href={href as never} className="focus-ring intro-workflow-step">
             <Icon size={18} />
             <strong>{label}</strong>
             <span>{detail}</span>
-          </article>
+          </Link>
         ))}
       </section>
 

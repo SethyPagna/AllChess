@@ -12,6 +12,10 @@ test("localized game hub can open variants and a playable board", async ({ page 
   await expect(page.getByRole("link", { name: "Start playing" })).toHaveAttribute("href", "/en/play");
   await expect(page.getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/en/login");
   await expect(page.getByLabel("How AllChess works")).toContainText("Pick a board");
+  await expect(page.getByRole("link", { name: /Pick a board/ })).toHaveAttribute("href", "/en/play");
+  await expect(page.getByRole("link", { name: /Train fast/ })).toHaveAttribute("href", "/en/practice");
+  await expect(page.getByRole("link", { name: /Watch or review/ })).toHaveAttribute("href", "/en/watch");
+  await expect(page.getByLabel("Classic chess board preview")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
   await page.goto("/en/variants");
