@@ -660,7 +660,9 @@ function evaluateState(state: GameState, perspective: PlayerColor, budget?: Sear
   const activeMobility = (budget ? allLegalMovesCached(state, budget) : allLegalMoves(state)).length * (state.turn === perspective ? 5 : -5);
   const position = positionalScore(state, perspective);
   const royalSafety = royalSafetyScore(state, perspective);
-  return material + activeMobility + position + royalSafety;
+  const tacticalPressure = tacticalStateScore(state, perspective, budget);
+  const endgamePlan = endgameConversionScore(state, perspective, budget);
+  return material + activeMobility + position + royalSafety + tacticalPressure + endgamePlan;
 }
 
 function staticMoveScore(state: GameState, move: Move) {
@@ -695,7 +697,11 @@ function strategicMoveScore(state: GameState, next: GameState, move: Move, persp
   const forkPressure = forkPressureScore(next, perspective, budget) * (difficulty.skill / 18);
   const loosePiecePressure = loosePieceScore(next, opponents, budget) * (difficulty.skill / 18);
   const tempo = givesTurnPressure(next, perspective) ? 45 : 0;
-  return newThreats + ownSupport + advancement + objective + constriction + forkPressure + loosePiecePressure + tempo - ownDanger;
+  const deepPlan =
+    difficulty.skill >= 14
+      ? deepStrategicPlanScore(state, next, move, perspective, difficulty, budget)
+      : 0;
+  return newThreats + ownSupport + advancement + objective + constriction + forkPressure + loosePiecePressure + tempo + deepPlan - ownDanger;
 }
 
 function escapeOrCounterScore(
@@ -742,10 +748,166 @@ function opponentReplyPenalty(state: GameState, perspective: PlayerColor, diffic
     budget.nodes += 1;
     if (next?.status === "completed" && next.result !== perspective && next.result !== "draw") {
       worst = Math.max(worst, 50000);
+    } else if (next && difficulty.skill >= 14) {
+      const recovery = bestCounterplayScore(next, perspective, difficulty, budget);
+      worst = Math.max(0, worst - recovery * 0.2);
     }
   }
 
   return worst * (difficulty.skill / 20);
+}
+
+function deepStrategicPlanScore(
+  state: GameState,
+  next: GameState,
+  move: Move,
+  perspective: PlayerColor,
+  difficulty: BotDifficulty,
+  budget: SearchBudget
+) {
+  const pressureGain = tacticalStateScore(next, perspective, budget) - tacticalStateScore(state, perspective, budget);
+  const kingNetGain = kingNetScore(next, perspective, budget) - kingNetScore(state, perspective, budget);
+  const conversionGain = endgameConversionScore(next, perspective, budget) - endgameConversionScore(state, perspective, budget);
+  const sacrificeCompensation = sacrificeCompensationScore(state, next, move, perspective, difficulty, budget);
+  const drawResource = drawSavingResourceScore(state, next, perspective, budget);
+  const scale = difficulty.key === "legend" ? 1.2 : difficulty.key === "grandmaster" ? 1.05 : 0.8;
+
+  return (pressureGain * 0.55 + kingNetGain * 0.85 + conversionGain * 0.65 + sacrificeCompensation + drawResource) * scale;
+}
+
+function tacticalStateScore(state: GameState, perspective: PlayerColor, budget?: SearchBudget) {
+  const ownProfile = threatProfile(state, perspective, budget);
+  const opponentProfile = opponentColors(state, perspective).reduce(
+    (total, color) => addThreatProfiles(total, threatProfile(state, color, budget)),
+    emptyThreatProfile()
+  );
+
+  return (
+    ownProfile.captureValue * 0.2 +
+    ownProfile.looseTargetValue * 0.42 +
+    ownProfile.supportedTargetValue * 0.18 +
+    ownProfile.kingPressure * 26 -
+    opponentProfile.captureValue * 0.22 -
+    opponentProfile.looseTargetValue * 0.5 -
+    opponentProfile.supportedTargetValue * 0.14 -
+    opponentProfile.kingPressure * 31
+  );
+}
+
+function threatProfile(state: GameState, color: PlayerColor, budget?: SearchBudget) {
+  const profile = emptyThreatProfile();
+  const opponents = opponentColors(state, color);
+  const enemyRoyal = opponents.map((opponent) => findRoyalSquare(state, opponent)).find(Boolean);
+
+  for (const move of allLegalMovesFor(state, color, budget)) {
+    const target = state.board[move.to.row]?.[move.to.col]?.piece;
+    if (target && opponents.includes(target.owner)) {
+      const targetValue = pieceValues[target.code] ?? 100;
+      profile.captureValue += targetValue;
+      if (nearbyFriendlySupport(state, move.to, target.owner) === 0) {
+        profile.looseTargetValue += targetValue;
+      } else {
+        profile.supportedTargetValue += targetValue;
+      }
+    }
+    if (enemyRoyal && squareDistance(move.to, enemyRoyal) <= 1) {
+      profile.kingPressure += 1;
+    }
+  }
+
+  return profile;
+}
+
+function emptyThreatProfile() {
+  return {
+    captureValue: 0,
+    kingPressure: 0,
+    looseTargetValue: 0,
+    supportedTargetValue: 0
+  };
+}
+
+function addThreatProfiles(left: ReturnType<typeof emptyThreatProfile>, right: ReturnType<typeof emptyThreatProfile>) {
+  return {
+    captureValue: left.captureValue + right.captureValue,
+    kingPressure: left.kingPressure + right.kingPressure,
+    looseTargetValue: left.looseTargetValue + right.looseTargetValue,
+    supportedTargetValue: left.supportedTargetValue + right.supportedTargetValue
+  };
+}
+
+function kingNetScore(state: GameState, perspective: PlayerColor, budget?: SearchBudget) {
+  const enemyRoyal = opponentColors(state, perspective).map((color) => findRoyalSquare(state, color)).find(Boolean);
+  const ownRoyal = findRoyalSquare(state, perspective);
+  const enemyNet = enemyRoyal ? royalNetPressure(state, enemyRoyal, perspective, budget) : 0;
+  const ownNet = ownRoyal ? royalNetPressure(state, ownRoyal, opponentColors(state, perspective)[0] ?? perspective, budget) : 0;
+  return enemyNet - ownNet * 1.2;
+}
+
+function royalNetPressure(state: GameState, royal: { row: number; col: number }, attacker: PlayerColor, budget?: SearchBudget) {
+  const attackSquares = new Set(allLegalMovesFor(state, attacker, budget).map((move) => `${move.to.row}:${move.to.col}`));
+  let pressure = 0;
+  for (let row = royal.row - 1; row <= royal.row + 1; row += 1) {
+    for (let col = royal.col - 1; col <= royal.col + 1; col += 1) {
+      if (row === royal.row && col === royal.col) continue;
+      if (row < 0 || col < 0 || row >= state.board.length || col >= (state.board[0]?.length ?? 0)) continue;
+      if (attackSquares.has(`${row}:${col}`)) pressure += 28;
+      const occupant = state.board[row]?.[col]?.piece;
+      if (occupant && occupant.owner !== attacker) pressure += 10;
+    }
+  }
+  return pressure;
+}
+
+function endgameConversionScore(state: GameState, perspective: PlayerColor, budget?: SearchBudget) {
+  const material = materialOnlyScore(state, perspective);
+  const passedPawns = passedPawnScore(state, perspective);
+  const mobility = allLegalMovesFor(state, perspective, budget).length;
+  const opponentMobility = opponentColors(state, perspective).reduce((total, color) => total + allLegalMovesFor(state, color, budget).length, 0);
+  const squeeze = Math.max(0, mobility - opponentMobility) * (material >= 0 ? 5 : 2);
+  const drawFortress = material < -350 && opponentMobility <= 4 ? 120 : 0;
+  return passedPawns + squeeze + drawFortress;
+}
+
+function sacrificeCompensationScore(
+  state: GameState,
+  next: GameState,
+  move: Move,
+  perspective: PlayerColor,
+  difficulty: BotDifficulty,
+  budget: SearchBudget
+) {
+  const materialDelta = materialOnlyScore(next, perspective) - materialOnlyScore(state, perspective);
+  if (materialDelta >= -160) return 0;
+
+  const pressureGain = tacticalStateScore(next, perspective, budget) - tacticalStateScore(state, perspective, budget);
+  const kingPressure = kingNetScore(next, perspective, budget);
+  const objective = variantObjectiveScore(next, move, perspective);
+  const compensation = pressureGain * 0.65 + kingPressure * 0.8 + objective;
+  const requiredCompensation = Math.abs(materialDelta) * (difficulty.key === "legend" ? 0.55 : 0.7);
+  return compensation > requiredCompensation ? compensation - requiredCompensation : materialDelta * 0.35;
+}
+
+function drawSavingResourceScore(state: GameState, next: GameState, perspective: PlayerColor, budget: SearchBudget) {
+  if (materialOnlyScore(state, perspective) > -450) return 0;
+  const beforeOpponentMoves = opponentColors(state, perspective).reduce((total, color) => total + allLegalMovesFor(state, color, budget).length, 0);
+  const afterOpponentMoves = opponentColors(next, perspective).reduce((total, color) => total + allLegalMovesFor(next, color, budget).length, 0);
+  const reducedMobility = Math.max(0, beforeOpponentMoves - afterOpponentMoves) * 18;
+  return reducedMobility + (next.status === "completed" && next.result === "draw" ? 2000 : 0);
+}
+
+function bestCounterplayScore(state: GameState, perspective: PlayerColor, difficulty: BotDifficulty, budget: SearchBudget) {
+  if (state.turn !== perspective || Date.now() >= budget.deadline || budget.nodes >= difficulty.nodeBudget) return 0;
+  return allLegalMovesCached(state, budget)
+    .map((move) => staticMoveScore(state, move) + tacticalMovePressure(state, move, perspective, budget))
+    .sort((a, b) => b - a)
+    .at(0) ?? 0;
+}
+
+function tacticalMovePressure(state: GameState, move: Move, perspective: PlayerColor, budget: SearchBudget) {
+  const next = tryMove(state, move);
+  if (!next) return 0;
+  return Math.max(0, tacticalStateScore(next, perspective, budget) - tacticalStateScore(state, perspective, budget));
 }
 
 function mobilitySwing(previous: GameState, next: GameState, perspective: PlayerColor, budget: SearchBudget) {
@@ -810,6 +972,44 @@ function advancementScore(state: GameState, move: Move, owner: PlayerColor, code
   const forwardOwners: PlayerColor[] = ["white", "red", "sente"];
   const progress = forwardOwners.includes(owner) ? rows - 1 - move.to.row : move.to.row;
   return Math.max(0, progress) * (code === "p" || code === "s" ? 9 : 5);
+}
+
+function materialOnlyScore(state: GameState, perspective: PlayerColor) {
+  return state.board.reduce((total, row) => {
+    return (
+      total +
+      row.reduce((rowTotal, cell) => {
+        if (!cell.piece) return rowTotal;
+        const value = pieceValues[cell.piece.code] ?? 100;
+        return rowTotal + (cell.piece.owner === perspective ? value : -value);
+      }, 0)
+    );
+  }, 0);
+}
+
+function passedPawnScore(state: GameState, perspective: PlayerColor) {
+  let score = 0;
+  for (const row of state.board) {
+    for (const cell of row) {
+      const piece = cell.piece;
+      if (!piece || piece.owner !== perspective || !["p", "s"].includes(piece.code)) continue;
+      const direction = ["white", "red", "sente"].includes(piece.owner) ? -1 : 1;
+      const promotionDistance = direction < 0 ? cell.square.row : state.board.length - 1 - cell.square.row;
+      const blockers = opponentColors(state, perspective).some((opponent) =>
+        state.board.some((scanRow) =>
+          scanRow.some((scanCell) => {
+            const occupant = scanCell.piece;
+            if (!occupant || occupant.owner !== opponent || !["p", "s"].includes(occupant.code)) return false;
+            const sameOrAdjacentFile = Math.abs(scanCell.square.col - cell.square.col) <= 1;
+            const inFront = direction < 0 ? scanCell.square.row < cell.square.row : scanCell.square.row > cell.square.row;
+            return sameOrAdjacentFile && inFront;
+          })
+        )
+      );
+      if (!blockers) score += Math.max(0, 7 - promotionDistance) * 22;
+    }
+  }
+  return score;
 }
 
 function variantObjectiveScore(state: GameState, move: Move, owner: PlayerColor) {
@@ -924,6 +1124,10 @@ function deterministicNoise(move: Move) {
 
 function serializeMoveSource(move: Move) {
   return `${move.from.row},${move.from.col}`;
+}
+
+function squareDistance(left: { row: number; col: number }, right: { row: number; col: number }) {
+  return Math.max(Math.abs(left.row - right.row), Math.abs(left.col - right.col));
 }
 
 function confidenceFor(score: number | null, depth: number, tier: BotTierKey) {
