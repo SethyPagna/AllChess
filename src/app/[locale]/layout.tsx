@@ -45,16 +45,8 @@ export default async function LocaleLayout({
       icon: "swords",
       links: [
         { href: "lobby", icon: "home", label: t("nav.lobby") },
-        { href: "play", icon: "swords", label: t("nav.play") }
-      ]
-    },
-    {
-      label: t("nav.learnPractice"),
-      icon: "book",
-      links: [
-        { href: "practice", icon: "users", label: t("nav.practice") },
-        { href: "variants", icon: "library", label: t("nav.gamesRules") },
-        { href: "variants?playability=learn", icon: "book", label: t("nav.learnRules") }
+        { href: "play", icon: "swords", label: t("nav.play") },
+        { href: "variants", icon: "library", label: t("nav.gamesRules") }
       ]
     },
     {
@@ -66,17 +58,13 @@ export default async function LocaleLayout({
       ]
     },
     {
-      label: t("nav.account"),
+      label: t("nav.settings"),
       icon: "settings",
-      links: [
-        { href: "profile/player", icon: "user", label: t("nav.profile") },
-        { href: "history", icon: "history", label: t("nav.history") },
-        { href: "settings", icon: "settings", label: t("nav.settings") },
-        { href: "login", icon: "login", label: t("nav.login") }
-      ]
+      links: [{ href: "settings", icon: "settings", label: t("nav.settings") }]
     }
   ];
   const profileHref = `/${locale}/profile/player`;
+  const loginHref = `/${locale}/login`;
 
   return (
     <html lang={locale} dir={rtlLocales.has(locale) ? "rtl" : "ltr"} suppressHydrationWarning>
@@ -92,7 +80,7 @@ export default async function LocaleLayout({
                   <span className="app-brand-name">{t("app.name")}</span>
                 </span>
               </Link>
-              <AppSidebarNavigation account={{ href: profileHref, icon: "user", label: t("nav.profile") }} groups={navGroups} locale={locale} />
+              <AppSidebarNavigation account={{ href: profileHref, icon: "user", label: t("nav.profileHistory") }} auth={{ href: loginHref, icon: "login", label: t("nav.login") }} groups={navGroups} locale={locale} />
               <div className="app-responsive-tools" aria-label="Quick settings">
                 <ThemeToggle
                   labels={{
@@ -133,7 +121,7 @@ export default async function LocaleLayout({
                     <Menu size={18} />
                   </summary>
                   <div className="app-menu-panel">
-                    <AppMobileNavigation account={{ href: profileHref, icon: "user", label: t("nav.profile") }} groups={navGroups} locale={locale} />
+                    <AppMobileNavigation account={{ href: profileHref, icon: "user", label: t("nav.profileHistory") }} auth={{ href: loginHref, icon: "login", label: t("nav.login") }} groups={navGroups} locale={locale} />
                   </div>
                 </details>
               </header>

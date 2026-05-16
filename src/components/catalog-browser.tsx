@@ -127,6 +127,10 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
                     <BookOpen size={16} />
                     Rules
                   </Link>
+                  <Link href={`/${locale}/play/${entry.variantKey}?bot=normal&mode=bot`} className="action-secondary focus-ring">
+                    <Bot size={16} />
+                    Practice
+                  </Link>
                 </>
               ) : (
                 <Link href={`/${locale}/games/${entry.id}` as never} className="action-secondary focus-ring">

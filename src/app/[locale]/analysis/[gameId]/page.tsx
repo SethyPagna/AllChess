@@ -22,7 +22,7 @@ export default async function AnalysisPage({
       </div>
       <div className="panel analysis-command-bar">
         <span>Game {gameId}</span>
-        <Link href={`/${locale}/history`} className="action-secondary focus-ring inline-flex items-center gap-2 px-3 py-2 text-sm">
+        <Link href={`/${locale}/profile/player`} className="action-secondary focus-ring inline-flex items-center gap-2 px-3 py-2 text-sm">
           <ChevronLeft size={16} />
           Records
         </Link>

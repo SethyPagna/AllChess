@@ -22,6 +22,7 @@ export default async function ProfilePage({
           {displayName.slice(0, 2).toUpperCase()}
         </div>
         <div className="min-w-0">
+          <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">Profile & history</p>
           <h1 className="truncate text-4xl font-black">@{displayName}</h1>
           <div className="account-profile-meta">
             <span>Guest-ready</span>
@@ -57,9 +58,9 @@ export default async function ProfilePage({
             <Play size={16} />
             Start playing
           </Link>
-          <Link href={`/${locale}/history`} className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-2">
-            <History size={16} />
-            Match records
+          <Link href={`/${locale}/leaderboards`} className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-2">
+            <BarChart3 size={16} />
+            View ratings
           </Link>
         </div>
       </div>

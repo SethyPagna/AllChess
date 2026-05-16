@@ -49,7 +49,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const catalogStats = getCatalogStats(getGameCatalog());
   const workflows = [
     { Icon: Play, label: "Pick a board", detail: "Chess, variants, and rules in one place.", href: `/${locale}/play` },
-    { Icon: Bot, label: "Train fast", detail: "Bots explain source, tier, and threat.", href: `/${locale}/practice` },
+    { Icon: Bot, label: "Train fast", detail: "Bots explain source, tier, and threat.", href: `/${locale}/variants?playability=playable` },
     { Icon: Eye, label: "Watch or review", detail: "Rooms, history, and analysis stay connected.", href: `/${locale}/watch` }
   ];
 
@@ -105,7 +105,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       </section>
 
       <nav className="intro-shortcuts" aria-label="Visitor shortcuts">
-        <Link href={`/${locale}/practice`} className="focus-ring">
+        <Link href={`/${locale}/play?mode=bot`} className="focus-ring">
           <Bot size={16} />
           Bots
         </Link>

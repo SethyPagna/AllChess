@@ -38,6 +38,7 @@ const en = {
   "nav.settings": "Settings",
   "nav.login": "Sign in",
   "nav.profile": "Profile",
+  "nav.profileHistory": "Profile & history",
   "auth.title": "Welcome back",
   "auth.subtitle": "Sign in to keep ratings, records, reviews, and preferences synced across devices.",
   "auth.email": "Email",

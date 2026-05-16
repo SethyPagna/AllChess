@@ -224,6 +224,40 @@ select {
   color: var(--accent);
 }
 
+.app-sidebar-bottom {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.app-sidebar-bottom .app-nav-link {
+  min-width: 0;
+}
+
+.app-sidebar-bottom .app-nav-link span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-nav-icon-link {
+  display: grid;
+  width: 2.55rem;
+  height: 2.55rem;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+
+.app-nav-icon-link:hover,
+.app-nav-icon-link.is-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-soft));
+  color: var(--foreground);
+}
+
 .app-nav-group {
   display: grid;
   gap: 0.2rem;
@@ -3377,7 +3411,7 @@ select {
 
 .practice-bot-metrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
   gap: 0.65rem;
   padding: 0.75rem;
 }

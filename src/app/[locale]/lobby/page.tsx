@@ -21,7 +21,7 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
     { Icon: Lock, title: t("lobby.privateRoom"), href: `/${locale}/play?mode=room`, body: "Create a shareable room code for friends." },
     { Icon: Clock, title: t("lobby.correspondence"), href: `/${locale}/play?time=daily`, body: "Play long-form games across time zones." },
     { Icon: Eye, title: "Watch rooms", href: `/${locale}/watch`, body: "Spectate public rooms when real games are active." },
-    { Icon: Bot, title: t("lobby.aiPractice"), href: `/${locale}/practice`, body: "Practice against Easy through Legend bot levels." },
+    { Icon: Bot, title: t("lobby.aiPractice"), href: `/${locale}/variants?playability=playable`, body: "Choose a verified board, then practice against Easy through Legend bot levels." },
     { Icon: Users, title: "Presence", href: `/${locale}/watch`, body: `${siteStats.playersOnline.value} online / ${siteStats.activeRooms.value} rooms / ${siteStats.spectators.value} spectators.` }
   ];
 
@@ -87,7 +87,7 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
           ))}
         </div>
         <div className="compact-section-heading">
-          <h2 className="section-title">Learn by Family</h2>
+          <h2 className="section-title">Games & Rules</h2>
           <InfoHint text="Browse related games together, then open a short rule guide or a verified practice board." />
         </div>
         <div className="panel lobby-family-strip">

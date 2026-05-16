@@ -39,6 +39,7 @@ type AccountShortcut = {
 
 type AppNavigationProps = {
   account?: AccountShortcut;
+  auth?: AccountShortcut;
   groups: AppNavGroup[];
   locale: string;
 };
@@ -105,9 +106,10 @@ function AccountLink({ account, active, iconSize }: { account: AccountShortcut; 
   );
 }
 
-export function AppSidebarNavigation({ account, groups, locale }: AppNavigationProps) {
+export function AppSidebarNavigation({ account, auth, groups, locale }: AppNavigationProps) {
   const isActiveHref = useActiveHref(locale);
   const accountRoute = account ? hrefToRoute(locale, account.href) : "";
+  const authRoute = auth ? hrefToRoute(locale, auth.href) : "";
 
   return (
     <div className="app-sidebar-nav-stack">
@@ -115,6 +117,11 @@ export function AppSidebarNavigation({ account, groups, locale }: AppNavigationP
         {groups.map((group, index) => {
           const GroupIcon = iconMap[group.icon];
           const groupActive = group.links.some((link) => isActiveHref(link.href));
+          const directLink = group.links.length === 1 && group.links[0]?.label === group.label ? group.links[0] : null;
+
+          if (directLink) {
+            return <NavLink key={directLink.href} {...directLink} href={localizedHref(locale, directLink.href)} active={isActiveHref(directLink.href)} nested={false} />;
+          }
 
           return (
             <details key={group.label} className={`app-nav-group${groupActive ? " is-active" : ""}`} open={index < 3 || groupActive}>
@@ -132,33 +139,48 @@ export function AppSidebarNavigation({ account, groups, locale }: AppNavigationP
           );
         })}
       </nav>
-      {account ? (
-        <div className="app-sidebar-bottom" aria-label="Account shortcut">
-          <AccountLink account={account} active={isActiveHref(accountRoute)} iconSize={20} />
+      {account || auth ? (
+        <div className="app-sidebar-bottom" aria-label="Profile and sign in">
+          {account ? <AccountLink account={account} active={isActiveHref(accountRoute)} iconSize={20} /> : null}
+          {auth ? (
+            <Link href={auth.href as never} aria-current={isActiveHref(authRoute) ? "page" : undefined} className={`app-nav-icon-link focus-ring${isActiveHref(authRoute) ? " is-active" : ""}`} title={auth.label} aria-label={auth.label}>
+              <LogIn size={18} strokeWidth={2.5} />
+            </Link>
+          ) : null}
         </div>
       ) : null}
     </div>
   );
 }
 
-export function AppMobileNavigation({ account, groups, locale }: AppNavigationProps) {
+export function AppMobileNavigation({ account, auth, groups, locale }: AppNavigationProps) {
   const isActiveHref = useActiveHref(locale);
   const accountRoute = account ? hrefToRoute(locale, account.href) : "";
+  const authRoute = auth ? hrefToRoute(locale, auth.href) : "";
 
   return (
     <div className="app-menu-sections">
-      {groups.map((group) => (
-        <section key={group.label} className="app-menu-section" aria-label={group.label}>
-          <p className="app-menu-section-label">{group.label}</p>
-          {group.links.map((link) => (
-            <NavLink key={link.href} {...link} href={localizedHref(locale, link.href)} active={isActiveHref(link.href)} nested={false} />
-          ))}
-        </section>
-      ))}
-      {account ? (
-        <section className="app-menu-section" aria-label="Account">
-          <p className="app-menu-section-label">Account</p>
-          <AccountLink account={account} active={isActiveHref(accountRoute)} iconSize={18} />
+      {groups.map((group) => {
+        const directLink = group.links.length === 1 && group.links[0]?.label === group.label ? group.links[0] : null;
+
+        if (directLink) {
+          return <NavLink key={directLink.href} {...directLink} href={localizedHref(locale, directLink.href)} active={isActiveHref(directLink.href)} nested={false} />;
+        }
+
+        return (
+          <section key={group.label} className="app-menu-section" aria-label={group.label}>
+            <p className="app-menu-section-label">{group.label}</p>
+            {group.links.map((link) => (
+              <NavLink key={link.href} {...link} href={localizedHref(locale, link.href)} active={isActiveHref(link.href)} nested={false} />
+            ))}
+          </section>
+        );
+      })}
+      {account || auth ? (
+        <section className="app-menu-section" aria-label="Profile and sign in">
+          <p className="app-menu-section-label">Profile</p>
+          {account ? <AccountLink account={account} active={isActiveHref(accountRoute)} iconSize={18} /> : null}
+          {auth ? <AccountLink account={auth} active={isActiveHref(authRoute)} iconSize={18} /> : null}
         </section>
       ) : null}
     </div>
