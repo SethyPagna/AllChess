@@ -58,6 +58,11 @@ export default async function LocaleLayout({
       ]
     },
     {
+      label: t("nav.history"),
+      icon: "history",
+      links: [{ href: "history", icon: "history", label: t("nav.history") }]
+    },
+    {
       label: t("nav.settings"),
       icon: "settings",
       links: [{ href: "settings", icon: "settings", label: t("nav.settings") }]

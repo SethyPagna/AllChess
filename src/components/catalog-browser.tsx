@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { BookOpen, Bot, Filter, Play, RotateCcw, Search } from "lucide-react";
+import { BookOpen, Bot, Filter, Info, Play, RotateCcw, Search, X } from "lucide-react";
 
 import {
   displayBotReadiness,
@@ -36,6 +36,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
   const [query, setQuery] = useState("");
   const [family, setFamily] = useState<GameFamilyKey | "all">(initialFamily);
   const [status, setStatus] = useState<PlayabilityStatus | "all">(initialStatus);
+  const [selectedEntry, setSelectedEntry] = useState<GameCatalogEntry | null>(null);
 
   const filtered = useMemo(() => {
     const normalized = normalize(query);
@@ -100,62 +101,36 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
       <div className="catalog-grid">
         {filtered.map((entry) => (
           <article key={entry.id} className="panel catalog-card">
-            <div>
-              <h2>{displayGameName(entry)}</h2>
-              <p>{gameFamilies.find((item) => item.key === entry.family)?.label}</p>
+            <div className="catalog-card-head">
+              <div>
+                <h2>{displayGameName(entry)}</h2>
+                <p>{gameFamilies.find((item) => item.key === entry.family)?.label}</p>
+              </div>
+              <button type="button" className="catalog-icon-button focus-ring" aria-label={`Rules for ${displayGameName(entry)}`} title="Rules, status, and practice" onClick={() => setSelectedEntry(entry)}>
+                <Info size={16} />
+              </button>
             </div>
-            <div className="catalog-card-meta">
-              <span>{entry.board.description}</span>
-              <span>{displayPiecePresentation(entry)}</span>
-            </div>
-            <ol>
-              {entry.shortRules.slice(0, 2).map((rule, index) => (
-                <li key={rule}>
-                  <strong>{index + 1}.</strong>
-                  <span>{rule}</span>
-                </li>
-              ))}
-            </ol>
+            <p className="catalog-card-summary">{entry.shortRules[0] ?? entry.winConditions[0]}</p>
             <div className="catalog-card-actions">
               {entry.playability === "playable" && entry.variantKey ? (
-                <>
-                  <Link href={`/${locale}/play/${entry.variantKey}`} className="action-primary focus-ring">
-                    <Play size={16} />
-                    Play
-                  </Link>
-                  <Link href={`/${locale}/games/${entry.id}` as never} className="action-secondary focus-ring">
-                    <BookOpen size={16} />
-                    Rules
-                  </Link>
-                  <Link href={`/${locale}/play/${entry.variantKey}?bot=normal&mode=bot`} className="action-secondary focus-ring">
-                    <Bot size={16} />
-                    Practice
-                  </Link>
-                </>
-              ) : (
-                <Link href={`/${locale}/games/${entry.id}` as never} className="action-secondary focus-ring">
-                  <BookOpen size={16} />
-                  Rules
+                <Link href={`/${locale}/play/${entry.variantKey}`} className="action-primary focus-ring">
+                  <Play size={16} />
+                  Play
                 </Link>
+              ) : (
+                <button type="button" className="action-secondary focus-ring" onClick={() => setSelectedEntry(entry)}>
+                  <BookOpen size={16} />
+                  Guide
+                </button>
               )}
               <span className="catalog-status" data-status={entry.playability}>
                 {displayPlayabilityStatus(entry.playability)}
               </span>
-              <span className="catalog-release" data-status={entry.playability} title={entry.verification?.knownGaps[0] ?? "Verified release gate"}>
-                {displayReleaseReadiness(entry)}
-              </span>
-              {entry.botAdapter !== "none" ? (
-                <span className="catalog-engine">
-                  <Bot size={14} />
-                  {displayBotReadiness(entry)}
-                </span>
-              ) : (
-                <span className="catalog-engine">{displayRulesReadiness(entry)}</span>
-              )}
             </div>
           </article>
         ))}
       </div>
+      {selectedEntry ? <CatalogRulesOverlay entry={selectedEntry} locale={locale} onClose={() => setSelectedEntry(null)} /> : null}
       {!filtered.length ? (
         <div className="panel catalog-empty-state">
           <Search size={22} />
@@ -176,6 +151,72 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
         </div>
       ) : null}
     </section>
+  );
+}
+
+function CatalogRulesOverlay({ entry, locale, onClose }: { entry: GameCatalogEntry; locale: LocaleCode; onClose: () => void }) {
+  const playHref = entry.variantKey ? `/${locale}/play/${entry.variantKey}` : `/${locale}/games/${entry.id}`;
+
+  return (
+    <div className="catalog-rules-backdrop" role="presentation" onClick={onClose}>
+      <section className="catalog-rules-sheet panel" role="dialog" aria-modal="true" aria-label={`${displayGameName(entry)} rules`} onClick={(event) => event.stopPropagation()}>
+        <div className="catalog-rules-head">
+          <div>
+            <span>{gameFamilies.find((item) => item.key === entry.family)?.label}</span>
+            <h2>{displayGameName(entry)}</h2>
+          </div>
+          <button type="button" className="catalog-icon-button focus-ring" aria-label="Close rules" onClick={onClose}>
+            <X size={17} />
+          </button>
+        </div>
+        <div className="catalog-card-meta">
+          <span>{entry.board.description}</span>
+          <span>{displayPiecePresentation(entry)}</span>
+          <span>{displayRulesReadiness(entry)}</span>
+          <span>{displayReleaseReadiness(entry)}</span>
+          <span>{entry.botAdapter !== "none" ? displayBotReadiness(entry) : "Rules only"}</span>
+        </div>
+        <div className="catalog-rules-grid">
+          <article>
+            <h3>Basics</h3>
+            <ol>
+              {entry.shortRules.slice(0, 4).map((rule, index) => (
+                <li key={rule}>
+                  <strong>{index + 1}.</strong>
+                  <span>{rule}</span>
+                </li>
+              ))}
+            </ol>
+          </article>
+          <article>
+            <h3>How it ends</h3>
+            <ul>
+              {entry.winConditions.slice(0, 3).map((condition) => (
+                <li key={condition}>{condition}</li>
+              ))}
+            </ul>
+          </article>
+        </div>
+        <div className="catalog-rules-actions">
+          {entry.playability === "playable" && entry.variantKey ? (
+            <Link href={playHref as never} className="action-primary focus-ring">
+              <Play size={16} />
+              Play
+            </Link>
+          ) : null}
+          <Link href={`/${locale}/games/${entry.id}` as never} className="action-secondary focus-ring">
+            <BookOpen size={16} />
+            Full guide
+          </Link>
+          {entry.playability === "playable" && entry.variantKey ? (
+            <Link href={`/${locale}/play/${entry.variantKey}?mode=bot`} className="action-secondary focus-ring">
+              <Bot size={16} />
+              Bot mode
+            </Link>
+          ) : null}
+        </div>
+      </section>
+    </div>
   );
 }
 

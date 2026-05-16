@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { BookOpen, Bot, Brain, Database, Gauge, Play } from "lucide-react";
+import { Bot, Brain, Database, Gauge } from "lucide-react";
 
 import { CatalogBrowser } from "@/components/catalog-browser";
 import { InfoHint } from "@/components/info-hint";
@@ -31,19 +30,11 @@ export default async function VariantsPage({
 
   return (
     <section className="grid gap-6">
-      <div className="practice-hero panel">
-        <div>
-          <p className="inline-flex items-center gap-2 text-xs font-black uppercase tracking-wide text-[var(--muted)]">
-            <BookOpen size={16} />
-            Games, rules, and practice
-          </p>
-          <h1>{t("variants.title")}</h1>
-          <p>{stats.playableGames} ready boards, {stats.learnGames} guides, {stats.comingSoonGames} in progress.</p>
-        </div>
-        <Link href={`/${locale}/play/classic?bot=normal&mode=bot`} className="focus-ring action-primary inline-flex items-center gap-2 px-4 py-3">
-          <Play size={18} />
-          Quick bot game
-        </Link>
+      <div className="games-rules-heading panel">
+        <h1>{t("variants.title")}</h1>
+        <span>{stats.playableGames} ready</span>
+        <span>{stats.learnGames} guides</span>
+        <span>{stats.comingSoonGames} building</span>
       </div>
       <div className="panel practice-bot-metrics" aria-label="Bot training status">
         <div>
