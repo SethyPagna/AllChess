@@ -20,6 +20,6 @@ describe("performance boundaries", () => {
     const generatedPath = join(repoRoot, "src", "data", "bot-knowledge.generated.json");
     const size = statSync(generatedPath).size;
 
-    expect(size).toBeLessThan(28 * 1024 * 1024);
+    expect(size).toBeLessThan(20 * 1024 * 1024);
   });
 });
