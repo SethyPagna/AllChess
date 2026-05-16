@@ -905,22 +905,35 @@ select {
 .board-coordinate {
   position: absolute;
   z-index: 2;
-  color: color-mix(in srgb, currentColor 88%, transparent);
+  min-width: 1.08em;
+  border-radius: 999px;
+  background: rgb(244 238 196 / 72%);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 18%);
+  color: #24461a;
   font-size: clamp(0.64rem, calc((var(--board-fixed-size) / var(--board-cols)) * 0.16), 1.05rem);
   font-weight: 900;
   line-height: 1;
+  padding: 0.09rem 0.2rem;
   pointer-events: none;
-  text-shadow: 0 1px 1px rgb(0 0 0 / 18%);
+  text-align: center;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 72%);
+}
+
+.board-square[data-tone="dark"] .board-coordinate {
+  background: rgb(18 30 13 / 62%);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 32%);
+  color: #fff4bd;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 75%);
 }
 
 .board-rank {
-  left: 0.22rem;
-  top: 0.22rem;
+  left: 0.16rem;
+  top: 0.16rem;
 }
 
 .board-file {
-  right: 0.22rem;
-  bottom: 0.2rem;
+  right: 0.16rem;
+  bottom: 0.16rem;
   text-transform: uppercase;
 }
 

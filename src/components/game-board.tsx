@@ -501,6 +501,7 @@ export function GameBoard({
                       className="board-square focus-ring relative grid place-items-center overflow-hidden font-black"
                       aria-label={cell.piece ? `${name} ${cell.piece.owner} ${pieceName(cell.piece.code)}` : name}
                       data-square={name}
+                      data-tone={dark ? "dark" : "light"}
                       data-suggested={isSuggestedFrom ? "from" : isSuggestedTo ? "to" : undefined}
                       style={{
                         background: isSelected
