@@ -761,6 +761,35 @@ export function displayReleaseReadiness(entry: GameCatalogEntry) {
   return "Researching";
 }
 
+export function getCatalogReleaseReadiness(entry: GameCatalogEntry) {
+  const label = displayReleaseReadiness(entry);
+  if (entry.playability === "playable") {
+    return {
+      status: "verified-ready" as const,
+      label,
+      gateComplete: true,
+      blockers: [] as string[]
+    };
+  }
+
+  return {
+    status: entry.variantKey ? ("not-fully-trained" as const) : ("researching" as const),
+    label,
+    gateComplete: false,
+    blockers:
+      entry.verification?.knownGaps.length
+        ? entry.verification.knownGaps
+        : ["Rules, bot, review, persistence, and E2E fixtures must pass before this game becomes playable."]
+  };
+}
+
+export function serializeCatalogEntry(entry: GameCatalogEntry) {
+  return {
+    ...entry,
+    releaseReadiness: getCatalogReleaseReadiness(entry)
+  };
+}
+
 export function getCatalogStats(entries: GameCatalogEntry[] = gameCatalog): CatalogStats {
   const familyCounts = Object.fromEntries(gameFamilies.map((family) => [family.key, 0])) as CatalogStats["familyCounts"];
   for (const entry of entries) {

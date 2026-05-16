@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getGameCatalogEntry } from "@/lib/catalog";
+import { getGameCatalogEntry, serializeCatalogEntry } from "@/lib/catalog";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ gameId: string }> }) {
   const { gameId } = await params;
@@ -8,5 +8,5 @@ export async function GET(_request: Request, { params }: { params: Promise<{ gam
   if (!entry) {
     return NextResponse.json({ error: "Unknown game." }, { status: 404 });
   }
-  return NextResponse.json(entry);
+  return NextResponse.json(serializeCatalogEntry(entry));
 }

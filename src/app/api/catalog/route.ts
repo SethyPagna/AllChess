@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getCatalogStats, getGameCatalog, searchGameCatalog, type GameFamilyKey, type PlayabilityStatus } from "@/lib/catalog";
+import { getCatalogStats, getGameCatalog, searchGameCatalog, serializeCatalogEntry, type GameFamilyKey, type PlayabilityStatus } from "@/lib/catalog";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   const entries = query || family || playability ? searchGameCatalog(query, { family: family ?? undefined, playability: playability ?? undefined }) : getGameCatalog();
 
   return NextResponse.json({
-    entries,
+    entries: entries.map(serializeCatalogEntry),
     stats: getCatalogStats(entries)
   });
 }

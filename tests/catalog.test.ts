@@ -5,7 +5,17 @@ import { GET as catalogItemGet } from "@/app/api/catalog/[gameId]/route";
 import { GET as familiesGet } from "@/app/api/game-families/route";
 import { GET as leaderboardsGet } from "@/app/api/leaderboards/route";
 import { GET as rulesGet } from "@/app/api/rules/[variantKey]/route";
-import { displayGameName, displayReleaseReadiness, gameCatalog, gameFamilies, getCatalogStats, getGameCatalogEntry, getPlayableGameVerification, searchGameCatalog } from "@/lib/catalog";
+import {
+  displayGameName,
+  displayReleaseReadiness,
+  gameCatalog,
+  gameFamilies,
+  getCatalogReleaseReadiness,
+  getCatalogStats,
+  getGameCatalogEntry,
+  getPlayableGameVerification,
+  searchGameCatalog
+} from "@/lib/catalog";
 
 describe("universal game catalog", () => {
   test("keeps every current playable variant in the broader catalog", () => {
@@ -40,6 +50,12 @@ describe("universal game catalog", () => {
     expect(getGameCatalogEntry("jungle")).toMatchObject({ playability: "learn" });
     expect(displayReleaseReadiness(getGameCatalogEntry("classic")!)).toBe("Verified ready");
     expect(displayReleaseReadiness(getGameCatalogEntry("shogi")!)).toBe("Not fully trained");
+    expect(getCatalogReleaseReadiness(getGameCatalogEntry("classic")!)).toMatchObject({ status: "verified-ready", gateComplete: true, blockers: [] });
+    expect(getCatalogReleaseReadiness(getGameCatalogEntry("shogi")!)).toMatchObject({
+      status: "not-fully-trained",
+      gateComplete: false,
+      blockers: expect.arrayContaining([expect.stringContaining("pawn-drop")])
+    });
   });
 
   test("covers the wider board-game families without marking unfinished engines playable", () => {
@@ -77,10 +93,23 @@ describe("universal game catalog", () => {
     expect(stats.familyCounts.mancala).toBeGreaterThan(0);
 
     const catalog = await catalogGet(new Request("http://allchess.test/api/catalog?q=go"));
-    await expect(catalog.json()).resolves.toMatchObject({ stats: { totalGames: expect.any(Number) } });
+    await expect(catalog.json()).resolves.toMatchObject({
+      stats: { totalGames: expect.any(Number) },
+      entries: expect.arrayContaining([
+        expect.objectContaining({
+          releaseReadiness: expect.objectContaining({ status: expect.any(String), gateComplete: false })
+        })
+      ])
+    });
 
     const item = await catalogItemGet(new Request("http://allchess.test/api/catalog/dou-shou-qi"), { params: Promise.resolve({ gameId: "dou-shou-qi" }) });
     await expect(item.json()).resolves.toMatchObject({ id: "jungle", name: { native: "鬥獸棋" } });
+
+    const gatedItem = await catalogItemGet(new Request("http://allchess.test/api/catalog/shogi"), { params: Promise.resolve({ gameId: "shogi" }) });
+    await expect(gatedItem.json()).resolves.toMatchObject({
+      id: "shogi",
+      releaseReadiness: { status: "not-fully-trained", label: "Not fully trained", gateComplete: false }
+    });
 
     const families = await familiesGet();
     await expect(families.json()).resolves.toMatchObject({ families: expect.arrayContaining([expect.objectContaining({ key: "mancala", games: expect.any(Number) })]) });
