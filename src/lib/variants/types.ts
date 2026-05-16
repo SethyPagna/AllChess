@@ -20,6 +20,7 @@ export type BoardCell = {
 };
 
 export type Move = {
+  kind?: "move" | "drop";
   from: Square;
   to: Square;
   promotion?: boolean;
@@ -57,6 +58,26 @@ export type GameState = {
   captured: Piece[];
   checks: Partial<Record<PlayerColor, number>>;
   halfmoveClock: number;
+  hands?: Partial<Record<PlayerColor, Record<string, number>>>;
+  variantState?: Record<string, unknown>;
+  review?: {
+    summaryId?: string;
+    completedAt?: string;
+  };
+};
+
+export type MoveReview = {
+  classification: "best" | "excellent" | "good" | "inaccuracy" | "mistake" | "blunder";
+  detail: string;
+};
+
+export type RulesAdapter = {
+  createInitialState: (variantKey: string, id?: string) => GameState;
+  getLegalMoves: (state: GameState, fromOrHand: Square | { drop: Piece }) => Move[];
+  applyMove: (state: GameState, move: Move) => GameState;
+  getOutcome: (state: GameState) => Pick<GameState, "status" | "result" | "outcomeReason">;
+  toNotation: (state: GameState, move: Move) => string;
+  reviewMove: (before: GameState, move: Move, after: GameState) => MoveReview;
 };
 
 export type VariantDefinition = {
