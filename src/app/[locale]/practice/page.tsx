@@ -3,7 +3,7 @@ import { BookOpen, Bot, Brain, Database, Gauge, Play, Swords } from "lucide-reac
 
 import { InfoHint } from "@/components/info-hint";
 import { displayBotReadiness, displayGameName, displayRulesReadiness, gameFamilies, getGameCatalog } from "@/lib/catalog";
-import { listBotKnowledgeSummary, listBotTrainingReadiness } from "@/lib/bot-training";
+import { getBotTrainingGateSummary, listBotKnowledgeSummary, listBotTrainingReadiness } from "@/lib/bot-training";
 import { listBotStrengthBands } from "@/lib/bot-strength";
 import { normalizeLocale } from "@/lib/i18n/locales";
 
@@ -13,6 +13,7 @@ export default async function PracticePage({ params }: { params: Promise<{ local
   const variantEntries = getGameCatalog().filter((entry) => entry.variantKey);
   const knowledge = listBotKnowledgeSummary();
   const readinessByVariant = new Map(listBotTrainingReadiness().map((readiness) => [readiness.variantKey, readiness]));
+  const trainingGate = getBotTrainingGateSummary();
   const strengthBands = listBotStrengthBands();
   const legendBand = strengthBands[strengthBands.length - 1];
 
@@ -60,6 +61,15 @@ export default async function PracticePage({ params }: { params: Promise<{ local
           <strong>{legendBand.display}</strong>
           <small>{legendBand.calibrationStatus.replace(/-/g, " ")}</small>
         </div>
+        <div>
+          <span>
+            <BookOpen size={16} />
+            Release gate
+            <InfoHint text={trainingGate.notice} />
+          </span>
+          <strong>{trainingGate.playableVariants.length} ready</strong>
+          <small>{trainingGate.gatedVariants.length} not fully trained</small>
+        </div>
       </div>
       <div className="practice-grid">
         {variantEntries.map((entry) => {
@@ -74,9 +84,9 @@ export default async function PracticePage({ params }: { params: Promise<{ local
                 <h2>{displayGameName(entry)}</h2>
                 <p>{entry.board.description}</p>
               </div>
-              <div className="practice-readiness" title={readiness?.primaryGap}>
+              <div className="practice-readiness" data-status={readiness?.coverageStatus ?? "training"} title={readiness?.primaryGap}>
                 <strong>{readiness?.badgeLabel ?? "Search ready"}</strong>
-                <span>{readiness?.coverageStatus === "rules-gated" ? "rules gated" : `${(readiness?.knowledgeEntries ?? 0).toLocaleString()} cached`}</span>
+                <span>{readiness?.coverageStatus === "rules-gated" ? "not fully trained" : `${(readiness?.knowledgeEntries ?? 0).toLocaleString()} cached`}</span>
                 <span>{(readiness?.responseTargetMs ?? 2800) / 1000}s target</span>
               </div>
               <div className="practice-card-meta">

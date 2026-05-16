@@ -47,8 +47,10 @@ test("practice page shows compact bot training status", async ({ page }) => {
   await expect(page.getByLabel("Bot training status")).toContainText("Book & tactics");
   await expect(page.getByLabel("Bot training status")).toContainText("tactics");
   await expect(page.getByLabel("Bot training status")).toContainText("3190+ benchmark");
+  await expect(page.getByLabel("Bot training status")).toContainText("not fully trained");
   await expect(page.getByText("Cache ready").first()).toBeVisible();
   await expect(page.getByText("Rules gated").first()).toBeVisible();
+  await expect(page.locator(".practice-readiness").filter({ hasText: "not fully trained" }).first()).toBeVisible();
   await expect(page.getByRole("link", { name: "Rules gate" }).first()).toBeVisible();
   await expect(page.getByText("2.8s target").first()).toBeVisible();
   await expectNoHorizontalOverflow(page);
@@ -97,6 +99,7 @@ test("catalog search finds native and romanized game names", async ({ page }) =>
 
   await page.goto("/en/games/shogi");
   await expect(page.getByRole("heading", { name: "Rules gate" })).toBeVisible();
+  await expect(page.getByLabel("Training and rules gate")).toContainText("Not fully trained yet");
   await expect(page.getByText("Nifu pawn-drop fixtures")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });

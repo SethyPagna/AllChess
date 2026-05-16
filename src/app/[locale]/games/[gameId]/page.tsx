@@ -4,6 +4,7 @@ import { ArrowLeft, BookOpen, Bot, ExternalLink, Play } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
 import { displayBotReadiness, displayGameName, displayPiecePresentation, displayPlayabilityStatus, displayRulesReadiness, gameFamilies, getGameCatalogEntry } from "@/lib/catalog";
+import { listBotTrainingReadiness } from "@/lib/bot-training";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getVariantRuleSummary } from "@/lib/rules-atlas";
 
@@ -14,6 +15,8 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
   if (!entry) notFound();
   const family = gameFamilies.find((item) => item.key === entry.family);
   const completion = entry.variantKey ? getVariantRuleSummary(entry.variantKey).completion : null;
+  const readiness = entry.variantKey ? listBotTrainingReadiness(entry.variantKey)[0] : null;
+  const isGated = completion?.status !== "verified-playable" || readiness?.coverageStatus === "rules-gated";
 
   return (
     <section className="game-detail">
@@ -53,6 +56,17 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
           </span>
         )}
       </div>
+      {isGated ? (
+        <div className="game-detail-gate panel" aria-label="Training and rules gate">
+          <div>
+            <strong>Not fully trained yet</strong>
+            <span>
+              This game stays as a rule guide until native rules, legal bot moves, review, persistence, and E2E fixtures are complete.
+            </span>
+          </div>
+          <span>{readiness?.primaryGap ?? completion?.remainingGates[0] ?? "Complete the verification matrix before enabling play."}</span>
+        </div>
+      ) : null}
       <div className="game-detail-grid">
         <article className="panel game-detail-section">
           <h2>Basic rules</h2>

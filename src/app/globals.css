@@ -3021,6 +3021,16 @@ select {
   color: var(--muted);
 }
 
+.practice-readiness[data-status="rules-gated"] strong {
+  background: color-mix(in srgb, var(--warning) 22%, var(--surface-strong));
+  color: var(--warning);
+}
+
+.practice-readiness[data-status="rules-gated"] span:first-of-type {
+  background: color-mix(in srgb, var(--danger) 14%, var(--surface-strong));
+  color: var(--danger);
+}
+
 .practice-card-meta {
   display: grid;
   gap: 0.35rem;
@@ -3179,6 +3189,40 @@ select {
   flex-wrap: wrap;
   gap: 0.55rem;
   justify-content: flex-end;
+}
+
+.game-detail-gate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-color: color-mix(in srgb, var(--warning) 45%, var(--border));
+  background: color-mix(in srgb, var(--warning) 8%, var(--surface));
+  padding: 0.85rem 1rem;
+}
+
+.game-detail-gate div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.game-detail-gate strong {
+  font-size: 0.95rem;
+  font-weight: 950;
+}
+
+.game-detail-gate span {
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.game-detail-gate > span {
+  max-width: 32rem;
+  border-radius: 999px;
+  background: var(--surface-strong);
+  padding: 0.32rem 0.65rem;
+  text-align: right;
 }
 
 .game-detail-note {
@@ -3340,6 +3384,16 @@ select {
   .game-detail-hero {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .game-detail-gate {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .game-detail-gate > span {
+    max-width: 100%;
+    text-align: left;
   }
 
   .home-command-center,
