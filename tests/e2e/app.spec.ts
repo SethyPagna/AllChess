@@ -13,6 +13,7 @@ test("localized game hub can open variants and a playable board", async ({ page 
   await page.goto("/en/variants");
   await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Xiangqi / Xiàngqí / 象棋" })).toBeVisible();
+  await expect(page.locator(".catalog-release").filter({ hasText: "Not fully trained" }).first()).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
   await page.goto("/en/play");

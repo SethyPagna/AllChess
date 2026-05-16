@@ -755,6 +755,12 @@ export function displayBotReadiness(entry: GameCatalogEntry) {
   return "Bot planned";
 }
 
+export function displayReleaseReadiness(entry: GameCatalogEntry) {
+  if (entry.playability === "playable") return "Verified ready";
+  if (entry.variantKey) return "Not fully trained";
+  return "Researching";
+}
+
 export function getCatalogStats(entries: GameCatalogEntry[] = gameCatalog): CatalogStats {
   const familyCounts = Object.fromEntries(gameFamilies.map((family) => [family.key, 0])) as CatalogStats["familyCounts"];
   for (const entry of entries) {

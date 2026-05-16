@@ -3050,6 +3050,7 @@ select {
 
 .catalog-card-meta span,
 .catalog-status,
+.catalog-release,
 .catalog-engine,
 .game-detail-tags span {
   border-radius: 999px;
@@ -3096,6 +3097,12 @@ select {
   font-weight: 950;
 }
 
+.catalog-release {
+  border: 1px solid transparent;
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
 .catalog-reset {
   display: inline-flex;
   min-height: 2.6rem;
@@ -3137,6 +3144,22 @@ select {
 .catalog-status[data-status="playable"] {
   background: color-mix(in srgb, var(--accent) 20%, var(--surface-soft));
   color: var(--accent-strong);
+}
+
+.catalog-release[data-status="playable"] {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-soft));
+  color: var(--accent-strong);
+}
+
+.catalog-release[data-status="learn"] {
+  border-color: color-mix(in srgb, var(--warning) 44%, var(--border));
+  background: color-mix(in srgb, var(--warning) 12%, var(--surface-soft));
+  color: var(--warning);
+}
+
+.catalog-release[data-status="coming-soon"] {
+  background: var(--surface-strong);
+  color: var(--muted);
 }
 
 .leaderboard-card {

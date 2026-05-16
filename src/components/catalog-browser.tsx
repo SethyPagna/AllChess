@@ -9,6 +9,7 @@ import {
   displayGameName,
   displayPiecePresentation,
   displayPlayabilityStatus,
+  displayReleaseReadiness,
   displayRulesReadiness,
   gameFamilies,
   type GameCatalogEntry,
@@ -135,6 +136,9 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
               )}
               <span className="catalog-status" data-status={entry.playability}>
                 {displayPlayabilityStatus(entry.playability)}
+              </span>
+              <span className="catalog-release" data-status={entry.playability} title={entry.verification?.knownGaps[0] ?? "Verified release gate"}>
+                {displayReleaseReadiness(entry)}
               </span>
               {entry.botAdapter !== "none" ? (
                 <span className="catalog-engine">

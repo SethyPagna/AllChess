@@ -5,7 +5,7 @@ import { GET as catalogItemGet } from "@/app/api/catalog/[gameId]/route";
 import { GET as familiesGet } from "@/app/api/game-families/route";
 import { GET as leaderboardsGet } from "@/app/api/leaderboards/route";
 import { GET as rulesGet } from "@/app/api/rules/[variantKey]/route";
-import { displayGameName, gameCatalog, gameFamilies, getCatalogStats, getGameCatalogEntry, getPlayableGameVerification, searchGameCatalog } from "@/lib/catalog";
+import { displayGameName, displayReleaseReadiness, gameCatalog, gameFamilies, getCatalogStats, getGameCatalogEntry, getPlayableGameVerification, searchGameCatalog } from "@/lib/catalog";
 
 describe("universal game catalog", () => {
   test("keeps every current playable variant in the broader catalog", () => {
@@ -38,6 +38,8 @@ describe("universal game catalog", () => {
     });
     expect(getGameCatalogEntry("shogi")).toMatchObject({ playability: "learn" });
     expect(getGameCatalogEntry("jungle")).toMatchObject({ playability: "learn" });
+    expect(displayReleaseReadiness(getGameCatalogEntry("classic")!)).toBe("Verified ready");
+    expect(displayReleaseReadiness(getGameCatalogEntry("shogi")!)).toBe("Not fully trained");
   });
 
   test("covers the wider board-game families without marking unfinished engines playable", () => {
