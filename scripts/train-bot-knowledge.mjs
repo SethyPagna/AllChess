@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, openSync, readFileSync, readSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, extname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Chess } from "chess.js";
@@ -17,6 +17,9 @@ const maxPuzzles = Number(options.maxPuzzles ?? 9000);
 const maxBytes = Number(options.maxBytes ?? 120_000_000);
 const maxOpeningPly = Number(options.maxOpeningPly ?? 10);
 const pythonExecutable = process.env.PYTHON ?? "python";
+const maxChecksumBytes = Number(options.maxChecksumBytes ?? 1_000_000);
+const runtimeBudgetMs = 2800;
+const verifiedTrainingVariants = new Set(["classic", "chess960", "xiangqi", "antichess", "king-of-the-hill", "three-check"]);
 
 const seededOpeningLines = [
   { line: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6", weight: 8 },
@@ -47,16 +50,24 @@ for (const file of files) {
   const manifest = manifests.find((item) => item.path === normalizePath(relative(dataRoot, file)));
   if (!manifest) continue;
 
-  if (isPgnFile(file) && manifest.variantKey === "classic") {
+  if (isPgnFile(file)) {
     const sample = readTextSample(file, maxBytes);
     manifest.readStatus = sample.status;
     if (sample.text) {
       const games = parsePgnGames(sample.text).slice(0, maxGames);
-      for (const game of games) {
-        addOpeningGame(openingBook, game, maxOpeningPly);
+      if (manifest.variantKey === "classic" || manifest.variantKey === "chess960") {
+        for (const game of games) {
+          addOpeningGame(openingBook, game, maxOpeningPly, manifest.variantKey, manifest.id, manifest.license);
+        }
       }
       manifest.sampledRecords = games.length;
     }
+  }
+
+  if (isParquetFile(file)) {
+    const sample = inspectParquetReadiness(file);
+    manifest.readStatus = sample.status;
+    manifest.sampledRecords = sample.records;
   }
 
   if (isCsvFile(file) && puzzleCount < maxPuzzles) {
@@ -73,7 +84,10 @@ for (const file of files) {
 
 addSeededOpenings(openingBook, maxOpeningPly);
 entries.unshift(...compileOpeningEntries(openingBook));
+for (const entry of entries) applyKnowledgeMetadata(entry, manifests);
 const engineLabelCount = entries.filter((entry) => entry.variantKey === "classic" && entry.moveUci && (entry.positionKey || entry.boardSignature)).length;
+const generatedPositions = new Set(entries.map((entry) => `${entry.variantKey}|${entry.positionHash ?? entry.positionKey ?? entry.boardSignature ?? entry.id}`)).size;
+const scannedRecords = manifests.reduce((total, manifest) => total + Number(manifest.sampledRecords ?? 0), 0);
 
 const output = {
   version: `allchess-local-knowledge-${new Date().toISOString().slice(0, 10)}`,
@@ -86,8 +100,27 @@ const output = {
     openingEntries: entries.filter((entry) => entry.source === "opening-book").length,
     tacticEntries: entries.filter((entry) => entry.source === "tactic-cache").length,
     engineLabels: engineLabelCount,
-    sampledBytesPerCompressedFile: maxBytes
+    sampledBytesPerCompressedFile: maxBytes,
+    scannedRecords,
+    generatedPositions
   },
+  trainingRuns: [
+    {
+      id: `training-${new Date().toISOString().slice(0, 10)}`,
+      mode: "two-track",
+      generatedAt: new Date().toISOString(),
+      scannedRecords,
+      generatedPositions,
+      runtimeBudgetMs,
+      variants: [...new Set(entries.map((entry) => entry.variantKey))].sort(),
+      artifacts: {
+        compactRuntime: "src/data/bot-knowledge.generated.json",
+        largeArtifacts: "r2",
+        metadata: "d1"
+      }
+    }
+  ],
+  variantCoverage: buildVariantCoverage(entries, manifests),
   entries,
   manifests,
   toolManifests
@@ -170,6 +203,7 @@ function describeFile(root, file) {
     kind: detectKind(file),
     variantKey: detectVariantKey(path),
     bytes: stats.size,
+    checksum: checksumFileSample(file),
     readStatus: "not-sampled",
     sampledRecords: 0,
     license: licenseFor(path),
@@ -291,6 +325,10 @@ function isCsvFile(file) {
   return lower.endsWith(".csv") || lower.endsWith(".csv.zst");
 }
 
+function isParquetFile(file) {
+  return file.toLowerCase().endsWith(".parquet");
+}
+
 function readTextSample(file, limitBytes) {
   if (file.toLowerCase().endsWith(".zst")) {
     return readZstdTextSample(file, limitBytes);
@@ -347,16 +385,25 @@ function parsePgnGames(text) {
     .filter(Boolean);
 }
 
-function addOpeningGame(book, pgn, maxPly) {
+function inspectParquetReadiness(_file) {
+  const python = spawnSync(pythonExecutable, ["-c", "import pyarrow.parquet"], { encoding: "utf8" });
+  if (python.status !== 0) {
+    return { status: `skipped-pyarrow: install pyarrow for ${pythonExecutable} to stream parquet training records`, records: 0 };
+  }
+
+  return { status: "sampled-parquet", records: 0 };
+}
+
+function addOpeningGame(book, pgn, maxPly, variantKey = "classic", sourceFileId = `source-${variantKey}-seeded`, sourceLicense = "local-derived-seed") {
   const chess = new Chess();
   const tokens = extractMoveTokens(pgn);
   const played = [];
   for (const token of tokens.slice(0, maxPly)) {
-    const beforeKey = `classic|turn:${chess.turn() === "w" ? "white" : "black"}|moves:${played.join(" ")}`;
+    const beforeKey = `${variantKey}|turn:${chess.turn() === "w" ? "white" : "black"}|moves:${played.join(" ")}`;
     const move = chess.move(token);
     if (!move) break;
     const uci = `${move.from}${move.to}${move.promotion ?? ""}`;
-    const countKey = `${beforeKey}|move:${uci}`;
+    const countKey = `${beforeKey}|move:${uci}|source:${sourceFileId}|license:${sourceLicense}`;
     book.set(countKey, (book.get(countKey) ?? 0) + 1);
     played.push(uci);
   }
@@ -386,9 +433,10 @@ function extractMoveTokens(pgn) {
 function compileOpeningEntries(book) {
   const byPosition = new Map();
   for (const [key, count] of book.entries()) {
-    const [positionKey, moveUci] = key.split("|move:");
+    const [positionKey, rest] = key.split("|move:");
+    const [moveUci, sourceFileId = "source-classic-seeded", sourceLicense = "local-derived-seed"] = rest.split("|source:").flatMap((part) => part.split("|license:"));
     const moves = byPosition.get(positionKey) ?? [];
-    moves.push({ moveUci, count });
+    moves.push({ moveUci, count, sourceFileId, sourceLicense });
     byPosition.set(positionKey, moves);
   }
 
@@ -397,15 +445,18 @@ function compileOpeningEntries(book) {
     const total = moves.reduce((sum, move) => sum + move.count, 0);
     const best = moves.sort((a, b) => b.count - a.count)[0];
     if (!best || total < 2) continue;
+    const variantKey = positionKey.split("|")[0] || "classic";
     entries.push({
       id: `local-opening-${stableId(`${positionKey}|${best.moveUci}`)}`,
-      variantKey: "classic",
+      variantKey,
       positionKey,
       moveUci: best.moveUci,
       source: "opening-book",
       minTier: "easy",
       confidence: Number(Math.max(0.84, best.count / total).toFixed(3)),
       benchmarkVersion: "allchess-local-knowledge-v1",
+      sourceFileId: best.sourceFileId,
+      sourceLicense: best.sourceLicense,
       tags: ["local-data", "opening", "seeded-book", `samples:${total}`],
       explanation: {
         plan: `Use the most common local-data opening move from ${total} sampled positions.`,
@@ -450,6 +501,8 @@ function compilePuzzleEntries(csvText, limit) {
       minTier: rating >= 2200 ? "grandmaster" : rating >= 1700 ? "hard" : "normal",
       confidence: 0.82,
       benchmarkVersion: "allchess-local-knowledge-v1",
+      sourceFileId: "lichess-puzzle-csv",
+      sourceLicense: "public Lichess data; verify downstream license before publishing derived models",
       tags: ["local-data", "puzzle", ...themes],
       explanation: {
         plan: `Solve a local tactical motif${rating ? ` rated near ${rating}` : ""}.`,
@@ -460,6 +513,110 @@ function compilePuzzleEntries(csvText, limit) {
     });
   }
   return entries;
+}
+
+function applyKnowledgeMetadata(entry, manifests) {
+  const generatedAt = new Date().toISOString();
+  entry.tierTargets ??= tiersAtOrAbove(entry.minTier);
+  entry.positionHash ??= stableId(`${entry.variantKey}|${entry.positionKey}|${entry.boardSignature ?? ""}|${entry.moveUci}`);
+  entry.sourceFileId ??= sourceFileForEntry(entry, manifests).id;
+  entry.sourceLicense ??= sourceFileForEntry(entry, manifests).license;
+  entry.labelDepth ??= depthForEntry(entry);
+  entry.engine ??= engineForEntry(entry);
+  entry.split ??= splitForId(entry.id);
+  entry.generatedAt ??= generatedAt;
+}
+
+function buildVariantCoverage(entries, manifests) {
+  const variants = [...new Set([...entries.map((entry) => entry.variantKey), ...manifests.map((manifest) => manifest.variantKey)])]
+    .filter((variantKey) => variantKey && variantKey !== "unknown")
+    .sort();
+
+  return variants.map((variantKey) => {
+    const variantEntries = entries.filter((entry) => entry.variantKey === variantKey);
+    const variantRecords = manifests.filter((manifest) => manifest.variantKey === variantKey).reduce((total, manifest) => total + Number(manifest.sampledRecords ?? 0), 0);
+    return {
+      variantKey,
+      claimStatus: verifiedTrainingVariants.has(variantKey) ? "verified" : "preview-only",
+      readiness: verifiedTrainingVariants.has(variantKey) ? "active" : "rules-gated",
+      recordsScanned: variantRecords,
+      entries: variantEntries.length,
+      tiers: tierProfiles().map((tier) => ({
+        tier: tier.key,
+        policy: tier.policy,
+        cacheThreshold: tier.cacheThreshold,
+        latencyTargetMs: Math.min(tier.latencyTargetMs, runtimeBudgetMs)
+      }))
+    };
+  });
+}
+
+function sourceFileForEntry(entry, manifests) {
+  if (entry.source === "tactic-cache") {
+    const puzzle = manifests.find((manifest) => manifest.path.toLowerCase().includes("puzzle"));
+    return {
+      id: puzzle?.id ?? "lichess-puzzle-csv",
+      license: puzzle?.license ?? "public Lichess data; verify downstream license before publishing derived models"
+    };
+  }
+  const manifest = manifests.find((item) => item.id === entry.sourceFileId) ?? manifests.find((item) => item.variantKey === entry.variantKey && item.kind === "pgn");
+  return {
+    id: manifest?.id ?? `source-${entry.variantKey}-seeded`,
+    license: manifest?.license ?? "local-derived-seed"
+  };
+}
+
+function tiersAtOrAbove(minTier) {
+  const rank = Object.fromEntries(tierProfiles().map((tier, index) => [tier.key, index]));
+  return tierProfiles().filter((tier) => rank[tier.key] >= rank[minTier]).map((tier) => tier.key);
+}
+
+function tierProfiles() {
+  return [
+    { key: "easy", policy: "not naive: common book moves and obvious blunder filters", cacheThreshold: 0.82, latencyTargetMs: 160 },
+    { key: "normal", policy: "one-reply checks and defended-piece awareness", cacheThreshold: 0.78, latencyTargetMs: 280 },
+    { key: "hard", policy: "fork, pin, loose-piece, and king-safety tactics", cacheThreshold: 0.72, latencyTargetMs: 650 },
+    { key: "very-hard", policy: "deeper replies, sacrifice filters, and draw-saving fallback", cacheThreshold: 0.66, latencyTargetMs: 1200 },
+    { key: "grandmaster", policy: "engine labels, stronger PV preference, and benchmarked tactics", cacheThreshold: 0.6, latencyTargetMs: 2100 },
+    { key: "legend", policy: "highest confidence cache first and anti-blunder verification", cacheThreshold: 0.55, latencyTargetMs: 2600 }
+  ];
+}
+
+function depthForEntry(entry) {
+  if (entry.minTier === "legend") return 22;
+  if (entry.minTier === "grandmaster") return 18;
+  if (entry.minTier === "very-hard") return 16;
+  if (entry.minTier === "hard") return 14;
+  if (entry.minTier === "normal") return 10;
+  return 6;
+}
+
+function engineForEntry(entry) {
+  if (entry.source === "opening-book") return "local-opening-frequency";
+  if (entry.source === "tactic-cache") return "lichess-puzzle-solution";
+  if (entry.source === "endgame-cache") return "tablebase-style-cache";
+  if (entry.source === "ml-policy") return "offline-policy-manifest";
+  return entry.source;
+}
+
+function splitForId(id) {
+  const bucket = Number.parseInt(stableId(id).slice(0, 2), 16) % 10;
+  if (bucket === 0) return "test";
+  if (bucket <= 2) return "eval";
+  return "train";
+}
+
+function checksumFileSample(file) {
+  const stats = statSync(file);
+  const length = Math.min(stats.size, maxChecksumBytes);
+  const buffer = Buffer.alloc(length);
+  const fd = openSync(file, "r");
+  try {
+    readSync(fd, buffer, 0, length, 0);
+  } finally {
+    closeSync(fd);
+  }
+  return `sha256:${createHash("sha256").update(buffer).digest("hex")}`;
 }
 
 function splitCsvLine(line) {
