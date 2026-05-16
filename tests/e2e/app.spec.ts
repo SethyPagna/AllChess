@@ -68,8 +68,9 @@ test("watch rooms and catalog filters land on honest real-data views", async ({ 
 test("language menu keeps the current route", async ({ page }) => {
   await page.goto("/en/play/classic");
 
-  await page.getByLabel("Languages").click();
-  const french = page.getByRole("link", { name: "Francais" }).or(page.getByRole("link", { name: "Français" }));
+  const visibleShell = page.locator(".app-sidebar:visible, .app-mobile-header:visible");
+  await visibleShell.getByLabel("Languages").click();
+  const french = visibleShell.getByRole("link", { name: "Francais" }).or(visibleShell.getByRole("link", { name: "Français" }));
   await expect(french).toHaveAttribute("href", "/fr/play/classic");
   await Promise.all([page.waitForURL(/\/fr\/play\/classic$/), french.click({ force: true })]);
 
