@@ -319,6 +319,74 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
       risk: "Fast advances can overextend if the supporting animals do not follow.",
       fallbackGoal: "If the attack stalls, pivot to trap control and protect the den."
     }
+  },
+  {
+    id: "chess960-start-center-pawn",
+    variantKey: "chess960",
+    positionKey: "chess960|turn:white|moves:",
+    moveUci: "e2e4",
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.87,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "center", "chess960", "development"],
+    explanation: {
+      plan: "Claim central space first, then let the randomized back rank reveal the best development pattern.",
+      threat: "White prepares flexible piece routes instead of memorizing a fixed opening line.",
+      risk: "Chess960 castling lanes differ, so the follow-up must check king safety before rushing.",
+      fallbackGoal: "If Black contests the center, keep development compact and avoid moving the same piece repeatedly."
+    }
+  },
+  {
+    id: "xiangqi-start-central-soldier",
+    variantKey: "xiangqi",
+    positionKey: "xiangqi|turn:red|moves:",
+    moveUci: "e4e5",
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.86,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "xiangqi", "soldier", "river"],
+    explanation: {
+      plan: "Advance the central soldier to contest space without exposing the general.",
+      threat: "Red asks Black to respond to center pressure while keeping chariots and cannons flexible.",
+      risk: "The soldier cannot retreat, so the bot should not overextend the next wave without support.",
+      fallbackGoal: "If the center closes, pivot to cannon pressure and chariot mobility."
+    }
+  },
+  {
+    id: "king-of-the-hill-start-center",
+    variantKey: "king-of-the-hill",
+    positionKey: "king-of-the-hill|turn:white|moves:",
+    moveUci: "e2e4",
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.88,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "center", "king-safety", "variant-objective"],
+    explanation: {
+      plan: "Take central space so the king can later approach the hill only after support is ready.",
+      threat: "White gains room for development and keeps the center objective under control.",
+      risk: "Running the king forward too early can lose material or walk into checks.",
+      fallbackGoal: "If the hill is blocked, transpose into normal chess pressure with safer king timing."
+    }
+  },
+  {
+    id: "three-check-start-fast-development",
+    variantKey: "three-check",
+    positionKey: "three-check|turn:white|moves:",
+    moveUci: "e2e4",
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.88,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "center", "three-check", "initiative"],
+    explanation: {
+      plan: "Open central lines so checks can be created by developed pieces instead of one-move tricks.",
+      threat: "White prepares quick bishop and queen activity while still respecting king safety.",
+      risk: "Fishing for checks too early can waste tempi and fall behind in development.",
+      fallbackGoal: "If Black parries the first threats, keep building pressure rather than forcing bad checks."
+    }
   }
 ];
 
@@ -326,7 +394,8 @@ const generated = generatedKnowledge as GeneratedBotKnowledgeFile;
 const generatedKnowledgeEntries = generated.entries;
 const generatedEngineLabels = generated.engineLabels ?? [];
 const knowledgeEntries: BotKnowledgeEntry[] = [...curatedKnowledgeEntries, ...generatedKnowledgeEntries];
-const runtimeEngineLabels = generatedEngineLabels.length ? generatedEngineLabels : generatedKnowledgeEntries.map(knowledgeEntryToEngineLabel);
+const curatedEngineLabels = curatedKnowledgeEntries.map(knowledgeEntryToEngineLabel);
+const runtimeEngineLabels = generatedEngineLabels.length ? [...generatedEngineLabels, ...curatedEngineLabels] : [...generatedKnowledgeEntries.map(knowledgeEntryToEngineLabel), ...curatedEngineLabels];
 const knowledgeIndex = createKnowledgeIndex(knowledgeEntries);
 const knowledgeCountsByVariant = countKnowledgeByVariant(knowledgeEntries);
 const engineLabelCountsByVariant = countEngineLabelsByVariant(runtimeEngineLabels);

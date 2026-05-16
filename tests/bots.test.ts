@@ -328,6 +328,31 @@ describe("bot difficulty ladder", () => {
     });
   });
 
+  test("verified playable variants have legal cache-first seed moves", async () => {
+    const variants = ["classic", "chess960", "xiangqi", "king-of-the-hill", "three-check"];
+
+    for (const variantKey of variants) {
+      const state = createInitialState(variantKey, `${variantKey}-seed`);
+      const hit = lookupBotKnowledge(state, "easy");
+
+      expect(hit?.entry).toEqual(expect.objectContaining({ minTier: "easy" }));
+      expect(hit?.move).toBeTruthy();
+      expect(() => applyMove(state, hit!.move)).not.toThrow();
+
+      const startedAt = Date.now();
+      const result = await requestBotMove(state, "easy", { engine: "auto", maxSearchTimeMs: MAX_BOT_REPLY_MS });
+
+      expect(Date.now() - startedAt).toBeLessThan(150);
+      expect(result).toMatchObject({
+        status: "ok",
+        knowledgeSource: "opening-book",
+        nodesSearched: 1,
+        legalValidated: true
+      });
+      expect(result.elapsedMs).toBeLessThan(MAX_BOT_REPLY_MS);
+    }
+  });
+
   test("knowledge cache uses indexed runtime lookups instead of linear scans", () => {
     const stats = getBotKnowledgeIndexStats();
 
@@ -429,6 +454,7 @@ describe("bot difficulty ladder", () => {
     const checklists = listBotTrainingChecklists();
     const classic = checklists.find((checklist) => checklist.variantKey === "classic");
     const jungle = checklists.find((checklist) => checklist.variantKey === "jungle");
+    const verifiedPlayable = ["classic", "chess960", "xiangqi", "king-of-the-hill", "three-check"];
 
     expect(checklists.map((checklist) => checklist.variantKey)).toEqual(
       expect.arrayContaining(["classic", "chess960", "xiangqi", "shogi", "janggi", "makruk", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"])
@@ -445,6 +471,13 @@ describe("bot difficulty ladder", () => {
     expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "search-telemetry", status: "ready" })]));
     expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "rule-completion", status: "ready" })]));
     expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "strength-calibration", status: "ready" })]));
+    for (const variantKey of verifiedPlayable) {
+      const checklist = checklists.find((item) => item.variantKey === variantKey);
+      expect(checklist?.coverageStatus).toBe("active");
+      expect(checklist?.knowledgeEntries).toBeGreaterThan(0);
+      expect(checklist?.engineLabels).toBeGreaterThan(0);
+      expect(checklist?.difficultyTiers.map((tier) => tier.search.maxMoveTimeMs)).toEqual([160, 280, 650, 1200, 2100, 2600]);
+    }
     expect(jungle?.coverageStatus).toBe("rules-gated");
     expect(jungle?.rulesCompletion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("Rat river")]));
     expect(jungle?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "rule-completion", status: "rules-gated" })]));
@@ -457,7 +490,7 @@ describe("bot difficulty ladder", () => {
 
     expect(summary.claimPolicy).toBe("verified-playable-only");
     expect(summary.requiredCompletionGates).toEqual(expect.arrayContaining(["native rules", "legal bot moves", "review", "persistence", "E2E fixtures"]));
-    expect(summary.playableVariants).toEqual(expect.arrayContaining(["classic"]));
+    expect(summary.playableVariants).toEqual(expect.arrayContaining(["classic", "chess960", "xiangqi", "king-of-the-hill", "three-check"]));
     expect(summary.gatedVariants).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
