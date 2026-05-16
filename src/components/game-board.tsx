@@ -48,7 +48,7 @@ const playModeOptions: Array<{ key: PlayMode; label: string; description: string
   { key: "offline", label: "Offline Local", description: "Same device", Icon: Crown },
   { key: "room", label: "Create Room", description: "Invite by code", Icon: Flag },
   { key: "matchmaking", label: "Matchmaking", description: "Queue by settings", Icon: Timer },
-  { key: "spectate", label: "Spectate", description: "Watch live rooms", Icon: Brain }
+  { key: "spectate", label: "Spectate", description: "Watch rooms", Icon: Eye }
 ];
 
 const panelTabOptions: Array<{ key: PanelTab; label: string; Icon: typeof Swords }> = [

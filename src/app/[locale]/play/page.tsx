@@ -16,7 +16,7 @@ const playModes = [
 
 const workflowSteps = [
   { label: "1. Mode", detail: "Online, bot, local, room, match, or watch." },
-  { label: "2. Game", detail: "Pick Classic, Xiangqi, Shogi, Jungle, and more." },
+  { label: "2. Game", detail: "Pick the ruleset you want to play." },
   { label: "3. Setup", detail: "Choose side, clock, bot tier, then start." }
 ];
 
@@ -52,7 +52,7 @@ export default async function PlaySetupPage({ params }: { params: Promise<{ loca
         {workflowSteps.map((step) => (
           <div key={step.label} className="play-workflow-step">
             <strong>{step.label}</strong>
-            <span>{step.detail}</span>
+            <InfoHint text={step.detail} />
           </div>
         ))}
       </div>
@@ -61,7 +61,7 @@ export default async function PlaySetupPage({ params }: { params: Promise<{ loca
           <Link key={label} href={`/${locale}/play/classic${hrefSuffix}`} className="focus-ring play-quick-card">
             <Icon size={24} />
             <span>{label}</span>
-            <small>{detail}</small>
+            <InfoHint text={detail} />
           </Link>
         ))}
       </div>

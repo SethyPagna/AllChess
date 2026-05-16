@@ -737,6 +737,111 @@ select {
   display: none;
 }
 
+.home-command-center {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.home-command-copy {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.home-command-copy h1 {
+  font-size: clamp(2.15rem, 6vw, 4.8rem);
+  font-weight: 950;
+  line-height: 0.95;
+}
+
+.home-command-copy p,
+.home-next-steps p {
+  margin: 0;
+  max-width: 48rem;
+  color: var(--muted);
+  font-size: 0.96rem;
+  font-weight: 720;
+  line-height: 1.5;
+}
+
+.home-action-grid,
+.home-stat-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.home-action-card {
+  display: grid;
+  min-height: 7rem;
+  align-content: center;
+  justify-items: center;
+  gap: 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--foreground);
+  padding: 0.85rem;
+  text-align: center;
+  transition: border-color 140ms ease, transform 140ms ease, background 140ms ease;
+}
+
+.home-action-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface-strong));
+  transform: translateY(-1px);
+}
+
+.home-action-card.is-primary {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 20%, var(--surface-strong)), var(--surface));
+}
+
+.home-action-card svg,
+.home-stat-card svg {
+  color: var(--accent);
+  stroke-width: 2.7;
+}
+
+.home-action-card span {
+  font-size: 1rem;
+  font-weight: 950;
+}
+
+.home-action-card small,
+.home-stat-card span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 820;
+}
+
+.home-stat-card {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.9rem;
+}
+
+.home-stat-card strong {
+  font-size: 1.55rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.home-next-steps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.home-next-steps h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+  font-weight: 950;
+}
+
 .play-arena .game-board-layout {
   --board-fixed-size: clamp(380px, min(52vw, calc(100vh - 14rem)), 780px);
   grid-template-columns: var(--board-fixed-size) minmax(20rem, 1fr);
@@ -2530,8 +2635,10 @@ select {
 }
 
 .play-workflow-step {
-  display: grid;
-  gap: 0.18rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface);
@@ -2542,15 +2649,6 @@ select {
   color: var(--foreground);
   font-size: 0.86rem;
   font-weight: 950;
-}
-
-.play-workflow-step span {
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 0.76rem;
-  font-weight: 760;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .play-quick-grid {
@@ -2588,12 +2686,6 @@ select {
 .play-quick-card span {
   font-size: 0.95rem;
   font-weight: 950;
-}
-
-.play-quick-card small {
-  color: var(--muted);
-  font-size: 0.74rem;
-  font-weight: 800;
 }
 
 .play-mode-browser {
@@ -3074,6 +3166,8 @@ select {
 
   .lobby-stat-grid,
   .lobby-family-strip,
+  .home-action-grid,
+  .home-stat-grid,
   .leaderboard-feature-grid,
   .leaderboard-family-list > div,
   .account-stat-grid,
@@ -3093,6 +3187,16 @@ select {
   .game-detail-hero {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .home-command-center,
+  .home-next-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .home-command-center > a,
+  .home-next-steps .watch-actions {
+    width: 100%;
   }
 
   .play-header-compact,
