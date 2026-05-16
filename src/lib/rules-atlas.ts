@@ -5,6 +5,14 @@ export type RuleSourceLink = {
   url: string;
 };
 
+export type VariantRuleCompletionStatus = "verified-playable" | "rules-gated";
+
+export type VariantRuleCompletion = {
+  status: VariantRuleCompletionStatus;
+  verifiedEdgeCases: string[];
+  remainingGates: string[];
+};
+
 export type VariantRuleSummary = {
   variantKey: string;
   sourceLinks: RuleSourceLink[];
@@ -13,9 +21,12 @@ export type VariantRuleSummary = {
   winConditions: string[];
   drawConditions: string[];
   illegalMoveNotes: string[];
+  completion: VariantRuleCompletion;
 };
 
-export const variantRuleSummaries: Record<string, VariantRuleSummary> = {
+type VariantRuleSummaryBase = Omit<VariantRuleSummary, "completion">;
+
+export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
   classic: {
     variantKey: "classic",
     sourceLinks: [{ name: "FIDE Laws of Chess", url: "https://rcc.fide.com/fide-laws-of-chess_fulltexthtml/" }],
@@ -175,9 +186,86 @@ export const variantRuleSummaries: Record<string, VariantRuleSummary> = {
   }
 };
 
+const verifiedChessEdgeCases = [
+  "Royal pieces cannot be captured in check-based games.",
+  "Checkmate ends before any king capture can occur.",
+  "Stalemate, bare kings, and fifty-move-style draw handling are covered for verified western rules.",
+  "Promotion, castling, self-check rejection, terminal-state blocking, and bot legal validation are tested."
+];
+
+const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
+  classic: {
+    status: "verified-playable",
+    verifiedEdgeCases: verifiedChessEdgeCases,
+    remainingGates: []
+  },
+  chess960: {
+    status: "verified-playable",
+    verifiedEdgeCases: [...verifiedChessEdgeCases, "Chess960 uses verified standard castling destinations after randomized setup."],
+    remainingGates: []
+  },
+  xiangqi: {
+    status: "verified-playable",
+    verifiedEdgeCases: [
+      "Generals stay inside the palace and may not face across an open file.",
+      "Horse-leg, elephant-eye, river, cannon-screen, checkmate, and stalemate-loss behavior are covered.",
+      "Royal capture is rejected; legal-move validation decides terminal positions."
+    ],
+    remainingGates: []
+  },
+  shogi: {
+    status: "rules-gated",
+    verifiedEdgeCases: ["Board setup, promotion zones, hands/drop intent, and legal-move scaffolding are present."],
+    remainingGates: ["Nifu pawn-drop fixtures", "Dead-square drop fixtures", "Pawn-drop mate fixtures", "Impasse and repetition policy"]
+  },
+  janggi: {
+    status: "rules-gated",
+    verifiedEdgeCases: ["Palace board shape and xiangqi-family movement scaffold are present."],
+    remainingGates: ["Native palace diagonals", "Janggi cannon screens", "Facing-general policy", "Pass/scoring tournament profile"]
+  },
+  makruk: {
+    status: "rules-gated",
+    verifiedEdgeCases: ["Makruk setup, no-castling flag, and promotion intent are present."],
+    remainingGates: ["Native met/khon movement fixtures", "Makruk promotion fixtures", "Counting-rule draw fixtures"]
+  },
+  jungle: {
+    status: "rules-gated",
+    verifiedEdgeCases: ["Board terrain, den/trap/river tiles, and basic movement scaffold are present."],
+    remainingGates: ["Rat river exceptions", "Trap weakening captures", "Den-entry win fixtures", "No-progress/repetition policy"]
+  },
+  antichess: {
+    status: "rules-gated",
+    verifiedEdgeCases: ["Variant is cataloged with no-check intent and compulsory-capture objective."],
+    remainingGates: ["Mandatory capture enforcement", "No-legal-move win fixtures", "Non-royal king movement fixtures"]
+  },
+  horde: {
+    status: "rules-gated",
+    verifiedEdgeCases: ["Asymmetric horde setup and standard black-king safety intent are present."],
+    remainingGates: ["Horde elimination win fixtures", "Asymmetric check/draw fixtures", "Promotion and timeout policy"]
+  },
+  "king-of-the-hill": {
+    status: "verified-playable",
+    verifiedEdgeCases: [...verifiedChessEdgeCases, "A king reaching the center ends the game immediately as a variant objective."],
+    remainingGates: []
+  },
+  "three-check": {
+    status: "verified-playable",
+    verifiedEdgeCases: [...verifiedChessEdgeCases, "The third delivered check ends the game before ordinary continuation."],
+    remainingGates: []
+  }
+};
+
 export function getVariantRuleSummary(key: string) {
   const variant = getVariant(key);
-  return variantRuleSummaries[variant.key];
+  const summary = variantRuleSummaries[variant.key];
+  return {
+    ...summary,
+    completion: ruleCompletionByVariant[variant.key] ?? {
+      status: "rules-gated",
+      verifiedEdgeCases: [],
+      remainingGates: ["Register a rule-completion matrix before exposing this game as playable."]
+    }
+  };
 }
 
 export function allVariantRuleSummaries() {

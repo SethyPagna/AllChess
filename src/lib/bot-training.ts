@@ -2,6 +2,7 @@ import { moveToUci } from "@/lib/stockfish-engine";
 import { getVariantBotStrengthProfile, type BotTierKey, type VariantBotStrengthProfile } from "@/lib/bot-strength";
 import { MAX_BOT_REPLY_MS } from "@/lib/bot-config";
 import { getLegalMoves, variantCatalog, type GameState, type Move, type VariantDefinition } from "@/lib/variants";
+import { getVariantRuleSummary, type VariantRuleCompletion } from "@/lib/rules-atlas";
 import generatedKnowledge from "@/data/bot-knowledge.generated.json";
 
 export type BotKnowledgeSource = "opening-book" | "tactic-cache" | "endgame-cache" | "ml-policy" | "engine-search" | "internal-search";
@@ -159,6 +160,7 @@ export type GameBotTrainingChecklist = {
   variantKey: string;
   enginePlan: string;
   coverageStatus: "active" | "training" | "rules-gated";
+  rulesCompletion: VariantRuleCompletion;
   knowledgeEntries: number;
   engineLabels: number;
   difficultyTiers: BotTierTrainingChecklist[];
@@ -555,13 +557,15 @@ function createGameBotTrainingChecklist(variant: VariantDefinition): GameBotTrai
   const knowledgeEntriesForVariant = knowledgeCountsByVariant.get(variant.key) ?? 0;
   const engineLabelsForVariant = engineLabelCountsByVariant.get(variant.key) ?? 0;
   const hasRuntimeKnowledge = knowledgeEntriesForVariant > 0 || engineLabelsForVariant > 0;
-  const rulesGated = rulesGatedVariantKeys.has(variant.key);
+  const rulesCompletion = getVariantRuleSummary(variant.key).completion;
+  const rulesGated = rulesCompletion.status !== "verified-playable";
   const coverageStatus = rulesGated ? "rules-gated" : hasRuntimeKnowledge ? "active" : "training";
 
   return {
     variantKey: variant.key,
     enginePlan: enginePlanForVariant(variant),
     coverageStatus,
+    rulesCompletion,
     knowledgeEntries: knowledgeEntriesForVariant,
     engineLabels: engineLabelsForVariant,
     difficultyTiers: trainingTierProfiles.map((difficulty) => {
@@ -580,66 +584,72 @@ function createGameBotTrainingChecklist(variant: VariantDefinition): GameBotTrai
           maxMoveTimeMs: difficulty.moveTimeMs
         },
         checklist: [
-        {
-          id: "legal-validation",
-          label: "Validate every selected move against the rules adapter before applying it.",
-          status: "ready",
-          evidence: "requestBotMove and lookupBotKnowledge both validate against getLegalMoves before returning a move."
-        },
-        {
-          id: "not-naive-basics",
-          label: "Take immediate wins, avoid obvious hanging-piece blunders, and prefer defended progress.",
-          status: "ready",
-          evidence: `${difficulty.label} uses terminal-state checks, reply checks, defended-piece scoring, and a reply width of ${difficulty.replyCheckWidth}.`
-        },
-        {
-          id: "knowledge-cache",
-          label: "Use precomputed opening, tactic, endgame, or label knowledge before expensive live search.",
-          status: hasRuntimeKnowledge ? "ready" : "training",
-          evidence: hasRuntimeKnowledge
-            ? `${knowledgeEntriesForVariant} cached entries and ${engineLabelsForVariant} engine labels are indexed for ${variant.key}.`
-            : `No indexed cache is active for ${variant.key} yet, so this tier falls back to engine/search.`
-        },
-        {
-          id: "tier-distinction",
-          label: "Keep the tier distinct through depth, node budget, beam width, reply checks, and confidence gates.",
-          status: "ready",
-          evidence: `${difficulty.label}: ${strength.display}, depth ${difficulty.depth}, ${difficulty.nodeBudget} nodes, beam ${difficulty.beamWidth}, confidence gate ${difficulty.knowledgeMinimumConfidence}.`
-        },
-        {
-          id: "strength-calibration",
-          label: "Use a consistent Elo-style strength band without pretending every variant has a human-rated Elo.",
-          status: rulesGated ? "rules-gated" : "ready",
-          evidence: strength.basis
-        },
-        {
-          id: "resource-efficiency",
-          label: "Reuse legal-move generation inside nested search loops instead of recomputing the same board repeatedly.",
-          status: "ready",
-          evidence: "Internal search uses a per-request legal-move cache shared by evaluation, reply checks, minimax, quiescence, and mobility scoring."
-        },
-        {
-          id: "search-telemetry",
-          label: "Expose cache hits, cached positions, move-generation calls, and searched nodes for every returned bot move.",
-          status: "ready",
-          evidence: "BotMoveResult.searchEfficiency reports the live search budget so slow or wasteful tiers can be benchmarked instead of guessed."
-        },
-        {
-          id: "variant-objective",
-          label: "Score the native objective instead of playing only material-count chess.",
-          status: rulesGated ? "rules-gated" : "ready",
-          evidence: rulesGated
-            ? `${variant.key} still needs complete native-rule fixtures before bot strength can be called final.`
-            : `${variant.objective} is part of the variant scoring and terminal-state checks.`
-        }
+          {
+            id: "rule-completion",
+            label: "Only advertise final bot strength after the rules edge cases are complete.",
+            status: rulesGated ? "rules-gated" : "ready",
+            evidence: rulesGated
+              ? rulesCompletion.remainingGates.join("; ")
+              : `${rulesCompletion.verifiedEdgeCases.length} rule edge-case groups are verified for ${variant.key}.`
+          },
+          {
+            id: "legal-validation",
+            label: "Validate every selected move against the rules adapter before applying it.",
+            status: "ready",
+            evidence: "requestBotMove and lookupBotKnowledge both validate against getLegalMoves before returning a move."
+          },
+          {
+            id: "not-naive-basics",
+            label: "Take immediate wins, avoid obvious hanging-piece blunders, and prefer defended progress.",
+            status: "ready",
+            evidence: `${difficulty.label} uses terminal-state checks, reply checks, defended-piece scoring, and a reply width of ${difficulty.replyCheckWidth}.`
+          },
+          {
+            id: "knowledge-cache",
+            label: "Use precomputed opening, tactic, endgame, or label knowledge before expensive live search.",
+            status: hasRuntimeKnowledge ? "ready" : "training",
+            evidence: hasRuntimeKnowledge
+              ? `${knowledgeEntriesForVariant} cached entries and ${engineLabelsForVariant} engine labels are indexed for ${variant.key}.`
+              : `No indexed cache is active for ${variant.key} yet, so this tier falls back to engine/search.`
+          },
+          {
+            id: "tier-distinction",
+            label: "Keep the tier distinct through depth, node budget, beam width, reply checks, and confidence gates.",
+            status: "ready",
+            evidence: `${difficulty.label}: ${strength.display}, depth ${difficulty.depth}, ${difficulty.nodeBudget} nodes, beam ${difficulty.beamWidth}, confidence gate ${difficulty.knowledgeMinimumConfidence}.`
+          },
+          {
+            id: "strength-calibration",
+            label: "Use a consistent Elo-style strength band without pretending every variant has a human-rated Elo.",
+            status: rulesGated ? "rules-gated" : "ready",
+            evidence: strength.basis
+          },
+          {
+            id: "resource-efficiency",
+            label: "Reuse legal-move generation inside nested search loops instead of recomputing the same board repeatedly.",
+            status: "ready",
+            evidence: "Internal search uses a per-request legal-move cache shared by evaluation, reply checks, minimax, quiescence, and mobility scoring."
+          },
+          {
+            id: "search-telemetry",
+            label: "Expose cache hits, cached positions, move-generation calls, and searched nodes for every returned bot move.",
+            status: "ready",
+            evidence: "BotMoveResult.searchEfficiency reports the live search budget so slow or wasteful tiers can be benchmarked instead of guessed."
+          },
+          {
+            id: "variant-objective",
+            label: "Score the native objective instead of playing only material-count chess.",
+            status: rulesGated ? "rules-gated" : "ready",
+            evidence: rulesGated
+              ? `${variant.key} still needs complete native-rule fixtures before bot strength can be called final.`
+              : `${variant.objective} is part of the variant scoring and terminal-state checks.`
+          }
         ]
       };
     }),
     nextTrainingJobs: nextTrainingJobsForVariant(variant, hasRuntimeKnowledge, rulesGated)
   };
 }
-
-const rulesGatedVariantKeys = new Set(["shogi", "janggi", "makruk", "jungle", "antichess", "horde"]);
 
 function countKnowledgeByVariant(entries: BotKnowledgeEntry[]) {
   const counts = new Map<string, number>();

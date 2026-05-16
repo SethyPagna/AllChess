@@ -419,6 +419,8 @@ describe("bot difficulty ladder", () => {
       expect.arrayContaining(["classic", "chess960", "xiangqi", "shogi", "janggi", "makruk", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"])
     );
     expect(classic?.coverageStatus).toBe("active");
+    expect(classic?.rulesCompletion.status).toBe("verified-playable");
+    expect(classic?.rulesCompletion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("bare kings")]));
     expect(classic?.difficultyTiers.map((tier) => tier.tier)).toEqual(["easy", "normal", "hard", "very-hard", "grandmaster", "legend"]);
     expect(classic?.difficultyTiers[0].targetBehavior).toContain("not naive");
     expect(classic?.difficultyTiers[0].strength.calibrationStatus).toBe("allchess-estimated");
@@ -426,8 +428,11 @@ describe("bot difficulty ladder", () => {
     expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "not-naive-basics", status: "ready" })]));
     expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "resource-efficiency", status: "ready" })]));
     expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "search-telemetry", status: "ready" })]));
+    expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "rule-completion", status: "ready" })]));
     expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "strength-calibration", status: "ready" })]));
     expect(jungle?.coverageStatus).toBe("rules-gated");
+    expect(jungle?.rulesCompletion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("Rat river")]));
+    expect(jungle?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "rule-completion", status: "rules-gated" })]));
     expect(jungle?.difficultyTiers[0].strength.calibrationStatus).toBe("rules-gated");
     expect(jungle?.nextTrainingJobs[0]).toContain("Complete native jungle rules fixtures");
   });
