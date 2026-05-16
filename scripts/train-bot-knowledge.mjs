@@ -367,11 +367,11 @@ with open(path, "rb") as source:
 
   const result = spawnSync(pythonExecutable, ["-c", code, file, String(limitBytes)], {
     encoding: "utf8",
-    maxBuffer: limitBytes + 1_000_000
+    maxBuffer: Math.ceil(limitBytes * 2.5) + 10_000_000
   });
 
   if (result.status !== 0) {
-    const error = result.stderr.trim() || `python exited ${result.status}`;
+    const error = result.error?.message ?? (result.stderr.trim() || `python exited ${result.status}`);
     return { status: `zst-read-failed: ${error}`, text: "" };
   }
 
