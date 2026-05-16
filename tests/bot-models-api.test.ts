@@ -17,6 +17,18 @@ describe("bot models API", () => {
         expect.objectContaining({ language: "WebAssembly/C++", status: "active" })
       ])
     );
+    expect(body.runtime.architectureBoundaries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ boundary: "interactive-runtime", runtime: "TypeScript" }),
+        expect.objectContaining({ boundary: "engine-hot-path", runtime: "WebAssembly/C++" })
+      ])
+    );
+    expect(body.runtime.optimizationPolicy).toMatchObject({
+      maxInteractiveBotReplyMs: 2800,
+      cacheFirst: true,
+      offlineTraining: true
+    });
+    expect(body.runtime.cleanupFindings).toEqual(expect.arrayContaining([expect.stringContaining("S3 client dependency")]));
     expect(body.knowledgeIndex.entries).toBeGreaterThan(0);
     expect(body.knowledgeIndex.maxBucketSize).toBeLessThan(body.knowledgeIndex.entries);
     expect(body.readiness).toEqual(

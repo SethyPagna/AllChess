@@ -348,6 +348,20 @@ describe("bot difficulty ladder", () => {
         expect.objectContaining({ language: "Rust/WASM", status: "candidate" })
       ])
     );
+    expect(profile.architectureBoundaries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ boundary: "interactive-runtime", runtime: "TypeScript" }),
+        expect.objectContaining({ boundary: "engine-hot-path", runtime: "WebAssembly/C++" }),
+        expect.objectContaining({ boundary: "offline-training", runtime: "Python" }),
+        expect.objectContaining({ boundary: "future-kernel", runtime: "Rust/WASM" })
+      ])
+    );
+    expect(profile.optimizationPolicy).toMatchObject({
+      maxInteractiveBotReplyMs: 2800,
+      cacheFirst: true,
+      offlineTraining: true
+    });
+    expect(profile.cleanupFindings).toEqual(expect.arrayContaining([expect.stringContaining("duplicate verification table")]));
     expect(profile.migrationDecision.nextGate).toContain("benchmark");
   });
 

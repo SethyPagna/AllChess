@@ -127,6 +127,19 @@ export type BotRuntimeLanguageProfile = {
     status: "active" | "offline" | "candidate";
     reason: string;
   }>;
+  architectureBoundaries: Array<{
+    boundary: "interactive-runtime" | "engine-hot-path" | "offline-training" | "future-kernel";
+    runtime: "TypeScript" | "WebAssembly/C++" | "Python" | "Rust/WASM";
+    ownership: string;
+    reason: string;
+  }>;
+  optimizationPolicy: {
+    maxInteractiveBotReplyMs: number;
+    cacheFirst: true;
+    offlineTraining: true;
+    migrationRule: string;
+  };
+  cleanupFindings: string[];
   migrationDecision: {
     recommendation: "keep-typescript-orchestration-and-use-native-engine-hot-paths";
     reason: string;
@@ -423,6 +436,43 @@ export function getBotRuntimeLanguageProfile(): BotRuntimeLanguageProfile {
         status: "candidate",
         reason: "A Rust migration should be gated by benchmarks because it adds build complexity across Workers, Vercel, and Docker."
       }
+    ],
+    architectureBoundaries: [
+      {
+        boundary: "interactive-runtime",
+        runtime: "TypeScript",
+        ownership: "Request routing, legal validation, bot tier policy, status panels, and Cloudflare/Vercel portability.",
+        reason: "Keeping this layer in one typed runtime prevents duplicate gameplay logic across browser, Worker, and server routes."
+      },
+      {
+        boundary: "engine-hot-path",
+        runtime: "WebAssembly/C++",
+        ownership: "Deep tactical search, UCI-compatible evaluation, and future Fairy-Stockfish variant analysis.",
+        reason: "Native chess engines already outperform a hand-rolled TypeScript search for high-depth positions."
+      },
+      {
+        boundary: "offline-training",
+        runtime: "Python",
+        ownership: "Dataset extraction, compressed archive scans, engine labeling, benchmark aggregation, and model experiments.",
+        reason: "Offline jobs can use the best data tooling without increasing bundle size or slowing live gameplay."
+      },
+      {
+        boundary: "future-kernel",
+        runtime: "Rust/WASM",
+        ownership: "Possible shared rules/search kernels for non-chess families after profiling proves a hot spot.",
+        reason: "Rust/WASM is valuable for tight loops, but should be introduced only where measurements justify the extra build surface."
+      }
+    ],
+    optimizationPolicy: {
+      maxInteractiveBotReplyMs: MAX_BOT_REPLY_MS,
+      cacheFirst: true,
+      offlineTraining: true,
+      migrationRule:
+        "Do not rewrite working TypeScript orchestration unless a benchmark shows the rules/search loop exceeds the 3 second interaction budget after cache and engine routing."
+    },
+    cleanupFindings: [
+      "Catalog playability now derives from the rules atlas completion matrix instead of a duplicate verification table.",
+      "R2 storage remains on Cloudflare bindings; the unused direct S3 client dependency was removed from the app surface."
     ],
     migrationDecision: {
       recommendation: "keep-typescript-orchestration-and-use-native-engine-hot-paths",
