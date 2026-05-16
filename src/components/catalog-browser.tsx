@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { BookOpen, Bot, Filter, Play, Search } from "lucide-react";
+import { BookOpen, Bot, Filter, Play, RotateCcw, Search } from "lucide-react";
 
 import {
   displayBotReadiness,
@@ -47,6 +47,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
         .some((value) => normalize(value ?? "").includes(normalized));
     });
   }, [entries, family, query, status]);
+  const hasFilters = Boolean(query) || family !== "all" || status !== "all";
 
   return (
     <section className="catalog-browser">
@@ -79,8 +80,22 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
             ))}
           </select>
         </label>
+        {hasFilters ? (
+          <button
+            type="button"
+            className="catalog-reset focus-ring"
+            onClick={() => {
+              setQuery("");
+              setFamily("all");
+              setStatus("all");
+            }}
+          >
+            <RotateCcw size={15} />
+            Clear
+          </button>
+        ) : null}
       </div>
-      <div className="catalog-count">{filtered.length} games</div>
+      <div className="catalog-count">Showing {filtered.length} of {entries.length} games</div>
       <div className="catalog-grid">
         {filtered.map((entry) => (
           <article key={entry.id} className="panel catalog-card">
@@ -133,6 +148,25 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
           </article>
         ))}
       </div>
+      {!filtered.length ? (
+        <div className="panel catalog-empty-state">
+          <Search size={22} />
+          <h2>No matching games</h2>
+          <p>Try another family, a native name, a romanized name, or clear the filters.</p>
+          <button
+            type="button"
+            className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2"
+            onClick={() => {
+              setQuery("");
+              setFamily("all");
+              setStatus("all");
+            }}
+          >
+            <RotateCcw size={15} />
+            Show all games
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 }

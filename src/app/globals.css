@@ -3034,6 +3034,44 @@ select {
   font-weight: 950;
 }
 
+.catalog-reset {
+  display: inline-flex;
+  min-height: 2.6rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--foreground);
+  padding: 0 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.catalog-empty-state {
+  display: grid;
+  justify-items: start;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+  padding: 1rem;
+}
+
+.catalog-empty-state svg {
+  color: var(--accent);
+}
+
+.catalog-empty-state h2,
+.catalog-empty-state p {
+  margin: 0;
+}
+
+.catalog-empty-state p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 750;
+}
+
 .catalog-status[data-status="playable"] {
   background: color-mix(in srgb, var(--accent) 20%, var(--surface-soft));
   color: var(--accent-strong);
