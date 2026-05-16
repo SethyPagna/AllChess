@@ -56,6 +56,12 @@ describe("bot models API", () => {
     );
     expect(body.knowledgeIndex.entries).toBeGreaterThan(0);
     expect(body.knowledgeIndex.maxBucketSize).toBeLessThan(body.knowledgeIndex.entries);
+    expect(body.trainingSummary).toEqual(
+      expect.objectContaining({
+        scannedRecords: expect.any(Number),
+        generatedPositions: expect.any(Number)
+      })
+    );
     expect(body.readiness).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

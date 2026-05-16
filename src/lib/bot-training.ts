@@ -275,6 +275,8 @@ type GeneratedBotKnowledgeFile = {
     tacticEntries?: number;
     engineLabels?: number;
     sampledBytesPerCompressedFile?: number;
+    scannedRecords?: number;
+    generatedPositions?: number;
   };
   entries: BotKnowledgeEntry[];
   engineLabels?: EngineLabel[];
@@ -548,7 +550,9 @@ export function listBotKnowledgeSummary() {
     openingEntries: generated.summary?.openingEntries ?? generatedKnowledgeEntries.filter((entry) => entry.source === "opening-book").length,
     tacticEntries: generated.summary?.tacticEntries ?? generatedKnowledgeEntries.filter((entry) => entry.source === "tactic-cache").length,
     engineLabels: generated.summary?.engineLabels ?? generatedEngineLabels.length,
-    sampledBytesPerCompressedFile: generated.summary?.sampledBytesPerCompressedFile ?? 0
+    sampledBytesPerCompressedFile: generated.summary?.sampledBytesPerCompressedFile ?? 0,
+    scannedRecords: generated.summary?.scannedRecords ?? (generated.manifests ?? []).reduce((total, manifest) => total + Number(manifest.sampledRecords ?? 0), 0),
+    generatedPositions: generated.summary?.generatedPositions ?? totalGeneratedPositionCount
   };
 }
 
