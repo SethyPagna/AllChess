@@ -3,6 +3,8 @@
 import { Bell, CheckCircle2, Radio, Sparkles } from "lucide-react";
 import { useState } from "react";
 
+import { closeOtherShellMenus } from "./shell-menu-utils";
+
 const notifications = [
   {
     title: "Match ready",
@@ -26,7 +28,15 @@ export function NotificationCenter() {
   const unreadCount = read ? 0 : notifications.length;
 
   return (
-    <details className="notification-menu relative inline-block">
+    <details
+      className="notification-menu relative inline-block"
+      data-shell-menu="notifications"
+      onToggle={(event) => {
+        if (event.currentTarget.open) {
+          closeOtherShellMenus(event.currentTarget);
+        }
+      }}
+    >
       <summary
         aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
         title={unreadCount ? `${unreadCount} unread notifications` : "Notifications"}

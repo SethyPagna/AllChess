@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 import { localeNames, locales, type LocaleCode } from "@/lib/i18n/locales";
 import { localizePath } from "@/lib/i18n/navigation";
+import { closeOtherShellMenus } from "./shell-menu-utils";
 
 export function LocaleSwitcher({ active }: { active: LocaleCode }) {
   const pathname = usePathname();
@@ -14,7 +15,15 @@ export function LocaleSwitcher({ active }: { active: LocaleCode }) {
   const currentPath = `${pathname}${query ? `?${query}` : ""}`;
 
   return (
-    <details className="language-menu relative inline-block">
+    <details
+      className="language-menu relative inline-block"
+      data-shell-menu="language"
+      onToggle={(event) => {
+        if (event.currentTarget.open) {
+          closeOtherShellMenus(event.currentTarget);
+        }
+      }}
+    >
       <summary aria-label="Languages" title="Languages" className="focus-ring action-secondary grid h-10 w-10 cursor-pointer list-none place-items-center text-[var(--muted)]">
         <Languages aria-hidden="true" size={17} />
       </summary>
