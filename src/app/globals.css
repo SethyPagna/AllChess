@@ -1233,25 +1233,22 @@ select {
 .board-coordinate {
   position: absolute;
   z-index: 2;
-  min-width: 1.08em;
-  border-radius: 999px;
-  background: rgb(244 238 196 / 72%);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 18%);
-  color: #24461a;
+  color: #315d24;
   font-size: clamp(0.64rem, calc((var(--board-fixed-size) / var(--board-cols)) * 0.16), 1.05rem);
   font-weight: 900;
   line-height: 1;
-  padding: 0.09rem 0.2rem;
   pointer-events: none;
   text-align: center;
-  text-shadow: 0 1px 0 rgb(255 255 255 / 72%);
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 48%),
+    0 0 2px rgb(255 255 255 / 38%);
 }
 
 .board-square[data-tone="dark"] .board-coordinate {
-  background: rgb(18 30 13 / 62%);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 32%);
   color: #fff4bd;
-  text-shadow: 0 1px 1px rgb(0 0 0 / 75%);
+  text-shadow:
+    0 1px 1px rgb(0 0 0 / 82%),
+    0 0 2px rgb(0 0 0 / 62%);
 }
 
 .board-rank {
