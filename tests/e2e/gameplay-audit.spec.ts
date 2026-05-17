@@ -170,6 +170,29 @@ test("online setup disables bot controls and shows opponent search", async ({ pa
   expect(runtimeErrors).toEqual([]);
 });
 
+test("spectate mode is read-only after start", async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
+  });
+
+  await page.goto("/en/play/classic");
+  await page.locator(".play-header-command-actions").getByRole("button", { name: "Watch" }).click();
+  await page.getByRole("button", { name: "Start Game" }).click();
+  await expect(page.getByLabel("Match summary")).toContainText("Watching rooms");
+  await expect(page.getByText("Spectate mode is read-only. Watch rooms without moving pieces.")).toBeVisible();
+
+  await page.getByRole("button", { name: /e2.*white.*pawn/i }).click();
+  await page.getByRole("button", { name: "e4" }).click();
+  await expect(page.getByText("Spectate mode is read-only. Choose a playable mode to move pieces.")).toBeVisible();
+  await expect(page.getByText(/^1\./)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Move" })).toBeDisabled();
+  await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Draw" })).toBeDisabled();
+  await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Resign" })).toBeDisabled();
+  expect(runtimeErrors).toEqual([]);
+});
+
 test("resign result can be dismissed and reset to setup cleanly", async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
