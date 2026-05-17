@@ -477,6 +477,8 @@ export function GameBoard({
     }
     if (nextMode === "online" || nextMode === "matchmaking" || nextMode === "room") {
       setNotice("Online play selected. Bot controls are disabled while matchmaking or room pairing is active.");
+    } else if (nextMode === "spectate") {
+      setNotice("Spectate mode selected. Bot controls are disabled while you watch rooms.");
     } else {
       setNotice(null);
     }
@@ -683,7 +685,7 @@ export function GameBoard({
               <Share2 size={16} />
               <span className="button-label">Room</span>
             </button>
-            <button type="button" onClick={() => { setPlayMode("spectate"); setPanelTab("setup"); setNotice("Spectate mode selected. Live public rooms appear from Watch when available."); }} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Switch to spectator mode for live rooms.">
+            <button type="button" onClick={() => { selectPlayMode("spectate"); setPanelTab("setup"); }} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Switch to spectator mode for live rooms.">
               <Eye size={16} />
               <span className="button-label">Watch</span>
             </button>
