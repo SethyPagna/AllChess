@@ -163,11 +163,16 @@ export function GameBoard({
     ? "Searching for opponent..."
     : isWatchingMode
       ? "Watching rooms..."
-    : thinking.status === "thinking"
-      ? thinking.label
-      : gameStarted
-        ? `${colorLabel(state.turn)} to move`
-        : "Choose setup";
+      : thinking.status === "thinking"
+        ? thinking.label
+        : gameStarted
+          ? `${colorLabel(state.turn)} to move`
+          : "Choose setup";
+  const statusHeading = isSearchingOnline
+    ? "Searching for opponent"
+    : isWatchingMode
+      ? "Watching rooms"
+      : `${colorLabel(state.turn)} to move`;
   const modeSummary = gameStarted ? `${modeDetails.label} - ${getTimeControl(timeControl).label}` : `${modeDetails.label} setup`;
   const topPlayerColor = isBoardFlipped ? firstColor : secondColor;
   const bottomPlayerColor = isBoardFlipped ? secondColor : firstColor;
@@ -962,7 +967,7 @@ export function GameBoard({
               </div>
               <div className="play-table-card">
                 <p className="text-sm font-bold text-[var(--muted)]">Current position</p>
-                <p className="text-2xl font-black capitalize">{colorLabel(state.turn)} to move</p>
+                <p className="text-2xl font-black capitalize">{statusHeading}</p>
                 {thinking.status === "thinking" ? <p className="mt-1 text-sm font-bold text-[var(--info)]">{thinking.label}</p> : null}
                 {isOnlineMode ? (
                   <div className="online-search-card" role="status" aria-label="Online matchmaking status">
