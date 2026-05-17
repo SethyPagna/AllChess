@@ -23,6 +23,7 @@ import {
   Swords,
   Timer,
   Undo2,
+  X,
 } from "lucide-react";
 
 import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/lib/bot-config";
@@ -143,7 +144,9 @@ export function GameBoard({
   const secondColor = state.clocks[1]?.color ?? "black";
   const isThinking = thinking.status === "thinking";
   const isOnlineMode = playMode === "online" || playMode === "matchmaking" || playMode === "room";
+  const isBotPractice = playMode === "bot";
   const isSpectating = playMode === "spectate";
+  const isSearchingOnline = gameStarted && isOnlineMode && state.status === "active";
   const canUseAssist = gameStarted && state.status === "active" && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
   const canUseBots = gameStarted && state.status === "active" && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
   const canUndo = history.length > 0 && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
@@ -155,7 +158,13 @@ export function GameBoard({
     return isBoardFlipped ? rowsToRender.reverse().map((row) => row.reverse()) : rowsToRender;
   }, [displayState.board, isBoardFlipped]);
   const modeDetails = playModeOptions.find((option) => option.key === playMode) ?? playModeOptions[2];
-  const phaseLabel = thinking.status === "thinking" ? thinking.label : gameStarted ? `${colorLabel(state.turn)} to move` : "Choose setup";
+  const phaseLabel = isSearchingOnline
+    ? "Searching for opponent..."
+    : thinking.status === "thinking"
+      ? thinking.label
+      : gameStarted
+        ? `${colorLabel(state.turn)} to move`
+        : "Choose setup";
   const modeSummary = gameStarted ? `${modeDetails.label} - ${getTimeControl(timeControl).label}` : `${modeDetails.label} setup`;
   const topPlayerColor = isBoardFlipped ? firstColor : secondColor;
   const bottomPlayerColor = isBoardFlipped ? secondColor : firstColor;
@@ -202,6 +211,11 @@ export function GameBoard({
     }
     if (isReviewing) {
       setNotice("Review mode is showing a saved position. Jump to live to keep playing.");
+      return;
+    }
+    if (isOnlineMode) {
+      setNotice("Searching for opponent. Board moves unlock after a live opponent is paired.");
+      setPanelTab("status");
       return;
     }
     if (state.status === "completed" || thinking.status === "thinking") return;
@@ -447,12 +461,25 @@ export function GameBoard({
     const nextColor = pickHumanColor(state, seatChoice);
     resolvedRandomSeatRef.current = true;
     setHumanColor(nextColor);
-    setBotMode(playMode === "bot" ? "opponent" : "human");
+    setBotMode(isBotPractice ? "opponent" : "human");
     setBoardOrientation("auto");
     setLastBotResult(null);
     setGameStarted(true);
     setPanelTab("status");
-    setNotice(`${modeDetails.label} started. You are playing ${colorLabel(nextColor)}.`);
+    setNotice(isOnlineMode ? `Searching for opponent in ${modeDetails.label}. You will play ${colorLabel(nextColor)} when paired.` : `${modeDetails.label} started. You are playing ${colorLabel(nextColor)}.`);
+  }
+
+  function selectPlayMode(nextMode: PlayMode) {
+    setPlayMode(nextMode);
+    if (nextMode !== "bot") {
+      setBotMode("human");
+      setLastBotResult(null);
+    }
+    if (nextMode === "online" || nextMode === "matchmaking" || nextMode === "room") {
+      setNotice("Online play selected. Bot controls are disabled while matchmaking or room pairing is active.");
+    } else {
+      setNotice(null);
+    }
   }
 
   function flipBoard() {
@@ -588,6 +615,9 @@ export function GameBoard({
                 {outcome.celebrate ? <div className="win-celebration" aria-hidden="true" /> : null}
                 {showOutcome ? (
                   <div className={`match-result-modal match-result-${outcome.result}`} role="dialog" aria-label="Match over" aria-modal="false">
+                    <button type="button" className="match-result-close focus-ring" aria-label="Close match result" title="Close this result panel and view the board." onClick={() => setShowOutcome(false)}>
+                      <X size={16} />
+                    </button>
                     <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">Match over</p>
                     <h2>{outcome.headline}</h2>
                     <p>{outcome.detail}</p>
@@ -649,7 +679,7 @@ export function GameBoard({
               <RotateCcw size={16} />
               <span className="button-label">New</span>
             </button>
-            <button type="button" onClick={() => { setPlayMode("room"); setPanelTab("setup"); setNotice("Room setup selected. Choose settings, then start or create a room."); }} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Switch to room setup for a shareable game.">
+            <button type="button" onClick={() => { selectPlayMode("room"); setPanelTab("setup"); setNotice("Room setup selected. Bot controls are disabled while waiting for a player."); }} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Switch to room setup for a shareable game.">
               <Share2 size={16} />
               <span className="button-label">Room</span>
             </button>
@@ -703,7 +733,7 @@ export function GameBoard({
               <div className="play-options-card">
                 <div className="play-mode-grid" aria-label="Play modes">
                   {playModeOptions.map(({ key, label, description, Icon }) => (
-                    <button key={key} type="button" onClick={() => setPlayMode(key)} className={`focus-ring play-mode-button ${playMode === key ? "is-selected" : ""}`}>
+                    <button key={key} type="button" onClick={() => selectPlayMode(key)} className={`focus-ring play-mode-button ${playMode === key ? "is-selected" : ""}`}>
                       <Icon size={17} />
                       <span>{label}</span>
                       <small>{description}</small>
@@ -722,9 +752,9 @@ export function GameBoard({
                     <option value="second">{colorLabel(secondColor)}</option>
                   </select>
                 </label>
-                <label className="play-setup-field">
+                <label className={`play-setup-field ${!isBotPractice ? "is-disabled" : ""}`} title={isBotPractice ? "Choose how strong the bot should be." : "Bot difficulty is only used in Play Bots mode."}>
                   <span>Bot difficulty</span>
-                  <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)}>
+                  <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)} disabled={!isBotPractice}>
                     {botDifficultyLevels.map((level) => (
                       <option key={level.key} value={level.key}>
                         {level.label}
@@ -888,30 +918,42 @@ export function GameBoard({
                 <p className="text-sm font-bold text-[var(--muted)]">Current position</p>
                 <p className="text-2xl font-black capitalize">{colorLabel(state.turn)} to move</p>
                 {thinking.status === "thinking" ? <p className="mt-1 text-sm font-bold text-[var(--info)]">{thinking.label}</p> : null}
-                <div className="bot-profile-card">
-                  <Bot size={18} />
-                  <div>
-                    <strong>{botLevel.label} bot</strong>
-                    <span title={botStrength.basis}>{botStrength.display} - {botCalibrationLabel}</span>
+                {isOnlineMode ? (
+                  <div className="online-search-card" role="status" aria-label="Online matchmaking status">
+                    <Swords size={18} />
+                    <div>
+                      <strong>{isSearchingOnline ? "Searching for opponent" : "Online opponent required"}</strong>
+                      <span>{isSearchingOnline ? "Bot difficulty and automation are paused while AllChess looks for a human player." : "Choose Online, Room, or Matchmaking settings, then start searching."}</span>
+                    </div>
                   </div>
-                  <small title={botStrength.basis}>target {botStrength.targetElo}</small>
-                </div>
-                <p className="bot-tier-note" title={botStrength.basis}>{botLevel.estimatedStrength}</p>
-                <div className="bot-readiness-row" aria-label="Bot response profile">
-                  <span title="Maximum reply time for this tier in the browser.">under {botResponseBudget}ms</span>
-                  <span title="Opening and tactical knowledge are checked before live search.">cache first</span>
-                  <span title={botStrength.basis}>{botCalibrationLabel}</span>
-                </div>
-                <label className="play-setup-field mt-3">
-                  <span>Bot difficulty</span>
-                  <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)}>
-                    {botDifficultyLevels.map((level) => (
-                      <option key={level.key} value={level.key}>
-                        {level.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                ) : (
+                  <>
+                    <div className="bot-profile-card">
+                      <Bot size={18} />
+                      <div>
+                        <strong>{botLevel.label} bot</strong>
+                        <span title={botStrength.basis}>{botStrength.display} - {botCalibrationLabel}</span>
+                      </div>
+                      <small title={botStrength.basis}>target {botStrength.targetElo}</small>
+                    </div>
+                    <p className="bot-tier-note" title={botStrength.basis}>{botLevel.estimatedStrength}</p>
+                    <div className="bot-readiness-row" aria-label="Bot response profile">
+                      <span title="Maximum reply time for this tier in the browser.">under {botResponseBudget}ms</span>
+                      <span title="Opening and tactical knowledge are checked before live search.">cache first</span>
+                      <span title={botStrength.basis}>{botCalibrationLabel}</span>
+                    </div>
+                    <label className="play-setup-field mt-3">
+                      <span>Bot difficulty</span>
+                      <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)}>
+                        {botDifficultyLevels.map((level) => (
+                          <option key={level.key} value={level.key}>
+                            {level.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </>
+                )}
                 <p className="mt-1 text-xs font-bold text-[var(--muted)]">
                   You: {colorLabel(humanColor)} · View: {visualOrientation === "second" ? colorLabel(secondColor) : colorLabel(firstColor)}
                 </p>
