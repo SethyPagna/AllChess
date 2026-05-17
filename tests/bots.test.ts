@@ -28,11 +28,22 @@ describe("bot difficulty ladder", () => {
 
     const budgets = botDifficultyLevels.map((level) => level.depth * level.moveTimeMs);
     expect([...budgets].sort((a, b) => a - b)).toEqual(budgets);
-    expect(botDifficultyLevels.map((level) => level.beamWidth)).toEqual([6, 9, 14, 22, 34, 46]);
-    expect(botDifficultyLevels.map((level) => level.quiescenceDepth)).toEqual([0, 0, 1, 1, 2, 4]);
-    expect(botDifficultyLevels.map((level) => level.riskTolerance)).toEqual([0.62, 0.5, 0.35, 0.22, 0.1, 0.03]);
-    expect(botDifficultyLevels.map((level) => level.replyCheckWidth)).toEqual([2, 4, 7, 11, 17, 24]);
+    expect(botDifficultyLevels.map((level) => level.beamWidth)).toEqual([8, 12, 18, 28, 34, 46]);
+    expect(botDifficultyLevels.map((level) => level.quiescenceDepth)).toEqual([0, 1, 1, 2, 2, 4]);
+    expect(botDifficultyLevels.map((level) => level.riskTolerance)).toEqual([0.52, 0.42, 0.28, 0.16, 0.1, 0.03]);
+    expect(botDifficultyLevels.map((level) => level.replyCheckWidth)).toEqual([3, 6, 10, 15, 17, 24]);
     expect(Math.max(...botDifficultyLevels.map((level) => level.moveTimeMs))).toBeLessThanOrEqual(MAX_BOT_REPLY_MS);
+  });
+
+  test("lower tiers are smarter without exceeding the reply budget", () => {
+    const [easy, normal, hard, veryHard] = botDifficultyLevels;
+
+    expect(easy.depth).toBeGreaterThanOrEqual(2);
+    expect(easy.skill).toBeGreaterThanOrEqual(6);
+    expect(normal.quiescenceDepth).toBeGreaterThanOrEqual(1);
+    expect(hard.replyCheckWidth).toBeGreaterThanOrEqual(10);
+    expect(veryHard.nodeBudget).toBeGreaterThan(6000);
+    expect([easy, normal, hard, veryHard].every((level) => level.moveTimeMs < MAX_BOT_REPLY_MS)).toBe(true);
   });
 
   test("always chooses a legal move for every launch variant", () => {
@@ -476,7 +487,7 @@ describe("bot difficulty ladder", () => {
       expect(checklist?.coverageStatus).toBe("active");
       expect(checklist?.knowledgeEntries).toBeGreaterThan(0);
       expect(checklist?.engineLabels).toBeGreaterThan(0);
-      expect(checklist?.difficultyTiers.map((tier) => tier.search.maxMoveTimeMs)).toEqual([160, 280, 650, 1200, 2100, 2600]);
+      expect(checklist?.difficultyTiers.map((tier) => tier.search.maxMoveTimeMs)).toEqual([220, 420, 780, 1400, 2100, 2600]);
     }
     expect(jungle?.coverageStatus).toBe("rules-gated");
     expect(jungle?.rulesCompletion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Rat river")]));

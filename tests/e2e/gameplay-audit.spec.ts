@@ -79,6 +79,9 @@ test("checkmate shows match-over feedback without resizing the board", async ({ 
   await expect(dialog.getByText(/escape, capture, or block/i)).toBeVisible();
   await expect(page.getByRole("button", { name: "Play again" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Review moves" })).toBeVisible();
+  await dialog.getByRole("button", { name: "Close match result" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByText(/checkmate/i).first()).toBeVisible();
 
   const afterMate = await board.boundingBox();
   expect(afterMate?.width).toBeCloseTo(before!.width, 1);
@@ -137,5 +140,24 @@ test("classic grandmaster uses Stockfish on off-book replies", async ({ page }) 
 
   await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 7000 });
   await expect(page.getByText(/Bot source:\s*engine-search/i)).toBeVisible();
+  expect(runtimeErrors).toEqual([]);
+});
+
+test("online setup disables bot controls and shows opponent search", async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
+  });
+
+  await page.goto("/en/play/classic");
+  await page.getByRole("button", { name: "Play Online" }).click();
+  await expect(page.getByLabel("Bot difficulty")).toBeDisabled();
+  await page.getByRole("button", { name: "Start Game" }).click();
+
+  await expect(page.getByLabel("Online matchmaking status")).toContainText("Searching for opponent");
+  await expect(page.getByLabel("Online matchmaking status")).toContainText("Bot difficulty and automation are paused");
+  await expect(page.getByRole("button", { name: "Play Bots" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Apply disabled" })).toBeDisabled();
   expect(runtimeErrors).toEqual([]);
 });

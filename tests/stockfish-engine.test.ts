@@ -40,6 +40,6 @@ describe("Stockfish engine adapter", () => {
     expect(commands).toContain("setoption name UCI_LimitStrength value true");
     expect(commands).toContain("setoption name UCI_Elo value 1900");
     expect(commands).toContain("position startpos moves e2e4");
-    expect(commands.at(-1)).toBe("go movetime 500 depth 7");
+    expect(commands.at(-1)).toBe("go movetime 760 depth 9");
   });
 });
