@@ -490,10 +490,10 @@ function evaluateMove(
   const searchDepth = Math.max(0, difficulty.depth - 1);
   const searchScore = minimax(next, searchDepth, perspective, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, difficulty, budget);
   const movedPiece = next.board[move.to.row]?.[move.to.col]?.piece;
-  const riskPenalty = movedPiece && difficulty.skill >= 8 ? hangingPenalty(next, move.to, movedPiece) * (1 - difficulty.riskTolerance) : 0;
-  const strategyBonus = difficulty.skill >= 12 ? strategicMoveScore(state, next, move, perspective, difficulty, budget) : 0;
-  const rescueBonus = movedPiece && difficulty.skill >= 7 ? escapeOrCounterScore(state, next, move, movedPiece, difficulty, budget) : 0;
-  const replyPenalty = difficulty.skill >= 8 ? opponentReplyPenalty(next, perspective, difficulty, budget) * (1.15 - difficulty.riskTolerance) : 0;
+  const riskPenalty = movedPiece && difficulty.skill >= 6 ? hangingPenalty(next, move.to, movedPiece) * (1 - difficulty.riskTolerance) : 0;
+  const strategyBonus = difficulty.skill >= 9 ? strategicMoveScore(state, next, move, perspective, difficulty, budget) : 0;
+  const rescueBonus = movedPiece && difficulty.skill >= 6 ? escapeOrCounterScore(state, next, move, movedPiece, difficulty, budget) : 0;
+  const replyPenalty = difficulty.skill >= 6 ? opponentReplyPenalty(next, perspective, difficulty, budget) * (1.15 - difficulty.riskTolerance) : 0;
   const noise = difficulty.skill >= 20 ? 0 : deterministicNoise(move) * (22 - difficulty.skill);
   return searchScore + strategyBonus + rescueBonus - riskPenalty - replyPenalty + noise;
 }
@@ -501,7 +501,7 @@ function evaluateMove(
 function selectRankedMove(ranked: Array<{ move: Move; score: number }>, difficulty: BotDifficulty) {
   if (difficulty.key !== "easy") return ranked[0];
   const bestScore = ranked[0]?.score ?? 0;
-  const safeMoves = ranked.filter((entry) => entry.score >= bestScore - 45);
+  const safeMoves = ranked.filter((entry) => entry.score >= bestScore - 28);
   return safeMoves[0] ?? ranked[0];
 }
 
@@ -517,9 +517,9 @@ function beginnerMoveScore(state: GameState, move: Move, perspective: PlayerColo
   const support = movedPiece ? nearbyFriendlySupport(next, move.to, movedPiece.owner) * 20 : 0;
   const objective = movedPiece ? variantObjectiveScore(next, move, movedPiece.owner) * 0.65 : 0;
   const rescue = movedPiece ? escapeOrCounterScore(state, next, move, movedPiece, difficulty, budget) * 0.55 : 0;
-  const replyPenalty = opponentReplyPenalty(next, perspective, difficulty, budget) * 0.55;
-  const naiveNoise = deterministicNoise(move) * 4;
-  const retreatBonus = movedPiece && movedValue >= 500 && immediateDanger === 0 ? 18 : 0;
+  const replyPenalty = opponentReplyPenalty(next, perspective, difficulty, budget) * 0.72;
+  const naiveNoise = deterministicNoise(move) * 2;
+  const retreatBonus = movedPiece && movedValue >= 500 && immediateDanger === 0 ? 26 : 0;
 
   return staticScore + support + objective + rescue + retreatBonus - immediateDanger - replyPenalty + naiveNoise;
 }
