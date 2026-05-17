@@ -160,6 +160,7 @@ test("online setup disables bot controls and shows opponent search", async ({ pa
   await expect(page.getByLabel("Bot difficulty")).toBeDisabled();
   await page.getByRole("button", { name: "Start Game" }).click();
 
+  await expect(page.getByText("Searching for opponent").first()).toBeVisible();
   await expect(page.getByLabel("Online matchmaking status")).toContainText("Searching for opponent");
   await expect(page.getByLabel("Online matchmaking status")).toContainText("Bot difficulty and automation are paused");
   await expect(page.getByLabel("Board controls")).toContainText("Human match only");
@@ -181,6 +182,7 @@ test("spectate mode is read-only after start", async ({ page }) => {
   await page.locator(".play-header-command-actions").getByRole("button", { name: "Watch" }).click();
   await page.getByRole("button", { name: "Start Game" }).click();
   await expect(page.getByLabel("Match summary")).toContainText("Watching rooms");
+  await expect(page.getByText("Watching rooms").first()).toBeVisible();
   await expect(page.getByText("Spectate mode is read-only. Watch rooms without moving pieces.")).toBeVisible();
 
   await page.getByRole("button", { name: /e2.*white.*pawn/i }).click();
