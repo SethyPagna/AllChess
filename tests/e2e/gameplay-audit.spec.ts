@@ -168,6 +168,32 @@ test("online setup disables bot controls and shows opponent search", async ({ pa
   expect(runtimeErrors).toEqual([]);
 });
 
+test("resign result can be dismissed and reset to setup cleanly", async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
+  });
+
+  await page.goto("/en/play/classic");
+  await page.getByRole("button", { name: "Start Game" }).click();
+  await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Resign" })).toBeEnabled();
+  await page.locator(".play-header-command-actions").getByRole("button", { name: "Resign" }).click();
+
+  const dialog = page.getByRole("dialog", { name: "Match over" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("resignation");
+  await dialog.getByRole("button", { name: "Close match result" }).click();
+  await expect(dialog).toHaveCount(0);
+
+  await page.locator(".play-header-command-actions").getByRole("button", { name: "New" }).click();
+  await expect(page.getByLabel("Match summary")).toContainText("Offline Local setup");
+  await expect(page.getByText("Choose setup first")).toBeVisible();
+  await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Draw" })).toBeDisabled();
+  await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Resign" })).toBeDisabled();
+  expect(runtimeErrors).toEqual([]);
+});
+
 test("non-classic boards use clean coordinate labels too", async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
