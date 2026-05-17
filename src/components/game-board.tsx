@@ -150,7 +150,7 @@ export function GameBoard({
   const canUseAssist = gameStarted && state.status === "active" && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
   const canUseBots = gameStarted && state.status === "active" && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
   const canUndo = history.length > 0 && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
-  const canEndGame = gameStarted && state.status === "active" && !isReviewing && !isSpectating;
+  const canEndGame = gameStarted && state.status === "active" && !isReviewing && !isSpectating && !isSearchingOnline;
   const visualOrientation = boardOrientation === "auto" ? (humanColor === secondColor ? "second" : "first") : boardOrientation;
   const isBoardFlipped = visualOrientation === "second";
   const orientedRows = useMemo(() => {
