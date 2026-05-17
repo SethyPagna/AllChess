@@ -371,18 +371,27 @@ export function GameBoard({
 
   function offerDraw() {
     if (!canEndGame) return;
+    const requestId = activeBotRequestRef.current;
+    if (requestId) cancelRuntimeBotMove(requestId);
+    activeBotRequestRef.current = null;
     setState((current) => ({
       ...current,
       status: "completed",
       result: "draw",
       outcomeReason: "draw"
     }));
+    setThinking({ status: "idle", label: "" });
+    setSelected(null);
+    setSuggestedMove(null);
     setShowOutcome(true);
     setNotice("Game ended by agreed draw.");
   }
 
   function resignGame() {
     if (!canEndGame) return;
+    const requestId = activeBotRequestRef.current;
+    if (requestId) cancelRuntimeBotMove(requestId);
+    activeBotRequestRef.current = null;
     const winner = state.clocks.find((clock) => clock.color !== state.turn)?.color;
     setState((current) => ({
       ...current,
@@ -390,6 +399,9 @@ export function GameBoard({
       result: winner ?? "draw",
       outcomeReason: "resignation"
     }));
+    setThinking({ status: "idle", label: "" });
+    setSelected(null);
+    setSuggestedMove(null);
     setShowOutcome(true);
     setNotice("Resignation recorded.");
   }
@@ -422,7 +434,7 @@ export function GameBoard({
     setLastBotResult(null);
     setNotice(null);
     setThinking({ status: "idle", label: "" });
-    setShowOutcome(true);
+    setShowOutcome(false);
     setPanelTab("setup");
     setReviewPly(null);
     setReviewPlaying(false);
@@ -444,7 +456,7 @@ export function GameBoard({
     setLastBotResult(null);
     setNotice(null);
     setThinking({ status: "idle", label: "" });
-    setShowOutcome(true);
+    setShowOutcome(false);
     setPanelTab("setup");
     setReviewPly(null);
     setReviewPlaying(false);
