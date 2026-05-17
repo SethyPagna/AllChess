@@ -15,6 +15,7 @@ describe("shell controls", () => {
     const markup = renderToStaticMarkup(createElement(LocaleSwitcher, { active: "en" }));
 
     expect(markup).toContain('aria-label="Languages"');
+    expect(markup).toContain('data-shell-menu="language"');
     expect(markup).toContain("English");
     expect(markup).toContain("Français");
     expect(markup).toContain("简体中文");
@@ -25,6 +26,7 @@ describe("shell controls", () => {
     const markup = renderToStaticMarkup(createElement(NotificationCenter));
 
     expect(markup).toContain('aria-label="Notifications, 3 unread"');
+    expect(markup).toContain('data-shell-menu="notifications"');
     expect(markup).toContain("Match ready");
     expect(markup).toContain("Review complete");
     expect(markup).toContain("Real alerts only");

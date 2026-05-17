@@ -88,6 +88,13 @@ test("mobile shell language, notifications, and board controls stay in bounds", 
   await mobileHeader.getByLabel("Languages").click();
   await expect(mobileHeader.getByRole("link", { name: "Français" })).toBeVisible();
   await expectWithinViewport(page, mobileHeader.locator(".language-menu-panel"));
+  await mobileHeader.getByLabel(/Notifications/).click();
+  await expect(mobileHeader.locator(".language-menu-panel")).toBeHidden();
+  await expect(mobileHeader.getByText("3 unread")).toBeVisible();
+  await expectWithinViewport(page, mobileHeader.locator(".notification-panel"));
+  await mobileHeader.getByLabel("Languages").click();
+  await expect(mobileHeader.locator(".notification-panel")).toBeHidden();
+  await expectWithinViewport(page, mobileHeader.locator(".language-menu-panel"));
   await Promise.all([page.waitForURL(/\/fr\/play\/classic$/), mobileHeader.getByRole("link", { name: "Français" }).click()]);
   await expect(page).toHaveURL(/\/fr\/play\/classic$/);
   await expectNoHorizontalOverflow(page);
