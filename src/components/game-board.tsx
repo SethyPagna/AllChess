@@ -147,6 +147,7 @@ export function GameBoard({
   const isBotPractice = playMode === "bot";
   const isSpectating = playMode === "spectate";
   const isSearchingOnline = gameStarted && isOnlineMode && state.status === "active";
+  const isWatchingMode = gameStarted && isSpectating && state.status === "active";
   const canUseAssist = gameStarted && state.status === "active" && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
   const canUseBots = gameStarted && state.status === "active" && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
   const canUndo = history.length > 0 && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
@@ -160,6 +161,8 @@ export function GameBoard({
   const modeDetails = playModeOptions.find((option) => option.key === playMode) ?? playModeOptions[2];
   const phaseLabel = isSearchingOnline
     ? "Searching for opponent..."
+    : isWatchingMode
+      ? "Watching rooms..."
     : thinking.status === "thinking"
       ? thinking.label
       : gameStarted
@@ -215,6 +218,11 @@ export function GameBoard({
     }
     if (isOnlineMode) {
       setNotice("Searching for opponent. Board moves unlock after a live opponent is paired.");
+      setPanelTab("status");
+      return;
+    }
+    if (isSpectating) {
+      setNotice("Spectate mode is read-only. Choose a playable mode to move pieces.");
       setPanelTab("status");
       return;
     }
@@ -478,7 +486,13 @@ export function GameBoard({
     setLastBotResult(null);
     setGameStarted(true);
     setPanelTab("status");
-    setNotice(isOnlineMode ? `Searching for opponent in ${modeDetails.label}. You will play ${colorLabel(nextColor)} when paired.` : `${modeDetails.label} started. You are playing ${colorLabel(nextColor)}.`);
+    setNotice(
+      isOnlineMode
+        ? `Searching for opponent in ${modeDetails.label}. You will play ${colorLabel(nextColor)} when paired.`
+        : isSpectating
+          ? "Spectate mode is read-only. Watch rooms without moving pieces."
+          : `${modeDetails.label} started. You are playing ${colorLabel(nextColor)}.`
+    );
   }
 
   function selectPlayMode(nextMode: PlayMode) {
