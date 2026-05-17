@@ -54,6 +54,12 @@ test("localized game hub can open variants and a playable board", async ({ page 
   await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Watch" })).toBeVisible();
   await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Draw" })).toBeDisabled();
   await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Resign" })).toBeDisabled();
+  await page.locator(".play-header-command-actions").getByRole("button", { name: "Room" }).click();
+  await expect(page.getByLabel("Match summary")).toContainText("Create Room setup");
+  await expect(page.getByLabel("Bot difficulty")).toBeDisabled();
+  await page.locator(".play-header-command-actions").getByRole("button", { name: "Watch" }).click();
+  await expect(page.getByLabel("Match summary")).toContainText("Spectate setup");
+  await expect(page.getByLabel("Bot difficulty")).toBeDisabled();
   await expect(
     page.locator(".play-header-command-actions .button-label").evaluateAll((labels) => labels.every((label) => label.getBoundingClientRect().width > 12))
   ).resolves.toBe(true);
