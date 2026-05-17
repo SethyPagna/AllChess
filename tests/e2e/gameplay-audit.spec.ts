@@ -166,3 +166,31 @@ test("online setup disables bot controls and shows opponent search", async ({ pa
   await expect(page.getByRole("button", { name: "Apply disabled" })).toBeDisabled();
   expect(runtimeErrors).toEqual([]);
 });
+
+test("non-classic boards use clean coordinate labels too", async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
+  });
+
+  await page.goto("/en/play/xiangqi");
+  const board = page.getByLabel("Game board");
+  await expect(board).toBeVisible();
+  await expect(board.locator(".board-square")).toHaveCount(90);
+  const coordinate = board.locator(".board-coordinate").first();
+  await expect(coordinate).toBeVisible();
+  await expect(coordinate).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(coordinate).toHaveCSS("box-shadow", "none");
+  await expect(coordinate).toHaveCSS("border-radius", "0px");
+
+  const boardBox = await board.boundingBox();
+  const coordinateBox = await coordinate.boundingBox();
+  expect(boardBox).toBeTruthy();
+  expect(coordinateBox).toBeTruthy();
+  expect(coordinateBox!.x).toBeGreaterThanOrEqual(boardBox!.x);
+  expect(coordinateBox!.y).toBeGreaterThanOrEqual(boardBox!.y);
+  expect(coordinateBox!.x + coordinateBox!.width).toBeLessThanOrEqual(boardBox!.x + boardBox!.width);
+  expect(coordinateBox!.y + coordinateBox!.height).toBeLessThanOrEqual(boardBox!.y + boardBox!.height);
+  expect(runtimeErrors).toEqual([]);
+});
