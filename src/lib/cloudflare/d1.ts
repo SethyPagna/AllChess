@@ -141,6 +141,25 @@ export type ProfileGameResultSnapshot = Omit<SaveProfileGameResultInput, "rated"
   createdAt: string;
 };
 
+export type ProfileGameStatsSnapshot = {
+  profileId: string;
+  familyKey: string;
+  variantKey: string;
+  timeControlKey: string;
+  mode: GameModeKey | "all";
+  gamesPlayed: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  botGames: number;
+  onlineGames: number;
+  localGames: number;
+  ratedGames: number;
+  totalMoves: number;
+  bestRating: number | null;
+  updatedAt: string;
+};
+
 export type GameRepository = {
   createGame(input: CreateGameInput): Promise<{ id: string; mode: "d1" }>;
   createRoom(input: { snapshot: RoomSnapshot; hostId?: string | null; roomCode?: string | null }): Promise<{ id: string; mode: "d1"; roomCode: string }>;
@@ -157,6 +176,7 @@ export type GameRepository = {
   getLeaderboards(): Promise<LeaderboardSnapshot[]>;
   upsertProfileGameStats(input: UpsertProfileGameStatsInput): Promise<void>;
   saveProfileGameResult(input: SaveProfileGameResultInput): Promise<void>;
+  getProfileGameStats(profileId: string): Promise<ProfileGameStatsSnapshot[]>;
   getProfileGameResults(profileId: string, limit?: number): Promise<ProfileGameResultSnapshot[]>;
   saveBotBenchmark(input: SaveBotBenchmarkInput): Promise<void>;
   saveAnalysis(input: {
@@ -598,6 +618,20 @@ export function createD1GameRepository(db: D1Database): GameRepository {
         .run();
     },
 
+    async getProfileGameStats(profileId) {
+      const rows = await db
+        .prepare(
+          `select profile_id, family_key, variant_key, time_control_key, mode, games_played, wins, losses, draws,
+            bot_games, online_games, local_games, rated_games, total_moves, best_rating, updated_at
+           from profile_game_stats
+           where profile_id = ?
+           order by games_played desc, variant_key asc, time_control_key asc`
+        )
+        .bind(profileId)
+        .all<ProfileGameStatsRow>();
+      return (rows.results ?? []).map(toProfileGameStatsSnapshot);
+    },
+
     async getProfileGameResults(profileId, limit = 20) {
       const rows = await db
         .prepare(
@@ -714,6 +748,25 @@ type ProfileGameResultRow = {
   duration_ms?: number | null;
   completed_at?: string | null;
   created_at: string;
+};
+
+type ProfileGameStatsRow = {
+  profile_id: string;
+  family_key: string;
+  variant_key: string;
+  time_control_key: string;
+  mode: GameModeKey | "all";
+  games_played?: number | null;
+  wins?: number | null;
+  losses?: number | null;
+  draws?: number | null;
+  bot_games?: number | null;
+  online_games?: number | null;
+  local_games?: number | null;
+  rated_games?: number | null;
+  total_moves?: number | null;
+  best_rating?: number | null;
+  updated_at: string;
 };
 
 async function persistNormalizedGameStart(db: D1Database, state: GameState, createdBy?: string | null, roomPlayers?: ParticipantSeed[]) {
@@ -934,6 +987,27 @@ function toProfileGameResultSnapshot(row: ProfileGameResultRow): ProfileGameResu
     durationMs: row.duration_ms ?? null,
     completedAt: row.completed_at ?? null,
     createdAt: row.created_at
+  };
+}
+
+function toProfileGameStatsSnapshot(row: ProfileGameStatsRow): ProfileGameStatsSnapshot {
+  return {
+    profileId: row.profile_id,
+    familyKey: row.family_key,
+    variantKey: row.variant_key,
+    timeControlKey: row.time_control_key,
+    mode: row.mode,
+    gamesPlayed: Number(row.games_played ?? 0),
+    wins: Number(row.wins ?? 0),
+    losses: Number(row.losses ?? 0),
+    draws: Number(row.draws ?? 0),
+    botGames: Number(row.bot_games ?? 0),
+    onlineGames: Number(row.online_games ?? 0),
+    localGames: Number(row.local_games ?? 0),
+    ratedGames: Number(row.rated_games ?? 0),
+    totalMoves: Number(row.total_moves ?? 0),
+    bestRating: row.best_rating ?? null,
+    updatedAt: row.updated_at
   };
 }
 

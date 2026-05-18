@@ -395,6 +395,64 @@ describe("D1 persistence", () => {
     );
   });
 
+  test("loads profile game stat summaries from normalized rows", async () => {
+    const { db, calls } = createMockD1(
+      {},
+      {
+        "from profile_game_stats": [
+          {
+            profile_id: "profile-1",
+            family_key: "chess-family",
+            variant_key: "classic",
+            time_control_key: "rapid",
+            mode: "bot",
+            games_played: 12,
+            wins: 8,
+            losses: 3,
+            draws: 1,
+            bot_games: 12,
+            online_games: 0,
+            local_games: 0,
+            rated_games: 6,
+            total_moves: 742,
+            best_rating: 1390,
+            updated_at: "2026-05-18T02:00:00.000Z"
+          }
+        ]
+      }
+    );
+    const repository = createD1GameRepository(db);
+
+    await expect(repository.getProfileGameStats("profile-1")).resolves.toEqual([
+      {
+        profileId: "profile-1",
+        familyKey: "chess-family",
+        variantKey: "classic",
+        timeControlKey: "rapid",
+        mode: "bot",
+        gamesPlayed: 12,
+        wins: 8,
+        losses: 3,
+        draws: 1,
+        botGames: 12,
+        onlineGames: 0,
+        localGames: 0,
+        ratedGames: 6,
+        totalMoves: 742,
+        bestRating: 1390,
+        updatedAt: "2026-05-18T02:00:00.000Z"
+      }
+    ]);
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          sql: expect.stringContaining("from profile_game_stats"),
+          values: ["profile-1"]
+        })
+      ])
+    );
+  });
+
   test("stores native GameState fields in game and move snapshots", async () => {
     const { db, calls } = createMockD1();
     const repository = createD1GameRepository(db);
