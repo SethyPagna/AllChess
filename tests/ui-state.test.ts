@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { createDefaultStats } from "@/lib/stats";
 import { timeControls } from "@/lib/game/time-controls";
 import { formatClock, settleTurnClockElapsed, tickGameClock } from "@/lib/game/clocks";
+import { pushTimeline, redoTimeline, undoTimeline } from "@/lib/game/history";
 import { createInitialState } from "@/lib/variants";
 import { localizePath } from "@/lib/i18n/navigation";
 
@@ -74,6 +75,28 @@ describe("time controls", () => {
   test("formats chess clocks compactly", () => {
     expect(formatClock(65_000)).toBe("1:05");
     expect(formatClock(0)).toBe("∞");
+  });
+});
+
+describe("local game history", () => {
+  test("supports undo, redo, and clearing redo after a new branch", () => {
+    const start = createInitialState("classic", "timeline-start");
+    const afterFirst = { ...start, id: "timeline-after-first", ply: 1 };
+    const afterSecond = { ...start, id: "timeline-after-second", ply: 2 };
+    const branch = { ...start, id: "timeline-branch", ply: 2 };
+
+    const first = pushTimeline([], start, afterFirst);
+    const second = pushTimeline(first.past, first.present, afterSecond);
+    const undone = undoTimeline(second.past, second.present, second.future);
+    expect(undone?.present.id).toBe("timeline-after-first");
+    expect(undone?.future[0]?.id).toBe("timeline-after-second");
+
+    const redone = redoTimeline(undone?.past ?? [], undone?.present ?? start, undone?.future ?? []);
+    expect(redone?.present.id).toBe("timeline-after-second");
+
+    const branched = pushTimeline(undone?.past ?? [], undone?.present ?? start, branch);
+    expect(branched.present.id).toBe("timeline-branch");
+    expect(branched.future).toEqual([]);
   });
 });
 

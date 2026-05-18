@@ -23,6 +23,7 @@ import {
   Swords,
   Timer,
   Undo2,
+  Redo2,
   X,
 } from "lucide-react";
 
@@ -30,6 +31,7 @@ import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/
 import { getVariantBotStrengthProfile } from "@/lib/bot/strength";
 import type { BotMoveResult } from "@/lib/bot/runtime";
 import { formatClock, settleTurnClockElapsed, tickGameClock } from "@/lib/game/clocks";
+import { redoTimeline, undoTimeline } from "@/lib/game/history";
 import { analyzeMoveList, summarizeReview } from "@/lib/game/review";
 import { describeGameOutcome } from "@/lib/game/outcome";
 import type { VariantRuleSummary } from "@/lib/rules-atlas";
@@ -102,6 +104,7 @@ export function GameBoard({
   const [timeControl, setTimeControl] = useState<TimeControlKey>("rapid");
   const [state, setState] = useState(() => withTimeControl(initialState ?? createInitialState(variantKey), "rapid"));
   const [history, setHistory] = useState<GameState[]>([]);
+  const [future, setFuture] = useState<GameState[]>([]);
   const [selected, setSelected] = useState<Square | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [playMode, setPlayMode] = useState<PlayMode>(initialPlayMode ?? (initialBotMode === "opponent" ? "bot" : "offline"));
@@ -151,6 +154,7 @@ export function GameBoard({
   const canUseAssist = gameStarted && state.status === "active" && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
   const canUseBots = gameStarted && state.status === "active" && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
   const canUndo = history.length > 0 && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
+  const canRedo = future.length > 0 && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
   const canEndGame = gameStarted && state.status === "active" && !isReviewing && !isSpectating && !isSearchingOnline;
   const visualOrientation = boardOrientation === "auto" ? (humanColor === secondColor ? "second" : "first") : boardOrientation;
   const isBoardFlipped = visualOrientation === "second";
@@ -240,6 +244,7 @@ export function GameBoard({
       const move = legalMoves.find((candidate) => sameSquare(candidate.to, square));
       if (move) {
         setHistory((current) => [...current, state]);
+        setFuture([]);
         setState((current) => applyMove(current, move));
         setSuggestedMove(null);
         setNotice(null);
@@ -275,6 +280,7 @@ export function GameBoard({
       const move = result.move;
       setLastBotResult(result);
       setHistory((current) => [...current, snapshot]);
+      setFuture([]);
       setState((current) => {
         if (current.id !== snapshot.id || current.ply !== snapshot.ply || current.turn !== snapshot.turn) return current;
         const clockSettled = settleTurnClockElapsed(current, snapshot, result.elapsedMs);
@@ -363,6 +369,7 @@ export function GameBoard({
       return;
     }
     setHistory((current) => [...current, state]);
+    setFuture([]);
     setState((current) => applyMove(current, move));
     setSelected(null);
     setSuggestedMove(null);
@@ -393,6 +400,7 @@ export function GameBoard({
       result: "draw",
       outcomeReason: "draw"
     }));
+    setFuture([]);
     setThinking({ status: "idle", label: "" });
     setSelected(null);
     setSuggestedMove(null);
@@ -412,6 +420,7 @@ export function GameBoard({
       result: winner ?? "draw",
       outcomeReason: "resignation"
     }));
+    setFuture([]);
     setThinking({ status: "idle", label: "" });
     setSelected(null);
     setSuggestedMove(null);
@@ -420,10 +429,25 @@ export function GameBoard({
   }
 
   function undo() {
-    const previous = history.at(-1);
-    if (!previous) return;
-    setHistory((current) => current.slice(0, -1));
-    setState(previous);
+    const next = undoTimeline(history, state, future);
+    if (!next) return;
+    setHistory(next.past);
+    setFuture(next.future);
+    setState(next.present);
+    setSelected(null);
+    setSuggestedMove(null);
+    setLastBotResult(null);
+    setNotice(null);
+    setReviewPly(null);
+    setReviewPlaying(false);
+  }
+
+  function redo() {
+    const next = redoTimeline(history, state, future);
+    if (!next) return;
+    setHistory(next.past);
+    setFuture(next.future);
+    setState(next.present);
     setSelected(null);
     setSuggestedMove(null);
     setLastBotResult(null);
@@ -439,6 +463,7 @@ export function GameBoard({
     const nextState = withTimeControl(createInitialState(variantKey), timeControl);
     resolvedRandomSeatRef.current = false;
     setHistory([]);
+    setFuture([]);
     setState(nextState);
     setHumanColor(pickHumanColor(nextState, seatChoice));
     setGameStarted(false);
@@ -461,6 +486,7 @@ export function GameBoard({
     resolvedRandomSeatRef.current = false;
     setTimeControl(nextControl);
     setHistory([]);
+    setFuture([]);
     setState(nextState);
     setHumanColor(pickHumanColor(nextState, seatChoice));
     setGameStarted(false);
@@ -951,6 +977,16 @@ export function GameBoard({
                         disabled={!canUndo}
                       >
                         <Undo2 size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        title={canRedo ? "Redo the next local move from history." : "Redo is disabled for online, room, spectate, review, thinking, or empty future states."}
+                        onClick={redo}
+                        className="focus-ring action-secondary play-icon-button"
+                        aria-label="Redo"
+                        disabled={!canRedo}
+                      >
+                        <Redo2 size={16} />
                       </button>
                       <button
                         type="button"
