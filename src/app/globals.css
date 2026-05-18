@@ -3434,6 +3434,20 @@ select {
   gap: 0.45rem;
 }
 
+.play-game-picker-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.play-game-picker-toolbar > span,
+.play-game-empty {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
 .play-mode-rail-item {
   display: grid;
   min-height: 2.75rem;
@@ -3500,6 +3514,12 @@ select {
   font-size: 0.72rem;
   font-weight: 900;
   white-space: nowrap;
+}
+
+.play-game-row-main .catalog-icon-button {
+  width: 2rem;
+  height: 2rem;
+  margin-left: auto;
 }
 
 .play-game-row-actions {

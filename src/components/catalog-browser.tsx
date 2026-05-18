@@ -130,7 +130,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
           </article>
         ))}
       </div>
-      {selectedEntry ? <CatalogRulesOverlay entry={selectedEntry} locale={locale} onClose={() => setSelectedEntry(null)} /> : null}
+      {selectedEntry ? <CatalogInfoOverlay entry={selectedEntry} locale={locale} onClose={() => setSelectedEntry(null)} /> : null}
       {!filtered.length ? (
         <div className="panel catalog-empty-state">
           <Search size={22} />
@@ -154,7 +154,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
   );
 }
 
-function CatalogRulesOverlay({ entry, locale, onClose }: { entry: GameCatalogEntry; locale: LocaleCode; onClose: () => void }) {
+export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCatalogEntry; locale: LocaleCode; onClose: () => void }) {
   const playHref = entry.variantKey ? `/${locale}/play/${entry.variantKey}` : `/${locale}/games/${entry.id}`;
 
   return (

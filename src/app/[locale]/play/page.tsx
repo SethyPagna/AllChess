@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { BookOpen, Bot, Clock3, Eye, Globe2, Handshake, Lock, MonitorSmartphone, Radio, Swords, Users } from "lucide-react";
+import { Bot, Clock3, Eye, Globe2, Handshake, Lock, MonitorSmartphone, Swords, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
-import { displayGameName, displayRulesReadiness, getGameCatalog } from "@/lib/catalog";
+import { PlayGamePicker } from "@/components/play-game-picker";
+import { getGameCatalog } from "@/lib/catalog";
 import { normalizeLocale } from "@/lib/i18n/locales";
 
 type PlayModeKey = "online" | "bot" | "offline" | "room" | "matchmaking" | "spectate";
@@ -43,7 +44,6 @@ export default async function PlaySetupPage({
   const selectedMode = normalizePlayMode(query?.mode);
   const selectedModeLabel = playModes.find((mode) => mode.key === selectedMode)?.label ?? "Online";
   const playable = getGameCatalog().filter((entry) => entry.playability === "playable" && entry.variantKey);
-  const featured = playable.slice(0, 10);
 
   return (
     <section className="play-setup-page grid gap-5">
@@ -96,29 +96,9 @@ export default async function PlaySetupPage({
         <div className="panel play-game-picker">
           <div className="compact-section-heading">
             <h2 className="section-title">Game</h2>
-            <InfoHint text="Pick a ruleset. Each row has one fast bot action and one online setup action to avoid clutter." />
+            <InfoHint text="Pick a ruleset. Use the info button for basics, endings, status, bot mode, and the full guide." />
           </div>
-          <div className="play-game-list">
-            {featured.map((entry) => (
-              <article key={entry.id} className="play-game-row">
-                <div className="play-game-row-main">
-                  <Radio size={16} />
-                  <strong>{displayGameName(entry)}</strong>
-                  <span>{displayRulesReadiness(entry)}</span>
-                  <InfoHint text={entry.winConditions[0]} />
-                </div>
-                <div className="play-game-row-actions">
-                  <Link href={`/${locale}/games/${entry.id}` as never} className="focus-ring action-secondary" title="Open the short rules guide">
-                    <BookOpen size={14} />
-                    Rules
-                  </Link>
-                  <Link href={gameModeHref(locale, entry.variantKey, selectedMode)} className="focus-ring action-primary">
-                    {modeActionLabel(selectedMode)}
-                  </Link>
-                </div>
-              </article>
-            ))}
-          </div>
+          <PlayGamePicker entries={playable} locale={locale} selectedMode={selectedMode} />
         </div>
       </div>
     </section>
@@ -128,22 +108,4 @@ export default async function PlaySetupPage({
 function normalizePlayMode(mode: string | undefined): PlayModeKey {
   if (mode === "bot" || mode === "offline" || mode === "room" || mode === "matchmaking" || mode === "spectate") return mode;
   return "online";
-}
-
-function modeActionLabel(mode: PlayModeKey) {
-  const labels: Record<PlayModeKey, string> = {
-    online: "Play",
-    bot: "Bot",
-    offline: "Local",
-    room: "Room",
-    matchmaking: "Match",
-    spectate: "Watch"
-  };
-  return labels[mode];
-}
-
-function gameModeHref(locale: string, variantKey: string | undefined, mode: PlayModeKey) {
-  if (mode === "spectate") return `/${locale}/watch` as never;
-  if (mode === "bot") return `/${locale}/play/${variantKey}?bot=normal&mode=bot` as never;
-  return `/${locale}/play/${variantKey}?mode=${mode}` as never;
 }
