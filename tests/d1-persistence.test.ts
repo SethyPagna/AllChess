@@ -48,6 +48,11 @@ describe("D1 persistence", () => {
     const gameInsert = calls.find((call) => call.sql.includes("insert into games"));
     const gameUpdate = calls.find((call) => call.sql.includes("update games"));
     const moveInsert = calls.find((call) => call.sql.includes("insert into moves"));
+    const normalizedParticipants = calls.filter((call) => call.sql.includes("insert or ignore into game_participants"));
+    const normalizedMove = calls.find((call) => call.sql.includes("insert into game_moves"));
+    const normalizedPosition = calls.find((call) => call.sql.includes("insert or replace into game_positions") && call.values[1] === state.ply);
+    const normalizedClocks = calls.filter((call) => call.sql.includes("insert into game_clocks"));
+    const clockEvent = calls.find((call) => call.sql.includes("insert into clock_events"));
 
     expect(JSON.parse(gameInsert?.values[4] as string)).toMatchObject({
       hands: state.hands,
@@ -64,5 +69,18 @@ describe("D1 persistence", () => {
       variantState: state.variantState,
       review: state.review
     });
+    expect(normalizedParticipants).toHaveLength(state.clocks.length + 1);
+    expect(normalizedMove?.values[0]).toBe(state.id);
+    expect(normalizedMove?.values[1]).toBe(state.ply);
+    expect(normalizedMove?.values[2]).toMatch(/^native-state:/);
+    expect(normalizedMove?.values[12]).toBe(JSON.stringify({ from: { row: 6, col: 0 }, to: { row: 5, col: 0 } }));
+    expect(JSON.parse(normalizedPosition?.values[2] as string)).toMatchObject({
+      hands: state.hands,
+      variantState: state.variantState,
+      review: state.review
+    });
+    expect(normalizedClocks.length).toBeGreaterThanOrEqual(state.clocks.length * 2);
+    expect(clockEvent?.values[0]).toBe(state.id);
+    expect(clockEvent?.values[1]).toMatch(/^native-state:/);
   });
 });
