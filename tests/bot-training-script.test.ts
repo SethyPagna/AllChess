@@ -32,7 +32,21 @@ describe("bot knowledge training script", () => {
 
       execFileSync(
         "node",
-        ["scripts/train-bot-knowledge.mjs", "--data-root", dataRoot, "--output", output, "--max-games", "3", "--max-puzzles", "0", "--max-opening-ply", "4", "--allow-regression", "true"],
+        [
+          "scripts/training/train-bot-knowledge.mjs",
+          "--data-root",
+          dataRoot,
+          "--output",
+          output,
+          "--max-games",
+          "3",
+          "--max-puzzles",
+          "0",
+          "--max-opening-ply",
+          "4",
+          "--allow-regression",
+          "true"
+        ],
         { cwd: process.cwd(), stdio: "pipe" }
       );
 

@@ -22,7 +22,7 @@
 1. Bot domain: move flat bot files into `src/lib/bot/` and update all imports.
 2. Gameplay domain: review whether `clocks`, `game-outcome`, `game-review`, and `time-controls` should move under `src/lib/game/`.
 3. UI domain: split large board/catalog components only after route behavior is stable.
-4. Scripts domain: group scripts by `audit`, `deploy`, `training`, and `assets` once package scripts can be updated cleanly.
+4. Scripts domain: keep scripts grouped by `audit`, `deploy`, `training`, and `assets`.
 5. Remove empty or obsolete folders after confirming Git tracks no files inside them.
 
 ## Multi-Language Policy

@@ -10,7 +10,7 @@ export default defineConfig({
     trace: "on-first-retry"
   },
   webServer: {
-    command: "node scripts/playwright-dev-server.mjs",
+    command: "node scripts/audit/playwright-dev-server.mjs",
     url: "http://127.0.0.1:3210/en/play",
     reuseExistingServer: !process.env.CI,
     timeout: 180000

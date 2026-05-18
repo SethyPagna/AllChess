@@ -27,7 +27,7 @@ Dependency folders, Next build output, and generated reports are intentionally e
 | Migrations | Cloudflare D1 raw SQL | `cloudflare/d1/migrations/0001_initial.sql` through `0004_bot_knowledge_pipeline.sql` |
 | Seeds | No dedicated seed migrations found | Catalog and curated bot knowledge are currently code/generated-data driven |
 | Tests | Unit, integration, E2E, Cloudflare schema/persistence tests | `tests/**/*.ts`, `tests/**/*.tsx`, `tests/e2e/*.spec.ts` |
-| Scripts | Training, env, deploy/worker patch helpers | `scripts/*.mjs` |
+| Scripts | Training, env, deploy/worker patch helpers | `scripts/<domain>/*.mjs` |
 
 ## 2. Verification Sweeps
 

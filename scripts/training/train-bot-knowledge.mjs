@@ -5,7 +5,7 @@ import { dirname, extname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Chess } from "chess.js";
 
-const repoRoot = dirname(fileURLToPath(new URL("../package.json", import.meta.url)));
+const repoRoot = dirname(fileURLToPath(new URL("../../package.json", import.meta.url)));
 const defaultDataRoot = join(repoRoot, "CHESS DATA");
 const defaultOutput = join(repoRoot, "src", "data", "bot-knowledge.generated.json");
 
