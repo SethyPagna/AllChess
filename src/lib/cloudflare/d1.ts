@@ -19,6 +19,7 @@ export type RecordMoveInput = {
 export type GameRepository = {
   createGame(input: CreateGameInput): Promise<{ id: string; mode: "d1" }>;
   createRoom(input: { snapshot: RoomSnapshot; hostId?: string | null; roomCode?: string | null }): Promise<{ id: string; mode: "d1"; roomCode: string }>;
+  getGameState(gameId: string): Promise<GameState | null>;
   getLiveStats(): Promise<LiveStats>;
   recordMove(input: RecordMoveInput): Promise<{ id: string; mode: "d1" }>;
   saveAnalysis(input: {
@@ -115,6 +116,12 @@ export function createD1GameRepository(db: D1Database): GameRepository {
       await persistNormalizedGameStart(db, input.snapshot.state, input.hostId ?? null, input.snapshot.players);
 
       return { id: input.snapshot.roomId, mode: "d1", roomCode };
+    },
+
+    async getGameState(gameId) {
+      const row = await db.prepare("select board_state from games where id = ?").bind(gameId).first<{ board_state?: string }>();
+      if (!row?.board_state) return null;
+      return JSON.parse(row.board_state) as GameState;
     },
 
     async getLiveStats() {

@@ -4,7 +4,7 @@ import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { createInitialState } from "@/lib/variants";
 import type { D1Database } from "@cloudflare/workers-types";
 
-function createMockD1() {
+function createMockD1(firstRows: Record<string, unknown> = {}) {
   const calls: Array<{ sql: string; values: unknown[] }> = [];
   const db = {
     prepare(sql: string) {
@@ -16,7 +16,8 @@ function createMockD1() {
               return { success: true };
             },
             async first() {
-              return null;
+              const key = Object.keys(firstRows).find((rowKey) => sql.includes(rowKey));
+              return key ? firstRows[key] : null;
             }
           };
         }
@@ -28,6 +29,22 @@ function createMockD1() {
 }
 
 describe("D1 persistence", () => {
+  test("loads authoritative game state from D1 before move application", async () => {
+    const state = createInitialState("classic", "authoritative-game");
+    const { db, calls } = createMockD1({ "select board_state from games": { board_state: JSON.stringify(state) } });
+    const repository = createD1GameRepository(db);
+
+    await expect(repository.getGameState(state.id)).resolves.toMatchObject({ id: state.id, variantKey: "classic" });
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          sql: expect.stringContaining("select board_state from games where id = ?"),
+          values: [state.id]
+        })
+      ])
+    );
+  });
+
   test("stores native GameState fields in game and move snapshots", async () => {
     const { db, calls } = createMockD1();
     const repository = createD1GameRepository(db);
