@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Info, Play, Radio, Search } from "lucide-react";
+import { BookOpen, Play, Radio, Search } from "lucide-react";
 
 import { CatalogInfoOverlay } from "@/components/catalog-browser";
 import { displayGameName, displayRulesReadiness, type GameCatalogEntry } from "@/lib/catalog";
@@ -43,8 +43,9 @@ export function PlayGamePicker({ entries, locale, selectedMode }: { entries: Gam
               <Radio size={16} />
               <strong>{displayGameName(entry)}</strong>
               <span>{displayRulesReadiness(entry)}</span>
-              <button type="button" className="catalog-icon-button focus-ring" aria-label={`Open info for ${displayGameName(entry)}`} title="Info, rules, and setup actions" onClick={() => setSelectedEntry(entry)}>
-                <Info size={15} />
+              <button type="button" className="catalog-guide-button focus-ring" aria-label={`Open guide for ${displayGameName(entry)}`} title="Guide, rules, and setup actions" onClick={() => setSelectedEntry(entry)}>
+                <BookOpen size={15} />
+                <span>Guide</span>
               </button>
             </div>
             <div className="play-game-row-actions">

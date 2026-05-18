@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { BookOpen, Bot, Filter, Info, Play, RotateCcw, Search, X } from "lucide-react";
+import { BookOpen, Bot, Filter, Play, RotateCcw, Search, X } from "lucide-react";
 
 import {
   displayBotReadiness,
@@ -106,8 +106,9 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
                 <h2>{displayGameName(entry)}</h2>
                 <p>{gameFamilies.find((item) => item.key === entry.family)?.label}</p>
               </div>
-              <button type="button" className="catalog-icon-button focus-ring" aria-label={`Open info for ${displayGameName(entry)}`} title="Info, rules, and actions" onClick={() => setSelectedEntry(entry)}>
-                <Info size={16} />
+              <button type="button" className="catalog-guide-button focus-ring" aria-label={`Open guide for ${displayGameName(entry)}`} title="Guide, rules, and actions" onClick={() => setSelectedEntry(entry)}>
+                <BookOpen size={15} />
+                <span>Guide</span>
               </button>
             </div>
             <p className="catalog-card-summary">{entry.shortRules[0] ?? entry.winConditions[0]}</p>
@@ -159,13 +160,13 @@ export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCata
 
   return (
     <div className="catalog-rules-backdrop" role="presentation" onClick={onClose}>
-      <section className="catalog-rules-sheet panel" role="dialog" aria-modal="true" aria-label={`${displayGameName(entry)} info`} onClick={(event) => event.stopPropagation()}>
+      <section className="catalog-rules-sheet panel" role="dialog" aria-modal="true" aria-label={`${displayGameName(entry)} guide`} onClick={(event) => event.stopPropagation()}>
         <div className="catalog-rules-head">
           <div>
             <span>{gameFamilies.find((item) => item.key === entry.family)?.label}</span>
             <h2>{displayGameName(entry)}</h2>
           </div>
-          <button type="button" className="catalog-icon-button focus-ring" aria-label="Close info" onClick={onClose}>
+          <button type="button" className="catalog-icon-button focus-ring" aria-label="Close guide" onClick={onClose}>
             <X size={17} />
           </button>
         </div>
@@ -184,12 +185,12 @@ export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCata
           ) : null}
           <Link href={`/${locale}/games/${entry.id}` as never} className="action-secondary focus-ring">
             <BookOpen size={16} />
-            Full Guide
+            Full page
           </Link>
         </div>
-        <div className="catalog-rules-grid">
-          <article>
-            <h3>Basics</h3>
+        <div className="catalog-guide-sections">
+          <details open>
+            <summary>Basics</summary>
             <ol>
               {entry.shortRules.slice(0, 4).map((rule, index) => (
                 <li key={rule}>
@@ -198,26 +199,36 @@ export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCata
                 </li>
               ))}
             </ol>
-          </article>
-          <article>
-            <h3>How it ends</h3>
+          </details>
+          <details>
+            <summary>How it ends</summary>
             <ul>
               {entry.winConditions.slice(0, 3).map((condition) => (
                 <li key={condition}>{condition}</li>
               ))}
             </ul>
-          </article>
+          </details>
+          <details>
+            <summary>Status</summary>
+            <div className="catalog-card-meta">
+              <span>{entry.board.description}</span>
+              <span>{displayPiecePresentation(entry)}</span>
+              <span>{displayRulesReadiness(entry)}</span>
+              <span>{displayReleaseReadiness(entry)}</span>
+              <span>{entry.botAdapter !== "none" ? displayBotReadiness(entry) : "Rules only"}</span>
+            </div>
+          </details>
+          <details>
+            <summary>Sources</summary>
+            <div className="catalog-source-list">
+              {entry.ruleSourceLinks.map((source) => (
+                <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="focus-ring action-secondary">
+                  {source.name}
+                </a>
+              ))}
+            </div>
+          </details>
         </div>
-        <section className="catalog-rules-status" aria-label={`${displayGameName(entry)} status`}>
-          <h3>Status</h3>
-          <div className="catalog-card-meta">
-            <span>{entry.board.description}</span>
-            <span>{displayPiecePresentation(entry)}</span>
-            <span>{displayRulesReadiness(entry)}</span>
-            <span>{displayReleaseReadiness(entry)}</span>
-            <span>{entry.botAdapter !== "none" ? displayBotReadiness(entry) : "Rules only"}</span>
-          </div>
-        </section>
       </section>
     </div>
   );

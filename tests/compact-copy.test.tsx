@@ -43,7 +43,7 @@ describe("compact page copy", () => {
     expect(markup).toContain("Games &amp; rules");
     expect(markup).toContain("Bot training status");
     expect(markup).toContain("Book &amp; tactics");
-    expect(markup).toContain("Open info for Classic Chess");
+    expect(markup).toContain("Open guide for Classic Chess");
     expect(markup).toContain("Games &amp; rules");
     expect(markup).not.toContain("Full Guide");
   });

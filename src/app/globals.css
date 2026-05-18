@@ -3516,9 +3516,7 @@ select {
   white-space: nowrap;
 }
 
-.play-game-row-main .catalog-icon-button {
-  width: 2rem;
-  height: 2rem;
+.play-game-row-main .catalog-guide-button {
   margin-left: auto;
 }
 
@@ -3729,6 +3727,27 @@ select {
   color: var(--foreground);
 }
 
+.catalog-guide-button {
+  display: inline-flex;
+  min-height: 2.35rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--foreground);
+  padding: 0 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 950;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.catalog-guide-button:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-soft));
+}
+
 .catalog-card-meta span,
 .catalog-status,
 .catalog-release,
@@ -3869,27 +3888,40 @@ select {
   line-height: 1;
 }
 
-.catalog-rules-grid {
+.catalog-rules-grid,
+.catalog-guide-sections {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
   gap: 0.75rem;
   margin-top: 0.85rem;
 }
 
-.catalog-rules-grid article {
+.catalog-rules-grid {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+}
+
+.catalog-rules-grid article,
+.catalog-guide-sections details {
   border-radius: 8px;
   background: var(--surface-strong);
   padding: 0.85rem;
 }
 
-.catalog-rules-grid h3 {
+.catalog-rules-grid h3,
+.catalog-guide-sections summary {
   margin: 0 0 0.55rem;
   font-size: 0.95rem;
   font-weight: 950;
 }
 
+.catalog-guide-sections summary {
+  cursor: pointer;
+  list-style-position: inside;
+}
+
 .catalog-rules-grid ol,
-.catalog-rules-grid ul {
+.catalog-rules-grid ul,
+.catalog-guide-sections ol,
+.catalog-guide-sections ul {
   display: grid;
   gap: 0.45rem;
   margin: 0;
@@ -3897,12 +3929,24 @@ select {
   list-style: none;
 }
 
-.catalog-rules-grid li {
+.catalog-rules-grid li,
+.catalog-guide-sections li {
   display: flex;
   gap: 0.45rem;
   color: var(--muted);
   font-size: 0.86rem;
   line-height: 1.35;
+}
+
+.catalog-source-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.catalog-source-list a {
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8rem;
 }
 
 .catalog-rules-actions {
