@@ -72,6 +72,29 @@ export type ReplaceLeaderboardEntriesInput = {
   entries: LeaderboardEntryInput[];
 };
 
+export type LeaderboardEntrySnapshot = {
+  rank: number;
+  profileId: string | null;
+  displayName: string;
+  rating: number | null;
+  gamesPlayed: number;
+  winRate: number | null;
+  streak: number;
+  metadata: unknown;
+  computedAt: string;
+};
+
+export type LeaderboardSnapshot = {
+  id: string;
+  scopeId: string;
+  gameId: string | null;
+  familyKey: string | null;
+  ratedOnly: boolean;
+  period: string;
+  computedAt: string;
+  entries: LeaderboardEntrySnapshot[];
+};
+
 export type GameRepository = {
   createGame(input: CreateGameInput): Promise<{ id: string; mode: "d1" }>;
   createRoom(input: { snapshot: RoomSnapshot; hostId?: string | null; roomCode?: string | null }): Promise<{ id: string; mode: "d1"; roomCode: string }>;
@@ -85,6 +108,7 @@ export type GameRepository = {
   saveProfileRating(input: SaveProfileRatingInput): Promise<void>;
   saveRatingEvent(input: SaveRatingEventInput): Promise<void>;
   replaceLeaderboardEntries(input: ReplaceLeaderboardEntriesInput): Promise<void>;
+  getLeaderboards(): Promise<LeaderboardSnapshot[]>;
   saveBotBenchmark(input: SaveBotBenchmarkInput): Promise<void>;
   saveAnalysis(input: {
     id: string;
@@ -406,6 +430,42 @@ export function createD1GameRepository(db: D1Database): GameRepository {
       }
     },
 
+    async getLeaderboards() {
+      const leaderboards = await db
+        .prepare(
+          `select id, scope_id, game_id, family_key, rated_only, period, computed_at
+           from leaderboards
+           order by scope_id, period`
+        )
+        .bind()
+        .all<LeaderboardRow>();
+
+      const snapshots: LeaderboardSnapshot[] = [];
+      for (const leaderboard of leaderboards.results ?? []) {
+        const entries = await db
+          .prepare(
+            `select rank, profile_id, display_name, rating, games_played, win_rate, streak, metadata, computed_at
+             from leaderboard_entries
+             where leaderboard_id = ?
+             order by rank asc`
+          )
+          .bind(leaderboard.id)
+          .all<LeaderboardEntryRow>();
+
+        snapshots.push({
+          id: leaderboard.id,
+          scopeId: leaderboard.scope_id,
+          gameId: leaderboard.game_id ?? null,
+          familyKey: leaderboard.family_key ?? null,
+          ratedOnly: Boolean(leaderboard.rated_only),
+          period: leaderboard.period,
+          computedAt: leaderboard.computed_at,
+          entries: (entries.results ?? []).map(toLeaderboardEntrySnapshot)
+        });
+      }
+      return snapshots;
+    },
+
     async saveBotBenchmark(input) {
       await db
         .prepare(
@@ -465,6 +525,28 @@ type RoomParticipantRow = {
   display_name?: string | null;
   connected?: number;
   rating_at_start?: number | null;
+};
+
+type LeaderboardRow = {
+  id: string;
+  scope_id: string;
+  game_id?: string | null;
+  family_key?: string | null;
+  rated_only?: number;
+  period: string;
+  computed_at: string;
+};
+
+type LeaderboardEntryRow = {
+  rank: number;
+  profile_id?: string | null;
+  display_name: string;
+  rating?: number | null;
+  games_played?: number | null;
+  win_rate?: number | null;
+  streak?: number | null;
+  metadata?: string | null;
+  computed_at: string;
 };
 
 async function persistNormalizedGameStart(db: D1Database, state: GameState, createdBy?: string | null, roomPlayers?: ParticipantSeed[]) {
@@ -650,6 +732,29 @@ function normalizeRoomStatus(status: string | undefined, fallback: GameState["st
 function normalizeChatPolicy(policy: string | undefined): ChatPolicy {
   if (policy === "disabled" || policy === "players" || policy === "spectators" || policy === "everyone") return policy;
   return "players";
+}
+
+function toLeaderboardEntrySnapshot(row: LeaderboardEntryRow): LeaderboardEntrySnapshot {
+  return {
+    rank: Number(row.rank),
+    profileId: row.profile_id ?? null,
+    displayName: row.display_name,
+    rating: row.rating ?? null,
+    gamesPlayed: Number(row.games_played ?? 0),
+    winRate: row.win_rate ?? null,
+    streak: Number(row.streak ?? 0),
+    metadata: parseJson(row.metadata, {}),
+    computedAt: row.computed_at
+  };
+}
+
+function parseJson(value: string | null | undefined, fallback: unknown) {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return fallback;
+  }
 }
 
 function createPositionHash(state: GameState) {

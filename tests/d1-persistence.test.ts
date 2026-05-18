@@ -208,6 +208,70 @@ describe("D1 persistence", () => {
     expect(entry?.values).toEqual(["classic-rapid", 1, "profile-1", "Sharp Player", 1801, 88, 0.64, 5, JSON.stringify({ country: "HK" })]);
   });
 
+  test("loads normalized leaderboard rows with entries", async () => {
+    const { db, calls } = createMockD1(
+      {},
+      {
+        "from leaderboards": [
+          {
+            id: "classic-rapid",
+            scope_id: "global",
+            game_id: "classic",
+            family_key: "chess-family",
+            rated_only: 1,
+            period: "all-time",
+            computed_at: "2026-05-18T00:00:00.000Z"
+          }
+        ],
+        "from leaderboard_entries": [
+          {
+            rank: 1,
+            profile_id: "profile-1",
+            display_name: "Sharp Player",
+            rating: 1801,
+            games_played: 88,
+            win_rate: 0.64,
+            streak: 5,
+            metadata: JSON.stringify({ country: "HK" }),
+            computed_at: "2026-05-18T00:00:00.000Z"
+          }
+        ]
+      }
+    );
+    const repository = createD1GameRepository(db);
+
+    await expect(repository.getLeaderboards()).resolves.toEqual([
+      {
+        id: "classic-rapid",
+        scopeId: "global",
+        gameId: "classic",
+        familyKey: "chess-family",
+        ratedOnly: true,
+        period: "all-time",
+        computedAt: "2026-05-18T00:00:00.000Z",
+        entries: [
+          {
+            rank: 1,
+            profileId: "profile-1",
+            displayName: "Sharp Player",
+            rating: 1801,
+            gamesPlayed: 88,
+            winRate: 0.64,
+            streak: 5,
+            metadata: { country: "HK" },
+            computedAt: "2026-05-18T00:00:00.000Z"
+          }
+        ]
+      }
+    ]);
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ sql: expect.stringContaining("from leaderboards"), values: [] }),
+        expect.objectContaining({ sql: expect.stringContaining("from leaderboard_entries"), values: ["classic-rapid"] })
+      ])
+    );
+  });
+
   test("stores native GameState fields in game and move snapshots", async () => {
     const { db, calls } = createMockD1();
     const repository = createD1GameRepository(db);
