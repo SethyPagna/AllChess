@@ -1551,7 +1551,8 @@ select {
 }
 
 .play-arena .game-side-panel {
-  max-height: none;
+  max-height: calc(var(--board-fixed-size) + 7.8rem);
+  overflow: hidden;
 }
 
 .play-panel-title {
@@ -1584,6 +1585,7 @@ select {
 
 .play-panel-match-header .play-title-row {
   align-items: flex-start;
+  gap: 0.65rem;
 }
 
 .play-panel-match-header .play-title-block h1 {
@@ -1594,6 +1596,23 @@ select {
 .play-panel-match-header .play-title-meta {
   gap: 0.32rem;
   margin-top: 0.45rem;
+}
+
+.play-title-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  margin-left: auto;
+}
+
+.play-title-actions button {
+  min-height: 2.15rem;
+  border-radius: 7px;
+  padding: 0.38rem 0.58rem;
+  font-size: 0.76rem;
+  line-height: 1;
 }
 
 .play-panel-match-header .play-title-meta strong {
@@ -1688,7 +1707,7 @@ select {
 
 .play-section-tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.35rem;
   border-radius: 8px;
   background: #171614;
@@ -1721,7 +1740,9 @@ select {
 }
 
 .play-tab-panel {
-  min-height: 17rem;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 0.1rem;
 }
 
 .play-mode-grid {
@@ -1923,6 +1944,46 @@ select {
   padding: 0.85rem;
 }
 
+.compact-status-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.compact-status-heading p,
+.compact-status-heading strong {
+  margin: 0;
+}
+
+.compact-status-heading p {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.compact-status-heading strong {
+  display: block;
+  margin-top: 0.1rem;
+  color: var(--foreground);
+  font-size: 1.14rem;
+  font-weight: 950;
+  line-height: 1.05;
+  text-transform: capitalize;
+}
+
+.compact-status-heading > span {
+  border-radius: 999px;
+  background: rgb(255 255 255 / 7%);
+  color: var(--muted);
+  padding: 0.18rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
 .play-control-card {
   display: grid;
   gap: 0.65rem;
@@ -1973,6 +2034,12 @@ select {
 .play-control-groups {
   display: grid;
   gap: 0.55rem;
+}
+
+.play-control-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.35rem;
 }
 
 .play-control-section {
@@ -2032,10 +2099,10 @@ select {
   justify-content: center;
   gap: 0.45rem;
   min-width: 0;
-  min-height: 2.45rem;
+  min-height: 2.1rem;
   border-radius: 7px;
-  padding: 0.55rem 0.7rem;
-  font-size: 0.78rem;
+  padding: 0.42rem 0.5rem;
+  font-size: 0.72rem;
   font-weight: 950;
   line-height: 1;
 }
@@ -2054,12 +2121,19 @@ select {
 }
 
 .play-control-button.is-main {
-  min-height: 2.65rem;
-  font-size: 0.84rem;
+  min-height: 2.1rem;
+  font-size: 0.74rem;
 }
 
 .play-icon-button {
+  aspect-ratio: 1;
   padding-inline: 0.45rem;
+}
+
+.play-control-button.is-danger {
+  border: 1px solid var(--danger);
+  background: color-mix(in srgb, var(--danger) 9%, #171614);
+  color: var(--danger);
 }
 
 .play-control-button:disabled,
@@ -2386,6 +2460,10 @@ select {
   margin-top: 0.65rem;
 }
 
+.compact-bot-stat-grid {
+  margin-top: 0.55rem;
+}
+
 .bot-stat-grid span {
   border: 1px solid rgb(255 255 255 / 8%);
   border-radius: 8px;
@@ -2445,6 +2523,57 @@ select {
   border-radius: 8px;
   background: #211f1d;
   overflow: hidden;
+}
+
+.play-review-compact .review-engine-row,
+.play-review-compact .review-summary-row {
+  padding: 0.55rem 0.7rem;
+}
+
+.play-review-compact .review-position-card {
+  gap: 0.18rem;
+  padding: 0.58rem 0.7rem;
+}
+
+.play-review-compact .review-position-card span,
+.play-review-compact .review-position-card small {
+  display: none;
+}
+
+.play-review-compact .review-move-list {
+  max-height: clamp(7rem, 22vh, 12rem);
+}
+
+.play-review-compact .review-move-list li button {
+  min-height: 2rem;
+  padding: 0.38rem 0.7rem;
+}
+
+.play-review-compact .review-controls {
+  gap: 0.35rem;
+  padding: 0 0.65rem 0.55rem;
+}
+
+.play-review-compact .review-controls button {
+  min-height: 2.35rem;
+}
+
+.review-inline-actions {
+  display: flex;
+  gap: 0.45rem;
+  padding: 0 0.65rem 0.65rem;
+}
+
+.review-inline-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 2.15rem;
+  flex: 1;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 950;
 }
 
 .review-tabs {
@@ -4141,6 +4270,12 @@ select {
     grid-template-columns: 1fr;
   }
 
+  .play-arena .game-side-panel {
+    order: -1;
+    max-height: none;
+    overflow: visible;
+  }
+
   .play-header-command-actions {
     max-width: 100%;
     justify-content: flex-start;
@@ -4302,13 +4437,31 @@ select {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .play-title-actions {
+    width: 100%;
+    justify-content: flex-start;
+    margin-left: 0;
+  }
+
+  .play-panel-match-header .play-title-row {
+    flex-wrap: wrap;
+  }
+
+  .play-panel-match-header .play-title-block h1 {
+    width: 100%;
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+  }
+
   .play-control-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .play-control-group-primary,
-  .play-control-group-bots {
-    grid-template-columns: 1fr;
+  .play-control-group-bots,
+  .play-control-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .board-player-card {
@@ -4406,7 +4559,8 @@ select {
   .play-mode-rail-list,
   .play-control-grid,
   .play-control-group-primary,
-  .play-control-group-bots {
+  .play-control-group-bots,
+  .play-control-strip {
     grid-template-columns: 1fr;
   }
 

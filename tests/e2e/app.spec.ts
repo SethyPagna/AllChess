@@ -49,19 +49,19 @@ test("localized game hub can open variants and a playable board", async ({ page 
   await expect(page.getByLabel("Bot difficulty")).toContainText("Grandmaster");
   await expect(page.getByLabel("Bot difficulty")).toContainText("Legend");
   await expect(page.getByLabel("Game guide")).toBeVisible();
-  await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "New" })).toBeVisible();
-  await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Room" })).toBeVisible();
-  await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Watch" })).toBeVisible();
-  await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Draw" })).toBeDisabled();
-  await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Resign" })).toBeDisabled();
-  await page.locator(".play-header-command-actions").getByRole("button", { name: "Room" }).click();
+  await expect(page.locator(".play-title-actions").getByRole("button", { name: "Room" })).toBeVisible();
+  await expect(page.locator(".play-title-actions").getByRole("button", { name: "Watch" })).toBeVisible();
+  await page.getByRole("button", { name: "Status" }).click();
+  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
+  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();
+  await page.locator(".play-title-actions").getByRole("button", { name: "Room" }).click();
   await expect(page.getByLabel("Match summary")).toContainText("Create Room setup");
   await expect(page.getByLabel("Bot difficulty")).toBeDisabled();
-  await page.locator(".play-header-command-actions").getByRole("button", { name: "Watch" }).click();
+  await page.locator(".play-title-actions").getByRole("button", { name: "Watch" }).click();
   await expect(page.getByLabel("Match summary")).toContainText("Spectate setup");
   await expect(page.getByLabel("Bot difficulty")).toBeDisabled();
   await expect(
-    page.locator(".play-header-command-actions .button-label").evaluateAll((labels) => labels.every((label) => label.getBoundingClientRect().width > 12))
+    page.locator(".play-title-actions .button-label").evaluateAll((labels) => labels.every((label) => label.getBoundingClientRect().width > 12))
   ).resolves.toBe(true);
   await expectNoHorizontalOverflow(page);
 });
@@ -105,12 +105,14 @@ test("mobile shell language, notifications, and board controls stay in bounds", 
   await expect(mobileHeader.getByRole("button", { name: "Mark read" })).toBeVisible();
   await expectWithinViewport(page, mobileHeader.locator(".notification-panel"));
   await expectNoHorizontalOverflow(page);
+  await mobileHeader.getByLabel(/Notifications/).click();
+  await expect(mobileHeader.locator(".notification-panel")).toBeHidden();
 
   await page.getByRole("button", { name: "Status" }).click();
   await expect(page.getByLabel("Board controls")).toBeVisible();
-  await expect(page.getByLabel("Board controls")).toContainText("Assist");
-  await expect(page.getByLabel("Board controls")).toContainText("Bot automation");
-  await expect(page.getByLabel("Board controls")).toContainText("Utilities");
+  await expect(page.getByLabel("Board controls")).toContainText("Suggest");
+  await expect(page.getByLabel("Board controls")).toContainText("Auto");
+  await expect(page.getByLabel("Board controls")).toContainText("Resign");
   await expect(page.getByRole("button", { name: "Apply disabled" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Undo" })).toBeDisabled();
   await expectNoHorizontalOverflow(page);

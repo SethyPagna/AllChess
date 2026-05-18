@@ -14,7 +14,7 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await expect(page.getByText("Match center")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Game Tools" })).toHaveCount(0);
   await expect(page.getByText("Review hook")).toHaveCount(0);
-  await expect(page.getByLabel("Bot response profile")).toContainText("cache first");
+  await expect(page.getByLabel("Bot search profile")).toContainText("Budget");
   const before = await board.boundingBox();
   expect(before).toBeTruthy();
 
@@ -40,7 +40,7 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   expect(afterSuggestion?.width).toBeCloseTo(before!.width, 1);
   expect(afterSuggestion?.height).toBeCloseTo(before!.height, 1);
 
-  await page.locator(".play-header-command-actions").getByRole("button", { name: "New" }).click();
+  await page.getByLabel("Board controls").getByRole("button", { name: "Reset" }).click();
   await page.getByLabel("Side").selectOption("first");
   await page.getByRole("button", { name: /Play Bots/ }).last().click();
   await page.getByRole("button", { name: "Start Game" }).click();
@@ -117,7 +117,6 @@ test("setup flow supports bot practice as black with an automatic first reply", 
   await expect(page.getByText(/You: Black/)).toBeVisible();
   await expect(page.getByText(/View: Black/)).toBeVisible();
   await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 5000 });
-  await expect(page.getByText(/Bot source:/)).toBeVisible();
   await expect(page.getByText(/opening-book|internal-search|engine-search/)).toBeVisible();
 
   const after = await board.boundingBox();
@@ -144,7 +143,7 @@ test("classic grandmaster uses Stockfish on off-book replies", async ({ page }) 
   await page.getByRole("button", { name: "h3" }).click();
 
   await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 7000 });
-  await expect(page.getByText(/Bot source:\s*engine-search/i)).toBeVisible();
+  await expect(page.getByText(/engine-search/i)).toBeVisible();
   expect(runtimeErrors).toEqual([]);
 });
 
@@ -163,11 +162,10 @@ test("online setup disables bot controls and shows opponent search", async ({ pa
   await expect(page.getByText("Searching for opponent").first()).toBeVisible();
   await expect(page.getByLabel("Online matchmaking status")).toContainText("Searching for opponent");
   await expect(page.getByLabel("Online matchmaking status")).toContainText("Bot difficulty and automation are paused");
-  await expect(page.getByLabel("Board controls")).toContainText("Human match only");
   await expect(page.getByRole("button", { name: "Play Bots" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Apply disabled" })).toBeDisabled();
-  await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Draw" })).toBeDisabled();
-  await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Resign" })).toBeDisabled();
+  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
+  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();
   expect(runtimeErrors).toEqual([]);
 });
 
@@ -179,7 +177,7 @@ test("spectate mode is read-only after start", async ({ page }) => {
   });
 
   await page.goto("/en/play/classic");
-  await page.locator(".play-header-command-actions").getByRole("button", { name: "Watch" }).click();
+  await page.locator(".play-title-actions").getByRole("button", { name: "Watch" }).click();
   await page.getByRole("button", { name: "Start Game" }).click();
   await expect(page.getByLabel("Match summary")).toContainText("Watching rooms");
   await expect(page.getByText("Watching rooms").first()).toBeVisible();
@@ -188,10 +186,10 @@ test("spectate mode is read-only after start", async ({ page }) => {
   await page.getByRole("button", { name: /e2.*white.*pawn/i }).click();
   await page.getByRole("button", { name: "e4" }).click();
   await expect(page.getByText("Spectate mode is read-only. Choose a playable mode to move pieces.")).toBeVisible();
-  await expect(page.getByText(/^1\./)).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Move" })).toBeDisabled();
-  await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Draw" })).toBeDisabled();
-  await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Resign" })).toBeDisabled();
+  await expect(page.locator(".review-move-list")).not.toContainText("e4");
+  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Move", exact: true })).toBeDisabled();
+  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
+  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();
   expect(runtimeErrors).toEqual([]);
 });
 
@@ -204,8 +202,8 @@ test("resign result can be dismissed and reset to setup cleanly", async ({ page 
 
   await page.goto("/en/play/classic");
   await page.getByRole("button", { name: "Start Game" }).click();
-  await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Resign" })).toBeEnabled();
-  await page.locator(".play-header-command-actions").getByRole("button", { name: "Resign" }).click();
+  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeEnabled();
+  await page.getByLabel("Board controls").getByRole("button", { name: "Resign" }).click();
 
   const dialog = page.getByRole("dialog", { name: "Match over" });
   await expect(dialog).toBeVisible();
@@ -213,11 +211,12 @@ test("resign result can be dismissed and reset to setup cleanly", async ({ page 
   await dialog.getByRole("button", { name: "Close match result" }).click();
   await expect(dialog).toHaveCount(0);
 
-  await page.locator(".play-header-command-actions").getByRole("button", { name: "New" }).click();
+  await page.getByLabel("Board controls").getByRole("button", { name: "Reset" }).click();
   await expect(page.getByLabel("Match summary")).toContainText("Offline Local setup");
   await expect(page.getByText("Choose setup first")).toBeVisible();
-  await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Draw" })).toBeDisabled();
-  await expect(page.locator(".play-header-command-actions").getByRole("button", { name: "Resign" })).toBeDisabled();
+  await page.getByRole("button", { name: "Status" }).click();
+  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
+  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();
   expect(runtimeErrors).toEqual([]);
 });
 

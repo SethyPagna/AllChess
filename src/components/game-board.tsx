@@ -45,7 +45,7 @@ type BotMode = "human" | "opponent" | "both";
 type PlayMode = "online" | "bot" | "offline" | "room" | "matchmaking" | "spectate";
 type SeatChoice = "random" | "first" | "second";
 type BoardOrientation = "auto" | "first" | "second";
-type PanelTab = "setup" | "status" | "review";
+type PanelTab = "setup" | "status";
 
 const playModeOptions: Array<{ key: PlayMode; label: string; description: string; Icon: typeof Swords }> = [
   { key: "online", label: "Play Online", description: "Match with a player", Icon: Swords },
@@ -58,8 +58,7 @@ const playModeOptions: Array<{ key: PlayMode; label: string; description: string
 
 const panelTabOptions: Array<{ key: PanelTab; label: string; Icon: typeof Swords }> = [
   { key: "setup", label: "Setup", Icon: SlidersHorizontal },
-  { key: "status", label: "Status", Icon: Activity },
-  { key: "review", label: "Review", Icon: Brain }
+  { key: "status", label: "Status", Icon: Activity }
 ];
 
 type ThinkingState = {
@@ -375,7 +374,7 @@ export function GameBoard({
     setSuggestedMove(null);
     setLastBotResult(null);
     setNotice("Suggestion applied.");
-    setPanelTab("review");
+    setPanelTab("status");
     setReviewPly(null);
     setReviewPlaying(false);
   }
@@ -724,12 +723,22 @@ export function GameBoard({
           <div className="play-title-block">
             <div className="play-title-row">
               <h1>{title}</h1>
-              {rulesSummary ? (
-                <button type="button" title="Open guide, win conditions, and draw notes." onClick={() => setShowRules(true)} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" aria-label="Game guide">
-                  <BookOpen size={16} />
-                  Guide
+              <div className="play-title-actions" aria-label="Match actions">
+                {rulesSummary ? (
+                  <button type="button" title="Open guide, win conditions, and draw notes." onClick={() => setShowRules(true)} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" aria-label="Game guide">
+                    <BookOpen size={16} />
+                    Guide
+                  </button>
+                ) : null}
+                <button type="button" onClick={() => { selectPlayMode("room"); setPanelTab("setup"); setNotice("Room setup selected. Bot controls are disabled while waiting for a player."); }} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Switch to room setup for a shareable game.">
+                  <Share2 size={16} />
+                  <span className="button-label">Room</span>
                 </button>
-              ) : null}
+                <button type="button" onClick={() => { selectPlayMode("spectate"); setPanelTab("setup"); }} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Switch to spectator mode for live rooms.">
+                  <Eye size={16} />
+                  <span className="button-label">Watch</span>
+                </button>
+              </div>
             </div>
             <div className="play-title-meta" aria-label="Match summary">
               <span className="inline-flex items-center gap-2">
@@ -739,28 +748,6 @@ export function GameBoard({
               <strong title={objective}>{modeSummary}</strong>
               <em>{phaseLabel}</em>
             </div>
-          </div>
-          <div className="play-command-actions play-header-command-actions">
-            <button type="button" title="Reset the game with the current setup." onClick={reset} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm">
-              <RotateCcw size={16} />
-              <span className="button-label">New</span>
-            </button>
-            <button type="button" onClick={() => { selectPlayMode("room"); setPanelTab("setup"); setNotice("Room setup selected. Bot controls are disabled while waiting for a player."); }} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Switch to room setup for a shareable game.">
-              <Share2 size={16} />
-              <span className="button-label">Room</span>
-            </button>
-            <button type="button" onClick={() => { selectPlayMode("spectate"); setPanelTab("setup"); }} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Switch to spectator mode for live rooms.">
-              <Eye size={16} />
-              <span className="button-label">Watch</span>
-            </button>
-            <button type="button" onClick={offerDraw} disabled={!canEndGame} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title={canEndGame ? "End this local game as a draw." : "Draw is unavailable until an active playable game starts."}>
-              <Handshake size={16} />
-              <span className="button-label">Draw</span>
-            </button>
-            <button type="button" onClick={resignGame} disabled={!canEndGame} className="focus-ring inline-flex items-center gap-2 rounded-md border border-[var(--danger)] px-3 py-2 text-sm font-bold text-[var(--danger)]" title={canEndGame ? "Resign the active game." : "Resign is unavailable until an active game starts."}>
-              <Flag size={16} />
-              <span className="button-label">Resign</span>
-            </button>
           </div>
         </div>
         <div className="play-section-tabs" aria-label="Game tool sections">
@@ -856,161 +843,111 @@ export function GameBoard({
                   <strong>Board controls</strong>
                   <span>{gameStarted ? "Live" : "Start first"}</span>
                 </div>
-                <div className="play-control-groups">
-                  <section className="play-control-section" aria-label="Assist controls">
-                    <div className="play-control-group-label">
-                      <span>Assist</span>
-                      <small>{canUseAssist ? "Ready" : "Locked"}</small>
-                    </div>
-                    <div className="play-control-group play-control-group-primary" aria-label="Move help">
-                      <button
-                        type="button"
-                        title={
-                          canUseAssist
-                            ? "Find and highlight a legal candidate move for the current side."
-                            : "Suggestions are disabled for online, room, spectate, review, completed, or not-started states."
-                        }
-                        onClick={suggestMove}
-                        className="focus-ring action-secondary play-control-button"
-                        disabled={!canUseAssist}
-                      >
-                        <Lightbulb size={16} />
-                        <span>Suggest</span>
-                      </button>
-                      <button
-                        type="button"
-                        title={suggestedMove ? "Apply the highlighted suggestion to the board." : "Generate a suggestion first."}
-                        aria-label={suggestedMove ? "Apply suggestion" : "Apply disabled"}
-                        onClick={applySuggestion}
-                        className="focus-ring action-primary play-control-button is-main"
-                        disabled={!canUseAssist || !suggestedMove}
-                      >
-                        <Sparkles size={16} />
-                        <span>Apply</span>
-                      </button>
-                      <button
-                        type="button"
-                        title={
-                          canUseAssist
-                            ? "Ask the bot engine to move for whichever side is currently to move."
-                            : "Move for me is disabled for online, room, spectate, review, completed, or not-started states."
-                        }
-                        onClick={() => void playBotMove("manual")}
-                        className="focus-ring action-secondary play-control-button"
-                        disabled={!canUseAssist}
-                      >
-                        <PlayCircle size={16} />
-                        <span>Move</span>
-                      </button>
-                    </div>
-                  </section>
-                  <section className="play-control-section" aria-label="Bot automation controls">
-                    <div className="play-control-group-label">
-                      <span>Bot automation</span>
-                      <small>{isOnlineMode ? "Human match only" : canUseBots ? "Ready" : "Locked"}</small>
-                    </div>
-                    <div className="play-control-group play-control-group-bots" aria-label="Bot automation">
-                      <button
-                        type="button"
-                        aria-label="Play Bots"
-                        title={
-                          canUseBots
-                            ? "Toggle bot opponent. You move your selected side; the bot replies for the other side."
-                            : "Bot opponent is disabled for online, room, spectate, review, completed, or not-started states."
-                        }
-                        onClick={() => {
-                          setBotMode((current) => {
-                            const next = current === "opponent" ? "human" : "opponent";
-                            setNotice(
-                              next === "opponent" ? "Bot opponent is on. Make a move and the bot will reply automatically." : "Bot opponent is off."
-                            );
-                            setPanelTab("status");
-                            return next;
-                          });
-                        }}
-                        disabled={!canUseBots}
-                        className={`focus-ring play-control-button ${
-                          botMode === "opponent" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"
-                        }`}
-                      >
-                        <Bot size={16} />
-                        <span>Bot</span>
-                      </button>
-                      <button
-                        type="button"
-                        title={canUseBots ? "Let bots control both sides until you turn this off." : "Auto is disabled for online, room, spectate, review, completed, or not-started states."}
-                        onClick={() => setBotMode((current) => (current === "both" ? "human" : "both"))}
-                        disabled={!canUseBots}
-                        className={`focus-ring play-control-button ${
-                          botMode === "both" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"
-                        }`}
-                      >
-                        <Bot size={16} />
-                        <span>Auto</span>
-                      </button>
-                    </div>
-                  </section>
-                  <section className="play-control-section" aria-label="Board utility controls">
-                    <div className="play-control-group-label">
-                      <span>Utilities</span>
-                      <small>Board</small>
-                    </div>
-                    <div className="play-control-group play-control-group-utility" aria-label="Board utilities">
-                      <button
-                        type="button"
-                        title="Flip the visual board orientation without changing sides."
-                        onClick={flipBoard}
-                        className="focus-ring action-secondary play-icon-button"
-                        aria-label="Flip board"
-                      >
-                        <FlipHorizontal2 size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        title={isThinking ? "Stop the current bot search." : "Cancel is available only while the bot is thinking."}
-                        onClick={cancelThinking}
-                        className="focus-ring action-secondary play-icon-button"
-                        disabled={!isThinking}
-                        aria-label="Cancel thinking"
-                      >
-                        <PauseCircle size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        title={canUndo ? "Undo the last local move." : "Undo is disabled for online, room, spectate, review, thinking, or empty history states."}
-                        onClick={undo}
-                        className="focus-ring action-secondary play-icon-button"
-                        aria-label="Undo"
-                        disabled={!canUndo}
-                      >
-                        <Undo2 size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        title={canRedo ? "Redo the next local move from history." : "Redo is disabled for online, room, spectate, review, thinking, or empty future states."}
-                        onClick={redo}
-                        className="focus-ring action-secondary play-icon-button"
-                        aria-label="Redo"
-                        disabled={!canRedo}
-                      >
-                        <Redo2 size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        title="Reset the game with the current setup."
-                        onClick={reset}
-                        className="focus-ring action-secondary play-icon-button"
-                        aria-label="Reset"
-                      >
-                        <RotateCcw size={16} />
-                      </button>
-                    </div>
-                  </section>
+                <div className="play-control-strip" aria-label="Move and match controls">
+                  <button
+                    type="button"
+                    title={
+                      canUseAssist
+                        ? "Find and highlight a legal candidate move for the current side."
+                        : "Suggestions are disabled for online, room, spectate, review, completed, or not-started states."
+                    }
+                    onClick={suggestMove}
+                    className="focus-ring action-secondary play-control-button"
+                    disabled={!canUseAssist}
+                  >
+                    <Lightbulb size={15} />
+                    <span>Suggest</span>
+                  </button>
+                  <button
+                    type="button"
+                    title={suggestedMove ? "Apply the highlighted suggestion to the board." : "Generate a suggestion first."}
+                    aria-label={suggestedMove ? "Apply suggestion" : "Apply disabled"}
+                    onClick={applySuggestion}
+                    className="focus-ring action-primary play-control-button is-main"
+                    disabled={!canUseAssist || !suggestedMove}
+                  >
+                    <Sparkles size={15} />
+                    <span>Apply</span>
+                  </button>
+                  <button
+                    type="button"
+                    title={
+                      canUseAssist
+                        ? "Ask the bot engine to move for whichever side is currently to move."
+                        : "Move for me is disabled for online, room, spectate, review, completed, or not-started states."
+                    }
+                    onClick={() => void playBotMove("manual")}
+                    className="focus-ring action-secondary play-control-button"
+                    disabled={!canUseAssist}
+                  >
+                    <PlayCircle size={15} />
+                    <span>Move</span>
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Play Bots"
+                    title={
+                      canUseBots
+                        ? "Toggle bot opponent. You move your selected side; the bot replies for the other side."
+                        : "Bot opponent is disabled for online, room, spectate, review, completed, or not-started states."
+                    }
+                    onClick={() => {
+                      setBotMode((current) => {
+                        const next = current === "opponent" ? "human" : "opponent";
+                        setNotice(next === "opponent" ? "Bot opponent is on. Make a move and the bot will reply automatically." : "Bot opponent is off.");
+                        setPanelTab("status");
+                        return next;
+                      });
+                    }}
+                    disabled={!canUseBots}
+                    className={`focus-ring play-control-button ${botMode === "opponent" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"}`}
+                  >
+                    <Bot size={15} />
+                    <span>Bot</span>
+                  </button>
+                  <button
+                    type="button"
+                    title={canUseBots ? "Let bots control both sides until you turn this off." : "Auto is disabled for online, room, spectate, review, completed, or not-started states."}
+                    onClick={() => setBotMode((current) => (current === "both" ? "human" : "both"))}
+                    disabled={!canUseBots}
+                    className={`focus-ring play-control-button ${botMode === "both" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"}`}
+                  >
+                    <Bot size={15} />
+                    <span>Auto</span>
+                  </button>
+                  <button type="button" title="Flip the visual board orientation without changing sides." onClick={flipBoard} className="focus-ring action-secondary play-icon-button" aria-label="Flip board">
+                    <FlipHorizontal2 size={15} />
+                  </button>
+                  <button type="button" title={isThinking ? "Stop the current bot search." : "Cancel is available only while the bot is thinking."} onClick={cancelThinking} className="focus-ring action-secondary play-icon-button" disabled={!isThinking} aria-label="Cancel thinking">
+                    <PauseCircle size={15} />
+                  </button>
+                  <button type="button" title={canUndo ? "Undo the last local move." : "Undo is disabled for online, room, spectate, review, thinking, or empty history states."} onClick={undo} className="focus-ring action-secondary play-icon-button" aria-label="Undo" disabled={!canUndo}>
+                    <Undo2 size={15} />
+                  </button>
+                  <button type="button" title={canRedo ? "Redo the next local move from history." : "Redo is disabled for online, room, spectate, review, thinking, or empty future states."} onClick={redo} className="focus-ring action-secondary play-icon-button" aria-label="Redo" disabled={!canRedo}>
+                    <Redo2 size={15} />
+                  </button>
+                  <button type="button" title="Reset the game with the current setup." onClick={reset} className="focus-ring action-secondary play-icon-button" aria-label="Reset">
+                    <RotateCcw size={15} />
+                  </button>
+                  <button type="button" onClick={offerDraw} disabled={!canEndGame} className="focus-ring action-secondary play-control-button" title={canEndGame ? "End this local game as a draw." : "Draw is unavailable until an active playable game starts."}>
+                    <Handshake size={15} />
+                    <span>Draw</span>
+                  </button>
+                  <button type="button" onClick={resignGame} disabled={!canEndGame} className="focus-ring play-control-button is-danger" title={canEndGame ? "Resign the active game." : "Resign is unavailable until an active game starts."}>
+                    <Flag size={15} />
+                    <span>Resign</span>
+                  </button>
                 </div>
               </div>
               <div className="play-table-card">
-                <p className="text-sm font-bold text-[var(--muted)]">Current position</p>
-                <p className="text-2xl font-black capitalize">{statusHeading}</p>
+                <div className="compact-status-heading">
+                  <div>
+                    <p>Current position</p>
+                    <strong>{statusHeading}</strong>
+                  </div>
+                  <span>{colorLabel(humanColor)} view</span>
+                </div>
                 {thinking.status === "thinking" ? <p className="mt-1 text-sm font-bold text-[var(--info)]">{thinking.label}</p> : null}
                 {isOnlineMode ? (
                   <div className="online-search-card" role="status" aria-label="Online matchmaking status">
@@ -1047,12 +984,6 @@ export function GameBoard({
                       </div>
                       <small title={botStrength.basis}>target {botStrength.targetElo}</small>
                     </div>
-                    <p className="bot-tier-note" title={botStrength.basis}>{botLevel.estimatedStrength}</p>
-                    <div className="bot-readiness-row" aria-label="Bot response profile">
-                      <span title="Maximum reply time for this tier in the browser.">under {botResponseBudget}ms</span>
-                      <span title="Opening and tactical knowledge are checked before live search.">cache first</span>
-                      <span title={botStrength.basis}>{botCalibrationLabel}</span>
-                    </div>
                     <label className="play-setup-field mt-3">
                       <span>Bot difficulty</span>
                       <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)}>
@@ -1068,43 +999,20 @@ export function GameBoard({
                 <p className="mt-1 text-xs font-bold text-[var(--muted)]">
                   You: {colorLabel(humanColor)} · View: {visualOrientation === "second" ? colorLabel(secondColor) : colorLabel(firstColor)}
                 </p>
-                <div className="bot-stat-grid" aria-label="Bot search profile">
+                <div className="bot-stat-grid compact-bot-stat-grid" aria-label="Bot search profile">
                   <span>
-                    <small>Depth</small>
-                    <strong>{botLevel.depth}</strong>
+                    <small>{lastBotResult ? "Source" : "Depth"}</small>
+                    <strong>{lastBotResult?.knowledgeSource ?? lastBotResult?.engine ?? botLevel.depth}</strong>
                   </span>
                   <span>
-                    <small>Budget</small>
-                    <strong>{botLevel.moveTimeMs}ms</strong>
+                    <small>{lastBotResult ? "Search" : "Budget"}</small>
+                    <strong>{lastBotResult ? `${lastBotResult.depthReached}/${lastBotResult.nodesSearched}` : `${botResponseBudget}ms`}</strong>
                   </span>
                   <span>
-                    <small>Nodes</small>
-                    <strong>{botLevel.nodeBudget}</strong>
+                    <small>View</small>
+                    <strong>{visualOrientation === "second" ? colorLabel(secondColor) : colorLabel(firstColor)}</strong>
                   </span>
                 </div>
-                {lastBotResult ? (
-                  <div className="bot-explanation-card">
-                    <p>
-                      <strong>Bot source:</strong> {lastBotResult.knowledgeSource ?? lastBotResult.engine} - depth {lastBotResult.depthReached} - nodes {lastBotResult.nodesSearched}
-                    </p>
-                    {lastBotResult.searchEfficiency ? (
-                      <span>
-                        Reused {lastBotResult.searchEfficiency.cacheHits} move buckets and {lastBotResult.searchEfficiency.transpositionHits} transpositions from{" "}
-                        {lastBotResult.searchEfficiency.transpositionEntries} stored positions.
-                      </span>
-                    ) : null}
-                    {lastBotResult.explanation ? (
-                      <>
-                        <span>{lastBotResult.explanation.plan}</span>
-                        <span>{lastBotResult.explanation.threat}</span>
-                        <span>{lastBotResult.explanation.risk}</span>
-                        <span>{lastBotResult.explanation.fallbackGoal}</span>
-                      </>
-                    ) : (
-                      <span>Move was validated by the rules engine before it could affect the board.</span>
-                    )}
-                  </div>
-                ) : null}
                 {suggestedMove ? (
                   <p className="mt-1 text-sm font-bold text-[var(--accent-strong)]">
                     Suggestion: {suggestedMove.notation} - depth {suggestedMove.depthReached}
@@ -1112,30 +1020,21 @@ export function GameBoard({
                 ) : null}
                 {notice ? <p className="mt-1 text-sm text-[var(--warning)]">{notice}</p> : null}
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                {state.clocks.map((clock) => (
-                  <div key={clock.color} className={`play-clock-card ${state.turn === clock.color ? "is-active" : ""}`}>
-                    <p>{colorLabel(clock.color)}</p>
-                    <strong>{formatClock(clock.remainingMs)}</strong>
-                    <span>{state.turn === clock.color ? "to move" : clock.color === humanColor ? "you" : botMode !== "human" && clock.color === botColor ? "bot" : "waiting"}</span>
-                  </div>
-                ))}
-              </div>
             </div>
           ) : null}
-          {panelTab === "review" ? (
-            <div className="play-review-card">
+          {panelTab === "status" ? (
+            <div className="play-review-card play-review-compact">
               <div className="review-engine-row">
                 <span className="inline-flex items-center gap-2">
                   <Brain size={16} className="text-[var(--accent)]" />
-                  Analysis
+                  Moves
                 </span>
-                <span>Engine review</span>
+                <span>{isReviewing ? "Reviewing" : "Live"}</span>
               </div>
               <div className="review-position-card">
-                <p>{displayPly === 0 ? "Starting position" : `Position after ${activeReviewMove?.notation ?? "latest move"}`}</p>
-                <strong>{activeReviewMove ? `${activeReviewMove.label} - ${activeReviewMove.score}/100` : "Ready for review"}</strong>
-                <span>{activeReviewMove?.detail ?? "Use Game Review to replay positions with move quality labels."}</span>
+                <p>{displayPly === 0 ? "Starting position" : `After ${activeReviewMove?.notation ?? "latest move"}`}</p>
+                <strong>{activeReviewMove ? `${activeReviewMove.label} - ${activeReviewMove.score}/100` : "Ready"}</strong>
+                <span>{activeReviewMove?.detail ?? "Review opens here without hiding live status."}</span>
                 {activeReviewMove ? <small>Best line: {activeReviewMove.bestLine}</small> : null}
               </div>
               <ol className="review-move-list move-list max-h-52 overflow-auto text-sm">
@@ -1171,10 +1070,6 @@ export function GameBoard({
                 <span data-review="excellent">{reviewSummary.excellent} Excellent</span>
                 <span data-review="blunder">{reviewSummary.blunder} Blunder</span>
               </div>
-              <button type="button" title="Open move-by-move review mode." onClick={startReview} className="focus-ring review-primary-button">
-                <Sparkles size={20} />
-                Game Review
-              </button>
               <div className="review-controls" aria-label="Review playback controls">
                 <button type="button" onClick={() => setReviewCursor(0)} className="focus-ring" aria-label="First move" disabled={!reviewMoves.length}>
                   <SkipBack size={20} />
@@ -1192,11 +1087,17 @@ export function GameBoard({
                   <SkipForward size={20} />
                 </button>
               </div>
-              {isReviewing ? (
-                <button type="button" onClick={jumpToLive} className="focus-ring review-live-button">
-                  Back to live board
+              <div className="review-inline-actions">
+                <button type="button" title="Open move-by-move review mode." onClick={startReview} className="focus-ring action-secondary">
+                  <Sparkles size={16} />
+                  Review
                 </button>
-              ) : null}
+                {isReviewing ? (
+                  <button type="button" onClick={jumpToLive} className="focus-ring action-secondary">
+                    Back to live
+                  </button>
+                ) : null}
+              </div>
             </div>
           ) : null}
         </div>
