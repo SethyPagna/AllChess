@@ -16,6 +16,17 @@ export type RecordMoveInput = {
   move: Move;
 };
 
+export type SaveBotBenchmarkInput = {
+  id: string;
+  variantKey: string;
+  tier: string;
+  benchmarkVersion: string;
+  gamesPlayed: number;
+  score: number;
+  illegalMoves: number;
+  summary: unknown;
+};
+
 export type GameRepository = {
   createGame(input: CreateGameInput): Promise<{ id: string; mode: "d1" }>;
   createRoom(input: { snapshot: RoomSnapshot; hostId?: string | null; roomCode?: string | null }): Promise<{ id: string; mode: "d1"; roomCode: string }>;
@@ -23,6 +34,7 @@ export type GameRepository = {
   getRoomSnapshot(roomIdOrCode: string): Promise<RoomSnapshot | null>;
   getLiveStats(): Promise<LiveStats>;
   recordMove(input: RecordMoveInput): Promise<{ id: string; mode: "d1" }>;
+  saveBotBenchmark(input: SaveBotBenchmarkInput): Promise<void>;
   saveAnalysis(input: {
     id: string;
     gameId: string;
@@ -222,6 +234,26 @@ export function createD1GameRepository(db: D1Database): GameRepository {
       await persistClocks(db, input.gameId, input.state, actor);
 
       return { id: input.gameId, mode: "d1" };
+    },
+
+    async saveBotBenchmark(input) {
+      await db
+        .prepare(
+          `insert into bot_benchmark_runs (
+            id, variant_key, tier, benchmark_version, games_played, score, illegal_moves, summary
+          ) values (?, ?, ?, ?, ?, ?, ?, ?)`
+        )
+        .bind(
+          input.id,
+          input.variantKey,
+          input.tier,
+          input.benchmarkVersion,
+          input.gamesPlayed,
+          input.score,
+          input.illegalMoves,
+          JSON.stringify(input.summary)
+        )
+        .run();
     },
 
     async saveAnalysis(input) {

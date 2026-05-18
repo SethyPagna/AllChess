@@ -93,6 +93,34 @@ describe("D1 persistence", () => {
     );
   });
 
+  test("persists compact bot benchmark summaries to D1", async () => {
+    const { db, calls } = createMockD1();
+    const repository = createD1GameRepository(db);
+
+    await repository.saveBotBenchmark({
+      id: "bench-1",
+      variantKey: "classic",
+      tier: "legend",
+      benchmarkVersion: "bench-v1",
+      gamesPlayed: 12,
+      score: 9.5,
+      illegalMoves: 0,
+      summary: { suite: "smoke", positions: 12, claimStatus: "verified" }
+    });
+
+    const benchmarkInsert = calls.find((call) => call.sql.includes("insert into bot_benchmark_runs"));
+    expect(benchmarkInsert?.values).toEqual([
+      "bench-1",
+      "classic",
+      "legend",
+      "bench-v1",
+      12,
+      9.5,
+      0,
+      JSON.stringify({ suite: "smoke", positions: 12, claimStatus: "verified" })
+    ]);
+  });
+
   test("stores native GameState fields in game and move snapshots", async () => {
     const { db, calls } = createMockD1();
     const repository = createD1GameRepository(db);
