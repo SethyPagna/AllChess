@@ -2,7 +2,7 @@ import type { D1Database } from "@cloudflare/workers-types";
 
 import { getCatalogStats } from "@/lib/catalog";
 import type { GameState, Move, PlayerClock, PlayerColor } from "@/lib/variants";
-import type { LiveStats, RoomSnapshot } from "@/lib/realtime/types";
+import type { ChatPolicy, LiveStats, RoomPlayer, RoomSnapshot, RoomStatus } from "@/lib/realtime/types";
 
 export type CreateGameInput = {
   state: GameState;
@@ -20,6 +20,7 @@ export type GameRepository = {
   createGame(input: CreateGameInput): Promise<{ id: string; mode: "d1" }>;
   createRoom(input: { snapshot: RoomSnapshot; hostId?: string | null; roomCode?: string | null }): Promise<{ id: string; mode: "d1"; roomCode: string }>;
   getGameState(gameId: string): Promise<GameState | null>;
+  getRoomSnapshot(roomIdOrCode: string): Promise<RoomSnapshot | null>;
   getLiveStats(): Promise<LiveStats>;
   recordMove(input: RecordMoveInput): Promise<{ id: string; mode: "d1" }>;
   saveAnalysis(input: {
@@ -124,6 +125,52 @@ export function createD1GameRepository(db: D1Database): GameRepository {
       return JSON.parse(row.board_state) as GameState;
     },
 
+    async getRoomSnapshot(roomIdOrCode) {
+      const room = await db
+        .prepare(
+          `select
+            r.id as room_id,
+            r.game_id,
+            r.variant_key,
+            r.status,
+            r.spectator_count,
+            r.rated,
+            r.chat_policy,
+            g.board_state
+           from rooms r
+           join games g on g.id = r.game_id
+           where r.id = ? or r.room_code = ?`
+        )
+        .bind(roomIdOrCode, roomIdOrCode)
+        .first<RoomSnapshotRow>();
+      if (!room?.board_state) return null;
+
+      const state = JSON.parse(room.board_state) as GameState;
+      const participants = await db
+        .prepare(
+          `select profile_id, participant_type, seat, display_name, connected, rating_at_start
+           from game_participants
+           where game_id = ? and participant_type <> 'spectator'
+           order by joined_at`
+        )
+        .bind(room.game_id)
+        .all<RoomParticipantRow>();
+
+      return {
+        roomId: room.room_id,
+        gameId: room.game_id,
+        variantKey: room.variant_key,
+        status: normalizeRoomStatus(room.status, state.status),
+        players: createRoomPlayers(state, participants.results ?? []),
+        spectators: Number(room.spectator_count ?? 0),
+        clocks: state.clocks,
+        state,
+        moveVersion: state.ply,
+        rated: Boolean(room.rated),
+        chatPolicy: normalizeChatPolicy(room.chat_policy)
+      };
+    },
+
     async getLiveStats() {
       const rooms = await db
         .prepare(
@@ -196,6 +243,26 @@ type ParticipantSeed = {
   role?: "player" | "spectator" | "bot";
   connected?: boolean;
   ratingAtStart?: number;
+};
+
+type RoomSnapshotRow = {
+  room_id: string;
+  game_id: string;
+  variant_key: string;
+  status?: string;
+  spectator_count?: number;
+  rated?: number;
+  chat_policy?: string;
+  board_state: string;
+};
+
+type RoomParticipantRow = {
+  profile_id?: string | null;
+  participant_type: string;
+  seat: PlayerColor;
+  display_name?: string | null;
+  connected?: number;
+  rating_at_start?: number | null;
 };
 
 async function persistNormalizedGameStart(db: D1Database, state: GameState, createdBy?: string | null, roomPlayers?: ParticipantSeed[]) {
@@ -350,6 +417,37 @@ function participantId(gameId: string, color: PlayerColor) {
 
 function displayNameForSeat(color: PlayerColor) {
   return color.charAt(0).toUpperCase() + color.slice(1);
+}
+
+function createRoomPlayers(state: GameState, participants: RoomParticipantRow[]): RoomPlayer[] {
+  if (participants.length > 0) {
+    return participants.map((participant, index) => ({
+      profileId: participant.profile_id ?? `seat-${index + 1}`,
+      displayName: participant.display_name ?? displayNameForSeat(participant.seat),
+      color: participant.seat,
+      role: participant.participant_type === "bot" ? "bot" : "player",
+      connected: Boolean(participant.connected),
+      ratingAtStart: participant.rating_at_start ?? undefined
+    }));
+  }
+
+  return state.clocks.map((clock, index) => ({
+    profileId: `seat-${index + 1}`,
+    displayName: displayNameForSeat(clock.color),
+    color: clock.color,
+    role: "player",
+    connected: false
+  }));
+}
+
+function normalizeRoomStatus(status: string | undefined, fallback: GameState["status"]): RoomStatus {
+  if (status === "waiting" || status === "active" || status === "completed" || status === "abandoned") return status;
+  return fallback === "waiting" || fallback === "active" || fallback === "completed" ? fallback : "active";
+}
+
+function normalizeChatPolicy(policy: string | undefined): ChatPolicy {
+  if (policy === "disabled" || policy === "players" || policy === "spectators" || policy === "everyone") return policy;
+  return "players";
 }
 
 function createPositionHash(state: GameState) {

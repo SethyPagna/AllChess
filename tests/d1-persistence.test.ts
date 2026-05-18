@@ -4,7 +4,7 @@ import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { createInitialState } from "@/lib/variants";
 import type { D1Database } from "@cloudflare/workers-types";
 
-function createMockD1(firstRows: Record<string, unknown> = {}) {
+function createMockD1(firstRows: Record<string, unknown> = {}, allRows: Record<string, unknown[]> = {}) {
   const calls: Array<{ sql: string; values: unknown[] }> = [];
   const db = {
     prepare(sql: string) {
@@ -18,6 +18,10 @@ function createMockD1(firstRows: Record<string, unknown> = {}) {
             async first() {
               const key = Object.keys(firstRows).find((rowKey) => sql.includes(rowKey));
               return key ? firstRows[key] : null;
+            },
+            async all() {
+              const key = Object.keys(allRows).find((rowKey) => sql.includes(rowKey));
+              return { results: key ? allRows[key] : [] };
             }
           };
         }
@@ -41,6 +45,50 @@ describe("D1 persistence", () => {
           sql: expect.stringContaining("select board_state from games where id = ?"),
           values: [state.id]
         })
+      ])
+    );
+  });
+
+  test("reconstructs room snapshots from D1 room, game, and participant rows", async () => {
+    const state = createInitialState("classic", "room-game");
+    const { db, calls } = createMockD1(
+      {
+        "from rooms r": {
+          room_id: "room-1",
+          game_id: state.id,
+          variant_key: "classic",
+          status: "active",
+          spectator_count: 3,
+          rated: 1,
+          chat_policy: "everyone",
+          board_state: JSON.stringify(state)
+        }
+      },
+      {
+        "from game_participants": [
+          { profile_id: "p-white", participant_type: "user", seat: "white", display_name: "White Player", connected: 1, rating_at_start: 1210 },
+          { profile_id: "bot-black", participant_type: "bot", seat: "black", display_name: "AllChess Bot", connected: 1, rating_at_start: 1600 }
+        ]
+      }
+    );
+    const repository = createD1GameRepository(db);
+
+    await expect(repository.getRoomSnapshot("room-1")).resolves.toMatchObject({
+      roomId: "room-1",
+      gameId: state.id,
+      variantKey: "classic",
+      spectators: 3,
+      rated: true,
+      chatPolicy: "everyone",
+      players: [
+        { profileId: "p-white", displayName: "White Player", color: "white", role: "player", connected: true, ratingAtStart: 1210 },
+        { profileId: "bot-black", displayName: "AllChess Bot", color: "black", role: "bot", connected: true, ratingAtStart: 1600 }
+      ]
+    });
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ sql: expect.stringContaining("from rooms r"), values: ["room-1", "room-1"] }),
+        expect.objectContaining({ sql: expect.stringContaining("from game_participants"), values: [state.id] })
       ])
     );
   });
