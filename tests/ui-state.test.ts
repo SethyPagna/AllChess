@@ -4,8 +4,8 @@ import { createElement } from "react";
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { createDefaultStats } from "@/lib/stats";
-import { timeControls } from "@/lib/time-controls";
-import { formatClock, settleTurnClockElapsed, tickGameClock } from "@/lib/clocks";
+import { timeControls } from "@/lib/game/time-controls";
+import { formatClock, settleTurnClockElapsed, tickGameClock } from "@/lib/game/clocks";
 import { createInitialState } from "@/lib/variants";
 import { localizePath } from "@/lib/i18n/navigation";
 

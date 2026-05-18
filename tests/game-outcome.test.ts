@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { describeGameOutcome } from "@/lib/game-outcome";
+import { describeGameOutcome } from "@/lib/game/outcome";
 import { applyMove, createInitialState } from "@/lib/variants";
 
 describe("game outcome descriptions", () => {

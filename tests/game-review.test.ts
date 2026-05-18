@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { analyzeMoveList, summarizeReview } from "@/lib/game-review";
+import { analyzeMoveList, summarizeReview } from "@/lib/game/review";
 
 describe("game review", () => {
   test("classifies moves and summarizes review counts", () => {

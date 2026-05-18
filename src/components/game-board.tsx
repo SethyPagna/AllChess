@@ -29,11 +29,11 @@ import {
 import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/lib/bot/config";
 import { getVariantBotStrengthProfile } from "@/lib/bot/strength";
 import type { BotMoveResult } from "@/lib/bot/runtime";
-import { formatClock, settleTurnClockElapsed, tickGameClock } from "@/lib/clocks";
-import { analyzeMoveList, summarizeReview } from "@/lib/game-review";
-import { describeGameOutcome } from "@/lib/game-outcome";
+import { formatClock, settleTurnClockElapsed, tickGameClock } from "@/lib/game/clocks";
+import { analyzeMoveList, summarizeReview } from "@/lib/game/review";
+import { describeGameOutcome } from "@/lib/game/outcome";
 import type { VariantRuleSummary } from "@/lib/rules-atlas";
-import { getTimeControl, timeControls, type TimeControlKey } from "@/lib/time-controls";
+import { getTimeControl, timeControls, type TimeControlKey } from "@/lib/game/time-controls";
 import { applyMove, createInitialState, getLegalMoves, sameSquare, serializeSquare, type GameState, type Square } from "@/lib/variants";
 import { PieceIcon } from "@/components/piece-icon";
 
