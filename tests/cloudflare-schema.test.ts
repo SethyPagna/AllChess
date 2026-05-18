@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { describe, expect, test } from "vitest";
 
 const migrationsDir = join(process.cwd(), "cloudflare", "d1", "migrations");
-const schema = ["0001_initial.sql", "0002_realtime_training.sql", "0003_catalog_leaderboards.sql", "0004_bot_knowledge_pipeline.sql", "0005_normalized_game_state.sql"]
+const schema = ["0001_initial.sql", "0002_realtime_training.sql", "0003_catalog_leaderboards.sql", "0004_bot_knowledge_pipeline.sql", "0005_normalized_game_state.sql", "0006_matchmaking_tickets.sql"]
   .map((file) => readFileSync(join(migrationsDir, file), "utf8"))
   .join("\n")
   .toLowerCase();
@@ -32,7 +32,8 @@ describe("cloudflare d1 schema", () => {
       "game_positions",
       "game_clocks",
       "clock_events",
-      "bot_move_audits"
+      "bot_move_audits",
+      "matchmaking_tickets"
     ]) {
       expect(schema).toContain(`create table if not exists ${table}`);
     }
@@ -46,5 +47,6 @@ describe("cloudflare d1 schema", () => {
     expect(schema).toContain("idx_game_positions_hash");
     expect(schema).toContain("idx_game_participants_profile_joined");
     expect(schema).toContain("idx_game_moves_actor_created");
+    expect(schema).toContain("idx_matchmaking_open");
   });
 });

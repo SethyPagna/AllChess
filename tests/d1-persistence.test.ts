@@ -121,6 +121,28 @@ describe("D1 persistence", () => {
     ]);
   });
 
+  test("persists and cancels matchmaking tickets in D1", async () => {
+    const { db, calls } = createMockD1();
+    const repository = createD1GameRepository(db);
+    const ticket = {
+      ticketId: "ticket-1",
+      profileId: "profile-1",
+      variantKey: "classic",
+      timeControlKey: "rapid",
+      ratingRange: [1000, 1400] as [number, number],
+      rated: true,
+      createdAt: "2026-05-18T00:00:00.000Z"
+    };
+
+    await repository.saveMatchmakingTicket(ticket);
+    await repository.cancelMatchmakingTicket(ticket.ticketId);
+
+    const insert = calls.find((call) => call.sql.includes("insert into matchmaking_tickets"));
+    const update = calls.find((call) => call.sql.includes("update matchmaking_tickets"));
+    expect(insert?.values).toEqual(["ticket-1", "profile-1", "classic", "rapid", 1000, 1400, 1, "2026-05-18T00:00:00.000Z"]);
+    expect(update?.values).toEqual(["ticket-1"]);
+  });
+
   test("stores native GameState fields in game and move snapshots", async () => {
     const { db, calls } = createMockD1();
     const repository = createD1GameRepository(db);

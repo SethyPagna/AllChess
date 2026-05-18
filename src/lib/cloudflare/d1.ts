@@ -2,7 +2,7 @@ import type { D1Database } from "@cloudflare/workers-types";
 
 import { getCatalogStats } from "@/lib/catalog";
 import type { GameState, Move, PlayerClock, PlayerColor } from "@/lib/variants";
-import type { ChatPolicy, LiveStats, RoomPlayer, RoomSnapshot, RoomStatus } from "@/lib/realtime/types";
+import type { ChatPolicy, LiveStats, MatchmakingTicket, RoomPlayer, RoomSnapshot, RoomStatus } from "@/lib/realtime/types";
 
 export type CreateGameInput = {
   state: GameState;
@@ -34,6 +34,8 @@ export type GameRepository = {
   getRoomSnapshot(roomIdOrCode: string): Promise<RoomSnapshot | null>;
   getLiveStats(): Promise<LiveStats>;
   recordMove(input: RecordMoveInput): Promise<{ id: string; mode: "d1" }>;
+  saveMatchmakingTicket(ticket: MatchmakingTicket): Promise<void>;
+  cancelMatchmakingTicket(ticketId: string): Promise<void>;
   saveBotBenchmark(input: SaveBotBenchmarkInput): Promise<void>;
   saveAnalysis(input: {
     id: string;
@@ -234,6 +236,46 @@ export function createD1GameRepository(db: D1Database): GameRepository {
       await persistClocks(db, input.gameId, input.state, actor);
 
       return { id: input.gameId, mode: "d1" };
+    },
+
+    async saveMatchmakingTicket(ticket) {
+      await db
+        .prepare(
+          `insert into matchmaking_tickets (
+            ticket_id, profile_id, variant_key, time_control_key, rating_min, rating_max, rated, status, created_at, updated_at
+          ) values (?, ?, ?, ?, ?, ?, ?, 'queued', ?, datetime('now'))
+          on conflict(ticket_id) do update set
+            profile_id = excluded.profile_id,
+            variant_key = excluded.variant_key,
+            time_control_key = excluded.time_control_key,
+            rating_min = excluded.rating_min,
+            rating_max = excluded.rating_max,
+            rated = excluded.rated,
+            status = 'queued',
+            updated_at = datetime('now')`
+        )
+        .bind(
+          ticket.ticketId,
+          ticket.profileId,
+          ticket.variantKey,
+          ticket.timeControlKey,
+          ticket.ratingRange[0],
+          ticket.ratingRange[1],
+          ticket.rated ? 1 : 0,
+          ticket.createdAt
+        )
+        .run();
+    },
+
+    async cancelMatchmakingTicket(ticketId) {
+      await db
+        .prepare(
+          `update matchmaking_tickets
+           set status = 'cancelled', updated_at = datetime('now')
+           where ticket_id = ? and status = 'queued'`
+        )
+        .bind(ticketId)
+        .run();
     },
 
     async saveBotBenchmark(input) {
