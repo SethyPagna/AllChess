@@ -2315,6 +2315,44 @@ select {
   line-height: 1.35;
 }
 
+.opponent-search-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+  max-width: 100%;
+}
+
+.opponent-search-field {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--background) 68%, transparent);
+  padding: 0.38rem 0.5rem;
+}
+
+.opponent-search-field svg {
+  color: var(--muted);
+}
+
+.opponent-search-field input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.opponent-search-field input::placeholder {
+  color: color-mix(in srgb, var(--muted) 78%, transparent);
+}
+
 .bot-tier-note {
   margin: 0.55rem 0 0;
   color: #c9c3b6;

@@ -16,6 +16,7 @@ import {
   PlayCircle,
   RotateCcw,
   Share2,
+  Search,
   SkipBack,
   SkipForward,
   SlidersHorizontal,
@@ -122,6 +123,7 @@ export function GameBoard({
   const [panelTab, setPanelTab] = useState<PanelTab>("setup");
   const [reviewPly, setReviewPly] = useState<number | null>(null);
   const [reviewPlaying, setReviewPlaying] = useState(false);
+  const [opponentQuery, setOpponentQuery] = useState("");
   const activeBotRequestRef = useRef<string | null>(null);
   const resolvedRandomSeatRef = useRef(false);
 
@@ -178,6 +180,7 @@ export function GameBoard({
       ? "Watching rooms"
       : `${colorLabel(state.turn)} to move`;
   const modeSummary = gameStarted ? `${modeDetails.label} - ${getTimeControl(timeControl).label}` : `${modeDetails.label} setup`;
+  const trimmedOpponentQuery = opponentQuery.trim();
   const topPlayerColor = isBoardFlipped ? firstColor : secondColor;
   const bottomPlayerColor = isBoardFlipped ? secondColor : firstColor;
   const capturedBy = useCallback(
@@ -528,6 +531,7 @@ export function GameBoard({
 
   function selectPlayMode(nextMode: PlayMode) {
     setPlayMode(nextMode);
+    setOpponentQuery("");
     if (nextMode !== "bot") {
       setBotMode("human");
       setLastBotResult(null);
@@ -561,6 +565,12 @@ export function GameBoard({
     setReviewPly(null);
     setReviewPlaying(false);
     setNotice("Back to live board.");
+  }
+
+  function searchOpponent() {
+    if (!trimmedOpponentQuery) return;
+    setPanelTab("status");
+    setNotice(`Searching for ${trimmedOpponentQuery}. Live player results will appear here when Cloudflare presence reports a match.`);
   }
 
   function setReviewCursor(nextPly: number) {
@@ -1011,6 +1021,23 @@ export function GameBoard({
                     <div>
                       <strong>{isSearchingOnline ? "Searching for opponent" : "Online opponent required"}</strong>
                       <span>{isSearchingOnline ? "Bot difficulty and automation are paused while AllChess looks for a human player." : "Choose Online, Room, or Matchmaking settings, then start searching."}</span>
+                      <form
+                        className="opponent-search-form"
+                        onSubmit={(event) => {
+                          event.preventDefault();
+                          searchOpponent();
+                        }}
+                      >
+                        <label className="opponent-search-field">
+                          <Search size={14} />
+                          <span className="sr-only">Search opponent or room code</span>
+                          <input value={opponentQuery} onChange={(event) => setOpponentQuery(event.target.value)} placeholder="Username or room code" />
+                        </label>
+                        <button type="submit" className="focus-ring action-secondary px-2 py-1 text-xs" disabled={!trimmedOpponentQuery} title="Search real online presence when available.">
+                          Search
+                        </button>
+                      </form>
+                      {trimmedOpponentQuery ? <span>Looking for: {trimmedOpponentQuery}</span> : null}
                     </div>
                   </div>
                 ) : (
