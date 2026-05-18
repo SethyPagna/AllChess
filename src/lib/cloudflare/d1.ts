@@ -27,6 +27,51 @@ export type SaveBotBenchmarkInput = {
   summary: unknown;
 };
 
+export type UpsertRatingPoolInput = {
+  id: string;
+  familyKey?: string | null;
+  variantKey?: string | null;
+  timeControlKey: string;
+  ratedOnly: boolean;
+  system?: "elo" | "glicko";
+};
+
+export type SaveProfileRatingInput = {
+  profileId: string;
+  poolId: string;
+  rating: number;
+  deviation?: number | null;
+  volatility?: number | null;
+  gamesPlayed: number;
+  provisional: boolean;
+};
+
+export type SaveRatingEventInput = {
+  gameId: string;
+  profileId: string;
+  poolId: string;
+  beforeRating: number;
+  afterRating: number;
+  delta: number;
+  reason?: string;
+};
+
+export type LeaderboardEntryInput = {
+  rank: number;
+  profileId?: string | null;
+  displayName: string;
+  rating?: number | null;
+  gamesPlayed: number;
+  winRate?: number | null;
+  streak?: number;
+  metadata?: unknown;
+};
+
+export type ReplaceLeaderboardEntriesInput = {
+  leaderboardId: string;
+  entries: LeaderboardEntryInput[];
+};
+
 export type GameRepository = {
   createGame(input: CreateGameInput): Promise<{ id: string; mode: "d1" }>;
   createRoom(input: { snapshot: RoomSnapshot; hostId?: string | null; roomCode?: string | null }): Promise<{ id: string; mode: "d1"; roomCode: string }>;
@@ -36,6 +81,10 @@ export type GameRepository = {
   recordMove(input: RecordMoveInput): Promise<{ id: string; mode: "d1" }>;
   saveMatchmakingTicket(ticket: MatchmakingTicket): Promise<void>;
   cancelMatchmakingTicket(ticketId: string): Promise<void>;
+  upsertRatingPool(input: UpsertRatingPoolInput): Promise<void>;
+  saveProfileRating(input: SaveProfileRatingInput): Promise<void>;
+  saveRatingEvent(input: SaveRatingEventInput): Promise<void>;
+  replaceLeaderboardEntries(input: ReplaceLeaderboardEntriesInput): Promise<void>;
   saveBotBenchmark(input: SaveBotBenchmarkInput): Promise<void>;
   saveAnalysis(input: {
     id: string;
@@ -276,6 +325,85 @@ export function createD1GameRepository(db: D1Database): GameRepository {
         )
         .bind(ticketId)
         .run();
+    },
+
+    async upsertRatingPool(input) {
+      await db
+        .prepare(
+          `insert into rating_pools (
+            id, family_key, variant_key, time_control_key, rated_only, system, updated_at
+          ) values (?, ?, ?, ?, ?, ?, datetime('now'))
+          on conflict(id) do update set
+            family_key = excluded.family_key,
+            variant_key = excluded.variant_key,
+            time_control_key = excluded.time_control_key,
+            rated_only = excluded.rated_only,
+            system = excluded.system,
+            updated_at = datetime('now')`
+        )
+        .bind(input.id, input.familyKey ?? null, input.variantKey ?? null, input.timeControlKey, input.ratedOnly ? 1 : 0, input.system ?? "glicko")
+        .run();
+    },
+
+    async saveProfileRating(input) {
+      await db
+        .prepare(
+          `insert into profile_ratings (
+            profile_id, pool_id, rating, deviation, volatility, games_played, provisional, updated_at
+          ) values (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+          on conflict(profile_id, pool_id) do update set
+            rating = excluded.rating,
+            deviation = excluded.deviation,
+            volatility = excluded.volatility,
+            games_played = excluded.games_played,
+            provisional = excluded.provisional,
+            updated_at = datetime('now')`
+        )
+        .bind(
+          input.profileId,
+          input.poolId,
+          input.rating,
+          input.deviation ?? null,
+          input.volatility ?? null,
+          input.gamesPlayed,
+          input.provisional ? 1 : 0
+        )
+        .run();
+    },
+
+    async saveRatingEvent(input) {
+      await db
+        .prepare(
+          `insert into rating_events (
+            game_id, profile_id, pool_id, before_rating, after_rating, delta, reason
+          ) values (?, ?, ?, ?, ?, ?, ?)`
+        )
+        .bind(input.gameId, input.profileId, input.poolId, input.beforeRating, input.afterRating, input.delta, input.reason ?? "game-result")
+        .run();
+    },
+
+    async replaceLeaderboardEntries(input) {
+      await db.prepare("delete from leaderboard_entries where leaderboard_id = ?").bind(input.leaderboardId).run();
+      for (const entry of input.entries) {
+        await db
+          .prepare(
+            `insert into leaderboard_entries (
+              leaderboard_id, rank, profile_id, display_name, rating, games_played, win_rate, streak, metadata
+            ) values (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          )
+          .bind(
+            input.leaderboardId,
+            entry.rank,
+            entry.profileId ?? null,
+            entry.displayName,
+            entry.rating ?? null,
+            entry.gamesPlayed,
+            entry.winRate ?? null,
+            entry.streak ?? 0,
+            JSON.stringify(entry.metadata ?? {})
+          )
+          .run();
+      }
     },
 
     async saveBotBenchmark(input) {

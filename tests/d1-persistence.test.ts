@@ -143,6 +143,71 @@ describe("D1 persistence", () => {
     expect(update?.values).toEqual(["ticket-1"]);
   });
 
+  test("persists normalized rating pools, profile ratings, and rating events", async () => {
+    const { db, calls } = createMockD1();
+    const repository = createD1GameRepository(db);
+
+    await repository.upsertRatingPool({
+      id: "classic-rapid-rated",
+      familyKey: "chess",
+      variantKey: "classic",
+      timeControlKey: "rapid",
+      ratedOnly: true,
+      system: "glicko"
+    });
+    await repository.saveProfileRating({
+      profileId: "profile-1",
+      poolId: "classic-rapid-rated",
+      rating: 1325.4,
+      deviation: 75,
+      volatility: 0.06,
+      gamesPlayed: 42,
+      provisional: false
+    });
+    await repository.saveRatingEvent({
+      gameId: "game-1",
+      profileId: "profile-1",
+      poolId: "classic-rapid-rated",
+      beforeRating: 1312.2,
+      afterRating: 1325.4,
+      delta: 13.2,
+      reason: "rated-bot-game"
+    });
+
+    const pool = calls.find((call) => call.sql.includes("insert into rating_pools"));
+    const rating = calls.find((call) => call.sql.includes("insert into profile_ratings"));
+    const event = calls.find((call) => call.sql.includes("insert into rating_events"));
+    expect(pool?.values).toEqual(["classic-rapid-rated", "chess", "classic", "rapid", 1, "glicko"]);
+    expect(rating?.values).toEqual(["profile-1", "classic-rapid-rated", 1325.4, 75, 0.06, 42, 0]);
+    expect(event?.values).toEqual(["game-1", "profile-1", "classic-rapid-rated", 1312.2, 1325.4, 13.2, "rated-bot-game"]);
+  });
+
+  test("replaces leaderboard entries with queryable rows", async () => {
+    const { db, calls } = createMockD1();
+    const repository = createD1GameRepository(db);
+
+    await repository.replaceLeaderboardEntries({
+      leaderboardId: "classic-rapid",
+      entries: [
+        {
+          rank: 1,
+          profileId: "profile-1",
+          displayName: "Sharp Player",
+          rating: 1801,
+          gamesPlayed: 88,
+          winRate: 0.64,
+          streak: 5,
+          metadata: { country: "HK" }
+        }
+      ]
+    });
+
+    const clear = calls.find((call) => call.sql.includes("delete from leaderboard_entries"));
+    const entry = calls.find((call) => call.sql.includes("insert into leaderboard_entries"));
+    expect(clear?.values).toEqual(["classic-rapid"]);
+    expect(entry?.values).toEqual(["classic-rapid", 1, "profile-1", "Sharp Player", 1801, 88, 0.64, 5, JSON.stringify({ country: "HK" })]);
+  });
+
   test("stores native GameState fields in game and move snapshots", async () => {
     const { db, calls } = createMockD1();
     const repository = createD1GameRepository(db);
