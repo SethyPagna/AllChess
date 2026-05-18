@@ -12,14 +12,15 @@ const defaultOutput = join(repoRoot, "src", "data", "bot-knowledge.generated.jso
 const options = parseArgs(process.argv.slice(2));
 const dataRoot = options.dataRoot ?? defaultDataRoot;
 const outputPath = options.output ?? defaultOutput;
-const maxGames = Number(options.maxGames ?? 250);
-const maxPuzzles = Number(options.maxPuzzles ?? 9000);
-const maxBytes = Number(options.maxBytes ?? 120_000_000);
+const maxGames = Number(options.maxGames ?? 1000);
+const maxPuzzles = Number(options.maxPuzzles ?? 10_000);
+const maxBytes = Number(options.maxBytes ?? 160_000_000);
 const maxOpeningPly = Number(options.maxOpeningPly ?? 10);
 const pythonExecutable = process.env.PYTHON ?? "python";
 const maxChecksumBytes = Number(options.maxChecksumBytes ?? 1_000_000);
 const runtimeBudgetMs = 2800;
 const verifiedTrainingVariants = new Set(["classic", "chess960", "xiangqi", "antichess", "king-of-the-hill", "three-check"]);
+const ignoredDataDirectories = new Set([".git", "archive", "node_modules"]);
 
 const seededOpeningLines = [
   { line: "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6", weight: 8 },
@@ -184,7 +185,7 @@ function scanFiles(root) {
     for (const entry of readdirSync(current, { withFileTypes: true })) {
       const fullPath = join(current, entry.name);
       if (entry.isDirectory()) {
-        if (entry.name === ".git" || entry.name === "node_modules") continue;
+        if (ignoredDataDirectories.has(entry.name)) continue;
         stack.push(fullPath);
         continue;
       }

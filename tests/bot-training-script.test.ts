@@ -16,6 +16,7 @@ describe("bot knowledge training script", () => {
       mkdirSync(join(dataRoot, "chess960"), { recursive: true });
       mkdirSync(join(dataRoot, "antichess"), { recursive: true });
       mkdirSync(join(dataRoot, "chess"), { recursive: true });
+      mkdirSync(join(dataRoot, "archive"), { recursive: true });
       writeFileSync(
         join(dataRoot, "classic", "mini.pgn"),
         ['[Event "Mini"]', '[Variant "Standard"]', "", "1. e4 e5 2. Nf3 Nc6 1-0"].join("\n")
@@ -29,6 +30,7 @@ describe("bot knowledge training script", () => {
         ['[Event "MiniAnti"]', '[Variant "Antichess"]', "", "1. e3 e6 2. Qh5 Qh4 1-0"].join("\n")
       );
       writeFileSync(join(dataRoot, "chess", "train-00000.parquet"), "placeholder");
+      writeFileSync(join(dataRoot, "archive", "old.pgn"), ['[Event "Archived"]', "", "1. e4 e5 1-0"].join("\n"));
 
       execFileSync(
         "node",
@@ -51,10 +53,12 @@ describe("bot knowledge training script", () => {
       );
 
       const generated = JSON.parse(readFileSync(output, "utf8"));
+      const archived = generated.manifests.find((manifest: { path: string }) => manifest.path.includes("archive/"));
       const chess960 = generated.manifests.find((manifest: { variantKey: string }) => manifest.variantKey === "chess960");
       const antichess = generated.manifests.find((manifest: { variantKey: string }) => manifest.variantKey === "antichess");
       const parquet = generated.manifests.find((manifest: { kind: string }) => manifest.kind === "parquet");
 
+      expect(archived).toBeUndefined();
       expect(chess960).toEqual(
         expect.objectContaining({
           checksum: expect.stringMatching(/^sha256:/),
