@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { listTierBenchmarkResults, listVariantTrainingCoverage } from "@/lib/bot-training";
-import { getBotStrengthBand } from "@/lib/bot-strength";
+import { listTierBenchmarkResults, listVariantTrainingCoverage } from "@/lib/bot/training";
+import { getBotStrengthBand } from "@/lib/bot/strength";
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
 

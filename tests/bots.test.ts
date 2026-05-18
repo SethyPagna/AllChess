@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { cancelBotMove, chooseBotMove, chooseBotMoveSafe, botDifficultyLevels, MAX_BOT_REPLY_MS, requestBotMove } from "@/lib/bots";
+import { cancelBotMove, chooseBotMove, chooseBotMoveSafe, botDifficultyLevels, MAX_BOT_REPLY_MS, requestBotMove } from "@/lib/bot/runtime";
 import {
   createBotBoardSignature,
   createBotPositionKey,
@@ -15,7 +15,7 @@ import {
   listBotToolManifests,
   listTrainingDataManifests,
   lookupBotKnowledge
-} from "@/lib/bot-training";
+} from "@/lib/bot/training";
 import { applyMove, createInitialState, getLegalMoves } from "@/lib/variants";
 
 describe("bot difficulty ladder", () => {

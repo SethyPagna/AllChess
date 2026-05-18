@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { buildStockfishCommands, getStockfishDifficultyConfig, moveToUci, shouldUseStockfish, uciToLegalMove } from "@/lib/stockfish-engine";
+import { buildStockfishCommands, getStockfishDifficultyConfig, moveToUci, shouldUseStockfish, uciToLegalMove } from "@/lib/bot/stockfish-engine";
 import { createInitialState } from "@/lib/variants";
 
 describe("Stockfish engine adapter", () => {

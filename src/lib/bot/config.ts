@@ -1,8 +1,8 @@
-import { getBotStrengthBand, type BotStrengthBand, type BotTierKey } from "@/lib/bot-strength";
+import { getBotStrengthBand, type BotStrengthBand, type BotTierKey } from "@/lib/bot/strength";
 
 export const MAX_BOT_REPLY_MS = 2800;
 
-export type { BotTierKey } from "@/lib/bot-strength";
+export type { BotTierKey } from "@/lib/bot/strength";
 export type BotDifficultyKey = BotTierKey;
 export type BotPlayStyle = "balanced" | "tactical" | "positional" | "defensive" | "wild";
 

@@ -1,5 +1,5 @@
 import { getLegalMoves, type GameState, type Move } from "@/lib/variants";
-import { getBotStrengthBand, type BotTierKey } from "@/lib/bot-strength";
+import { getBotStrengthBand, type BotTierKey } from "@/lib/bot/strength";
 
 export type BotEngineMode = "auto" | "stockfish" | "internal";
 export type BotDifficultyKey = BotTierKey;

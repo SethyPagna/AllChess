@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { requestBotMove, type BotTierKey } from "@/lib/bots";
+import { requestBotMove, type BotTierKey } from "@/lib/bot/runtime";
 import type { GameState } from "@/lib/variants";
 
 const botMoveSchema = z.object({

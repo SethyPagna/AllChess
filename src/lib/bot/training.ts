@@ -1,6 +1,6 @@
-import { moveToUci } from "@/lib/stockfish-engine";
-import { getVariantBotStrengthProfile, type BotTierKey, type VariantBotStrengthProfile } from "@/lib/bot-strength";
-import { MAX_BOT_REPLY_MS } from "@/lib/bot-config";
+import { moveToUci } from "@/lib/bot/stockfish-engine";
+import { getVariantBotStrengthProfile, type BotTierKey, type VariantBotStrengthProfile } from "@/lib/bot/strength";
+import { MAX_BOT_REPLY_MS } from "@/lib/bot/config";
 import { getLegalMoves, variantCatalog, type GameState, type Move, type VariantDefinition } from "@/lib/variants";
 import { getVariantRuleSummary, type VariantRuleCompletion } from "@/lib/rules-atlas";
 import generatedKnowledge from "@/data/bot-knowledge.generated.json";

@@ -4,7 +4,7 @@ import { ArrowLeft, BookOpen, Bot, ExternalLink, Play } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
 import { displayBotReadiness, displayGameName, displayPiecePresentation, displayPlayabilityStatus, displayRulesReadiness, gameFamilies, getGameCatalogEntry } from "@/lib/catalog";
-import { listBotTrainingReadiness } from "@/lib/bot-training";
+import { listBotTrainingReadiness } from "@/lib/bot/training";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getVariantRuleSummary } from "@/lib/rules-atlas";
 

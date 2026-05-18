@@ -15,8 +15,8 @@ import {
   listTrainingRunManifests,
   listVariantTrainingCoverage,
   listTrainingDataManifests
-} from "@/lib/bot-training";
-import { listBotStrengthBands } from "@/lib/bot-strength";
+} from "@/lib/bot/training";
+import { listBotStrengthBands } from "@/lib/bot/strength";
 import { getValidationRuntimeProfile } from "@/lib/validation-runtime";
 
 export function GET() {

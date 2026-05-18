@@ -26,9 +26,9 @@ import {
   X,
 } from "lucide-react";
 
-import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/lib/bot-config";
-import { getVariantBotStrengthProfile } from "@/lib/bot-strength";
-import type { BotMoveResult } from "@/lib/bots";
+import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/lib/bot/config";
+import { getVariantBotStrengthProfile } from "@/lib/bot/strength";
+import type { BotMoveResult } from "@/lib/bot/runtime";
 import { formatClock, settleTurnClockElapsed, tickGameClock } from "@/lib/clocks";
 import { analyzeMoveList, summarizeReview } from "@/lib/game-review";
 import { describeGameOutcome } from "@/lib/game-outcome";
@@ -71,13 +71,13 @@ type SuggestedMove = {
   depthReached: number;
 };
 
-async function requestRuntimeBotMove(...args: Parameters<typeof import("@/lib/bots").requestBotMove>) {
-  const { requestBotMove } = await import("@/lib/bots");
+async function requestRuntimeBotMove(...args: Parameters<typeof import("@/lib/bot/runtime").requestBotMove>) {
+  const { requestBotMove } = await import("@/lib/bot/runtime");
   return requestBotMove(...args);
 }
 
 function cancelRuntimeBotMove(requestId: string) {
-  void import("@/lib/bots").then(({ cancelBotMove }) => cancelBotMove(requestId));
+  void import("@/lib/bot/runtime").then(({ cancelBotMove }) => cancelBotMove(requestId));
 }
 
 export function GameBoard({

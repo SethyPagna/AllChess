@@ -1,15 +1,15 @@
 import { applyMove, getLegalMoves, sameSquare, type GameState, type Move, type PlayerColor } from "@/lib/variants";
-import { lookupBotKnowledge, type BotKnowledgeSource, type BotMoveExplanation } from "@/lib/bot-training";
-import { moveToUci, requestStockfishMove, shouldUseStockfish, type BotEngineMode } from "@/lib/stockfish-engine";
-import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficulty, type BotDifficultyKey, type BotPlayStyle } from "@/lib/bot-config";
-import type { BotStrengthBand, BotTierKey } from "@/lib/bot-strength";
+import { lookupBotKnowledge, type BotKnowledgeSource, type BotMoveExplanation } from "@/lib/bot/training";
+import { moveToUci, requestStockfishMove, shouldUseStockfish, type BotEngineMode } from "@/lib/bot/stockfish-engine";
+import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficulty, type BotDifficultyKey, type BotPlayStyle } from "@/lib/bot/config";
+import type { BotStrengthBand, BotTierKey } from "@/lib/bot/strength";
 
 const MIN_BOT_SEARCH_MS = 8;
 const MAX_GLOBAL_TRANSPOSITIONS = 6000;
 
 export { botDifficultyLevels, MAX_BOT_REPLY_MS };
 export type { BotDifficulty, BotDifficultyKey, BotPlayStyle };
-export type { BotTierKey } from "@/lib/bot-strength";
+export type { BotTierKey } from "@/lib/bot/strength";
 
 export type BotSearchEfficiency = {
   cacheHits: number;

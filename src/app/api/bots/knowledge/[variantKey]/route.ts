@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { listBotKnowledge, listVariantTrainingCoverage } from "@/lib/bot-training";
+import { listBotKnowledge, listVariantTrainingCoverage } from "@/lib/bot/training";
 
 export function GET(_request: Request, { params }: { params: Promise<{ variantKey: string }> }) {
   return params.then(({ variantKey }) =>
