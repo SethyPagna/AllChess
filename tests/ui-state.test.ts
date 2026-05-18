@@ -5,6 +5,7 @@ import { createElement } from "react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { createDefaultStats } from "@/lib/stats";
 import { timeControls } from "@/lib/game/time-controls";
+import { applyBotMoveAfterThinking, settleBotThinkingSnapshot } from "@/lib/game/bot-clock";
 import { formatClock, settleTurnClockElapsed, tickGameClock } from "@/lib/game/clocks";
 import { pushTimeline, redoTimeline, undoTimeline } from "@/lib/game/history";
 import { createInitialState } from "@/lib/variants";
@@ -70,6 +71,28 @@ describe("time controls", () => {
     expect(next.status).toBe("completed");
     expect(next.outcomeReason).toBe("timeout");
     expect(next.result).toBe("black");
+  });
+
+  test("records bot thinking time in the history snapshot before the move", () => {
+    const snapshot = createInitialState("classic", "bot-history-clock");
+    snapshot.clocks = snapshot.clocks.map((clock) => (clock.color === "white" ? { ...clock, remainingMs: 10_000 } : clock));
+
+    const historySnapshot = settleBotThinkingSnapshot(snapshot, 1_400);
+
+    expect(historySnapshot.clocks.find((clock) => clock.color === "white")?.remainingMs).toBe(8_600);
+    expect(snapshot.clocks.find((clock) => clock.color === "white")?.remainingMs).toBe(10_000);
+  });
+
+  test("does not apply a bot move if thinking time already caused timeout", () => {
+    const snapshot = createInitialState("classic", "bot-timeout-before-move");
+    snapshot.clocks = snapshot.clocks.map((clock) => (clock.color === "white" ? { ...clock, remainingMs: 700 } : clock));
+    const move = { from: { row: 6, col: 4 }, to: { row: 5, col: 4 } };
+
+    const next = applyBotMoveAfterThinking(snapshot, snapshot, move, 900);
+
+    expect(next.status).toBe("completed");
+    expect(next.outcomeReason).toBe("timeout");
+    expect(next.ply).toBe(0);
   });
 
   test("formats chess clocks compactly", () => {

@@ -31,7 +31,8 @@ import {
 import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/lib/bot/config";
 import { getVariantBotStrengthProfile } from "@/lib/bot/strength";
 import type { BotMoveResult } from "@/lib/bot/runtime";
-import { formatClock, settleTurnClockElapsed, tickGameClock } from "@/lib/game/clocks";
+import { applyBotMoveAfterThinking, settleBotThinkingSnapshot } from "@/lib/game/bot-clock";
+import { formatClock, tickGameClock } from "@/lib/game/clocks";
 import { redoTimeline, undoTimeline } from "@/lib/game/history";
 import { analyzeMoveList, summarizeReview } from "@/lib/game/review";
 import { describeGameOutcome } from "@/lib/game/outcome";
@@ -281,15 +282,11 @@ export function GameBoard({
       }
 
       const move = result.move;
+      const historySnapshot = settleBotThinkingSnapshot(snapshot, result.elapsedMs);
       setLastBotResult(result);
-      setHistory((current) => [...current, snapshot]);
+      setHistory((current) => [...current, historySnapshot]);
       setFuture([]);
-      setState((current) => {
-        if (current.id !== snapshot.id || current.ply !== snapshot.ply || current.turn !== snapshot.turn) return current;
-        const clockSettled = settleTurnClockElapsed(current, snapshot, result.elapsedMs);
-        if (clockSettled.status !== "active") return clockSettled;
-        return applyMove(clockSettled, move);
-      });
+      setState((current) => applyBotMoveAfterThinking(current, snapshot, move, result.elapsedMs));
       setSuggestedMove(null);
       setNotice(source === "auto" ? "Bot replied automatically." : "Bot played the current side.");
       setSelected(null);
