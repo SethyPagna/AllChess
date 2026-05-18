@@ -272,6 +272,129 @@ describe("D1 persistence", () => {
     );
   });
 
+  test("persists profile game stats and result history rows", async () => {
+    const { db, calls } = createMockD1();
+    const repository = createD1GameRepository(db);
+
+    await repository.upsertProfileGameStats({
+      profileId: "profile-1",
+      familyKey: "chess-family",
+      variantKey: "classic",
+      timeControlKey: "rapid",
+      mode: "bot",
+      gamesPlayed: 12,
+      wins: 8,
+      losses: 3,
+      draws: 1,
+      botGames: 12,
+      onlineGames: 0,
+      localGames: 0,
+      ratedGames: 6,
+      totalMoves: 742,
+      bestRating: 1390
+    });
+    await repository.saveProfileGameResult({
+      id: "result-1",
+      profileId: "profile-1",
+      gameId: "game-1",
+      familyKey: "chess-family",
+      variantKey: "classic",
+      timeControlKey: "rapid",
+      mode: "bot",
+      opponentProfileId: "bot-grandmaster",
+      opponentType: "bot",
+      result: "win",
+      outcomeReason: "checkmate",
+      rated: true,
+      ratingDelta: 14,
+      movesPlayed: 63,
+      durationMs: 540000,
+      completedAt: "2026-05-18T01:00:00.000Z"
+    });
+
+    const stats = calls.find((call) => call.sql.includes("insert into profile_game_stats"));
+    const result = calls.find((call) => call.sql.includes("insert into profile_game_results"));
+    expect(stats?.values).toEqual(["profile-1", "chess-family", "classic", "rapid", "bot", 12, 8, 3, 1, 12, 0, 0, 6, 742, 1390]);
+    expect(result?.values).toEqual([
+      "result-1",
+      "profile-1",
+      "game-1",
+      "chess-family",
+      "classic",
+      "rapid",
+      "bot",
+      "bot-grandmaster",
+      "bot",
+      "win",
+      "checkmate",
+      1,
+      14,
+      63,
+      540000,
+      "2026-05-18T01:00:00.000Z"
+    ]);
+  });
+
+  test("loads recent profile result history from normalized rows", async () => {
+    const { db, calls } = createMockD1(
+      {},
+      {
+        "from profile_game_results": [
+          {
+            id: "result-1",
+            profile_id: "profile-1",
+            game_id: "game-1",
+            family_key: "chess-family",
+            variant_key: "classic",
+            time_control_key: "rapid",
+            mode: "bot",
+            opponent_profile_id: "bot-grandmaster",
+            opponent_type: "bot",
+            result: "win",
+            outcome_reason: "checkmate",
+            rated: 1,
+            rating_delta: 14,
+            moves_played: 63,
+            duration_ms: 540000,
+            completed_at: "2026-05-18T01:00:00.000Z",
+            created_at: "2026-05-18T00:30:00.000Z"
+          }
+        ]
+      }
+    );
+    const repository = createD1GameRepository(db);
+
+    await expect(repository.getProfileGameResults("profile-1", 10)).resolves.toEqual([
+      {
+        id: "result-1",
+        profileId: "profile-1",
+        gameId: "game-1",
+        familyKey: "chess-family",
+        variantKey: "classic",
+        timeControlKey: "rapid",
+        mode: "bot",
+        opponentProfileId: "bot-grandmaster",
+        opponentType: "bot",
+        result: "win",
+        outcomeReason: "checkmate",
+        rated: true,
+        ratingDelta: 14,
+        movesPlayed: 63,
+        durationMs: 540000,
+        completedAt: "2026-05-18T01:00:00.000Z",
+        createdAt: "2026-05-18T00:30:00.000Z"
+      }
+    ]);
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          sql: expect.stringContaining("from profile_game_results"),
+          values: ["profile-1", 10]
+        })
+      ])
+    );
+  });
+
   test("stores native GameState fields in game and move snapshots", async () => {
     const { db, calls } = createMockD1();
     const repository = createD1GameRepository(db);

@@ -95,6 +95,52 @@ export type LeaderboardSnapshot = {
   entries: LeaderboardEntrySnapshot[];
 };
 
+export type GameModeKey = "online" | "bot" | "offline" | "room" | "matchmaking";
+export type GameResultKey = "win" | "loss" | "draw" | "unfinished";
+export type OpponentTypeKey = "user" | "bot" | "local-human" | "unknown";
+
+export type UpsertProfileGameStatsInput = {
+  profileId: string;
+  familyKey?: string;
+  variantKey?: string;
+  timeControlKey?: string;
+  mode?: GameModeKey | "all";
+  gamesPlayed: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  botGames: number;
+  onlineGames: number;
+  localGames: number;
+  ratedGames: number;
+  totalMoves: number;
+  bestRating?: number | null;
+};
+
+export type SaveProfileGameResultInput = {
+  id: string;
+  profileId: string;
+  gameId: string;
+  familyKey: string;
+  variantKey: string;
+  timeControlKey: string;
+  mode: GameModeKey;
+  opponentProfileId?: string | null;
+  opponentType?: OpponentTypeKey;
+  result: GameResultKey;
+  outcomeReason?: string | null;
+  rated: boolean;
+  ratingDelta?: number | null;
+  movesPlayed: number;
+  durationMs?: number | null;
+  completedAt?: string | null;
+};
+
+export type ProfileGameResultSnapshot = Omit<SaveProfileGameResultInput, "rated"> & {
+  rated: boolean;
+  createdAt: string;
+};
+
 export type GameRepository = {
   createGame(input: CreateGameInput): Promise<{ id: string; mode: "d1" }>;
   createRoom(input: { snapshot: RoomSnapshot; hostId?: string | null; roomCode?: string | null }): Promise<{ id: string; mode: "d1"; roomCode: string }>;
@@ -109,6 +155,9 @@ export type GameRepository = {
   saveRatingEvent(input: SaveRatingEventInput): Promise<void>;
   replaceLeaderboardEntries(input: ReplaceLeaderboardEntriesInput): Promise<void>;
   getLeaderboards(): Promise<LeaderboardSnapshot[]>;
+  upsertProfileGameStats(input: UpsertProfileGameStatsInput): Promise<void>;
+  saveProfileGameResult(input: SaveProfileGameResultInput): Promise<void>;
+  getProfileGameResults(profileId: string, limit?: number): Promise<ProfileGameResultSnapshot[]>;
   saveBotBenchmark(input: SaveBotBenchmarkInput): Promise<void>;
   saveAnalysis(input: {
     id: string;
@@ -466,6 +515,104 @@ export function createD1GameRepository(db: D1Database): GameRepository {
       return snapshots;
     },
 
+    async upsertProfileGameStats(input) {
+      await db
+        .prepare(
+          `insert into profile_game_stats (
+            profile_id, family_key, variant_key, time_control_key, mode, games_played, wins, losses, draws,
+            bot_games, online_games, local_games, rated_games, total_moves, best_rating, updated_at
+          ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+          on conflict(profile_id, family_key, variant_key, time_control_key, mode) do update set
+            games_played = excluded.games_played,
+            wins = excluded.wins,
+            losses = excluded.losses,
+            draws = excluded.draws,
+            bot_games = excluded.bot_games,
+            online_games = excluded.online_games,
+            local_games = excluded.local_games,
+            rated_games = excluded.rated_games,
+            total_moves = excluded.total_moves,
+            best_rating = excluded.best_rating,
+            updated_at = datetime('now')`
+        )
+        .bind(
+          input.profileId,
+          input.familyKey ?? "all",
+          input.variantKey ?? "all",
+          input.timeControlKey ?? "all",
+          input.mode ?? "all",
+          input.gamesPlayed,
+          input.wins,
+          input.losses,
+          input.draws,
+          input.botGames,
+          input.onlineGames,
+          input.localGames,
+          input.ratedGames,
+          input.totalMoves,
+          input.bestRating ?? null
+        )
+        .run();
+    },
+
+    async saveProfileGameResult(input) {
+      await db
+        .prepare(
+          `insert into profile_game_results (
+            id, profile_id, game_id, family_key, variant_key, time_control_key, mode, opponent_profile_id,
+            opponent_type, result, outcome_reason, rated, rating_delta, moves_played, duration_ms, completed_at
+          ) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          on conflict(profile_id, game_id) do update set
+            family_key = excluded.family_key,
+            variant_key = excluded.variant_key,
+            time_control_key = excluded.time_control_key,
+            mode = excluded.mode,
+            opponent_profile_id = excluded.opponent_profile_id,
+            opponent_type = excluded.opponent_type,
+            result = excluded.result,
+            outcome_reason = excluded.outcome_reason,
+            rated = excluded.rated,
+            rating_delta = excluded.rating_delta,
+            moves_played = excluded.moves_played,
+            duration_ms = excluded.duration_ms,
+            completed_at = excluded.completed_at`
+        )
+        .bind(
+          input.id,
+          input.profileId,
+          input.gameId,
+          input.familyKey,
+          input.variantKey,
+          input.timeControlKey,
+          input.mode,
+          input.opponentProfileId ?? null,
+          input.opponentType ?? "unknown",
+          input.result,
+          input.outcomeReason ?? null,
+          input.rated ? 1 : 0,
+          input.ratingDelta ?? null,
+          input.movesPlayed,
+          input.durationMs ?? null,
+          input.completedAt ?? null
+        )
+        .run();
+    },
+
+    async getProfileGameResults(profileId, limit = 20) {
+      const rows = await db
+        .prepare(
+          `select id, profile_id, game_id, family_key, variant_key, time_control_key, mode, opponent_profile_id,
+            opponent_type, result, outcome_reason, rated, rating_delta, moves_played, duration_ms, completed_at, created_at
+           from profile_game_results
+           where profile_id = ?
+           order by coalesce(completed_at, created_at) desc
+           limit ?`
+        )
+        .bind(profileId, Math.max(1, Math.min(limit, 100)))
+        .all<ProfileGameResultRow>();
+      return (rows.results ?? []).map(toProfileGameResultSnapshot);
+    },
+
     async saveBotBenchmark(input) {
       await db
         .prepare(
@@ -547,6 +694,26 @@ type LeaderboardEntryRow = {
   streak?: number | null;
   metadata?: string | null;
   computed_at: string;
+};
+
+type ProfileGameResultRow = {
+  id: string;
+  profile_id: string;
+  game_id: string;
+  family_key: string;
+  variant_key: string;
+  time_control_key: string;
+  mode: GameModeKey;
+  opponent_profile_id?: string | null;
+  opponent_type?: OpponentTypeKey | null;
+  result: GameResultKey;
+  outcome_reason?: string | null;
+  rated?: number | null;
+  rating_delta?: number | null;
+  moves_played?: number | null;
+  duration_ms?: number | null;
+  completed_at?: string | null;
+  created_at: string;
 };
 
 async function persistNormalizedGameStart(db: D1Database, state: GameState, createdBy?: string | null, roomPlayers?: ParticipantSeed[]) {
@@ -745,6 +912,28 @@ function toLeaderboardEntrySnapshot(row: LeaderboardEntryRow): LeaderboardEntryS
     streak: Number(row.streak ?? 0),
     metadata: parseJson(row.metadata, {}),
     computedAt: row.computed_at
+  };
+}
+
+function toProfileGameResultSnapshot(row: ProfileGameResultRow): ProfileGameResultSnapshot {
+  return {
+    id: row.id,
+    profileId: row.profile_id,
+    gameId: row.game_id,
+    familyKey: row.family_key,
+    variantKey: row.variant_key,
+    timeControlKey: row.time_control_key,
+    mode: row.mode,
+    opponentProfileId: row.opponent_profile_id ?? null,
+    opponentType: row.opponent_type ?? "unknown",
+    result: row.result,
+    outcomeReason: row.outcome_reason ?? null,
+    rated: Boolean(row.rated),
+    ratingDelta: row.rating_delta ?? null,
+    movesPlayed: Number(row.moves_played ?? 0),
+    durationMs: row.duration_ms ?? null,
+    completedAt: row.completed_at ?? null,
+    createdAt: row.created_at
   };
 }
 

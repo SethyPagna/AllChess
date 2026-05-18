@@ -11,7 +11,8 @@ const schema = [
   "0004_bot_knowledge_pipeline.sql",
   "0005_normalized_game_state.sql",
   "0006_matchmaking_tickets.sql",
-  "0007_ratings_leaderboards.sql"
+  "0007_ratings_leaderboards.sql",
+  "0008_profile_game_stats.sql"
 ]
   .map((file) => readFileSync(join(migrationsDir, file), "utf8"))
   .join("\n")
@@ -45,7 +46,9 @@ describe("cloudflare d1 schema", () => {
       "rating_pools",
       "profile_ratings",
       "rating_events",
-      "leaderboard_entries"
+      "leaderboard_entries",
+      "profile_game_stats",
+      "profile_game_results"
     ]) {
       expect(schema).toContain(`create table if not exists ${table}`);
     }
@@ -63,5 +66,7 @@ describe("cloudflare d1 schema", () => {
     expect(schema).toContain("idx_profile_ratings_pool_rating");
     expect(schema).toContain("idx_rating_events_profile_created");
     expect(schema).toContain("idx_leaderboard_entries_rating");
+    expect(schema).toContain("idx_profile_game_stats_variant");
+    expect(schema).toContain("idx_profile_game_results_profile_completed");
   });
 });
