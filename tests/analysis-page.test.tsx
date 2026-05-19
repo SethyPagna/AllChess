@@ -84,6 +84,7 @@ describe("analysis page review navigation", () => {
 
     expect(markup).toContain("Saved review");
     expect(markup).toContain("Key moments");
+    expect(markup).toContain("analysis-detail-link");
     expect(markup).toContain("excellent");
     expect(markup).toContain("Train next");
     expect(markup).toContain("Review central pawn breaks.");

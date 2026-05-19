@@ -3495,7 +3495,8 @@ select {
   text-transform: uppercase;
 }
 
-.analysis-detail-list span {
+.analysis-detail-list span,
+.analysis-detail-list a {
   display: flex;
   min-width: 0;
   align-items: center;
@@ -3504,6 +3505,11 @@ select {
   color: var(--text);
   font-size: 0.84rem;
   font-weight: 850;
+  text-decoration: none;
+}
+
+.analysis-detail-list a:hover {
+  color: var(--accent);
 }
 
 .analysis-detail-list strong {
@@ -3600,7 +3606,7 @@ select {
   min-height: 2.25rem;
   align-items: center;
   gap: 0.5rem;
-  grid-template-columns: 3rem minmax(0, 1fr);
+  grid-template-columns: 3rem minmax(0, 1fr) auto;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface-strong);
@@ -3626,6 +3632,17 @@ select {
   font-weight: 850;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.analysis-move-list em {
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 950;
+  padding: 0.12rem 0.4rem;
+  text-transform: capitalize;
 }
 
 .auth-intro,

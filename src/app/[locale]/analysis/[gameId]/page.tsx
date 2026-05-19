@@ -30,6 +30,7 @@ export default async function AnalysisPage({
   const selectedMoveIndex = normalizeSelectedMoveIndex(query.ply, review.moves);
   const selectedMove = review.moves[selectedMoveIndex] ?? null;
   const reviewMoments = extractReviewMoments(review.analysis?.report);
+  const reviewMomentByMove = createReviewMomentByMove(reviewMoments, review.moves);
   const trainingIdeas = extractTrainingIdeas(review.analysis?.report);
 
   return (
@@ -70,10 +71,7 @@ export default async function AnalysisPage({
               <div className="analysis-detail-list" aria-label="Key review moments">
                 <h3>Key moments</h3>
                 {reviewMoments.map((moment) => (
-                  <span key={`${moment.move}-${moment.label}`}>
-                    <strong>{moment.label}</strong>
-                    {moment.move}
-                  </span>
+                  <ReviewMomentLink key={`${moment.move}-${moment.label}`} gameId={decodedGameId} locale={locale} moment={moment} ply={reviewMomentByMove.get(reviewMomentKey(moment.move))?.ply} />
                 ))}
               </div>
             ) : null}
@@ -116,14 +114,19 @@ export default async function AnalysisPage({
                 </div>
               ) : null}
               <ol className="analysis-move-list" aria-label="Saved move timeline">
-                {review.moves.slice(0, 16).map((move) => (
-                  <li key={`${move.gameId}-${move.ply}`} className={selectedMove?.ply === move.ply ? "is-active" : undefined}>
-                    <Link href={analysisPlyHref(locale, decodedGameId, move.ply) as never} className="focus-ring">
-                      <strong>{move.ply}.</strong>
-                      <span>{move.notation || "Saved move"}</span>
-                    </Link>
-                  </li>
-                ))}
+                {review.moves.slice(0, 16).map((move) => {
+                  const moment = reviewMomentByMove.get(reviewMomentKey(move.notation));
+
+                  return (
+                    <li key={`${move.gameId}-${move.ply}`} className={selectedMove?.ply === move.ply ? "is-active" : undefined}>
+                      <Link href={analysisPlyHref(locale, decodedGameId, move.ply) as never} className="focus-ring">
+                        <strong>{move.ply}.</strong>
+                        <span>{move.notation || "Saved move"}</span>
+                        {moment?.label ? <em>{moment.label}</em> : null}
+                      </Link>
+                    </li>
+                  );
+                })}
               </ol>
             </>
           ) : (
@@ -203,6 +206,23 @@ function ReviewPlaybackLinks({
 
 type RuntimeAnalysisMoves = Awaited<ReturnType<typeof getRuntimeAnalysisReview>>["moves"];
 
+function ReviewMomentLink({ gameId, locale, moment, ply }: { gameId: string; locale: string; moment: ReviewMoment; ply?: number }) {
+  const content = (
+    <>
+      <strong>{moment.label}</strong>
+      {moment.move}
+    </>
+  );
+
+  return ply ? (
+    <Link href={analysisPlyHref(locale, gameId, ply) as never} className="analysis-detail-link focus-ring">
+      {content}
+    </Link>
+  ) : (
+    <span>{content}</span>
+  );
+}
+
 function normalizeSelectedMoveIndex(value: string | undefined, moves: RuntimeAnalysisMoves) {
   if (!moves.length) return 0;
   const requestedPly = Number.parseInt(value ?? "", 10);
@@ -221,6 +241,7 @@ function analysisPlyHref(locale: string, gameId: string, ply: number, options: {
 type ReviewMoment = {
   label: string;
   move: string;
+  ply?: number;
 };
 
 function extractReviewMoments(report: unknown): ReviewMoment[] {
@@ -235,6 +256,27 @@ function extractReviewMoments(report: unknown): ReviewMoment[] {
     })
     .filter((moment): moment is ReviewMoment => Boolean(moment))
     .slice(0, 4);
+}
+
+function createReviewMomentByMove(moments: ReviewMoment[], moves: RuntimeAnalysisMoves) {
+  const momentsByMove = new Map<string, ReviewMoment>();
+  for (const moment of moments) {
+    const key = reviewMomentKey(moment.move);
+    if (key) momentsByMove.set(key, moment);
+  }
+
+  const matchedMoments = new Map<string, ReviewMoment>();
+  for (const move of moves) {
+    const key = reviewMomentKey(move.notation);
+    const moment = momentsByMove.get(key);
+    if (moment) matchedMoments.set(key, { ...moment, ply: move.ply });
+  }
+
+  return matchedMoments;
+}
+
+function reviewMomentKey(value: unknown) {
+  return normalizeDetailText(value).toLowerCase();
 }
 
 function extractTrainingIdeas(report: unknown): string[] {
