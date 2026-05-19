@@ -71,7 +71,7 @@ export default async function AnalysisPage({
               <div className="analysis-detail-list" aria-label="Key review moments">
                 <h3>Key moments</h3>
                 {reviewMoments.map((moment) => (
-                  <ReviewMomentLink key={`${moment.move}-${moment.label}`} gameId={decodedGameId} locale={locale} moment={moment} ply={reviewMomentByMove.get(reviewMomentKey(moment.move))?.ply} />
+                  <ReviewMomentLink key={`${moment.move}-${moment.label}-${moment.ply ?? "move"}`} gameId={decodedGameId} locale={locale} moment={moment} ply={moment.ply ?? reviewMomentByMove.get(reviewMomentKey(moment.move))?.ply} />
                 ))}
               </div>
             ) : null}
@@ -252,7 +252,11 @@ function extractReviewMoments(report: unknown): ReviewMoment[] {
       if (!isRecord(moment)) return null;
       const label = normalizeDetailText(moment.label);
       const move = normalizeDetailText(moment.move);
-      return label || move ? { label: label || "Moment", move: move || "Saved position" } : null;
+      const ply = normalizePly(moment.ply);
+      if (!label && !move && !ply) return null;
+      const reviewMoment: ReviewMoment = { label: label || "Moment", move: move || (ply ? `Ply ${ply}` : "Saved position") };
+      if (ply) reviewMoment.ply = ply;
+      return reviewMoment;
     })
     .filter((moment): moment is ReviewMoment => Boolean(moment))
     .slice(0, 4);
@@ -268,7 +272,7 @@ function createReviewMomentByMove(moments: ReviewMoment[], moves: RuntimeAnalysi
   const matchedMoments = new Map<string, ReviewMoment>();
   for (const move of moves) {
     const key = reviewMomentKey(move.notation);
-    const moment = momentsByMove.get(key);
+    const moment = moments.find((item) => item.ply === move.ply) ?? momentsByMove.get(key);
     if (moment) matchedMoments.set(key, { ...moment, ply: move.ply });
   }
 
@@ -287,6 +291,11 @@ function extractTrainingIdeas(report: unknown): string[] {
 
 function normalizeDetailText(value: unknown) {
   return String(value ?? "").trim();
+}
+
+function normalizePly(value: unknown) {
+  const ply = Number(value);
+  return Number.isInteger(ply) && ply > 0 ? ply : undefined;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
