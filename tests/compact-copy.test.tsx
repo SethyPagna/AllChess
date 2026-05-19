@@ -119,15 +119,17 @@ describe("compact page copy", () => {
     expect(markup).toContain("Leaderboards stay empty until real games are recorded.");
   });
 
-  test("watch rooms disables live controls until room data exists", async () => {
+  test("watch rooms exposes useful filters even when room data is empty", async () => {
     const element = await WatchPage({ params: Promise.resolve({ locale: "en" }) });
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain("Watch rooms");
     expect(markup).toContain("No public rooms right now");
     expect(markup).toContain("aria-label=\"Watch room controls\"");
-    expect(markup).toContain("Search unlocks when public rooms are available.");
-    expect(markup).toContain("disabled=\"\"");
+    expect(markup).toContain("aria-label=\"Search rooms\"");
+    expect(markup).toContain("Room, game, rated");
+    expect(markup).toContain("/en/watch?status=active");
+    expect(markup).not.toContain("Search unlocks when public rooms are available.");
   });
 
   test("analysis keeps empty review controls visible but disabled", async () => {

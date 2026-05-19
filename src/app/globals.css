@@ -3039,7 +3039,10 @@ select {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.watch-room-tools button {
+.watch-room-search,
+.watch-room-tools select,
+.watch-room-tools button,
+.watch-filter-chip {
   display: inline-flex;
   min-height: 2.45rem;
   align-items: center;
@@ -3053,9 +3056,38 @@ select {
   font-weight: 900;
 }
 
-.watch-room-tools.is-empty button:disabled {
-  cursor: not-allowed;
-  opacity: 0.68;
+.watch-room-search {
+  justify-content: flex-start;
+  padding: 0 0.7rem;
+}
+
+.watch-room-search input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  outline: 0;
+}
+
+.watch-room-search input::placeholder {
+  color: var(--muted);
+}
+
+.watch-room-tools select {
+  appearance: none;
+  padding: 0 0.75rem;
+}
+
+.watch-filter-chip {
+  text-decoration: none;
+}
+
+.watch-filter-chip.is-active {
+  border-color: rgba(104, 211, 145, 0.74);
+  background: rgba(104, 211, 145, 0.16);
+  color: var(--accent);
 }
 
 .watch-room-list {
