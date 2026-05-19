@@ -3502,6 +3502,34 @@ select {
   font-weight: 950;
 }
 
+.analysis-label-counts span[data-label="positive"],
+.analysis-selected-move em[data-label="positive"],
+.analysis-move-list em[data-label="positive"] {
+  border-color: color-mix(in srgb, var(--accent) 52%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-strong));
+  color: var(--accent);
+}
+
+.analysis-label-counts span[data-label="warning"],
+.analysis-selected-move em[data-label="warning"],
+.analysis-move-list em[data-label="warning"] {
+  border-color: color-mix(in srgb, var(--warning) 52%, var(--border));
+  background: color-mix(in srgb, var(--warning) 12%, var(--surface-strong));
+  color: var(--warning);
+}
+
+.analysis-label-counts span[data-label="critical"],
+.analysis-selected-move em[data-label="critical"],
+.analysis-move-list em[data-label="critical"] {
+  border-color: color-mix(in srgb, var(--danger) 52%, var(--border));
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface-strong));
+  color: var(--danger);
+}
+
+.analysis-label-counts span[data-label] strong {
+  color: currentColor;
+}
+
 .analysis-detail-list {
   display: grid;
   gap: 0.45rem;

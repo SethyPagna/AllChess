@@ -28,7 +28,7 @@ function createAnalysisPageD1() {
                 provider: "openai",
                 model: "gpt-test",
                 summary: "White converted a central tactic.",
-                report: JSON.stringify({ moments: [{ move: "e4", label: "excellent" }, { ply: 3, label: "best" }], training: ["Review central pawn breaks."] }),
+                report: JSON.stringify({ moments: [{ move: "e4", label: "excellent" }, { ply: 2, label: "blunder" }, { ply: 3, label: "best" }], training: ["Review central pawn breaks."] }),
                 created_at: "2026-05-18T00:00:00.000Z"
               };
             },
@@ -87,7 +87,10 @@ describe("analysis page review navigation", () => {
     expect(markup).toContain("Review label counts");
     expect(markup).toContain("analysis-detail-link");
     expect(markup).toContain("<strong>1</strong>best");
+    expect(markup).toContain("<strong>1</strong>blunder");
     expect(markup).toContain("<strong>1</strong>excellent");
+    expect(markup).toContain('data-label="critical"');
+    expect(markup).toContain('data-label="positive"');
     expect(markup).toContain("excellent");
     expect(markup).toContain("best");
     expect(markup).toContain("Ply 3");
@@ -129,6 +132,6 @@ describe("analysis page review navigation", () => {
     });
     const markup = renderToStaticMarkup(element);
 
-    expect(markup).toContain('aria-label="Selected move"><strong>Ply 3 of 3</strong><span>Nf3</span><em>best</em>');
+    expect(markup).toContain('aria-label="Selected move"><strong>Ply 3 of 3</strong><span>Nf3</span><em data-label="positive">best</em>');
   });
 });

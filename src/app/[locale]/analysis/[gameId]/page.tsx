@@ -72,7 +72,7 @@ export default async function AnalysisPage({
             {reviewLabelCounts.length ? (
               <div className="analysis-label-counts" aria-label="Review label counts">
                 {reviewLabelCounts.map((item) => (
-                  <span key={item.label}>
+                  <span key={item.label} data-label={item.tone}>
                     <strong>{item.count}</strong>
                     {item.label}
                   </span>
@@ -123,7 +123,7 @@ export default async function AnalysisPage({
                     Ply {selectedMove.ply} of {review.moves.length}
                   </strong>
                   <span>{selectedMove.notation || "Saved move"}</span>
-                  {selectedMoment?.label ? <em>{selectedMoment.label}</em> : null}
+                  {selectedMoment?.label ? <em data-label={reviewLabelTone(selectedMoment.label)}>{selectedMoment.label}</em> : null}
                 </div>
               ) : null}
               <ol className="analysis-move-list" aria-label="Saved move timeline">
@@ -135,7 +135,7 @@ export default async function AnalysisPage({
                       <Link href={analysisPlyHref(locale, decodedGameId, move.ply) as never} className="focus-ring">
                         <strong>{move.ply}.</strong>
                         <span>{move.notation || "Saved move"}</span>
-                        {moment?.label ? <em>{moment.label}</em> : null}
+                        {moment?.label ? <em data-label={reviewLabelTone(moment.label)}>{moment.label}</em> : null}
                       </Link>
                     </li>
                   );
@@ -257,6 +257,12 @@ type ReviewMoment = {
   ply?: number;
 };
 
+type ReviewLabelTone = "critical" | "neutral" | "positive" | "warning";
+
+const POSITIVE_REVIEW_LABELS = new Set(["best", "brilliant", "excellent", "good", "great"]);
+const WARNING_REVIEW_LABELS = new Set(["dubious", "inaccuracy", "mistake", "missed chance"]);
+const CRITICAL_REVIEW_LABELS = new Set(["blunder", "critical", "miss", "missed win"]);
+
 function extractReviewMoments(report: unknown): ReviewMoment[] {
   if (!isRecord(report) || !Array.isArray(report.moments)) return [];
 
@@ -299,7 +305,16 @@ function countReviewLabels(moments: ReviewMoment[]) {
     if (label) counts.set(label, (counts.get(label) ?? 0) + 1);
   }
 
-  return Array.from(counts, ([label, count]) => ({ count, label })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  return Array.from(counts, ([label, count]) => ({ count, label, tone: reviewLabelTone(label) })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+}
+
+function reviewLabelTone(label: string): ReviewLabelTone {
+  const normalizedLabel = normalizeDetailText(label).toLowerCase();
+  if (POSITIVE_REVIEW_LABELS.has(normalizedLabel)) return "positive";
+  if (WARNING_REVIEW_LABELS.has(normalizedLabel)) return "warning";
+  if (CRITICAL_REVIEW_LABELS.has(normalizedLabel)) return "critical";
+
+  return "neutral";
 }
 
 function getReviewMomentForMove(moments: Map<string, ReviewMoment>, move: RuntimeAnalysisMoves[number]) {
