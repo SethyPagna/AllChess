@@ -2838,10 +2838,12 @@ select {
 }
 
 .info-hint:hover .info-hint-trigger,
-.info-hint:focus-visible .info-hint-trigger,
+.info-hint-trigger:focus-visible,
 .info-hint:focus-within .info-hint-trigger {
   background: var(--accent);
   color: #07140c;
+  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 2px;
   transform: translateY(-1px);
 }
 
@@ -2871,7 +2873,7 @@ select {
 }
 
 .info-hint:hover .info-hint-bubble,
-.info-hint:focus-visible .info-hint-bubble,
+.info-hint-trigger:focus-visible + .info-hint-bubble,
 .info-hint:focus-within .info-hint-bubble {
   display: block;
   opacity: 1;
