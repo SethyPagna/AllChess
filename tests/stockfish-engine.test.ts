@@ -43,4 +43,11 @@ describe("Stockfish engine adapter", () => {
     expect(commands).toContain("position startpos moves e2e4");
     expect(commands.at(-1)).toBe("go movetime 920 depth 10");
   });
+
+  test("caps Stockfish command time to the remaining live-play budget", () => {
+    const state = createInitialState("classic", "uci-budget");
+    const commands = buildStockfishCommands(state, "grandmaster", ["h2h3"], 480);
+
+    expect(commands.at(-1)).toBe("go movetime 480 depth 15");
+  });
 });

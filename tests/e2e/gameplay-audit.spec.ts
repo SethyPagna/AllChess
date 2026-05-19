@@ -126,7 +126,7 @@ test("setup flow supports Bot Mode as black with an automatic first reply", asyn
   expect(runtimeErrors).toEqual([]);
 });
 
-test("classic grandmaster uses Stockfish on off-book replies", async ({ page }) => {
+test("classic grandmaster replies quickly with engine or bounded fallback", async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
   page.on("console", (message) => {
@@ -144,7 +144,7 @@ test("classic grandmaster uses Stockfish on off-book replies", async ({ page }) 
   await page.getByRole("button", { name: "h3" }).click();
 
   await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 7000 });
-  await expect(page.getByText(/engine-search/i)).toBeVisible();
+  await expect(page.getByText(/engine-search|internal-search/i)).toBeVisible();
   expect(runtimeErrors).toEqual([]);
 });
 

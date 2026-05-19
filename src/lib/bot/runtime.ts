@@ -6,6 +6,7 @@ import type { BotStrengthBand, BotTierKey } from "@/lib/bot/strength";
 
 const MIN_BOT_SEARCH_MS = 8;
 const MAX_GLOBAL_TRANSPOSITIONS = 6000;
+const BOT_REPLY_SAFETY_MS = 120;
 
 export { botDifficultyLevels, MAX_BOT_REPLY_MS };
 export type { BotDifficulty, BotDifficultyKey, BotPlayStyle };
@@ -210,6 +211,8 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
   const startedAt = Date.now();
   const tierConfig = difficultyFor(difficultyKey);
   const searchTimeMs = boundedSearchTime(options.maxSearchTimeMs ?? tierConfig.moveTimeMs, tierConfig.moveTimeMs);
+  const hardDeadline = startedAt + Math.max(MIN_BOT_SEARCH_MS, Math.min(searchTimeMs, MAX_BOT_REPLY_MS - BOT_REPLY_SAFETY_MS));
+  const remainingSearchMs = () => Math.max(MIN_BOT_SEARCH_MS, hardDeadline - Date.now());
 
   return new Promise((resolve) => {
     const finish = (result: BotMoveResult) => {
@@ -282,7 +285,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
 
         if (shouldUseStockfish(state, options.engine ?? "auto")) {
           const playedMoves = state.moves.map((move) => moveToUci(state, move));
-          const stockfish = await requestStockfishMove(state, difficultyKey, playedMoves, searchTimeMs);
+          const stockfish = await requestStockfishMove(state, difficultyKey, playedMoves, remainingSearchMs());
           if (stockfish && !requestState.cancelled) {
             finish({
               requestId,
@@ -315,7 +318,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
           }
         }
 
-        const result = chooseBotMoveSafe(state, difficultyKey, { ...options, maxSearchTimeMs: searchTimeMs });
+        const result = chooseBotMoveSafe(state, difficultyKey, { ...options, maxSearchTimeMs: remainingSearchMs() });
         if (!result.move) {
           finish({
             requestId,

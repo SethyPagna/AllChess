@@ -57,8 +57,9 @@ export function getStockfishDifficultyConfig(key: BotDifficultyKey) {
   return configs[key] ?? configs.normal;
 }
 
-export function buildStockfishCommands(state: GameState, difficultyKey: BotDifficultyKey, playedMoves: string[] = []) {
+export function buildStockfishCommands(state: GameState, difficultyKey: BotDifficultyKey, playedMoves: string[] = [], maxMoveTimeMs?: number) {
   const config = getStockfishDifficultyConfig(difficultyKey);
+  const moveTimeMs = Math.max(40, Math.min(config.moveTimeMs, maxMoveTimeMs ?? config.moveTimeMs));
   const commands = [
     "uci",
     `setoption name UCI_LimitStrength value ${config.limitStrength ? "true" : "false"}`,
@@ -70,16 +71,22 @@ export function buildStockfishCommands(state: GameState, difficultyKey: BotDiffi
   if (state.variantKey === "chess960") commands.push("setoption name UCI_Chess960 value true");
   commands.push("ucinewgame");
   commands.push(playedMoves.length ? `position startpos moves ${playedMoves.join(" ")}` : "position startpos");
-  commands.push(`go movetime ${config.moveTimeMs} depth ${config.depth}`);
+  commands.push(`go movetime ${moveTimeMs} depth ${config.depth}`);
   return commands;
 }
 
 export async function requestStockfishMove(state: GameState, difficultyKey: BotDifficultyKey, playedMoves: string[], timeoutMs: number): Promise<StockfishSearchResult | null> {
   if (!canUseStockfishRuntime()) return null;
 
-  const commands = buildStockfishCommands(state, difficultyKey, playedMoves);
-  const runtime = await getStockfishRuntime().catch(() => null);
+  const startedAt = Date.now();
+  const effectiveTimeoutMs = clampStockfishTimeout(timeoutMs);
+  const deadline = startedAt + effectiveTimeoutMs;
+  const loadBudgetMs = Math.min(Math.max(effectiveTimeoutMs - 150, 250), 1200);
+  const runtime = await withTimeout(getStockfishRuntime(), loadBudgetMs, null).catch(() => null);
   if (!runtime) return null;
+  if (deadline - Date.now() < 80) return null;
+  const engineBudgetMs = clampStockfishTimeout(deadline - Date.now());
+  const commands = buildStockfishCommands(state, difficultyKey, playedMoves, engineBudgetMs);
 
   return await new Promise((resolve) => {
     let finished = false;
@@ -87,7 +94,7 @@ export async function requestStockfishMove(state: GameState, difficultyKey: BotD
     let nodesSearched = 0;
     let evaluation: number | null = null;
     let principalVariation: string[] = [];
-    const timer = setTimeout(() => finish(null), Math.min(Math.max(timeoutMs + 350, 1500), 2950));
+    const timer = setTimeout(() => finish(null), engineBudgetMs);
 
     const finish = (result: StockfishSearchResult | null) => {
       if (finished) return;
@@ -149,6 +156,20 @@ function uciSquareToSquare(state: GameState, value: string) {
 
 function canUseStockfishRuntime() {
   return typeof document !== "undefined";
+}
+
+function clampStockfishTimeout(timeoutMs: number) {
+  return Math.max(80, Math.min(Math.trunc(timeoutMs), 2600));
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T) {
+  return new Promise<T>((resolve) => {
+    const timer = setTimeout(() => resolve(fallback), timeoutMs);
+    promise
+      .then((value) => resolve(value))
+      .catch(() => resolve(fallback))
+      .finally(() => clearTimeout(timer));
+  });
 }
 
 async function getStockfishRuntime() {
