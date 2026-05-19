@@ -222,7 +222,7 @@ type RuntimeAnalysisMoves = Awaited<ReturnType<typeof getRuntimeAnalysisReview>>
 function ReviewMomentLink({ gameId, locale, moment, ply }: { gameId: string; locale: string; moment: ReviewMoment; ply?: number }) {
   const content = (
     <>
-      <strong>{moment.label}</strong>
+      <strong data-label={reviewLabelTone(moment.label)}>{moment.label}</strong>
       {moment.move}
     </>
   );

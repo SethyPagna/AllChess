@@ -91,6 +91,8 @@ describe("analysis page review navigation", () => {
     expect(markup).toContain("<strong>1</strong>excellent");
     expect(markup).toContain('data-label="critical"');
     expect(markup).toContain('data-label="positive"');
+    expect(markup).toContain('<strong data-label="critical">blunder</strong>');
+    expect(markup).toContain('<strong data-label="positive">excellent</strong>');
     expect(markup).toContain("excellent");
     expect(markup).toContain("best");
     expect(markup).toContain("Ply 3");

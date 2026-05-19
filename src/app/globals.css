@@ -3572,6 +3572,18 @@ select {
   text-transform: capitalize;
 }
 
+.analysis-detail-list strong[data-label="positive"] {
+  color: var(--accent);
+}
+
+.analysis-detail-list strong[data-label="warning"] {
+  color: var(--warning);
+}
+
+.analysis-detail-list strong[data-label="critical"] {
+  color: var(--danger);
+}
+
 .analysis-review-shell svg {
   color: var(--accent);
 }
