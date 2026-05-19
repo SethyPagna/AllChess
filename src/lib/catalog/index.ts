@@ -701,8 +701,12 @@ export function getVerifiedPlayableVariants() {
 }
 
 export function searchGameCatalog(query: string, filters: { family?: GameFamilyKey; playability?: PlayabilityStatus } = {}) {
+  return filterGameCatalogEntries(gameCatalog, query, filters);
+}
+
+export function filterGameCatalogEntries(entries: GameCatalogEntry[], query: string, filters: { family?: GameFamilyKey; playability?: PlayabilityStatus } = {}) {
   const normalized = normalizeCatalogSearch(query);
-  return gameCatalog.filter((entry) => {
+  return entries.filter((entry) => {
     if (filters.family && entry.family !== filters.family) return false;
     if (filters.playability && entry.playability !== filters.playability) return false;
     if (!normalized) return true;
