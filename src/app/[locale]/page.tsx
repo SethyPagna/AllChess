@@ -72,7 +72,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <div className="intro-proof" aria-label="Intro stats">
             <span>{catalogStats.playableGames} ready games</span>
             <span>{catalogStats.learnGames + catalogStats.comingSoonGames} guides</span>
-            <span>No fake live counts</span>
+            <span>Live data only</span>
           </div>
         </div>
 

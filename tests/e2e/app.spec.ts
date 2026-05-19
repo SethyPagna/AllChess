@@ -132,7 +132,7 @@ test("games and rules shows compact bot training status", async ({ page }) => {
   await expect(page.getByRole("dialog", { name: /Classic Chess guide/ })).toBeVisible();
   await expect(page.getByRole("dialog").getByRole("link", { name: "Play" })).toBeVisible();
   await expect(page.getByRole("dialog").getByRole("link", { name: "Bot Mode" })).toBeVisible();
-  await expect(page.getByRole("dialog").getByRole("link", { name: "Full page" })).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("link", { name: "Details" })).toBeVisible();
   await expect(page.getByRole("dialog")).toContainText("Basics");
   await expect(page.getByRole("dialog")).toContainText("How it ends");
   await expect(page.getByRole("dialog")).toContainText("Status");
@@ -188,7 +188,7 @@ test("catalog search finds native and romanized game names", async ({ page }) =>
 
   await page.getByPlaceholder("Search names, aliases, native names").fill("Oware");
   await page.getByRole("button", { name: /Open guide for Oware/ }).click();
-  await expect(page.getByRole("dialog").getByRole("link", { name: "Full page" })).toHaveAttribute("href", "/en/games/oware");
+  await expect(page.getByRole("dialog").getByRole("link", { name: "Details" })).toHaveAttribute("href", "/en/games/oware");
   await page.goto("/en/games/oware");
   await expect(page.getByRole("heading", { name: /Oware/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Basic rules" })).toBeVisible();

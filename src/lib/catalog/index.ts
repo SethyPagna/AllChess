@@ -719,7 +719,7 @@ export function displayGameName(entry: GameCatalogEntry) {
 export function displayPlayabilityStatus(status: PlayabilityStatus) {
   const labels: Record<PlayabilityStatus, string> = {
     playable: "Ready to play",
-    learn: "Learn first",
+    learn: "Guide first",
     "coming-soon": "In progress"
   };
   return labels[status];

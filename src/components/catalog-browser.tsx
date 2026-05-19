@@ -28,7 +28,7 @@ type CatalogBrowserProps = {
 const playabilityLabels: Record<PlayabilityStatus | "all", string> = {
   all: "All",
   playable: "Ready to play",
-  learn: "Learn first",
+  learn: "Guide first",
   "coming-soon": "In progress"
 };
 
@@ -185,7 +185,7 @@ export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCata
           ) : null}
           <Link href={`/${locale}/games/${entry.id}` as never} className="action-secondary focus-ring">
             <BookOpen size={16} />
-            Full page
+            Details
           </Link>
         </div>
         <div className="catalog-guide-sections">
