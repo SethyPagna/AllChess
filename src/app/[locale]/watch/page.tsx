@@ -3,13 +3,10 @@ import { Eye, Radio, Search, Swords, Trophy, Users } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { getRuntimeLiveStats, getRuntimeRoomList } from "@/lib/realtime/runtime";
+import { getRuntimeLiveStats, getRuntimeRoomList, normalizeRoomListInput } from "@/lib/realtime/runtime";
 import { playSetupHref } from "@/lib/routing/play-links";
 
 export const dynamic = "force-dynamic";
-
-type WatchRoomStatusFilter = "all" | "active" | "waiting";
-type WatchRoomSort = "recent" | "spectators";
 
 export default async function WatchPage({
   params,
@@ -21,13 +18,11 @@ export default async function WatchPage({
   const { locale: rawLocale } = await params;
   const query = (await searchParams) ?? {};
   const locale = normalizeLocale(rawLocale);
-  const searchQuery = normalizeSearchQuery(query.q);
-  const statusFilter = normalizeStatusFilter(query.status);
-  const roomSort = normalizeRoomSort(query.sort);
-  const [stats, roomList] = await Promise.all([getRuntimeLiveStats(), getRuntimeRoomList(12)]);
-  const visibleRooms = sortRooms(filterRooms(roomList.rooms, { searchQuery, statusFilter }), roomSort);
-  const hasRooms = roomList.rooms.length > 0;
-  const hasVisibleRooms = visibleRooms.length > 0;
+  const requestedFilters = normalizeRoomListInput({ query: query.q, sort: query.sort === "spectators" ? "spectators" : "recent", status: query.status === "active" || query.status === "waiting" ? query.status : "all", limit: 12 });
+  const [stats, roomList] = await Promise.all([getRuntimeLiveStats(), getRuntimeRoomList(requestedFilters)]);
+  const { query: searchQuery, sort: roomSort, status: statusFilter } = roomList.filters;
+  const hasRooms = stats.activeRooms > 0;
+  const hasVisibleRooms = roomList.rooms.length > 0;
 
   return (
     <section className="watch-page grid gap-5">
@@ -58,7 +53,7 @@ export default async function WatchPage({
             <h2>Live room list</h2>
             <p>Public rooms from Cloudflare D1. Search by room, game, status, or rated state.</p>
             <div className="watch-room-list" aria-label="Public rooms">
-              {visibleRooms.map((room) => (
+              {roomList.rooms.map((room) => (
                 <Link key={room.roomId} href={`/${locale}/play/${room.variantKey}?mode=spectate&room=${room.roomId}`} className="focus-ring watch-room-card">
                   <span>
                     <strong>{room.variantKey}</strong>
@@ -124,40 +119,7 @@ export default async function WatchPage({
   );
 }
 
-function normalizeSearchQuery(value: string | undefined) {
-  return (value ?? "").trim().slice(0, 80);
-}
-
-function normalizeStatusFilter(value: string | undefined): WatchRoomStatusFilter {
-  return value === "active" || value === "waiting" ? value : "all";
-}
-
-function normalizeRoomSort(value: string | undefined): WatchRoomSort {
-  return value === "spectators" ? value : "recent";
-}
-
-function filterRooms(
-  rooms: Awaited<ReturnType<typeof getRuntimeRoomList>>["rooms"],
-  filters: { searchQuery: string; statusFilter: WatchRoomStatusFilter }
-) {
-  const normalizedQuery = filters.searchQuery.toLowerCase();
-
-  return rooms.filter((room) => {
-    const matchesStatus = filters.statusFilter === "all" || room.status === filters.statusFilter;
-    if (!matchesStatus) return false;
-    if (!normalizedQuery) return true;
-
-    const searchable = [room.roomId, room.gameId, room.variantKey, room.status, room.rated ? "rated" : "casual"].join(" ").toLowerCase();
-    return searchable.includes(normalizedQuery);
-  });
-}
-
-function sortRooms(rooms: Awaited<ReturnType<typeof getRuntimeRoomList>>["rooms"], sort: WatchRoomSort) {
-  if (sort !== "spectators") return rooms;
-  return [...rooms].sort((left, right) => right.spectators - left.spectators);
-}
-
-function watchHref(locale: string, values: { q: string; status: WatchRoomStatusFilter; sort: WatchRoomSort }) {
+function watchHref(locale: string, values: { q: string; status: string; sort: string }) {
   const query = new URLSearchParams();
   if (values.q) query.set("q", values.q);
   if (values.status !== "all") query.set("status", values.status);

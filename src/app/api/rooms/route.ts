@@ -13,8 +13,17 @@ const createRoomSchema = z.object({
 });
 
 export async function GET(request: Request) {
-  const limit = Number.parseInt(new URL(request.url).searchParams.get("limit") ?? "20", 10);
-  return NextResponse.json(await getRuntimeRoomList(Number.isFinite(limit) ? limit : 20));
+  const searchParams = new URL(request.url).searchParams;
+  const limit = Number.parseInt(searchParams.get("limit") ?? "20", 10);
+  const status = searchParams.get("status");
+  return NextResponse.json(
+    await getRuntimeRoomList({
+      limit: Number.isFinite(limit) ? limit : 20,
+      query: searchParams.get("q") ?? undefined,
+      sort: searchParams.get("sort") === "spectators" ? "spectators" : "recent",
+      status: status === "active" || status === "waiting" ? status : "all"
+    })
+  );
 }
 
 export async function POST(request: Request) {

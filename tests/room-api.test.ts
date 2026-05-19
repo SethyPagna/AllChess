@@ -92,10 +92,16 @@ describe("room API", () => {
     runtime.env = { ALLCHESS_D1: createRoomApiD1("room-1") };
     const { GET } = await import("@/app/api/rooms/route");
 
-    const response = await GET(new Request("http://allchess.test/api/rooms?limit=5"));
+    const response = await GET(new Request("http://allchess.test/api/rooms?limit=5&q=classic&status=active&sort=spectators"));
 
     await expect(response.json()).resolves.toMatchObject({
       mode: "d1",
+      filters: {
+        limit: 5,
+        query: "classic",
+        sort: "spectators",
+        status: "active"
+      },
       rooms: [
         {
           roomId: "room-1",

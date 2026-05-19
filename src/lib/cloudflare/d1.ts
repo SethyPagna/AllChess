@@ -12,6 +12,16 @@ export type CreateGameInput = {
 };
 
 export type RoomVisibility = "public" | "private" | "unlisted";
+export type RoomListStatusFilter = "all" | Extract<RoomStatus, "active" | "waiting">;
+export type RoomListSort = "recent" | "spectators";
+
+export type RoomListInput = {
+  visibility?: RoomVisibility | "all";
+  status?: RoomListStatusFilter;
+  query?: string;
+  sort?: RoomListSort;
+  limit?: number;
+};
 
 export type RecordMoveInput = {
   gameId: string;
@@ -188,7 +198,7 @@ export type GameRepository = {
   createRoom(input: { snapshot: RoomSnapshot; hostId?: string | null; roomCode?: string | null; visibility?: RoomVisibility }): Promise<{ id: string; mode: "d1"; roomCode: string }>;
   getGameState(gameId: string): Promise<GameState | null>;
   getRoomSnapshot(roomIdOrCode: string): Promise<RoomSnapshot | null>;
-  listRooms(input?: { visibility?: RoomVisibility | "all"; limit?: number }): Promise<RoomSnapshot[]>;
+  listRooms(input?: RoomListInput): Promise<RoomSnapshot[]>;
   getLiveStats(): Promise<LiveStats>;
   recordMove(input: RecordMoveInput): Promise<{ id: string; mode: "d1" }>;
   saveMatchmakingTicket(ticket: MatchmakingTicket): Promise<void>;
@@ -333,6 +343,33 @@ export function createD1GameRepository(db: D1Database): GameRepository {
 
     async listRooms(input = {}) {
       const visibility = input.visibility ?? "public";
+      const statusFilter = input.status ?? "all";
+      const normalizedQuery = input.query?.trim().toLowerCase();
+      const whereClauses = ["(? = 'all' or r.visibility = ?)"];
+      const bindings: Array<number | string> = [visibility, visibility];
+
+      if (statusFilter === "all") {
+        whereClauses.push("r.status in ('waiting', 'active')");
+      } else {
+        whereClauses.push("r.status = ?");
+        bindings.push(statusFilter);
+      }
+
+      if (normalizedQuery) {
+        whereClauses.push(
+          `(lower(r.id) like ?
+             or lower(r.game_id) like ?
+             or lower(r.variant_key) like ?
+             or lower(r.status) like ?
+             or lower(case when r.rated then 'rated' else 'casual' end) like ?)`
+        );
+        const searchPattern = `%${normalizedQuery}%`;
+        bindings.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
+      }
+
+      const orderBy = input.sort === "spectators" ? "r.spectator_count desc, r.created_at desc" : "r.created_at desc";
+      bindings.push(Math.max(1, Math.min(input.limit ?? 20, 50)));
+
       const rows = await db
         .prepare(
           `select
@@ -346,12 +383,11 @@ export function createD1GameRepository(db: D1Database): GameRepository {
             g.board_state
            from rooms r
            join games g on g.id = r.game_id
-           where r.status in ('waiting', 'active')
-             and (? = 'all' or r.visibility = ?)
-           order by r.created_at desc
+           where ${whereClauses.join(" and ")}
+           order by ${orderBy}
            limit ?`
         )
-        .bind(visibility, visibility, Math.max(1, Math.min(input.limit ?? 20, 50)))
+        .bind(...bindings)
         .all<RoomSnapshotRow>();
 
       const snapshots: RoomSnapshot[] = [];
