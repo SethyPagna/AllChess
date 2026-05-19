@@ -3492,7 +3492,8 @@ select {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.analysis-review-controls button {
+.analysis-review-controls button,
+.analysis-review-controls a {
   display: inline-flex;
   min-height: 2.35rem;
   align-items: center;
@@ -3504,6 +3505,7 @@ select {
   color: var(--text);
   font-size: 0.82rem;
   font-weight: 900;
+  text-decoration: none;
 }
 
 .analysis-review-controls button:disabled {
@@ -3518,6 +3520,32 @@ select {
   font-weight: 800;
 }
 
+.analysis-selected-move {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 52%, var(--border));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-strong));
+  padding: 0.55rem 0.7rem;
+}
+
+.analysis-selected-move strong {
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.analysis-selected-move span {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .analysis-move-list {
   display: grid;
   max-height: 24rem;
@@ -3528,6 +3556,10 @@ select {
 }
 
 .analysis-move-list li {
+  min-width: 0;
+}
+
+.analysis-move-list li a {
   display: grid;
   min-height: 2.25rem;
   align-items: center;
@@ -3537,6 +3569,12 @@ select {
   border-radius: 8px;
   background: var(--surface-strong);
   padding: 0.45rem 0.6rem;
+  text-decoration: none;
+}
+
+.analysis-move-list li.is-active a {
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--border));
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-strong));
 }
 
 .analysis-move-list strong {

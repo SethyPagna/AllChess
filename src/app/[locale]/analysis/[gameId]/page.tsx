@@ -11,11 +11,14 @@ import { playGameHref } from "@/lib/routing/play-links";
 export const dynamic = "force-dynamic";
 
 export default async function AnalysisPage({
-  params
+  params,
+  searchParams
 }: {
   params: Promise<{ locale: string; gameId: string }>;
+  searchParams?: Promise<{ ply?: string }>;
 }) {
   const { locale: rawLocale, gameId } = await params;
+  const query = (await searchParams) ?? {};
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
   const decodedGameId = safeDecodeRouteSegment(gameId) ?? gameId;
@@ -23,6 +26,8 @@ export default async function AnalysisPage({
   const hasMoves = review.moves.length > 0;
   const hasAnalysis = Boolean(review.analysis);
   const statusLabel = hasAnalysis ? `${review.source.toUpperCase()} review` : "No saved review";
+  const selectedMoveIndex = normalizeSelectedMoveIndex(query.ply, review.moves);
+  const selectedMove = review.moves[selectedMoveIndex] ?? null;
 
   return (
     <section className="analysis-page mx-auto grid max-w-5xl gap-5">
@@ -77,36 +82,33 @@ export default async function AnalysisPage({
             <BarChart3 size={18} />
             Review tools
           </h2>
-          <div className="analysis-review-controls" aria-label="Review playback controls">
-            <button type="button" disabled={!hasMoves} title={hasMoves ? "Jump to the first saved position." : "First move unlocks when this game has saved move history."}>
-              <SkipBack size={15} />
-              First
-            </button>
-            <button type="button" disabled={!hasMoves} title={hasMoves ? "Replay saved positions from the beginning." : "Playback unlocks after a completed game is saved."}>
-              <Play size={15} />
-              Play
-            </button>
-            <button type="button" disabled={!hasMoves} title={hasMoves ? "Step to the next saved move." : "Next move unlocks when review snapshots are available."}>
-              <SkipForward size={15} />
-              Next
-            </button>
-          </div>
+          {hasMoves ? <ReviewPlaybackLinks gameId={decodedGameId} locale={locale} moves={review.moves} selectedMoveIndex={selectedMoveIndex} /> : <EmptyReviewPlaybackControls />}
           {hasMoves ? (
-            <ol className="analysis-move-list" aria-label="Saved move timeline">
-              {review.moves.slice(0, 16).map((move) => (
-                <li key={`${move.gameId}-${move.ply}`}>
-                  <strong>{move.ply}.</strong>
-                  <span>{move.notation || "Saved move"}</span>
-                </li>
-              ))}
-            </ol>
+            <>
+              {selectedMove ? (
+                <div className="analysis-selected-move" aria-label="Selected move">
+                  <strong>Ply {selectedMove.ply}</strong>
+                  <span>{selectedMove.notation || "Saved move"}</span>
+                </div>
+              ) : null}
+              <ol className="analysis-move-list" aria-label="Saved move timeline">
+                {review.moves.slice(0, 16).map((move) => (
+                  <li key={`${move.gameId}-${move.ply}`} className={selectedMove?.ply === move.ply ? "is-active" : undefined}>
+                    <Link href={analysisPlyHref(locale, decodedGameId, move.ply) as never} className="focus-ring">
+                      <strong>{move.ply}.</strong>
+                      <span>{move.notation || "Saved move"}</span>
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+            </>
           ) : (
             <div className="analysis-review-rows">
               <span>Move timeline</span>
               <span>Best / excellent / mistake / blunder labels</span>
               <span>
-              <Pause size={14} />
-              Playback controls unlock after saved moves
+                <Pause size={14} />
+                Playback controls unlock after saved moves
               </span>
               <span>Position notes and engine-ready explanations</span>
             </div>
@@ -115,4 +117,71 @@ export default async function AnalysisPage({
       </div>
     </section>
   );
+}
+
+function EmptyReviewPlaybackControls() {
+  return (
+    <div className="analysis-review-controls" aria-label="Review playback controls">
+      <button type="button" disabled title="First move unlocks when this game has saved move history.">
+        <SkipBack size={15} />
+        First
+      </button>
+      <button type="button" disabled title="Playback unlocks after a completed game is saved.">
+        <Play size={15} />
+        Play
+      </button>
+      <button type="button" disabled title="Next move unlocks when review snapshots are available.">
+        <SkipForward size={15} />
+        Next
+      </button>
+    </div>
+  );
+}
+
+function ReviewPlaybackLinks({
+  gameId,
+  locale,
+  moves,
+  selectedMoveIndex
+}: {
+  gameId: string;
+  locale: string;
+  moves: RuntimeAnalysisMoves;
+  selectedMoveIndex: number;
+}) {
+  const firstMove = moves[0];
+  const previousMove = moves[Math.max(0, selectedMoveIndex - 1)];
+  const nextMove = moves[Math.min(moves.length - 1, selectedMoveIndex + 1)];
+
+  return (
+    <div className="analysis-review-controls" aria-label="Review playback controls">
+      <Link href={analysisPlyHref(locale, gameId, firstMove?.ply ?? 1) as never} className="focus-ring" title="Jump to the first saved position.">
+        <SkipBack size={15} />
+        First
+      </Link>
+      <Link href={analysisPlyHref(locale, gameId, previousMove?.ply ?? firstMove?.ply ?? 1) as never} className="focus-ring" title="Step to the previous saved move.">
+        <Pause size={15} />
+        Previous
+      </Link>
+      <Link href={analysisPlyHref(locale, gameId, nextMove?.ply ?? firstMove?.ply ?? 1) as never} className="focus-ring" title="Step to the next saved move.">
+        <SkipForward size={15} />
+        Next
+      </Link>
+    </div>
+  );
+}
+
+type RuntimeAnalysisMoves = Awaited<ReturnType<typeof getRuntimeAnalysisReview>>["moves"];
+
+function normalizeSelectedMoveIndex(value: string | undefined, moves: RuntimeAnalysisMoves) {
+  if (!moves.length) return 0;
+  const requestedPly = Number.parseInt(value ?? "", 10);
+  if (!Number.isFinite(requestedPly)) return 0;
+  const requestedIndex = moves.findIndex((move) => move.ply === requestedPly);
+
+  return requestedIndex >= 0 ? requestedIndex : 0;
+}
+
+function analysisPlyHref(locale: string, gameId: string, ply: number) {
+  return `/${locale}/analysis/${encodeURIComponent(gameId)}?ply=${ply}`;
 }
