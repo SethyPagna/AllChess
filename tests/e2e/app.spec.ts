@@ -214,6 +214,7 @@ test("analysis empty review controls are explicit and disabled", async ({ page }
   await expect(page.getByLabel("Review playback controls").getByRole("button", { name: "First" })).toBeDisabled();
   await expect(page.getByLabel("Review playback controls").getByRole("button", { name: "Play" })).toBeDisabled();
   await expect(page.getByLabel("Review playback controls").getByRole("button", { name: "Next" })).toBeDisabled();
+  await expect(page.getByLabel("Review playback controls").getByRole("button", { name: "Last" })).toBeDisabled();
   await expect(page.getByText("Playback controls unlock after saved moves")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });

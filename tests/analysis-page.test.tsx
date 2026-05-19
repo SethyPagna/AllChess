@@ -84,7 +84,7 @@ describe("analysis page review navigation", () => {
 
     expect(markup).toContain("Saved review");
     expect(markup).toContain("Selected move");
-    expect(markup).toContain("Ply 2");
+    expect(markup).toContain("Ply 2 of 3");
     expect(markup).toContain("/en/analysis/game-1?ply=1");
     expect(markup).toContain("/en/analysis/game-1?ply=2");
     expect(markup).toContain("/en/analysis/game-1?ply=3");

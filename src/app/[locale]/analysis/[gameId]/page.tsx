@@ -88,7 +88,9 @@ export default async function AnalysisPage({
             <>
               {selectedMove ? (
                 <div className="analysis-selected-move" aria-label="Selected move">
-                  <strong>Ply {selectedMove.ply}</strong>
+                  <strong>
+                    Ply {selectedMove.ply} of {review.moves.length}
+                  </strong>
                   <span>{selectedMove.notation || "Saved move"}</span>
                 </div>
               ) : null}
