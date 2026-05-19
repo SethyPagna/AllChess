@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
-import { getRuntimeRecentHistory } from "@/lib/history/runtime";
+import { getRuntimeRecentHistory, type HistoryResultFilter } from "@/lib/history/runtime";
 import { createInitialState } from "@/lib/variants";
 
 const createGameSchema = z.object({
@@ -14,7 +14,9 @@ const createGameSchema = z.object({
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const limit = Number.parseInt(url.searchParams.get("limit") ?? "20", 10);
-  return NextResponse.json(await getRuntimeRecentHistory(Number.isFinite(limit) ? limit : 20));
+  const query = url.searchParams.get("q") ?? undefined;
+  const result = url.searchParams.get("result") ?? undefined;
+  return NextResponse.json(await getRuntimeRecentHistory(Number.isFinite(limit) ? limit : 20, { query, result: result as HistoryResultFilter | undefined }));
 }
 
 export async function POST(request: Request) {

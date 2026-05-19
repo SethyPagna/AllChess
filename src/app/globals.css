@@ -3135,6 +3135,7 @@ select {
   display: inline-flex;
   min-height: 2.3rem;
   align-items: center;
+  justify-content: center;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--surface-strong);
@@ -3142,6 +3143,23 @@ select {
   color: var(--muted);
   font-size: 0.84rem;
   font-weight: 850;
+}
+
+.record-filter-select {
+  min-height: 2.3rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  padding: 0 0.7rem;
+  color: var(--text);
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.record-filter-chip:disabled,
+.record-filter-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.66;
 }
 
 .account-profile-hero {

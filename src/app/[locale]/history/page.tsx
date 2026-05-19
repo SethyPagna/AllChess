@@ -2,19 +2,27 @@ import Link from "next/link";
 import { BarChart3, History, Play, Search } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
-import { getRuntimeRecentHistory, type RuntimeRecentHistory } from "@/lib/history/runtime";
+import { getRuntimeRecentHistory, type HistoryResultFilter, type RuntimeRecentHistory } from "@/lib/history/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { playSetupHref } from "@/lib/routing/play-links";
 
 export const dynamic = "force-dynamic";
 
-export default async function HistoryPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function HistoryPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ q?: string; result?: string }>;
+}) {
   const { locale: rawLocale } = await params;
+  const query = await searchParams;
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
-  const history = await getRuntimeRecentHistory(20);
-  const hasResults = history.results.length > 0;
+  const history = await getRuntimeRecentHistory(20, { query: query?.q, result: query?.result as HistoryResultFilter | undefined });
+  const hasSavedRows = history.totalResults > 0;
+  const hasVisibleResults = history.results.length > 0;
 
   return (
     <section className="records-page grid gap-4">
@@ -22,27 +30,36 @@ export default async function HistoryPage({ params }: { params: Promise<{ locale
         <h1 className="text-3xl font-black">{t("history.title")}</h1>
         <InfoHint text={t("history.subtitle")} />
       </div>
-      <div className="record-filter-row panel is-empty" aria-label="History filters">
-        <label className="catalog-search" title="Search unlocks when saved match records exist.">
+      <form className={`record-filter-row panel ${hasSavedRows ? "" : "is-empty"}`} aria-label="History filters">
+        <label className="catalog-search" title={hasSavedRows ? "Search saved games by game, variant, opponent, mode, or result." : "Search unlocks when saved match records exist."}>
           <Search size={18} />
           <span className="sr-only">Search history</span>
-          <input aria-label="Search history" disabled placeholder="Search unlocks after saved matches" />
+          <input aria-label="Search history" name="q" defaultValue={history.filters.query} disabled={!hasSavedRows} placeholder={hasSavedRows ? "Search saved games" : "Search unlocks after saved matches"} />
         </label>
-        <span className="record-filter-chip" aria-disabled="true">All games</span>
+        <select className="record-filter-select" name="result" aria-label="Filter history result" disabled={!hasSavedRows} defaultValue={history.filters.result}>
+          <option value="all">All games</option>
+          <option value="win">Wins</option>
+          <option value="loss">Losses</option>
+          <option value="draw">Draws</option>
+          <option value="unfinished">Unfinished</option>
+        </select>
+        <button type="submit" className="focus-ring record-filter-chip" disabled={!hasSavedRows}>
+          Search
+        </button>
         <span className="record-filter-chip" aria-disabled="true">Recent first</span>
-      </div>
-      {hasResults ? <RecentHistoryList history={history} locale={locale} /> : <HistoryEmptyState locale={locale} />}
+      </form>
+      {hasVisibleResults ? <RecentHistoryList history={history} locale={locale} /> : <HistoryEmptyState locale={locale} hasSavedRows={hasSavedRows} />}
     </section>
   );
 }
 
-function HistoryEmptyState({ locale }: { locale: string }) {
+function HistoryEmptyState({ locale, hasSavedRows }: { locale: string; hasSavedRows: boolean }) {
   return (
     <div className="panel account-empty-state">
       <History size={24} />
-      <h2>No saved matches yet</h2>
-      <p>Saved games, review links, and rating changes appear here after real matches.</p>
-      <InfoHint text="History uses stored match data only. It stays empty until Cloudflare D1 has a real finished game for this account." />
+      <h2>{hasSavedRows ? "No matching games" : "No saved matches yet"}</h2>
+      <p>{hasSavedRows ? "Try a different search or result filter." : "Saved games, review links, and rating changes appear here after real matches."}</p>
+      <InfoHint text={hasSavedRows ? "Search filters only the saved Cloudflare D1 match rows already available." : "History uses stored match data only. It stays empty until Cloudflare D1 has a real finished game for this account."} />
       <div className="watch-actions">
         <Link className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2" href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never}>
           <Play size={16} />

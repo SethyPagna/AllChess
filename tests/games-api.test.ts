@@ -41,6 +41,25 @@ function createRecentGamesD1() {
                     duration_ms: 540000,
                     completed_at: "2026-05-18T01:00:00.000Z",
                     created_at: "2026-05-18T00:30:00.000Z"
+                  },
+                  {
+                    id: "result-2",
+                    profile_id: "profile-2",
+                    game_id: "game-2",
+                    family_key: "chess-family",
+                    variant_key: "xiangqi",
+                    time_control_key: "blitz",
+                    mode: "online",
+                    opponent_profile_id: "profile-3",
+                    opponent_type: "user",
+                    result: "loss",
+                    outcome_reason: "timeout",
+                    rated: 0,
+                    rating_delta: null,
+                    moves_played: 31,
+                    duration_ms: 210000,
+                    completed_at: "2026-05-18T02:00:00.000Z",
+                    created_at: "2026-05-18T01:30:00.000Z"
                   }
                 ]
               };
@@ -60,7 +79,7 @@ describe("games API", () => {
 
     const response = await GET(new Request("http://allchess.test/api/games"));
 
-    await expect(response.json()).resolves.toEqual({ source: "empty-live-data", results: [] });
+    await expect(response.json()).resolves.toEqual({ source: "empty-live-data", results: [], totalResults: 0, filters: { query: "", result: "all" } });
   });
 
   test("returns recent saved D1 results", async () => {
@@ -71,12 +90,29 @@ describe("games API", () => {
 
     await expect(response.json()).resolves.toMatchObject({
       source: "d1",
-      results: [expect.objectContaining({ gameId: "game-1", variantKey: "classic", result: "win" })]
+      totalResults: 2,
+      results: [
+        expect.objectContaining({ gameId: "game-1", variantKey: "classic", result: "win" }),
+        expect.objectContaining({ gameId: "game-2", variantKey: "xiangqi", result: "loss" })
+      ]
     });
     expect(calls).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ sql: expect.stringContaining("from profile_game_results"), values: [5] })
+        expect.objectContaining({ sql: expect.stringContaining("from profile_game_results"), values: [100] })
       ])
     );
+  });
+
+  test("filters recent saved results by query and result", async () => {
+    const { db } = createRecentGamesD1();
+    runtime.env = { ALLCHESS_D1: db };
+
+    const response = await GET(new Request("http://allchess.test/api/games?limit=5&q=xiangqi&result=loss"));
+
+    await expect(response.json()).resolves.toMatchObject({
+      source: "d1",
+      filters: { query: "xiangqi", result: "loss" },
+      results: [expect.objectContaining({ gameId: "game-2", variantKey: "xiangqi", result: "loss" })]
+    });
   });
 });
