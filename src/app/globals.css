@@ -3683,22 +3683,22 @@ select {
   white-space: nowrap;
 }
 
-.practice-bot-metrics {
+.bot-training-metrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
   gap: 0.65rem;
   padding: 0.75rem;
 }
 
-.practice-bot-metrics div {
+.bot-training-metrics div {
   min-width: 0;
   border-radius: 0.55rem;
   background: var(--surface-strong);
   padding: 0.75rem;
 }
 
-.practice-bot-metrics span,
-.practice-bot-metrics small {
+.bot-training-metrics span,
+.bot-training-metrics small {
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -3707,7 +3707,7 @@ select {
   font-weight: 850;
 }
 
-.practice-bot-metrics strong {
+.bot-training-metrics strong {
   display: block;
   margin: 0.2rem 0 0.1rem;
   overflow-wrap: anywhere;
@@ -4263,7 +4263,7 @@ select {
   .leaderboard-feature-grid,
   .leaderboard-family-list > div,
   .account-stat-grid,
-  .practice-bot-metrics {
+  .bot-training-metrics {
     grid-template-columns: 1fr;
   }
 

@@ -36,7 +36,7 @@ export default async function VariantsPage({
         <span>{stats.learnGames} guides</span>
         <span>{stats.comingSoonGames} building</span>
       </div>
-      <div className="panel practice-bot-metrics" aria-label="Bot training status">
+      <div className="panel bot-training-metrics" aria-label="Bot training status">
         <div>
           <span>
             <Database size={16} />
