@@ -6,6 +6,7 @@ import { displayGameName, displayRulesReadiness, gameFamilies, getCatalogStats }
 import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { getRuntimeLiveStats } from "@/lib/realtime/runtime";
 import { playGameHref, playSetupHref } from "@/lib/routing/play-links";
 import { createDefaultStats } from "@/lib/stats";
 
@@ -15,11 +16,11 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
-  const catalog = await getRuntimeCatalogEntries();
+  const [catalog, liveStats] = await Promise.all([getRuntimeCatalogEntries(), getRuntimeLiveStats()]);
   const stats = getCatalogStats(catalog);
   const featured = catalog.filter((entry) => entry.playability === "playable").slice(0, 6);
   const familyHighlights = gameFamilies.slice(0, 6);
-  const siteStats = createDefaultStats();
+  const siteStats = createDefaultStats(liveStats);
   const lobbyActions = [
     { Icon: Swords, title: t("lobby.quickPair"), href: playSetupHref(locale, { mode: "matchmaking", time: "rapid" }), body: "Find an even opponent by rating and preferred time control." },
     { Icon: Lock, title: t("lobby.privateRoom"), href: playSetupHref(locale, { mode: "room", time: "rapid" }), body: "Create a shareable room code for friends." },

@@ -2,11 +2,8 @@ import Link from "next/link";
 import { Eye, Radio, Search, Swords, Trophy, Users } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
-import { createD1GameRepository } from "@/lib/cloudflare/d1";
-import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { createDemoLiveStats } from "@/lib/realtime/rooms";
-import { getRuntimeRoomList } from "@/lib/realtime/runtime";
+import { getRuntimeLiveStats, getRuntimeRoomList } from "@/lib/realtime/runtime";
 import { playSetupHref } from "@/lib/routing/play-links";
 
 export const dynamic = "force-dynamic";
@@ -14,8 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function WatchPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
-  const env = await getCloudflareRuntimeEnv();
-  const [stats, roomList] = await Promise.all([env.ALLCHESS_D1 ? createD1GameRepository(env.ALLCHESS_D1).getLiveStats() : createDemoLiveStats(), getRuntimeRoomList(12)]);
+  const [stats, roomList] = await Promise.all([getRuntimeLiveStats(), getRuntimeRoomList(12)]);
   const hasRooms = roomList.rooms.length > 0;
 
   return (
