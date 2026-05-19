@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { safeDecodeRouteSegment } from "@/lib/api/route-params";
+import { safeDecodeRouteSegment } from "@/lib/routing/params";
 import { getGameCatalogEntry, serializeCatalogEntry } from "@/lib/catalog";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ gameId: string }> }) {

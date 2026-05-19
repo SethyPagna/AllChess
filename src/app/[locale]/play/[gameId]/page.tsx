@@ -1,9 +1,9 @@
 import { notFound } from "next/navigation";
 
 import { GameBoard } from "@/components/game-board";
-import { safeDecodeRouteSegment } from "@/lib/api/route-params";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { parsePlayMode, parseQueryFlag, safeDecodeRouteSegment } from "@/lib/routing/params";
 import { getVariantRuleSummary } from "@/lib/rules-atlas";
 import { getVariant } from "@/lib/variants";
 
@@ -27,8 +27,8 @@ export default async function PlayPage({
   } catch {
     notFound();
   }
-  const rawMode = Array.isArray(query.mode) ? query.mode[0] : query.mode;
-  const initialPlayMode = ["online", "bot", "offline", "room", "matchmaking", "spectate"].includes(rawMode ?? "") ? rawMode : undefined;
+  const initialPlayMode = parsePlayMode(query.mode);
+  const initialBotMode = parseQueryFlag(query.bot) || initialPlayMode === "bot" ? "opponent" : "human";
 
   return (
     <section className="play-arena">
@@ -36,8 +36,8 @@ export default async function PlayPage({
         <GameBoard
           variantKey={variant.key}
           rulesSummary={getVariantRuleSummary(variant.key)}
-          initialBotMode={query.bot || initialPlayMode === "bot" ? "opponent" : "human"}
-          initialPlayMode={initialPlayMode as "online" | "bot" | "offline" | "room" | "matchmaking" | "spectate" | undefined}
+          initialBotMode={initialBotMode}
+          initialPlayMode={initialPlayMode}
           title={t(variant.nameKey)}
           meta={formatPlayMeta(variant)}
           objective={variant.objective}
@@ -46,7 +46,6 @@ export default async function PlayPage({
     </section>
   );
 }
-
 function formatPlayMeta(variant: ReturnType<typeof getVariant>) {
   const engineLabel = variant.engineProtocol === "internal" ? "AllChess bot" : "Engine-assisted bot";
   return `Rules checked / ${engineLabel}`;

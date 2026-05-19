@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { parseBoundedInteger, safeDecodeRouteSegment } from "@/lib/api/route-params";
+import { parseBoundedInteger, safeDecodeRouteSegment } from "@/lib/routing/params";
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
 

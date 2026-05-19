@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { parseCatalogFamily, parsePlayabilityStatus } from "@/lib/api/route-params";
+import { parseCatalogFamily, parsePlayabilityStatus } from "@/lib/routing/params";
 import { getCatalogStats, getGameCatalog, searchGameCatalog, serializeCatalogEntry } from "@/lib/catalog";
 
 export async function GET(request: Request) {

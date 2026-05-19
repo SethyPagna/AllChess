@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { parseBoundedInteger, parseCatalogFamily, parsePlayabilityStatus, safeDecodeRouteSegment } from "@/lib/api/route-params";
+import { parseBoundedInteger, parseCatalogFamily, parsePlayabilityStatus, parsePlayMode, parseQueryFlag, safeDecodeRouteSegment } from "@/lib/routing/params";
 
 describe("API route parameter guards", () => {
   test("parses only known catalog filters", () => {
@@ -17,4 +17,12 @@ describe("API route parameter guards", () => {
     expect(parseBoundedInteger("bad", 20, { min: 1, max: 100 })).toBe(20);
   });
 
+  test("parses play modes and bot query flags narrowly", () => {
+    expect(parsePlayMode("bot")).toBe("bot");
+    expect(parsePlayMode(["spectate", "bot"])).toBe("spectate");
+    expect(parsePlayMode("broken", "online")).toBe("online");
+    expect(parseQueryFlag("normal")).toBe(true);
+    expect(parseQueryFlag("0")).toBe(false);
+    expect(parseQueryFlag(["yes", "0"])).toBe(true);
+  });
 });

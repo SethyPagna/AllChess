@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { safeDecodeRouteSegment } from "@/lib/api/route-params";
+import { safeDecodeRouteSegment } from "@/lib/routing/params";
 import { getGameCatalogEntry } from "@/lib/catalog";
 import { getVariantRuleSummary } from "@/lib/rules-atlas";
 

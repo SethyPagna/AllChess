@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, BookOpen, Bot, ExternalLink, Play } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
-import { safeDecodeRouteSegment } from "@/lib/api/route-params";
+import { safeDecodeRouteSegment } from "@/lib/routing/params";
 import { displayBotReadiness, displayGameName, displayPiecePresentation, displayPlayabilityStatus, displayRulesReadiness, gameFamilies, getGameCatalogEntry } from "@/lib/catalog";
 import { listBotTrainingReadiness } from "@/lib/bot/training";
 import { normalizeLocale } from "@/lib/i18n/locales";

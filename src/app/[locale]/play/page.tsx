@@ -6,8 +6,7 @@ import { InfoHint } from "@/components/info-hint";
 import { PlayGamePicker } from "@/components/play-game-picker";
 import { getGameCatalog } from "@/lib/catalog";
 import { normalizeLocale } from "@/lib/i18n/locales";
-
-type PlayModeKey = "online" | "bot" | "offline" | "room" | "matchmaking" | "spectate";
+import { parsePlayMode, type PlayModeKey } from "@/lib/routing/params";
 
 const playModes: Array<{ key: PlayModeKey; label: string; description: string; Icon: LucideIcon }> = [
   { key: "online", label: "Online", description: "Queue for a live opponent with matching settings.", Icon: Globe2 },
@@ -41,7 +40,7 @@ export default async function PlaySetupPage({
   const { locale: rawLocale } = await params;
   const query = await searchParams;
   const locale = normalizeLocale(rawLocale);
-  const selectedMode = normalizePlayMode(query?.mode);
+  const selectedMode = parsePlayMode(query?.mode, "online") ?? "online";
   const selectedModeLabel = playModes.find((mode) => mode.key === selectedMode)?.label ?? "Online";
   const playable = getGameCatalog().filter((entry) => entry.playability === "playable" && entry.variantKey);
 
@@ -103,9 +102,4 @@ export default async function PlaySetupPage({
       </div>
     </section>
   );
-}
-
-function normalizePlayMode(mode: string | undefined): PlayModeKey {
-  if (mode === "bot" || mode === "offline" || mode === "room" || mode === "matchmaking" || mode === "spectate") return mode;
-  return "online";
 }
