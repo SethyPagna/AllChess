@@ -395,6 +395,53 @@ describe("D1 persistence", () => {
     );
   });
 
+  test("loads distinct recent saved game results", async () => {
+    const { db, calls } = createMockD1(
+      {},
+      {
+        "from profile_game_results": [
+          {
+            id: "result-1",
+            profile_id: "profile-1",
+            game_id: "game-1",
+            family_key: "chess-family",
+            variant_key: "classic",
+            time_control_key: "rapid",
+            mode: "bot",
+            opponent_profile_id: "bot-grandmaster",
+            opponent_type: "bot",
+            result: "win",
+            outcome_reason: "checkmate",
+            rated: 1,
+            rating_delta: 14,
+            moves_played: 63,
+            duration_ms: 540000,
+            completed_at: "2026-05-18T01:00:00.000Z",
+            created_at: "2026-05-18T00:30:00.000Z"
+          }
+        ]
+      }
+    );
+    const repository = createD1GameRepository(db);
+
+    await expect(repository.getRecentGameResults(7)).resolves.toEqual([
+      expect.objectContaining({
+        id: "result-1",
+        gameId: "game-1",
+        variantKey: "classic",
+        result: "win"
+      })
+    ]);
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          sql: expect.stringContaining("group by game_id"),
+          values: [7]
+        })
+      ])
+    );
+  });
+
   test("loads profile game stat summaries from normalized rows", async () => {
     const { db, calls } = createMockD1(
       {},

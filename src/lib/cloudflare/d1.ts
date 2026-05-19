@@ -179,6 +179,7 @@ export type GameRepository = {
   saveProfileGameResult(input: SaveProfileGameResultInput): Promise<void>;
   getProfileGameStats(profileId: string): Promise<ProfileGameStatsSnapshot[]>;
   getProfileGameResults(profileId: string, limit?: number): Promise<ProfileGameResultSnapshot[]>;
+  getRecentGameResults(limit?: number): Promise<ProfileGameResultSnapshot[]>;
   saveBotBenchmark(input: SaveBotBenchmarkInput): Promise<void>;
   saveAnalysis(input: {
     id: string;
@@ -645,6 +646,25 @@ export function createD1GameRepository(db: D1Database): GameRepository {
            limit ?`
         )
         .bind(profileId, Math.max(1, Math.min(limit, 100)))
+        .all<ProfileGameResultRow>();
+      return (rows.results ?? []).map(toProfileGameResultSnapshot);
+    },
+
+    async getRecentGameResults(limit = 20) {
+      const rows = await db
+        .prepare(
+          `select id, profile_id, game_id, family_key, variant_key, time_control_key, mode, opponent_profile_id,
+            opponent_type, result, outcome_reason, rated, rating_delta, moves_played, duration_ms, completed_at, created_at
+           from profile_game_results
+           where id in (
+             select min(id)
+             from profile_game_results
+             group by game_id
+           )
+           order by coalesce(completed_at, created_at) desc
+           limit ?`
+        )
+        .bind(Math.max(1, Math.min(limit, 100)))
         .all<ProfileGameResultRow>();
       return (rows.results ?? []).map(toProfileGameResultSnapshot);
     },

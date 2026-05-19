@@ -3,12 +3,19 @@ import { z } from "zod";
 
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
+import { getRuntimeRecentHistory } from "@/lib/history/runtime";
 import { createInitialState } from "@/lib/variants";
 
 const createGameSchema = z.object({
   variantKey: z.string().default("classic"),
   privateRoom: z.boolean().default(false)
 });
+
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const limit = Number.parseInt(url.searchParams.get("limit") ?? "20", 10);
+  return NextResponse.json(await getRuntimeRecentHistory(Number.isFinite(limit) ? limit : 20));
+}
 
 export async function POST(request: Request) {
   const body = createGameSchema.parse(await request.json().catch(() => ({})));
