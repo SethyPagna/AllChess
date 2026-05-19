@@ -8,6 +8,8 @@ import { normalizeLocale } from "@/lib/i18n/locales";
 import { createDemoLiveStats } from "@/lib/realtime/rooms";
 import { playSetupHref } from "@/lib/routing/play-links";
 
+export const dynamic = "force-dynamic";
+
 export default async function WatchPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
