@@ -3045,6 +3045,15 @@ select {
   flex: 1 1 18rem;
 }
 
+.record-filter-row.is-empty {
+  opacity: 0.78;
+}
+
+.record-filter-row.is-empty .catalog-search,
+.record-filter-row.is-empty .record-filter-chip {
+  cursor: not-allowed;
+}
+
 .record-filter-chip {
   display: inline-flex;
   min-height: 2.3rem;
@@ -3316,6 +3325,12 @@ select {
   background: transparent;
   color: var(--foreground);
   outline: 0;
+}
+
+.catalog-search input:disabled,
+.catalog-select select:disabled {
+  color: var(--muted);
+  cursor: not-allowed;
 }
 
 .catalog-grid {
