@@ -117,7 +117,12 @@ describe("universal game catalog", () => {
     });
 
     const families = await familiesGet();
-    await expect(families.json()).resolves.toMatchObject({ families: expect.arrayContaining([expect.objectContaining({ key: "mancala", games: expect.any(Number) })]) });
+    await expect(families.json()).resolves.toMatchObject({
+      families: expect.arrayContaining([
+        expect.objectContaining({ key: "mancala", games: stats.familyCounts.mancala }),
+        expect.objectContaining({ key: "chess-family", games: stats.familyCounts["chess-family"] })
+      ])
+    });
 
     const leaderboards = await leaderboardsGet();
     await expect(leaderboards.json()).resolves.toMatchObject({ source: "empty-live-data", leaderboards: [] });
