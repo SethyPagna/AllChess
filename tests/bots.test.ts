@@ -98,6 +98,25 @@ describe("bot difficulty ladder", () => {
     expect(legend.to).toEqual({ row: 1, col: 1 });
   });
 
+  test("lower tiers avoid simple bad trades with major pieces", () => {
+    let state = createInitialState("classic", "bad-trade-filter");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[0][0].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[1][5].piece = { id: "black-knight", code: "n", owner: "black", labelKey: "chess.knight" };
+    state.board[3][4].piece = { id: "black-pawn", code: "p", owner: "black", labelKey: "chess.pawn" };
+    state.board[4][3].piece = { id: "white-queen", code: "q", owner: "white", labelKey: "chess.queen" };
+    state.board[7][7].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+
+    const defendedPawnCapture = { from: { row: 4, col: 3 }, to: { row: 3, col: 4 } };
+
+    expect(chooseBotMove(state, "easy", { engine: "internal", maxSearchTimeMs: 80 })).not.toMatchObject(defendedPawnCapture);
+    expect(chooseBotMove(state, "normal", { engine: "internal", maxSearchTimeMs: 80 })).not.toMatchObject(defendedPawnCapture);
+  });
+
   test("legend difficulty values promotion as a decisive strategic gain", () => {
     let state = createInitialState("classic", "bot-promotion");
     state = {
