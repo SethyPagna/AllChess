@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { GameBoard } from "@/components/game-board";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { parseBotDifficulty, parsePlayMode, parseQueryFlag, safeDecodeRouteSegment } from "@/lib/routing/params";
+import { parseBotDifficulty, parsePlayMode, parseQueryFlag, parseTimeControl, safeDecodeRouteSegment } from "@/lib/routing/params";
 import { getVariantRuleSummary } from "@/lib/rules-atlas";
 import { getVariant } from "@/lib/variants";
 
@@ -29,6 +29,7 @@ export default async function PlayPage({
   }
   const initialPlayMode = parsePlayMode(query.mode);
   const initialBotDifficulty = parseBotDifficulty(query.bot);
+  const initialTimeControl = parseTimeControl(query.time ?? query.clock);
   const initialBotMode = initialBotDifficulty || parseQueryFlag(query.bot) || initialPlayMode === "bot" ? "opponent" : "human";
 
   return (
@@ -40,6 +41,7 @@ export default async function PlayPage({
           initialBotMode={initialBotMode}
           initialBotDifficulty={initialBotDifficulty}
           initialPlayMode={initialPlayMode}
+          initialTimeControl={initialTimeControl}
           title={t(variant.nameKey)}
           meta={formatPlayMeta(variant)}
           objective={variant.objective}

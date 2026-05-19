@@ -24,10 +24,10 @@ const workflowSteps = [
 ];
 
 const quickActions = [
-  { label: "Play 10 min", detail: "Rapid setup", Icon: Clock3, hrefSuffix: "?mode=online" },
-  { label: "New Game", detail: "Classic setup", Icon: Swords, hrefSuffix: "?mode=offline" },
-  { label: "Bot Mode", detail: "Choose tier", Icon: Bot, hrefSuffix: "?bot=normal&mode=bot" },
-  { label: "Play a Friend", detail: "Room invite", Icon: Handshake, hrefSuffix: "?mode=room" }
+  { label: "Play 10 min", detail: "Rapid setup", Icon: Clock3, hrefSuffix: "?mode=online&time=rapid" },
+  { label: "New Game", detail: "Classic local setup", Icon: Swords, hrefSuffix: "?mode=offline&time=rapid" },
+  { label: "Bot Mode", detail: "Choose tier and clock", Icon: Bot, hrefSuffix: "?bot=normal&mode=bot&time=rapid" },
+  { label: "Play a Friend", detail: "Room invite", Icon: Handshake, hrefSuffix: "?mode=room&time=rapid" }
 ];
 
 export default async function PlaySetupPage({
@@ -54,7 +54,7 @@ export default async function PlaySetupPage({
             <InfoHint text="Pick a mode, then choose game, side, time, and bot tier before the board starts." />
           </div>
         </div>
-        <Link href={`/${locale}/play/classic?bot=normal&mode=bot`} className="focus-ring action-primary inline-flex items-center gap-2 px-4 py-3">
+        <Link href={`/${locale}/play/classic?bot=normal&mode=bot&time=rapid`} className="focus-ring action-primary inline-flex items-center gap-2 px-4 py-3">
           <Bot size={18} />
           Quick bot game
         </Link>

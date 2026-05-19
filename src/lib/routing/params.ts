@@ -1,5 +1,6 @@
 import { botDifficultyLevels, type BotDifficultyKey } from "@/lib/bot/config";
 import { gameFamilies, type GameFamilyKey, type PlayabilityStatus } from "@/lib/catalog";
+import { timeControls, type TimeControlKey } from "@/lib/game/time-controls";
 
 const playabilityStatuses: PlayabilityStatus[] = ["playable", "learn", "coming-soon"];
 const playModes = ["online", "bot", "offline", "room", "matchmaking", "spectate"] as const;
@@ -32,6 +33,12 @@ export function parseBotDifficulty(value: string | string[] | undefined, fallbac
   const difficulty = Array.isArray(value) ? value[0] : value;
   if (!difficulty) return fallback;
   return botDifficultyLevels.some((level) => level.key === difficulty) ? (difficulty as BotDifficultyKey) : fallback;
+}
+
+export function parseTimeControl(value: string | string[] | undefined, fallback?: TimeControlKey): TimeControlKey | undefined {
+  const timeControl = Array.isArray(value) ? value[0] : value;
+  if (!timeControl) return fallback;
+  return timeControls.some((control) => control.key === timeControl) ? (timeControl as TimeControlKey) : fallback;
 }
 
 export function parseBoundedInteger(value: string | null, fallback: number, options: { min: number; max: number }) {

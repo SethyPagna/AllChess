@@ -90,6 +90,7 @@ export function GameBoard({
   initialBotMode = "human",
   initialBotDifficulty = "normal",
   initialPlayMode,
+  initialTimeControl = "rapid",
   title = "Game",
   meta = "AllChess",
   objective = "Play a legal game."
@@ -100,12 +101,13 @@ export function GameBoard({
   initialBotMode?: BotMode;
   initialBotDifficulty?: BotDifficultyKey;
   initialPlayMode?: PlayMode;
+  initialTimeControl?: TimeControlKey;
   title?: string;
   meta?: string;
   objective?: string;
 }) {
-  const [timeControl, setTimeControl] = useState<TimeControlKey>("rapid");
-  const [state, setState] = useState(() => withTimeControl(initialState ?? createInitialState(variantKey), "rapid"));
+  const [timeControl, setTimeControl] = useState<TimeControlKey>(initialTimeControl);
+  const [state, setState] = useState(() => withTimeControl(initialState ?? createInitialState(variantKey), initialTimeControl));
   const [history, setHistory] = useState<GameState[]>([]);
   const [future, setFuture] = useState<GameState[]>([]);
   const [selected, setSelected] = useState<Square | null>(null);
@@ -115,7 +117,7 @@ export function GameBoard({
   const [botMode, setBotMode] = useState<BotMode>(initialBotMode);
   const [seatChoice, setSeatChoice] = useState<SeatChoice>("random");
   const [boardOrientation, setBoardOrientation] = useState<BoardOrientation>("auto");
-  const [humanColor, setHumanColor] = useState(() => pickHumanColor(withTimeControl(initialState ?? createInitialState(variantKey), "rapid"), "first"));
+  const [humanColor, setHumanColor] = useState(() => pickHumanColor(withTimeControl(initialState ?? createInitialState(variantKey), initialTimeControl), "first"));
   const [thinking, setThinking] = useState<ThinkingState>({ status: "idle", label: "" });
   const [suggestedMove, setSuggestedMove] = useState<SuggestedMove | null>(null);
   const [lastBotResult, setLastBotResult] = useState<BotMoveResult | null>(null);

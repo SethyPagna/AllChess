@@ -65,7 +65,7 @@ describe("compact page copy", () => {
   test("play route safely decodes game ids before loading the board", async () => {
     const element = await PlayPage({
       params: Promise.resolve({ locale: "en", gameId: "classic" }),
-      searchParams: Promise.resolve({ mode: "bot", bot: "grandmaster" })
+      searchParams: Promise.resolve({ mode: "bot", bot: "grandmaster", time: "blitz" })
     });
     const markup = renderToStaticMarkup(element);
 
@@ -73,6 +73,7 @@ describe("compact page copy", () => {
     expect(markup).toContain("Bot Mode");
     expect(markup).toContain("Bot difficulty");
     expect(markup).toContain('<option value="grandmaster" selected="">Grandmaster</option>');
+    expect(markup).toContain("Blitz 5+0");
     await expect(PlayPage({ params: Promise.resolve({ locale: "en", gameId: "%E0%A4%A" }) })).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
   });
 
