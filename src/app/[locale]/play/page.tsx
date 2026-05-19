@@ -27,7 +27,7 @@ const workflowSteps = [
 const quickActions = [
   { label: "Play 10 min", detail: "Rapid setup", Icon: Clock3, hrefSuffix: "?mode=online" },
   { label: "New Game", detail: "Classic setup", Icon: Swords, hrefSuffix: "?mode=offline" },
-  { label: "Play Bots", detail: "Choose tier", Icon: Bot, hrefSuffix: "?bot=normal&mode=bot" },
+  { label: "Bot Mode", detail: "Choose tier", Icon: Bot, hrefSuffix: "?bot=normal&mode=bot" },
   { label: "Play a Friend", detail: "Room invite", Icon: Handshake, hrefSuffix: "?mode=room" }
 ];
 

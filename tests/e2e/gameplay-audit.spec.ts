@@ -43,9 +43,9 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
 
   await page.getByLabel("Board controls").getByRole("button", { name: "Reset" }).click();
   await page.getByLabel("Side").selectOption("first");
-  await page.getByRole("button", { name: /Play Bots/ }).last().click();
+  await page.getByRole("button", { name: /Bot Mode/ }).last().click();
   await page.getByRole("button", { name: "Start Game" }).click();
-  await expect(page.getByText(/Play Bots started/i)).toBeVisible();
+  await expect(page.getByText(/Bot Mode started/i)).toBeVisible();
   await page.getByRole("button", { name: /e2.*pawn/i }).click();
   await page.getByRole("button", { name: "e4" }).click();
   await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 5000 });
@@ -163,7 +163,7 @@ test("online setup disables bot controls and shows opponent search", async ({ pa
   await expect(page.getByText("Searching for opponent").first()).toBeVisible();
   await expect(page.getByLabel("Online matchmaking status")).toContainText("Searching for opponent");
   await expect(page.getByLabel("Online matchmaking status")).toContainText("Bot difficulty and automation are paused");
-  await expect(page.getByRole("button", { name: "Play Bots" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Bot Mode" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Apply disabled" })).toBeDisabled();
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();

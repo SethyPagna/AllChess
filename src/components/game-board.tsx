@@ -49,7 +49,7 @@ type PanelTab = "setup" | "status";
 
 const playModeOptions: Array<{ key: PlayMode; label: string; description: string; Icon: typeof Swords }> = [
   { key: "online", label: "Play Online", description: "Match with a player", Icon: Swords },
-  { key: "bot", label: "Play Bots", description: "Train by tier", Icon: Bot },
+  { key: "bot", label: "Bot Mode", description: "Train by tier", Icon: Bot },
   { key: "offline", label: "Offline Local", description: "Same device", Icon: Crown },
   { key: "room", label: "Create Room", description: "Invite by code", Icon: Flag },
   { key: "matchmaking", label: "Matchmaking", description: "Queue by settings", Icon: Timer },
@@ -805,7 +805,7 @@ export function GameBoard({
                     <option value="second">{colorLabel(secondColor)}</option>
                   </select>
                 </label>
-                <label className={`play-setup-field ${!isBotPractice ? "is-disabled" : ""}`} title={isBotPractice ? "Choose how strong the bot should be." : "Bot difficulty is only used in Play Bots mode."}>
+                <label className={`play-setup-field ${!isBotPractice ? "is-disabled" : ""}`} title={isBotPractice ? "Choose how strong the bot should be." : "Bot difficulty is only used in Bot Mode."}>
                   <span>Bot difficulty</span>
                   <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)} disabled={!isBotPractice}>
                     {botDifficultyLevels.map((level) => (
@@ -885,7 +885,7 @@ export function GameBoard({
                   </button>
                   <button
                     type="button"
-                    aria-label="Play Bots"
+                    aria-label="Bot Mode"
                     title={
                       canUseBots
                         ? "Toggle bot opponent. You move your selected side; the bot replies for the other side."
