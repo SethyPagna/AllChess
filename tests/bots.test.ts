@@ -151,6 +151,22 @@ describe("bot difficulty ladder", () => {
     expect(terminalReplies.length).toBeLessThan(initialTerminalReplies.length);
   });
 
+  test("bot explanation reports immediate threat defense", async () => {
+    let state = createInitialState("king-of-the-hill", "hill-threat-explanation");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[4][2].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[7][4].piece = { id: "white-rook", code: "r", owner: "white", labelKey: "chess.rook" };
+    state.board[7][7].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+
+    const result = await requestBotMove(state, "normal", { engine: "internal", maxSearchTimeMs: 80 });
+
+    expect(result.explanation?.risk).toContain("Threat defense");
+  });
+
   test("legend difficulty values promotion as a decisive strategic gain", () => {
     let state = createInitialState("classic", "bot-promotion");
     state = {

@@ -1250,7 +1250,14 @@ function explanationForMove(source: BotKnowledgeSource, state: GameState, move: 
   const threat = target
     ? `It removes an opposing ${pieceLabel(target.code)} and looks for follow-up pressure.`
     : "It increases mobility, central control, or variant-objective pressure without relying on a single tactic.";
-  const risk = riskForMove({ movingLabel, remainsAttacked, score, tradeSafety: tradeSafetyText({ moving: moving ?? undefined, next, target: target ?? undefined, move }), wasAttacked });
+  const risk = riskForMove({
+    movingLabel,
+    remainsAttacked,
+    score,
+    terminalThreatDefense: terminalThreatDefenseText(state, next, moving?.owner, tier),
+    tradeSafety: tradeSafetyText({ moving: moving ?? undefined, next, target: target ?? undefined, move }),
+    wasAttacked
+  });
   const fallbackGoal = score !== null && score < -600 ? "If the advantage cannot be recovered, steer toward draw or stalemate-saving resources." : "If the opponent parries the main idea, keep development and defended pieces intact.";
   return { plan, threat: `${source}: ${threat}`, risk, fallbackGoal };
 }
@@ -1284,20 +1291,36 @@ function riskForMove({
   movingLabel,
   remainsAttacked,
   score,
+  terminalThreatDefense,
   tradeSafety,
   wasAttacked
 }: {
   movingLabel: string;
   remainsAttacked: boolean;
   score: number | null;
+  terminalThreatDefense?: string;
   tradeSafety?: string;
   wasAttacked: boolean;
 }) {
   if (tradeSafety) return tradeSafety;
+  if (terminalThreatDefense) return terminalThreatDefense;
   if (wasAttacked && !remainsAttacked) return `Risk reduced: the ${movingLabel} leaves immediate danger instead of staying loose.`;
   if (wasAttacked && remainsAttacked) return `Risk accepted: the ${movingLabel} is still tactically exposed, so the bot expects compensation.`;
   if (score !== null && score < -250) return "The position is worse, so the bot favors damage control and avoids forcing a losing race.";
   return "The move was filtered for immediate hanging-piece and terminal-state blunders.";
+}
+
+function terminalThreatDefenseText(state: GameState, next: GameState | null, perspective: PlayerColor | undefined, tier: BotTierKey) {
+  const difficulty = difficultyFor(tier);
+  if (!next || !perspective || !TERMINAL_THREAT_FILTER_VARIANTS.has(state.variantKey) || difficulty.skill < 8 || difficulty.skill > 14) return undefined;
+
+  const budget = createSearchBudget(Date.now(), Math.min(60, difficulty.moveTimeMs));
+  const beforeThreatState = { ...state, turn: next.turn };
+  const beforeThreats = countImmediateTerminalReplies(beforeThreatState, perspective, difficulty, budget);
+  const afterThreats = countImmediateTerminalReplies(next, perspective, difficulty, budget);
+  if (afterThreats >= beforeThreats) return undefined;
+
+  return `Threat defense: reduced opponent one-move winning replies from ${beforeThreats} to ${afterThreats}.`;
 }
 
 function tradeSafetyText({
