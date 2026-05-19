@@ -32,10 +32,10 @@ export default async function LeaderboardsPage({
         <InfoHint text={source === "d1" ? "Leaderboards read Cloudflare D1 rows. Empty boards mean no rated entries have been computed yet." : "Rated tables stay empty until real match results are recorded. No seeded players or guessed rankings."} />
       </div>
       <form className={`panel leaderboard-filter-bar ${hasComputedBoards ? "" : "is-empty"}`} aria-label="Leaderboard filters">
-        <label className="leaderboard-scope-select" title={hasComputedBoards ? "Filter computed leaderboard rows by scope." : "Scope filters unlock when rated results exist."}>
+        <label className="leaderboard-scope-select" title="Choose a leaderboard scope. Empty scopes stay visible until rated games create rows.">
           <Filter size={16} />
           <span className="sr-only">Scope</span>
-          <select name="scope" aria-label="Leaderboard scope" defaultValue={filters.scope} disabled={!hasComputedBoards}>
+          <select name="scope" aria-label="Leaderboard scope" defaultValue={filters.scope}>
             <option value="all">All scopes</option>
             {scopes.map((scope) => (
               <option key={scope.id} value={scope.id}>{scope.label}</option>
@@ -46,7 +46,7 @@ export default async function LeaderboardsPage({
         <span aria-disabled={hasRatedResults ? undefined : "true"} title={hasRatedResults ? "Showing computed Cloudflare D1 leaderboard rows." : "Leaderboards stay empty until real games are recorded."}>
           {hasRatedResults ? `${populatedLeaderboards.length} computed boards` : "Real results"}
         </span>
-        <button type="submit" className="focus-ring record-filter-chip" disabled={!hasComputedBoards}>Apply</button>
+        <button type="submit" className="focus-ring record-filter-chip">Apply</button>
       </form>
       {hasRatedResults ? <PopulatedLeaderboards leaderboards={populatedLeaderboards} /> : <EmptyLeaderboardScopes scopes={primaryScopes} />}
       <div className="panel leaderboard-family-list">

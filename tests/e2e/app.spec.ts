@@ -198,6 +198,13 @@ test("watch rooms and catalog filters land on honest real-data views", async ({ 
   await expect(page.getByLabel("Playability")).toHaveValue("learn");
   await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
+
+  await page.goto("/en/leaderboards?scope=family:asian-chess");
+  await expect(page.getByRole("heading", { name: "Leaderboards" })).toBeVisible();
+  await expect(page.getByLabel("Leaderboard scope")).toBeEnabled();
+  await expect(page.getByLabel("Leaderboard scope")).toHaveValue("family:asian-chess");
+  await expect(page.getByRole("button", { name: "Apply" })).toBeEnabled();
+  await expectNoHorizontalOverflow(page);
 });
 
 test("analysis empty review controls are explicit and disabled", async ({ page }) => {

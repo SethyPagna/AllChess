@@ -117,8 +117,11 @@ describe("compact page copy", () => {
     expect(markup).toContain("Leaderboards");
     expect(markup).toContain("No rated results yet.");
     expect(markup).toContain("aria-label=\"Leaderboard filters\"");
+    expect(markup).toContain("aria-label=\"Leaderboard scope\"");
+    expect(markup).toContain("Choose a leaderboard scope");
     expect(markup).toContain("aria-disabled=\"true\"");
     expect(markup).toContain("Leaderboards stay empty until real games are recorded.");
+    expect(markup).not.toContain("disabled=\"\"");
   });
 
   test("watch rooms exposes useful filters even when room data is empty", async () => {

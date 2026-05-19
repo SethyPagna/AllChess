@@ -3354,11 +3354,6 @@ select {
   outline: none;
 }
 
-.leaderboard-scope-select:has(select:disabled) {
-  cursor: not-allowed;
-  opacity: 0.68;
-}
-
 .leaderboard-filter-bar.is-empty {
   opacity: 0.82;
 }
