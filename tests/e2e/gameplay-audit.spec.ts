@@ -1,5 +1,12 @@
 import { expect, test } from "@playwright/test";
 
+function clockSeconds(value: string | null) {
+  if (!value) return Number.NaN;
+  const parts = value.trim().split(":").map(Number);
+  if (parts.some((part) => Number.isNaN(part))) return Number.NaN;
+  return parts.reduce((total, part) => total * 60 + part, 0);
+}
+
 test("suggestion, bot reply, and board geometry remain stable", async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
@@ -53,6 +60,30 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   const afterBot = await board.boundingBox();
   expect(afterBot?.width).toBeCloseTo(before!.width, 1);
   expect(afterBot?.height).toBeCloseTo(before!.height, 1);
+  expect(runtimeErrors).toEqual([]);
+});
+
+test("bot thinking time is charged to the bot clock", async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
+  });
+
+  await page.goto("/en/play/classic?mode=bot&bot=grandmaster&time=bullet");
+  const blackClock = page.getByLabel("Black clock");
+  await expect(blackClock).toHaveText("1:00");
+  await page.getByLabel("Side").selectOption("first");
+  await page.getByRole("button", { name: "Start Game" }).click();
+  const before = clockSeconds(await blackClock.textContent());
+
+  await page.getByRole("button", { name: /h2.*white.*pawn/i }).click();
+  await page.getByRole("button", { name: "h3" }).click();
+  await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 7000 });
+
+  const after = clockSeconds(await blackClock.textContent());
+  expect(after).toBeLessThan(before);
+  expect(after).toBeGreaterThanOrEqual(0);
   expect(runtimeErrors).toEqual([]);
 });
 

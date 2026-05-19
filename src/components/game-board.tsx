@@ -200,12 +200,12 @@ export function GameBoard({
     const capturedPieces = capturedBy(color);
     const clock = state.clocks.find((entry) => entry.color === color);
     return (
-      <div className={`board-player-card board-player-card-${placement} ${state.turn === color ? "is-active" : ""}`}>
+      <div className={`board-player-card board-player-card-${placement} ${state.turn === color ? "is-active" : ""}`} aria-label={`${colorLabel(color)} player card`}>
         <div className="player-avatar" aria-hidden="true">{isBot ? "AI" : isHuman ? "You" : colorLabel(color).slice(0, 2)}</div>
         <div className="player-card-main">
           <div className="player-card-row">
             <strong>{isHuman ? "Your profile" : isBot ? `${botLevel.label} bot` : `${colorLabel(color)} player`}</strong>
-            <span>{clock ? formatClock(clock.remainingMs, { untimed: timeControl === "freestyle" }) : "--:--"}</span>
+            <span aria-label={`${colorLabel(color)} clock`}>{clock ? formatClock(clock.remainingMs, { untimed: timeControl === "freestyle" }) : "--:--"}</span>
           </div>
           <p>{isBot ? `${botStrength.display} - ${botCalibrationLabel} - ${thinking.status === "thinking" ? "thinking" : "ready"}` : isHuman ? `${colorLabel(color)} side - local profile` : `${colorLabel(color)} side`}</p>
         </div>
