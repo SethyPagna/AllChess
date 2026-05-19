@@ -112,9 +112,13 @@ describe("bot difficulty ladder", () => {
     state.board[7][7].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
 
     const defendedPawnCapture = { from: { row: 4, col: 3 }, to: { row: 3, col: 4 } };
+    const hardSearch = chooseBotMoveSafe(state, "hard", { engine: "internal", maxSearchTimeMs: 40 });
 
     expect(chooseBotMove(state, "easy", { engine: "internal", maxSearchTimeMs: 80 })).not.toMatchObject(defendedPawnCapture);
     expect(chooseBotMove(state, "normal", { engine: "internal", maxSearchTimeMs: 80 })).not.toMatchObject(defendedPawnCapture);
+    if (hardSearch.reason !== "ok") throw new Error("Expected hard search to return a legal move.");
+    expect(hardSearch.move).not.toMatchObject(defendedPawnCapture);
+    expect(hardSearch.elapsedMs).toBeLessThan(MAX_BOT_REPLY_MS);
   });
 
   test("legend difficulty values promotion as a decisive strategic gain", () => {

@@ -563,7 +563,7 @@ function minimax(
   }
 
   const moves = allLegalMovesCached(state, budget)
-    .map((move) => ({ move, score: staticMoveScore(state, move) }))
+    .map((move) => ({ move, score: moveOrderingScore(state, move, difficulty, budget) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, difficulty.beamWidth);
 
@@ -627,7 +627,7 @@ function quiescence(
 
   const tacticalMoves = allLegalMovesCached(state, budget)
     .filter((move) => isCapture(state, move) || staticMoveScore(state, move) >= 700)
-    .map((move) => ({ move, score: staticMoveScore(state, move) }))
+    .map((move) => ({ move, score: moveOrderingScore(state, move, difficulty, budget) }))
     .sort((a, b) => b.score - a.score)
     .slice(0, Math.max(4, Math.floor(difficulty.beamWidth / 2)));
 
@@ -687,6 +687,20 @@ function staticMoveScore(state: GameState, move: Move) {
   const castlingScore = moving?.code === "k" && Math.abs(move.to.col - move.from.col) === 2 ? 90 : 0;
 
   return captureScore + promotionScore + castlingScore + developmentScore + centerScore;
+}
+
+function moveOrderingScore(state: GameState, move: Move, difficulty: BotDifficulty, budget: SearchBudget) {
+  const staticScore = staticMoveScore(state, move);
+  if (difficulty.skill < 14) return staticScore;
+
+  const movingPiece = state.board[move.from.row]?.[move.from.col]?.piece;
+  const targetPiece = state.board[move.to.row]?.[move.to.col]?.piece;
+  if (!movingPiece || !targetPiece || targetPiece.owner === movingPiece.owner || Date.now() >= budget.deadline) return staticScore;
+
+  const next = tryMove(state, move);
+  if (!next) return Number.NEGATIVE_INFINITY;
+
+  return staticScore - badTradePenalty(state, next, move, movingPiece, budget) * (1.1 - difficulty.riskTolerance);
 }
 
 function strategicMoveScore(state: GameState, next: GameState, move: Move, perspective: PlayerColor, difficulty: BotDifficulty, budget: SearchBudget) {
