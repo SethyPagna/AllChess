@@ -12,7 +12,8 @@ const schema = [
   "0005_normalized_game_state.sql",
   "0006_matchmaking_tickets.sql",
   "0007_ratings_leaderboards.sql",
-  "0008_profile_game_stats.sql"
+  "0008_profile_game_stats.sql",
+  "0009_catalog_rules_normalization.sql"
 ]
   .map((file) => readFileSync(join(migrationsDir, file), "utf8"))
   .join("\n")
@@ -48,7 +49,12 @@ describe("cloudflare d1 schema", () => {
       "rating_events",
       "leaderboard_entries",
       "profile_game_stats",
-      "profile_game_results"
+      "profile_game_results",
+      "game_aliases",
+      "game_regions",
+      "rule_sources",
+      "rule_sections",
+      "playable_game_verification"
     ]) {
       expect(schema).toContain(`create table if not exists ${table}`);
     }
@@ -68,5 +74,9 @@ describe("cloudflare d1 schema", () => {
     expect(schema).toContain("idx_leaderboard_entries_rating");
     expect(schema).toContain("idx_profile_game_stats_variant");
     expect(schema).toContain("idx_profile_game_results_profile_completed");
+    expect(schema).toContain("idx_game_aliases_normalized");
+    expect(schema).toContain("idx_game_regions_region");
+    expect(schema).toContain("idx_rule_sections_game_type_order");
+    expect(schema).toContain("idx_playable_game_verification_ready");
   });
 });

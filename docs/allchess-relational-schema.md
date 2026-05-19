@@ -1,8 +1,8 @@
 # AllChess Relational Data Schema Review
 
-Status: proposed migration plan
+Status: implemented through D1 migration `0009`; remaining items are runtime rewiring recommendations
 Scope: D1 relational data, Durable Object active state, R2 artifacts, API payloads, tests, and migration path
-Last reviewed: 2026-05-18
+Last reviewed: 2026-05-19
 
 ## 1. Scan Method
 
@@ -24,7 +24,7 @@ Dependency folders, Next build output, and generated reports are intentionally e
 | Services | D1 repository, auth repository, realtime helpers, bot/training/rules services | `src/lib/cloudflare/d1.ts`, `src/lib/auth/d1.ts`, `src/lib/realtime/*`, `src/lib/bots.ts`, `src/lib/bot-training.ts`, `src/lib/variants/*`, `src/lib/catalog/*`, `src/lib/game-review.ts`, `src/lib/game-outcome.ts` |
 | Controllers | Next API route handlers | `src/app/api/**/route.ts` |
 | Models | TypeScript domain types, no ORM models | `src/lib/variants/types.ts`, `src/lib/realtime/types.ts`, `src/lib/catalog/types.ts`, `src/lib/bot-training.ts` |
-| Migrations | Cloudflare D1 raw SQL | `cloudflare/d1/migrations/0001_initial.sql` through `0004_bot_knowledge_pipeline.sql` |
+| Migrations | Cloudflare D1 raw SQL | `cloudflare/d1/migrations/0001_initial.sql` through `0009_catalog_rules_normalization.sql` |
 | Seeds | No dedicated seed migrations found | Catalog and curated bot knowledge are currently code/generated-data driven |
 | Tests | Unit, integration, E2E, Cloudflare schema/persistence tests | `tests/**/*.ts`, `tests/**/*.tsx`, `tests/e2e/*.spec.ts` |
 | Scripts | Training, env, deploy/worker patch helpers | `scripts/<domain>/*.mjs` |
@@ -33,33 +33,37 @@ Dependency folders, Next build output, and generated reports are intentionally e
 
 ### Sweep 1 - Existing SQL
 
-Current D1 tables:
+Current D1 tables after migrations `0001` through `0009`:
 
 - Identity: `profiles`, `accounts`, `sessions`, `passkeys`.
 - Gameplay: `games`, `game_players`, `moves`.
 - Realtime shell: `rooms`, `room_events`.
 - Ratings: `ratings`.
 - Review: `analysis_reports`, `game_review_summaries`.
-- Catalog/rules: `game_catalog_entries`, `rules_versions`.
-- Leaderboards: `leaderboards`.
+- Catalog/rules: `game_catalog_entries`, `rules_versions`, `game_aliases`, `game_regions`, `rule_sources`, `rule_sections`, `playable_game_verification`.
+- Leaderboards: `leaderboards`, `leaderboard_entries`.
 - Bot/training: `training_manifests`, `training_games`, `training_positions`, `engine_labels`, `bot_model_manifests`, `bot_knowledge_entries`, `bot_benchmark_runs`.
+- Normalized gameplay: `game_participants`, `game_moves`, `game_positions`, `game_clocks`, `clock_events`, `bot_move_audits`.
+- Matchmaking and profiles: `matchmaking_tickets`, `rating_pools`, `profile_ratings`, `rating_events`, `profile_game_stats`, `profile_game_results`.
 
 Existing strengths:
 
 - `games.board_state` and `moves.board_state_after` preserve full native `GameState` JSON, including `hands`, `variantState`, and review pointers.
-- `moves(game_id, ply)` is unique and indexed for replay.
+- `moves(game_id, ply)` and normalized `game_moves(game_id, ply)` are unique and indexed for replay.
 - Rooms, catalog, bot knowledge, and benchmark tables already exist as Cloudflare-first primitives.
 - R2 is already the intended target for large artifacts.
+- `game_participants` models bots, offline local seats, guests, and spectators without forcing every seat to be a profile.
+- `game_positions`, `game_clocks`, and `clock_events` give replay/review/timer flows queryable checkpoints instead of only one latest JSON blob.
+- Catalog aliases, native names, regions, rule sections, sources, and release gates are now normalized for search and readiness.
 
 Existing gaps:
 
-- `game_players` assumes a real `profile_id`, which does not model bots, offline local players, anonymous local seats, or spectators cleanly.
-- `moves.actor_id` is not written by `recordMove`, so historical moves are not reliably tied to a participant.
-- Clocks are stored in snapshots and `game_players.clock_ms`, but there is no authoritative per-seat clock state or clock event trail.
+- Legacy `game_players`, `moves`, and `ratings` remain for compatibility; new code should prefer `game_participants`, `game_moves`, and rating pools.
 - `rooms` has a single `spectator_count`, but no durable relational room participants or spectator rows.
 - `leaderboards.entries` is JSON only, so ranking queries require a precomputed blob.
-- `ratings` is only `(profile_id, variant_key)`, with no family, time control, rated/casual, rating system, deviation, or history.
-- Bot runtime types contain metadata not represented in SQL: `boardSignature`, `tierTargets`, `positionHash`, `sourceFileId`, `sourceLicense`, `labelDepth`, `engine`, `split`, and `generatedAt`.
+- `games` still does not expose first-class `mode`, `family_key`, `rated`, `visibility`, `outcome_reason`, or `winner_participant_id` columns; those remain partly encoded in related rows and snapshots.
+- `rooms` does not yet store `active_object_id`, `last_snapshot_ply`, or `last_heartbeat_at`.
+- Bot runtime types still have richer fields than the first bot knowledge migration, especially `boardSignature`, `tierTargets`, `sourceFileId`, `sourceLicense`, `labelDepth`, `split`, and `generatedAt`.
 
 ### Sweep 2 - API And Repository Flow
 
@@ -602,48 +606,33 @@ Recommended ownership:
 
 ## 5. Migration Path
 
-### Migration 0005 - Participants, positions, and clocks
+### Applied migrations
 
-1. Create `game_participants`, `game_positions`, `game_clocks`, and `clock_events`.
-2. Backfill `game_participants` from `game_players`.
-3. Backfill `game_positions` with `ply = 0` or latest available `games.board_state`.
-4. Backfill `game_positions` from existing `moves.board_state_after`.
-5. Dual-write:
-   - Continue writing `games.board_state`.
-   - Also write `game_positions`.
-   - Continue writing `moves`.
-   - Also write `game_moves`.
-6. Update `recordMove` to set `actor_participant_id` and clock fields.
+1. `0001_initial.sql` creates identity, legacy gameplay snapshots, rooms, ratings, analysis reports, and core indexes.
+2. `0002_realtime_training.sql` extends rooms, adds `room_events`, `training_manifests`, and `bot_benchmark_runs`.
+3. `0003_catalog_leaderboards.sql` adds catalog entries, rule versions, leaderboard cache rows, and game review summaries.
+4. `0004_bot_knowledge_pipeline.sql` adds training games, positions, engine labels, bot model manifests, and runtime bot knowledge.
+5. `0005_normalized_game_state.sql` adds participants, normalized moves, position checkpoints, clock state/events, and bot move audits.
+6. `0006_matchmaking_tickets.sql` adds queryable matchmaking tickets.
+7. `0007_ratings_leaderboards.sql` adds rating pools, profile ratings, rating events, and normalized leaderboard entries.
+8. `0008_profile_game_stats.sql` adds profile-level stats and result history.
+9. `0009_catalog_rules_normalization.sql` adds aliases, regions, source links, rule sections, and playable-game verification gates.
 
-### Migration 0006 - Rooms and authoritative move recovery
+### Current migration posture
 
-1. Add `active_object_id`, `last_snapshot_ply`, and `last_heartbeat_at` to `rooms`.
-2. Create `room_participants`, `chat_messages`, and `matchmaking_tickets`.
-3. Extend `room_events` with `event_version`, `game_id`, `actor_participant_id`, and `idempotency_key`.
-4. Make `GameRoomDO` append D1 room events and move checkpoints after authoritative moves.
-5. Make `GET /api/rooms/:id` load from Durable Object or D1 instead of demo-only snapshots.
+The database now has the hybrid shape requested by the product plan:
 
-### Migration 0007 - Ratings, stats, and leaderboards
+- Full `GameState` JSON remains in `games.board_state` and `game_positions.state_json` for variant correctness.
+- Normalized rows support replay, profiles, ratings, leaderboards, clocks, bot audits, matchmaking, and catalog/rule search.
+- Legacy tables remain for compatibility while newer code writes normalized rows in parallel.
 
-1. Create `rating_pools`, `profile_ratings`, `rating_events`, `profile_stats`, `profile_variant_stats`, `site_daily_stats`, and `leaderboard_entries`.
-2. Backfill `profile_ratings` from current `ratings`.
-3. Keep `leaderboards.entries` as a cache, but compute from normalized rows.
-4. Move generic `profiles.rating` out of ranking logic.
+### Next migration candidates
 
-### Migration 0008 - Bot and training metadata
-
-1. Add missing runtime metadata columns to `bot_knowledge_entries`.
-2. Add missing runtime metadata columns to `engine_labels`.
-3. Create `bot_move_audits`.
-4. Make `/api/bots/benchmark` write `bot_benchmark_runs` when D1 is available.
-5. Store raw datasets/models in R2 and only compact manifests/runtime knowledge in D1/app data.
-
-### Migration 0009 - Catalog/rules normalization
-
-1. Create `game_aliases`, `game_regions`, `rule_sources`, `rule_sections`, and `playable_game_verification`.
-2. Backfill from code catalog.
-3. Keep code catalog as seed/source until an admin update path exists.
-4. Make API search use aliases/native/romanized rows.
+1. Add `mode`, `family_key`, `rated`, `visibility`, `outcome_reason`, and `winner_participant_id` to `games` so high-volume game list queries do not need JSON parsing.
+2. Add `active_object_id`, `last_snapshot_ply`, and `last_heartbeat_at` to `rooms` for Durable Object recovery.
+3. Add `room_participants` and `chat_messages` so spectators, reconnects, and chat policy are queryable after a room hibernates.
+4. Expand `bot_knowledge_entries` and `engine_labels` with the remaining runtime metadata fields: `board_signature`, `tier_targets`, `source_file_id`, `source_license`, `label_depth`, `split`, and `generated_at`.
+5. Backfill `game_aliases`, `game_regions`, `rule_sources`, `rule_sections`, and `playable_game_verification` from the code catalog during a seed/sync job.
 
 ## 6. Query Patterns And Indexing
 
@@ -658,21 +647,24 @@ High-priority read paths:
 - Bot move: app data or D1/R2-generated cache by `(variant_key, position_key/min_tier)` or `position_hash`.
 - Training audit: `training_positions(variant_key, split)`, `engine_labels(variant_key, position_key)`.
 
-Recommended D1 indexes:
+Current high-priority D1 indexes:
 
 ```sql
-create index if not exists idx_games_mode_status_started on games(mode, status, started_at);
-create index if not exists idx_games_creator_created on games(created_by, created_at);
+create index if not exists idx_games_variant_status on games(variant_key, status);
 create index if not exists idx_game_participants_profile_joined on game_participants(profile_id, joined_at);
 create index if not exists idx_game_participants_game_type on game_participants(game_id, participant_type);
 create index if not exists idx_game_moves_actor_created on game_moves(actor_participant_id, created_at);
 create index if not exists idx_game_positions_hash on game_positions(position_hash);
-create index if not exists idx_rooms_list on rooms(status, variant_key, visibility, rated, time_control_key);
+create index if not exists idx_rooms_status_variant on rooms(status, variant_key);
 create index if not exists idx_matchmaking_open on matchmaking_tickets(status, variant_key, time_control_key, rated, created_at);
 create index if not exists idx_profile_ratings_pool_rating on profile_ratings(pool_id, rating desc);
-create index if not exists idx_bot_knowledge_hash on bot_knowledge_entries(variant_key, position_hash);
-create index if not exists idx_engine_labels_variant_position on engine_labels(variant_key, position_key);
+create index if not exists idx_bot_knowledge_lookup on bot_knowledge_entries(variant_key, position_key, min_tier);
+create index if not exists idx_engine_labels_position on engine_labels(training_position_id);
+create index if not exists idx_game_aliases_normalized on game_aliases(normalized_alias, kind);
+create index if not exists idx_rule_sections_game_type_order on rule_sections(game_id, section_type, sort_order);
 ```
+
+Future indexes should be added when the related columns land, especially `games(mode, status, started_at)`, `rooms(status, variant_key, visibility, rated, time_control_key)`, `bot_knowledge_entries(variant_key, position_hash)`, and `engine_labels(variant_key, position_key)`.
 
 ## 7. Architectural Rewiring Recommendations
 
@@ -712,20 +704,20 @@ create index if not exists idx_engine_labels_variant_position on engine_labels(v
 
 ## 8. Immediate Code Follow-ups
 
-These are the highest-value implementation tasks after the schema migration docs:
+These are the highest-value implementation tasks after the applied schema migrations:
 
-1. Add `game_participants`, `game_moves`, `game_positions`, and `game_clocks`.
-2. Update `recordMove` to write actor, move, position, and clock data.
-3. Change `POST /api/games/:id/move` so it loads the authoritative state instead of trusting client-submitted state.
-4. Extend the move API schema to support drop/pass/resign/system move kinds.
-5. Make `GameRoomDO` append D1 room events and move checkpoints.
-6. Add D1 persistence for bot benchmarks and bot move audits.
-7. Normalize catalog aliases and release gates so game search and readiness do not depend only on code arrays.
-8. Backfill leaderboards and rating pools from current `ratings`.
+1. Backfill `game_aliases`, `game_regions`, `rule_sources`, `rule_sections`, and `playable_game_verification` from the code catalog.
+2. Add first-class game list columns to `games`: `mode`, `family_key`, `rated`, `visibility`, `outcome_reason`, and `winner_participant_id`.
+3. Add Durable Object recovery columns to `rooms`: `active_object_id`, `last_snapshot_ply`, and `last_heartbeat_at`.
+4. Create `room_participants` and `chat_messages`, then make `GameRoomDO` append room events and move checkpoints to D1 after authoritative moves.
+5. Extend the move API schema to support `pass`, `resign`, `offer_draw`, `accept_draw`, `timeout`, and `system` event moves.
+6. Persist bot move audits from runtime bot replies, not only benchmark summaries.
+7. Expand bot knowledge and engine label columns for remaining runtime metadata.
+8. Add seed/sync scripts so catalog and verification rows can be regenerated deterministically without hand-editing D1.
 
 ## 9. Final Schema Position
 
-The current D1 schema is a workable foundation, but it is snapshot-heavy. The optimized AllChess schema should be hybrid:
+The current D1 schema is now a workable hybrid foundation. It still keeps snapshots, but it also has normalized rows for the most important query paths:
 
 - JSON snapshots for full variant correctness.
 - Normalized rows for participants, moves, positions, clocks, ratings, leaderboards, reviews, rooms, and bot audits.
