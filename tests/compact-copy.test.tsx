@@ -103,8 +103,10 @@ describe("compact page copy", () => {
     expect(markup).toContain("Match records");
     expect(markup).toContain("No saved matches yet");
     expect(markup).toContain("Saved games, review links, and rating changes");
-    expect(markup).toContain("Search unlocks after saved matches");
+    expect(markup).toContain("Search saved games");
+    expect(markup).toContain("Filter history result");
     expect(markup).toContain("aria-disabled=\"true\"");
+    expect(markup).not.toContain("Search unlocks after saved matches");
     expect(markup).not.toContain("redirect");
   });
 
