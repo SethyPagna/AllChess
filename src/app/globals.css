@@ -3477,6 +3477,31 @@ select {
   white-space: nowrap;
 }
 
+.analysis-label-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.analysis-label-counts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface-strong));
+  color: var(--text);
+  font-size: 0.76rem;
+  font-weight: 900;
+  padding: 0.24rem 0.55rem;
+  text-transform: capitalize;
+}
+
+.analysis-label-counts strong {
+  color: var(--accent);
+  font-weight: 950;
+}
+
 .analysis-detail-list {
   display: grid;
   gap: 0.45rem;

@@ -32,6 +32,7 @@ export default async function AnalysisPage({
   const reviewMoments = extractReviewMoments(review.analysis?.report);
   const reviewMomentByMove = createReviewMomentByMove(reviewMoments, review.moves);
   const selectedMoment = selectedMove ? getReviewMomentForMove(reviewMomentByMove, selectedMove) : undefined;
+  const reviewLabelCounts = countReviewLabels(reviewMoments);
   const trainingIdeas = extractTrainingIdeas(review.analysis?.report);
 
   return (
@@ -68,6 +69,16 @@ export default async function AnalysisPage({
                 <dd>{review.moves.length}</dd>
               </div>
             </dl>
+            {reviewLabelCounts.length ? (
+              <div className="analysis-label-counts" aria-label="Review label counts">
+                {reviewLabelCounts.map((item) => (
+                  <span key={item.label}>
+                    <strong>{item.count}</strong>
+                    {item.label}
+                  </span>
+                ))}
+              </div>
+            ) : null}
             {reviewMoments.length ? (
               <div className="analysis-detail-list" aria-label="Key review moments">
                 <h3>Key moments</h3>
@@ -279,6 +290,16 @@ function createReviewMomentByMove(moments: ReviewMoment[], moves: RuntimeAnalysi
   }
 
   return matchedMoments;
+}
+
+function countReviewLabels(moments: ReviewMoment[]) {
+  const counts = new Map<string, number>();
+  for (const moment of moments) {
+    const label = normalizeDetailText(moment.label).toLowerCase();
+    if (label) counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+
+  return Array.from(counts, ([label, count]) => ({ count, label })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
 }
 
 function getReviewMomentForMove(moments: Map<string, ReviewMoment>, move: RuntimeAnalysisMoves[number]) {
