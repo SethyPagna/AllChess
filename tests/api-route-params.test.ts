@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { parseBoundedInteger, parseCatalogFamily, parsePlayabilityStatus, parsePlayMode, parseQueryFlag, safeDecodeRouteSegment } from "@/lib/routing/params";
+import { parseBotDifficulty, parseBoundedInteger, parseCatalogFamily, parsePlayabilityStatus, parsePlayMode, parseQueryFlag, safeDecodeRouteSegment } from "@/lib/routing/params";
 
 describe("API route parameter guards", () => {
   test("parses only known catalog filters", () => {
@@ -21,7 +21,10 @@ describe("API route parameter guards", () => {
     expect(parsePlayMode("bot")).toBe("bot");
     expect(parsePlayMode(["spectate", "bot"])).toBe("spectate");
     expect(parsePlayMode("broken", "online")).toBe("online");
-    expect(parseQueryFlag("normal")).toBe(true);
+    expect(parseBotDifficulty("normal")).toBe("normal");
+    expect(parseBotDifficulty("grandmaster")).toBe("grandmaster");
+    expect(parseBotDifficulty("broken", "normal")).toBe("normal");
+    expect(parseQueryFlag("true")).toBe(true);
     expect(parseQueryFlag("0")).toBe(false);
     expect(parseQueryFlag(["yes", "0"])).toBe(true);
   });

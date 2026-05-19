@@ -88,6 +88,7 @@ export function GameBoard({
   initialState,
   rulesSummary,
   initialBotMode = "human",
+  initialBotDifficulty = "normal",
   initialPlayMode,
   title = "Game",
   meta = "AllChess",
@@ -97,6 +98,7 @@ export function GameBoard({
   initialState?: GameState;
   rulesSummary?: VariantRuleSummary;
   initialBotMode?: BotMode;
+  initialBotDifficulty?: BotDifficultyKey;
   initialPlayMode?: PlayMode;
   title?: string;
   meta?: string;
@@ -109,7 +111,7 @@ export function GameBoard({
   const [selected, setSelected] = useState<Square | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [playMode, setPlayMode] = useState<PlayMode>(initialPlayMode ?? (initialBotMode === "opponent" ? "bot" : "offline"));
-  const [botDifficulty, setBotDifficulty] = useState<BotDifficultyKey>("normal");
+  const [botDifficulty, setBotDifficulty] = useState<BotDifficultyKey>(initialBotDifficulty);
   const [botMode, setBotMode] = useState<BotMode>(initialBotMode);
   const [seatChoice, setSeatChoice] = useState<SeatChoice>("random");
   const [boardOrientation, setBoardOrientation] = useState<BoardOrientation>("auto");

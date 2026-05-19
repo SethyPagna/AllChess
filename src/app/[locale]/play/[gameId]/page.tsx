@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { GameBoard } from "@/components/game-board";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { parsePlayMode, parseQueryFlag, safeDecodeRouteSegment } from "@/lib/routing/params";
+import { parseBotDifficulty, parsePlayMode, parseQueryFlag, safeDecodeRouteSegment } from "@/lib/routing/params";
 import { getVariantRuleSummary } from "@/lib/rules-atlas";
 import { getVariant } from "@/lib/variants";
 
@@ -28,7 +28,8 @@ export default async function PlayPage({
     notFound();
   }
   const initialPlayMode = parsePlayMode(query.mode);
-  const initialBotMode = parseQueryFlag(query.bot) || initialPlayMode === "bot" ? "opponent" : "human";
+  const initialBotDifficulty = parseBotDifficulty(query.bot);
+  const initialBotMode = initialBotDifficulty || parseQueryFlag(query.bot) || initialPlayMode === "bot" ? "opponent" : "human";
 
   return (
     <section className="play-arena">
@@ -37,6 +38,7 @@ export default async function PlayPage({
           variantKey={variant.key}
           rulesSummary={getVariantRuleSummary(variant.key)}
           initialBotMode={initialBotMode}
+          initialBotDifficulty={initialBotDifficulty}
           initialPlayMode={initialPlayMode}
           title={t(variant.nameKey)}
           meta={formatPlayMeta(variant)}
