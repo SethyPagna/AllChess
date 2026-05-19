@@ -770,7 +770,7 @@ export function getBotTrainingGateSummary(): BotTrainingGateSummary {
     playableVariants,
     gatedVariants,
     notice:
-      "AllChess only labels a bot/game as ready when native rules, legal bot moves, review, persistence, and E2E fixtures are complete. Gated variants remain learn/practice previews, not fully trained release bots."
+      "AllChess marks a bot/game ready only after native rules, legal bot moves, review, persistence, and E2E fixtures pass. Gated variants stay as guide-first previews until those gates pass."
   };
 }
 

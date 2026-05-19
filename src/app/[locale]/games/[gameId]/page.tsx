@@ -59,7 +59,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
       {isGated ? (
         <div className="game-detail-gate panel" aria-label="Training and rules gate">
           <div>
-            <strong>Not fully trained yet</strong>
+            <strong>Guide gated for play</strong>
             <span>
               This game stays as a rule guide until native rules, legal bot moves, review, persistence, and E2E fixtures are complete.
             </span>

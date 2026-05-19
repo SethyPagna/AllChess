@@ -71,7 +71,7 @@ export default async function VariantsPage({
             <InfoHint text={trainingGate.notice} />
           </span>
           <strong>{trainingGate.playableVariants.length} ready</strong>
-          <small>{trainingGate.gatedVariants.length} not fully trained</small>
+          <small>{trainingGate.gatedVariants.length} guide gated</small>
         </div>
       </div>
       <CatalogBrowser entries={entries} initialFamily={initialFamily} initialStatus={initialStatus} locale={locale} />

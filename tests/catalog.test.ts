@@ -49,7 +49,7 @@ describe("universal game catalog", () => {
     expect(getGameCatalogEntry("shogi")).toMatchObject({ playability: "learn" });
     expect(getGameCatalogEntry("jungle")).toMatchObject({ playability: "learn" });
     expect(displayReleaseReadiness(getGameCatalogEntry("classic")!)).toBe("Verified ready");
-    expect(displayReleaseReadiness(getGameCatalogEntry("shogi")!)).toBe("Not fully trained");
+    expect(displayReleaseReadiness(getGameCatalogEntry("shogi")!)).toBe("Guide gated");
     expect(getCatalogReleaseReadiness(getGameCatalogEntry("classic")!)).toMatchObject({ status: "verified-ready", gateComplete: true, blockers: [] });
     expect(getCatalogReleaseReadiness(getGameCatalogEntry("shogi")!)).toMatchObject({
       status: "not-fully-trained",
@@ -108,7 +108,7 @@ describe("universal game catalog", () => {
     const gatedItem = await catalogItemGet(new Request("http://allchess.test/api/catalog/shogi"), { params: Promise.resolve({ gameId: "shogi" }) });
     await expect(gatedItem.json()).resolves.toMatchObject({
       id: "shogi",
-      releaseReadiness: { status: "not-fully-trained", label: "Not fully trained", gateComplete: false }
+      releaseReadiness: { status: "not-fully-trained", label: "Guide gated", gateComplete: false }
     });
 
     const families = await familiesGet();

@@ -125,7 +125,7 @@ test("games and rules shows compact bot training status", async ({ page }) => {
   await expect(page.getByLabel("Bot training status")).toContainText("Book & tactics");
   await expect(page.getByLabel("Bot training status")).toContainText("tactics");
   await expect(page.getByLabel("Bot training status")).toContainText("3190+ benchmark");
-  await expect(page.getByLabel("Bot training status")).toContainText("not fully trained");
+  await expect(page.getByLabel("Bot training status")).toContainText("guide gated");
   await expect(page.getByRole("link", { name: "Play" }).first()).toBeVisible();
   await expect(page.locator(".catalog-status").filter({ hasText: "Ready to play" }).first()).toBeVisible();
   await page.getByRole("button", { name: /Open guide for Classic Chess/ }).click();
@@ -196,7 +196,7 @@ test("catalog search finds native and romanized game names", async ({ page }) =>
 
   await page.goto("/en/games/shogi");
   await expect(page.getByRole("heading", { name: "Rules gate" })).toBeVisible();
-  await expect(page.getByLabel("Training and rules gate")).toContainText("Not fully trained yet");
+  await expect(page.getByLabel("Training and rules gate")).toContainText("Guide gated for play");
   await expect(page.getByText("Nifu pawn-drop fixtures")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });

@@ -515,6 +515,6 @@ describe("bot difficulty ladder", () => {
         })
       ])
     );
-    expect(summary.notice).toContain("not fully trained release bots");
+    expect(summary.notice).toContain("guide-first previews");
   });
 });

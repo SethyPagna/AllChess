@@ -757,7 +757,7 @@ export function displayBotReadiness(entry: GameCatalogEntry) {
 
 export function displayReleaseReadiness(entry: GameCatalogEntry) {
   if (entry.playability === "playable") return "Verified ready";
-  if (entry.variantKey) return "Not fully trained";
+  if (entry.variantKey) return "Guide gated";
   return "Researching";
 }
 

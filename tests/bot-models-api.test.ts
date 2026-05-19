@@ -43,7 +43,7 @@ describe("bot models API", () => {
     expect(body.trainingGate).toMatchObject({
       claimPolicy: "verified-playable-only",
       requiredCompletionGates: expect.arrayContaining(["native rules", "legal bot moves", "review", "persistence", "E2E fixtures"]),
-      notice: expect.stringContaining("not fully trained release bots")
+      notice: expect.stringContaining("guide-first previews")
     });
     expect(body.trainingGate.gatedVariants).toEqual(
       expect.arrayContaining([
