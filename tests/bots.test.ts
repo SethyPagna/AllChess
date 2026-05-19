@@ -276,6 +276,24 @@ describe("bot difficulty ladder", () => {
     expect(result.explanation?.risk).toContain("queen");
   });
 
+  test("bot explanation reports capture trade safety", async () => {
+    let state = createInitialState("classic", "trade-safety-explanation");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[0][0].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[2][4].piece = { id: "black-queen", code: "q", owner: "black", labelKey: "chess.queen" };
+    state.board[3][3].piece = { id: "white-pawn", code: "p", owner: "white", labelKey: "chess.pawn" };
+    state.board[7][7].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+
+    const result = await requestBotMove(state, "normal", { engine: "internal", maxSearchTimeMs: 80 });
+
+    expect(result.move).toMatchObject({ from: { row: 3, col: 3 }, to: { row: 2, col: 4 } });
+    expect(result.explanation?.risk).toContain("Trade checked");
+  });
+
   test("legend search values variant objectives beyond raw material", () => {
     let state = createInitialState("king-of-the-hill", "hill-objective");
     state = {

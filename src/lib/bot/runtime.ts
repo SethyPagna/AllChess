@@ -1185,7 +1185,7 @@ function explanationForMove(source: BotKnowledgeSource, state: GameState, move: 
   const threat = target
     ? `It removes an opposing ${pieceLabel(target.code)} and looks for follow-up pressure.`
     : "It increases mobility, central control, or variant-objective pressure without relying on a single tactic.";
-  const risk = riskForMove({ movingLabel, remainsAttacked, score, wasAttacked });
+  const risk = riskForMove({ movingLabel, remainsAttacked, score, tradeSafety: tradeSafetyText({ moving: moving ?? undefined, next, target: target ?? undefined, move }), wasAttacked });
   const fallbackGoal = score !== null && score < -600 ? "If the advantage cannot be recovered, steer toward draw or stalemate-saving resources." : "If the opponent parries the main idea, keep development and defended pieces intact.";
   return { plan, threat: `${source}: ${threat}`, risk, fallbackGoal };
 }
@@ -1219,17 +1219,42 @@ function riskForMove({
   movingLabel,
   remainsAttacked,
   score,
+  tradeSafety,
   wasAttacked
 }: {
   movingLabel: string;
   remainsAttacked: boolean;
   score: number | null;
+  tradeSafety?: string;
   wasAttacked: boolean;
 }) {
+  if (tradeSafety) return tradeSafety;
   if (wasAttacked && !remainsAttacked) return `Risk reduced: the ${movingLabel} leaves immediate danger instead of staying loose.`;
   if (wasAttacked && remainsAttacked) return `Risk accepted: the ${movingLabel} is still tactically exposed, so the bot expects compensation.`;
   if (score !== null && score < -250) return "The position is worse, so the bot favors damage control and avoids forcing a losing race.";
   return "The move was filtered for immediate hanging-piece and terminal-state blunders.";
+}
+
+function tradeSafetyText({
+  move,
+  moving,
+  next,
+  target
+}: {
+  move: Move;
+  moving?: { code: string; owner: PlayerColor };
+  next: GameState | null;
+  target?: { code: string; owner: PlayerColor } | null;
+}) {
+  if (!moving || !target || !next || target.owner === moving.owner) return undefined;
+
+  const movingValue = pieceValues[moving.code] ?? 100;
+  const targetValue = pieceValues[target.code] ?? 100;
+  const canBeRecaptured = isSquareAttackedBy(next, move.to, opponentColors(next, moving.owner));
+  if (!canBeRecaptured) return `Trade checked: the ${pieceLabel(target.code)} capture is not immediately recaptured.`;
+  if (targetValue >= movingValue) return `Trade checked: recapture is possible, but the exchange wins at least equal value.`;
+
+  return `Trade risk checked: the ${pieceLabel(moving.code)} would be worth more than the captured ${pieceLabel(target.code)}, so this needed compensation.`;
 }
 
 function pieceLabel(code: string) {
