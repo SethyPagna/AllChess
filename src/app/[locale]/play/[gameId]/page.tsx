@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { GameBoard } from "@/components/game-board";
+import { safeDecodeRouteSegment } from "@/lib/api/route-params";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getVariantRuleSummary } from "@/lib/rules-atlas";
@@ -17,9 +18,12 @@ export default async function PlayPage({
   const query = searchParams ? await searchParams : {};
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
+  const decodedGameId = safeDecodeRouteSegment(gameId);
+  if (!decodedGameId) notFound();
+
   let variant;
   try {
-    variant = getVariant(gameId);
+    variant = getVariant(decodedGameId);
   } catch {
     notFound();
   }

@@ -2,10 +2,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vitest";
 
 import AnalysisPage from "@/app/[locale]/analysis/[gameId]/page";
+import GameDetailPage from "@/app/[locale]/games/[gameId]/page";
 import HistoryPage from "@/app/[locale]/history/page";
 import LeaderboardsPage from "@/app/[locale]/leaderboards/page";
 import LobbyPage from "@/app/[locale]/lobby/page";
 import LoginPage from "@/app/[locale]/login/page";
+import PlayPage from "@/app/[locale]/play/[gameId]/page";
 import PlaySetupPage from "@/app/[locale]/play/page";
 import ProfilePage from "@/app/[locale]/profile/[username]/page";
 import SettingsPage from "@/app/[locale]/settings/page";
@@ -49,6 +51,28 @@ describe("compact page copy", () => {
     expect(markup).toContain("Open guide for Classic Chess");
     expect(markup).toContain("Games &amp; rules");
     expect(markup).not.toContain("Full Guide");
+  });
+
+  test("game detail route safely resolves aliases and malformed ids", async () => {
+    const element = await GameDetailPage({ params: Promise.resolve({ locale: "en", gameId: "dou-shou-qi" }) });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("Jungle");
+    expect(markup).toContain("Guide gated for play");
+    await expect(GameDetailPage({ params: Promise.resolve({ locale: "en", gameId: "%E0%A4%A" }) })).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
+  });
+
+  test("play route safely decodes game ids before loading the board", async () => {
+    const element = await PlayPage({
+      params: Promise.resolve({ locale: "en", gameId: "classic" }),
+      searchParams: Promise.resolve({ mode: "bot" })
+    });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("Classic Chess");
+    expect(markup).toContain("Bot Mode");
+    expect(markup).toContain("Bot difficulty");
+    await expect(PlayPage({ params: Promise.resolve({ locale: "en", gameId: "%E0%A4%A" }) })).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
   });
 
   test("history is its own compact records page", async () => {

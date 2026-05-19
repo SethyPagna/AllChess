@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, BookOpen, Bot, ExternalLink, Play } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
+import { safeDecodeRouteSegment } from "@/lib/api/route-params";
 import { displayBotReadiness, displayGameName, displayPiecePresentation, displayPlayabilityStatus, displayRulesReadiness, gameFamilies, getGameCatalogEntry } from "@/lib/catalog";
 import { listBotTrainingReadiness } from "@/lib/bot/training";
 import { normalizeLocale } from "@/lib/i18n/locales";
@@ -11,7 +12,8 @@ import { getVariantRuleSummary } from "@/lib/rules-atlas";
 export default async function GameDetailPage({ params }: { params: Promise<{ locale: string; gameId: string }> }) {
   const { locale: rawLocale, gameId } = await params;
   const locale = normalizeLocale(rawLocale);
-  const entry = getGameCatalogEntry(decodeURIComponent(gameId));
+  const decodedGameId = safeDecodeRouteSegment(gameId);
+  const entry = decodedGameId ? getGameCatalogEntry(decodedGameId) : undefined;
   if (!entry) notFound();
   const family = gameFamilies.find((item) => item.key === entry.family);
   const completion = entry.variantKey ? getVariantRuleSummary(entry.variantKey).completion : null;
