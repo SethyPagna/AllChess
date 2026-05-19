@@ -49,7 +49,7 @@ type PanelTab = "setup" | "status";
 
 const playModeOptions: Array<{ key: PlayMode; label: string; description: string; Icon: typeof Swords }> = [
   { key: "online", label: "Play Online", description: "Match with a player", Icon: Swords },
-  { key: "bot", label: "Play Bots", description: "Practice by tier", Icon: Bot },
+  { key: "bot", label: "Play Bots", description: "Train by tier", Icon: Bot },
   { key: "offline", label: "Offline Local", description: "Same device", Icon: Crown },
   { key: "room", label: "Create Room", description: "Invite by code", Icon: Flag },
   { key: "matchmaking", label: "Matchmaking", description: "Queue by settings", Icon: Timer },

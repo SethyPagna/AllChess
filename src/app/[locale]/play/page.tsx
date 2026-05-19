@@ -11,7 +11,7 @@ type PlayModeKey = "online" | "bot" | "offline" | "room" | "matchmaking" | "spec
 
 const playModes: Array<{ key: PlayModeKey; label: string; description: string; Icon: LucideIcon }> = [
   { key: "online", label: "Online", description: "Queue for a live opponent with matching settings.", Icon: Globe2 },
-  { key: "bot", label: "Bots", description: "Practice from Easy through Legend with side choice.", Icon: Bot },
+  { key: "bot", label: "Bots", description: "Train from Easy through Legend with side choice.", Icon: Bot },
   { key: "offline", label: "Local", description: "Two players on the same device.", Icon: MonitorSmartphone },
   { key: "room", label: "Room", description: "Create a shareable room code for friends.", Icon: Lock },
   { key: "matchmaking", label: "Match", description: "Pick time, rating band, and rated/casual.", Icon: Users },

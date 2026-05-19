@@ -46,7 +46,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
             </Link>
             <Link href={`/${locale}/play/${entry.variantKey}?bot=normal&mode=bot` as never} className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-3">
               <Bot size={18} />
-              Practice
+              Bot Mode
             </Link>
           </div>
         ) : (
@@ -88,7 +88,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
           </ul>
         </article>
         <article className="panel game-detail-section">
-          <h2>Practice focus</h2>
+          <h2>Training focus</h2>
           <div className="game-detail-note">
             <span>{displayPiecePresentation(entry)}</span>
             <span>{displayBotReadiness(entry)}</span>
