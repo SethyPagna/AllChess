@@ -155,4 +155,16 @@ describe("compact page copy", () => {
     expect(markup).toContain("continue as guest");
     expect(markup).not.toContain("<script>bad()</script>");
   });
+
+  test("login explains duplicate account redirects with a stable code", async () => {
+    const element = await LoginPage({
+      params: Promise.resolve({ locale: "en" }),
+      searchParams: Promise.resolve({ error: "account-exists" })
+    });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("An account already exists for this email.");
+    expect(markup).toContain("Sign in instead");
+    expect(markup).not.toContain("password_hash");
+  });
 });

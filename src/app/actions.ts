@@ -7,6 +7,7 @@ import { z } from "zod";
 
 import { createExpiredSessionCookie, createSessionCookie } from "@/lib/auth/session";
 import { createGuestSessionWithD1, signInWithD1, signUpWithD1 } from "@/lib/auth/d1";
+import { errorCodeForSignInFailure, errorCodeForSignUpFailure } from "@/lib/auth/error-codes";
 import { localeFromFormData, localeFromValue } from "@/lib/auth/form-locale";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
 
@@ -30,7 +31,7 @@ export async function signInWithPassword(formData: FormData) {
 
   const result = await signInWithD1(env.ALLCHESS_D1, parsed.data.email, parsed.data.password);
   if (!result.ok) {
-    redirect(`/${locale}/login?error=${encodeURIComponent(result.error)}`);
+    redirect(`/${locale}/login?error=${errorCodeForSignInFailure()}`);
   }
 
   await setSessionCookie(result.sessionId, result.maxAge);
@@ -52,7 +53,7 @@ export async function signUpWithPassword(formData: FormData) {
 
   const result = await signUpWithD1(env.ALLCHESS_D1, parsed.data.email, parsed.data.password);
   if (!result.ok) {
-    redirect(`/${locale}/login?error=${encodeURIComponent(result.error)}`);
+    redirect(`/${locale}/login?error=${errorCodeForSignUpFailure(result.error)}`);
   }
 
   await setSessionCookie(result.sessionId, result.maxAge);

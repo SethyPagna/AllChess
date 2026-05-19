@@ -109,6 +109,15 @@ test("invalid login keeps the active locale", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("login explains duplicate account code", async ({ page }) => {
+  await page.goto("/en/login?error=account-exists");
+
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  await expect(page.locator(".auth-error")).toContainText("An account already exists for this email.");
+  await expect(page.locator(".auth-error")).toContainText("Sign in instead");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("mobile shell language, notifications, and board controls stay in bounds", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
   await page.goto("/en/play/classic");

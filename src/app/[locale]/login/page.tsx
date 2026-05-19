@@ -7,6 +7,7 @@ const authErrorMessages: Record<string, string> = {
   "google-oauth-not-configured": "Google sign-in is not configured yet. Use email/password or continue as guest.",
   "invalid-credentials": "Enter a valid email and a password with at least 6 characters.",
   "invalid-account": "Create an account with a valid email and a password with at least 6 characters.",
+  "account-exists": "An account already exists for this email. Sign in instead or continue as guest.",
   "auth-error": "We could not complete sign-in. Try again or continue as guest."
 };
 
