@@ -2082,8 +2082,12 @@ select {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.play-control-group-match {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .play-control-group-utility {
-  grid-template-columns: repeat(4, minmax(2.4rem, 1fr));
+  grid-template-columns: repeat(5, minmax(2.25rem, 1fr));
   border-top: 1px solid rgb(255 255 255 / 8%);
   padding-top: 0.55rem;
 }
@@ -4879,6 +4883,7 @@ select {
 
   .play-control-group-primary,
   .play-control-group-bots,
+  .play-control-group-match,
   .play-control-strip {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -4978,6 +4983,7 @@ select {
   .play-control-grid,
   .play-control-group-primary,
   .play-control-group-bots,
+  .play-control-group-match,
   .play-control-strip {
     grid-template-columns: 1fr;
   }

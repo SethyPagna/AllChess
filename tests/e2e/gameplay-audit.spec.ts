@@ -21,6 +21,11 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await expect(page.getByText("Match center")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Game Tools" })).toHaveCount(0);
   await expect(page.getByText("Review hook")).toHaveCount(0);
+  const controls = page.getByLabel("Board controls");
+  await expect(controls.getByLabel("Assist controls")).toContainText("Suggest");
+  await expect(controls.getByLabel("Bot automation controls")).toContainText("Auto");
+  await expect(controls.getByLabel("Match controls")).toContainText("Resign");
+  await expect(controls.getByLabel("Utility controls")).toBeVisible();
   await expect(page.getByLabel("Bot search profile")).toContainText("Budget");
   const before = await board.boundingBox();
   expect(before).toBeTruthy();
