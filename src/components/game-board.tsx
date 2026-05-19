@@ -149,7 +149,7 @@ export function GameBoard({
   const secondColor = state.clocks[1]?.color ?? "black";
   const isThinking = thinking.status === "thinking";
   const isOnlineMode = playMode === "online" || playMode === "matchmaking" || playMode === "room";
-  const isBotPractice = playMode === "bot";
+  const isBotMode = playMode === "bot";
   const isSpectating = playMode === "spectate";
   const isSearchingOnline = gameStarted && isOnlineMode && state.status === "active";
   const isWatchingMode = gameStarted && isSpectating && state.status === "active";
@@ -511,7 +511,7 @@ export function GameBoard({
     const nextColor = pickHumanColor(state, seatChoice);
     resolvedRandomSeatRef.current = true;
     setHumanColor(nextColor);
-    setBotMode(isBotPractice ? "opponent" : "human");
+    setBotMode(isBotMode ? "opponent" : "human");
     setBoardOrientation("auto");
     setLastBotResult(null);
     setGameStarted(true);
@@ -805,9 +805,9 @@ export function GameBoard({
                     <option value="second">{colorLabel(secondColor)}</option>
                   </select>
                 </label>
-                <label className={`play-setup-field ${!isBotPractice ? "is-disabled" : ""}`} title={isBotPractice ? "Choose how strong the bot should be." : "Bot difficulty is only used in Bot Mode."}>
+                <label className={`play-setup-field ${!isBotMode ? "is-disabled" : ""}`} title={isBotMode ? "Choose how strong the bot should be." : "Bot difficulty is only used in Bot Mode."}>
                   <span>Bot difficulty</span>
-                  <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)} disabled={!isBotPractice}>
+                  <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)} disabled={!isBotMode}>
                     {botDifficultyLevels.map((level) => (
                       <option key={level.key} value={level.key}>
                         {level.label}

@@ -95,7 +95,7 @@ test("checkmate shows match-over feedback without resizing the board", async ({ 
   expect(runtimeErrors).toEqual([]);
 });
 
-test("setup flow supports bot practice as black with an automatic first reply", async ({ page }) => {
+test("setup flow supports Bot Mode as black with an automatic first reply", async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
   page.on("console", (message) => {

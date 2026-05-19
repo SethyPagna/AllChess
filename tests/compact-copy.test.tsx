@@ -36,7 +36,7 @@ describe("compact page copy", () => {
     expect(markup).not.toContain("A Cloudflare-first arena for chess");
   });
 
-  test("games and rules owns practice, rules, and training status", async () => {
+  test("games and rules owns bot training, rules, and training status", async () => {
     const element = await VariantsPage({ params: Promise.resolve({ locale: "en" }), searchParams: Promise.resolve({}) });
     const markup = renderToStaticMarkup(element);
 

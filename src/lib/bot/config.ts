@@ -75,7 +75,7 @@ export const botDifficultyLevels: BotDifficulty[] = [
   {
     key: "very-hard",
     label: "Very Hard",
-    estimatedStrength: "Expert practice with deeper plans and sacrifice filters",
+    estimatedStrength: "Expert training with deeper plans and sacrifice filters",
     strength: getBotStrengthBand("very-hard"),
     benchmarkVersion: "allchess-bench-v2",
     depth: 5,
