@@ -7,6 +7,7 @@ const authErrorMessages: Record<string, string> = {
   "invalid-credentials": "Enter a valid email and a password with at least 6 characters.",
   "invalid-account": "Create an account with a valid email and a password with at least 6 characters."
 };
+const fallbackAuthError = "We could not complete sign-in. Try again or continue as guest.";
 
 export default async function LoginPage({
   params,
@@ -19,8 +20,8 @@ export default async function LoginPage({
   const query = searchParams ? await searchParams : {};
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
-  const rawError = query.error ? decodeURIComponent(query.error) : null;
-  const error = rawError ? authErrorMessages[rawError] ?? rawError : null;
+  const rawError = safeDecode(query.error);
+  const error = rawError ? authErrorMessages[rawError] ?? fallbackAuthError : null;
 
   return (
     <AuthCard
@@ -36,4 +37,13 @@ export default async function LoginPage({
       }}
     />
   );
+}
+
+function safeDecode(value?: string) {
+  if (!value) return null;
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return "unknown";
+  }
 }

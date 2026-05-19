@@ -143,4 +143,16 @@ describe("compact page copy", () => {
     expect(markup).not.toContain("GOOGLE_CLIENT_SECRET");
     expect(markup).not.toContain("CLOUDFLARE");
   });
+
+  test("login does not echo unknown auth error query text", async () => {
+    const element = await LoginPage({
+      params: Promise.resolve({ locale: "en" }),
+      searchParams: Promise.resolve({ error: "<script>bad()</script>" })
+    });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("We could not complete sign-in.");
+    expect(markup).toContain("continue as guest");
+    expect(markup).not.toContain("<script>bad()</script>");
+  });
 });
