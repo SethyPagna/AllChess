@@ -7,6 +7,7 @@ import { safeDecodeRouteSegment } from "@/lib/routing/params";
 import { displayBotReadiness, displayGameName, displayPiecePresentation, displayPlayabilityStatus, displayRulesReadiness, gameFamilies, getGameCatalogEntry } from "@/lib/catalog";
 import { listBotTrainingReadiness } from "@/lib/bot/training";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { playGameHref } from "@/lib/routing/play-links";
 import { getVariantRuleSummary } from "@/lib/rules-atlas";
 
 export default async function GameDetailPage({ params }: { params: Promise<{ locale: string; gameId: string }> }) {
@@ -42,11 +43,11 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
         </div>
         {entry.playability === "playable" && entry.variantKey ? (
           <div className="game-detail-actions">
-            <Link href={`/${locale}/play/${entry.variantKey}` as never} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-3">
+            <Link href={playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) as never} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-3">
               <Play size={18} />
               Play
             </Link>
-            <Link href={`/${locale}/play/${entry.variantKey}?bot=normal&mode=bot` as never} className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-3">
+            <Link href={playGameHref(locale, entry.variantKey, { mode: "bot", time: "rapid" }) as never} className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-3">
               <Bot size={18} />
               Bot Mode
             </Link>

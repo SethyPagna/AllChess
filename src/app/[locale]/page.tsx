@@ -5,6 +5,7 @@ import { PieceIcon } from "@/components/piece-icon";
 import { getCatalogStats, getGameCatalog } from "@/lib/catalog";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { playSetupHref } from "@/lib/routing/play-links";
 import type { PlayerColor } from "@/lib/variants";
 
 const introPieces: Record<number, { code: string; owner: PlayerColor }> = {
@@ -48,8 +49,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const t = createTranslator(locale);
   const catalogStats = getCatalogStats(getGameCatalog());
   const workflows = [
-    { Icon: Play, label: "Pick a board", detail: "Chess, variants, and rules in one place.", href: `/${locale}/play` },
-    { Icon: Bot, label: "Train fast", detail: "Bots explain source, tier, and threat.", href: `/${locale}/variants?playability=playable` },
+    { Icon: Play, label: "Pick a board", detail: "Chess, variants, and rules in one place.", href: playSetupHref(locale, { mode: "online", time: "rapid" }) },
+    { Icon: Bot, label: "Train fast", detail: "Bots explain source, tier, and threat.", href: playSetupHref(locale, { mode: "bot", time: "rapid" }) },
     { Icon: Eye, label: "Watch or review", detail: "Rooms, history, and analysis stay connected.", href: `/${locale}/watch` }
   ];
 
@@ -60,7 +61,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           <h1>{t("app.name")}</h1>
           <p>Play first. Learn as you go. Sign in only when you want your games saved.</p>
           <div className="intro-actions">
-            <Link href={`/${locale}/play`} className="focus-ring action-primary inline-flex items-center gap-2 px-5 py-3">
+            <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="focus-ring action-primary inline-flex items-center gap-2 px-5 py-3">
               <Swords size={18} />
               Start playing
             </Link>
@@ -105,7 +106,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       </section>
 
       <nav className="intro-shortcuts" aria-label="Visitor shortcuts">
-        <Link href={`/${locale}/play?mode=bot`} className="focus-ring">
+        <Link href={playSetupHref(locale, { mode: "bot", time: "rapid" }) as never} className="focus-ring">
           <Bot size={16} />
           Bots
         </Link>

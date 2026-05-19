@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import type { LocaleCode } from "@/lib/i18n/locales";
+import { playGameHref } from "@/lib/routing/play-links";
 import type { VariantRuleSummary } from "@/lib/rules-atlas";
 import type { VariantDefinition } from "@/lib/variants";
 
@@ -43,7 +44,7 @@ export function VariantCard({
         {variant.supportsCheck ? <span className="rounded bg-[var(--surface-strong)] px-2 py-1">check</span> : null}
       </div>
       <Link
-        href={`/${locale}/play/${variant.key}`}
+        href={playGameHref(locale, variant.key, { mode: "offline", time: "rapid" }) as never}
         className="focus-ring rounded-md bg-[var(--accent)] px-4 py-3 text-center font-bold text-black"
       >
         Start

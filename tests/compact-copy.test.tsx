@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vitest";
 
 import AnalysisPage from "@/app/[locale]/analysis/[gameId]/page";
+import HomePage from "@/app/[locale]/page";
 import GameDetailPage from "@/app/[locale]/games/[gameId]/page";
 import HistoryPage from "@/app/[locale]/history/page";
 import LeaderboardsPage from "@/app/[locale]/leaderboards/page";
@@ -16,6 +17,15 @@ import WatchPage from "@/app/[locale]/watch/page";
 import { ThemeProvider } from "@/components/theme-provider";
 
 describe("compact page copy", () => {
+  test("intro shortcuts open real play flows with mode and clock", async () => {
+    const element = await HomePage({ params: Promise.resolve({ locale: "en" }) });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("/en/play?mode=online&amp;time=rapid");
+    expect(markup).toContain("/en/play?mode=bot&amp;time=rapid");
+    expect(markup).toContain("/en/watch");
+  });
+
   test("play setup uses info affordances instead of visible paragraph-heavy mode cards", async () => {
     const element = await PlaySetupPage({ params: Promise.resolve({ locale: "en" }), searchParams: Promise.resolve({ mode: "bot", time: "blitz" }) });
     const markup = renderToStaticMarkup(element);
@@ -41,6 +51,10 @@ describe("compact page copy", () => {
     expect(markup).toContain("Play Now");
     expect(markup).toContain("Games &amp; Rules");
     expect(markup).toContain("Rooms &amp; Activity");
+    expect(markup).toContain("/en/play?mode=matchmaking&amp;time=rapid");
+    expect(markup).toContain("/en/play?mode=online&amp;time=correspondence");
+    expect(markup).toContain("/en/play/classic?bot=normal&amp;mode=bot&amp;time=rapid");
+    expect(markup).not.toContain("time=daily");
     expect(markup).toContain('class="info-hint');
     expect(markup).not.toContain("A Cloudflare-first arena for chess");
   });
@@ -53,6 +67,7 @@ describe("compact page copy", () => {
     expect(markup).toContain("Bot training status");
     expect(markup).toContain("Book &amp; tactics");
     expect(markup).toContain("Open guide for Classic Chess");
+    expect(markup).toContain("/en/play/classic?mode=offline&amp;time=rapid");
     expect(markup).toContain("Games &amp; rules");
     expect(markup).not.toContain("Full Guide");
   });

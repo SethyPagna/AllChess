@@ -4,6 +4,7 @@ import { BarChart3, History, Play, Settings } from "lucide-react";
 import { InfoHint } from "@/components/info-hint";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { playSetupHref } from "@/lib/routing/play-links";
 
 export default async function ProfilePage({
   params
@@ -54,7 +55,7 @@ export default async function ProfilePage({
         <p>Start a game to build recent matches, favorite games, and review highlights.</p>
         <InfoHint text="Profile history uses saved game data only, so this area stays empty until real matches are recorded." />
         <div className="watch-actions">
-          <Link href={`/${locale}/play`} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
+          <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
             <Play size={16} />
             Start playing
           </Link>

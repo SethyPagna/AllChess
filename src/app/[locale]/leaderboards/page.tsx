@@ -4,6 +4,7 @@ import { Filter, Play, Trophy } from "lucide-react";
 import { InfoHint } from "@/components/info-hint";
 import { getLeaderboardScopes } from "@/lib/catalog";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { playSetupHref } from "@/lib/routing/play-links";
 
 export default async function LeaderboardsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
@@ -47,7 +48,7 @@ export default async function LeaderboardsPage({ params }: { params: Promise<{ l
         </div>
       </div>
       <div className="watch-actions">
-        <Link href={`/${locale}/play`} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
+        <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
           <Play size={16} />
           Play rated
         </Link>

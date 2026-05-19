@@ -17,6 +17,7 @@ import {
   type PlayabilityStatus
 } from "@/lib/catalog";
 import type { LocaleCode } from "@/lib/i18n/locales";
+import { playGameHref } from "@/lib/routing/play-links";
 
 type CatalogBrowserProps = {
   entries: GameCatalogEntry[];
@@ -114,7 +115,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
             <p className="catalog-card-summary">{entry.shortRules[0] ?? entry.winConditions[0]}</p>
             <div className="catalog-card-actions">
               {entry.playability === "playable" && entry.variantKey ? (
-                <Link href={`/${locale}/play/${entry.variantKey}`} className="action-primary focus-ring">
+                <Link href={playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) as never} className="action-primary focus-ring">
                   <Play size={16} />
                   Play
                 </Link>
@@ -156,7 +157,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
 }
 
 export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCatalogEntry; locale: LocaleCode; onClose: () => void }) {
-  const playHref = entry.variantKey ? `/${locale}/play/${entry.variantKey}` : `/${locale}/games/${entry.id}`;
+  const playHref = entry.variantKey ? playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) : `/${locale}/games/${entry.id}`;
 
   return (
     <div className="catalog-rules-backdrop" role="presentation" onClick={onClose}>
@@ -178,7 +179,7 @@ export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCata
             </Link>
           ) : null}
           {entry.playability === "playable" && entry.variantKey ? (
-            <Link href={`/${locale}/play/${entry.variantKey}?mode=bot`} className="action-secondary focus-ring">
+            <Link href={playGameHref(locale, entry.variantKey, { mode: "bot", time: "rapid" }) as never} className="action-secondary focus-ring">
               <Bot size={16} />
               Bot Mode
             </Link>

@@ -6,6 +6,7 @@ import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { createDemoLiveStats } from "@/lib/realtime/rooms";
+import { playSetupHref } from "@/lib/routing/play-links";
 
 export default async function WatchPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
@@ -64,7 +65,7 @@ export default async function WatchPage({ params }: { params: Promise<{ locale: 
           </button>
         </div>
         <div className="watch-actions">
-          <Link href={`/${locale}/play`} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
+          <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
             <Swords size={16} />
             Start playing
           </Link>

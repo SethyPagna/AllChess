@@ -7,6 +7,7 @@ import { PlayGamePicker } from "@/components/play-game-picker";
 import { getGameCatalog } from "@/lib/catalog";
 import { timeControls } from "@/lib/game/time-controls";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { playGameHref, playSetupHref } from "@/lib/routing/play-links";
 import { parsePlayMode, parseTimeControl, type PlayModeKey } from "@/lib/routing/params";
 
 const playModes: Array<{ key: PlayModeKey; label: string; description: string; Icon: LucideIcon }> = [
@@ -25,11 +26,11 @@ const workflowSteps = [
 ];
 
 const quickActions = [
-  { label: "Play 10 min", detail: "Rapid setup", Icon: Clock3, hrefSuffix: "?mode=online&time=rapid" },
-  { label: "New Game", detail: "Classic local setup", Icon: Swords, hrefSuffix: "?mode=offline&time=rapid" },
-  { label: "Bot Mode", detail: "Choose tier and clock", Icon: Bot, hrefSuffix: "?bot=normal&mode=bot&time=rapid" },
-  { label: "Play a Friend", detail: "Room invite", Icon: Handshake, hrefSuffix: "?mode=room&time=rapid" }
-];
+  { label: "Play 10 min", detail: "Rapid setup", Icon: Clock3, mode: "online" },
+  { label: "New Game", detail: "Classic local setup", Icon: Swords, mode: "offline" },
+  { label: "Bot Mode", detail: "Choose tier and clock", Icon: Bot, mode: "bot" },
+  { label: "Play a Friend", detail: "Room invite", Icon: Handshake, mode: "room" }
+] satisfies Array<{ label: string; detail: string; Icon: LucideIcon; mode: PlayModeKey }>;
 
 export default async function PlaySetupPage({
   params,
@@ -57,7 +58,7 @@ export default async function PlaySetupPage({
             <InfoHint text="Pick a mode, then choose game, side, time, and bot tier before the board starts." />
           </div>
         </div>
-        <Link href={`/${locale}/play/classic?bot=normal&mode=bot&time=rapid`} className="focus-ring action-primary inline-flex items-center gap-2 px-4 py-3">
+        <Link href={playGameHref(locale, "classic", { mode: "bot", time: "rapid" }) as never} className="focus-ring action-primary inline-flex items-center gap-2 px-4 py-3">
           <Bot size={18} />
           Quick bot game
         </Link>
@@ -71,8 +72,8 @@ export default async function PlaySetupPage({
         ))}
       </div>
       <div className="play-quick-grid" aria-label="Fast play actions">
-        {quickActions.map(({ label, detail, Icon, hrefSuffix }) => (
-          <Link key={label} href={`/${locale}/play/classic${hrefSuffix}`} className="focus-ring play-quick-card">
+        {quickActions.map(({ label, detail, Icon, mode }) => (
+          <Link key={label} href={playGameHref(locale, "classic", { mode, time: "rapid" }) as never} className="focus-ring play-quick-card">
             <Icon size={24} />
             <span>{label}</span>
             <InfoHint text={detail} />
@@ -87,7 +88,7 @@ export default async function PlaySetupPage({
           </div>
           <div className="play-mode-rail-list">
             {playModes.map(({ key, label, description, Icon }) => (
-              <Link key={key} href={`/${locale}/play?mode=${key}&time=${selectedTimeControl}`} className={`focus-ring play-mode-rail-item ${selectedMode === key ? "is-selected" : ""}`} aria-current={selectedMode === key ? "page" : undefined}>
+              <Link key={key} href={playSetupHref(locale, { mode: key, time: selectedTimeControl }) as never} className={`focus-ring play-mode-rail-item ${selectedMode === key ? "is-selected" : ""}`} aria-current={selectedMode === key ? "page" : undefined}>
                 <Icon size={18} />
                 <span>{label}</span>
                 <InfoHint text={description} />
@@ -102,7 +103,7 @@ export default async function PlaySetupPage({
             {timeControls.map((control) => (
               <Link
                 key={control.key}
-                href={`/${locale}/play?mode=${selectedMode}&time=${control.key}`}
+                href={playSetupHref(locale, { mode: selectedMode, time: control.key }) as never}
                 className={`focus-ring play-mode-rail-item ${selectedTimeControl === control.key ? "is-selected" : ""}`}
                 aria-current={selectedTimeControl === control.key ? "page" : undefined}
               >

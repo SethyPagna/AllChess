@@ -5,6 +5,7 @@ import { InfoHint } from "@/components/info-hint";
 import { displayGameName, displayRulesReadiness, gameFamilies, getCatalogStats, getGameCatalog } from "@/lib/catalog";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { playGameHref, playSetupHref } from "@/lib/routing/play-links";
 import { createDefaultStats } from "@/lib/stats";
 
 export default async function LobbyPage({ params }: { params: Promise<{ locale: string }> }) {
@@ -17,11 +18,11 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
   const familyHighlights = gameFamilies.slice(0, 6);
   const siteStats = createDefaultStats();
   const lobbyActions = [
-    { Icon: Swords, title: t("lobby.quickPair"), href: `/${locale}/play?mode=matchmaking`, body: "Find an even opponent by rating and preferred time control." },
-    { Icon: Lock, title: t("lobby.privateRoom"), href: `/${locale}/play?mode=room`, body: "Create a shareable room code for friends." },
-    { Icon: Clock, title: t("lobby.correspondence"), href: `/${locale}/play?time=daily`, body: "Play long-form games across time zones." },
+    { Icon: Swords, title: t("lobby.quickPair"), href: playSetupHref(locale, { mode: "matchmaking", time: "rapid" }), body: "Find an even opponent by rating and preferred time control." },
+    { Icon: Lock, title: t("lobby.privateRoom"), href: playSetupHref(locale, { mode: "room", time: "rapid" }), body: "Create a shareable room code for friends." },
+    { Icon: Clock, title: t("lobby.correspondence"), href: playSetupHref(locale, { mode: "online", time: "correspondence" }), body: "Play long-form games across time zones." },
     { Icon: Eye, title: "Watch rooms", href: `/${locale}/watch`, body: "Spectate public rooms when real games are active." },
-    { Icon: Bot, title: t("lobby.aiPractice"), href: `/${locale}/variants?playability=playable`, body: "Choose a verified board, then train against Easy through Legend bot levels." },
+    { Icon: Bot, title: t("lobby.aiPractice"), href: playSetupHref(locale, { mode: "bot", time: "rapid" }), body: "Choose a verified board, then train against Easy through Legend bot levels." },
     { Icon: Users, title: "Presence", href: `/${locale}/watch`, body: `${siteStats.playersOnline.value} online / ${siteStats.activeRooms.value} rooms / ${siteStats.spectators.value} spectators.` }
   ];
 
@@ -33,11 +34,11 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
           <InfoHint text={t("app.description")} />
         </div>
         <div className="panel lobby-action-row">
-          <Link href={`/${locale}/play` as never} className="focus-ring action-primary inline-flex items-center gap-2 px-4 py-2 text-sm">
+          <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="focus-ring action-primary inline-flex items-center gap-2 px-4 py-2 text-sm">
             <Swords size={16} />
             Play now
           </Link>
-          <Link href={`/${locale}/play/classic?bot=normal&mode=bot`} className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2 text-sm">
+          <Link href={playGameHref(locale, "classic", { mode: "bot", time: "rapid" }) as never} className="focus-ring action-secondary inline-flex items-center gap-2 px-4 py-2 text-sm">
             <Bot size={16} />
             Bot training
           </Link>
@@ -77,7 +78,7 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {featured.map((entry) => (
-            <Link key={entry.id} href={`/${locale}/play/${entry.variantKey}`} className="panel focus-ring grid gap-2 p-4 transition hover:border-[var(--accent)]">
+            <Link key={entry.id} href={playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) as never} className="panel focus-ring grid gap-2 p-4 transition hover:border-[var(--accent)]">
               <span className="flex items-center justify-between gap-3 text-lg font-black">
                 {displayGameName(entry)}
                 <span className="rounded-md bg-[var(--surface-soft)] px-2 py-1 text-xs font-bold text-[var(--muted)]">{displayRulesReadiness(entry)}</span>

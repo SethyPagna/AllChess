@@ -4,6 +4,7 @@ import { BarChart3, History, Play, Search } from "lucide-react";
 import { InfoHint } from "@/components/info-hint";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { playSetupHref } from "@/lib/routing/play-links";
 
 export default async function HistoryPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
@@ -31,7 +32,7 @@ export default async function HistoryPage({ params }: { params: Promise<{ locale
         <p>Saved games, review links, and rating changes appear here after real matches.</p>
         <InfoHint text="History uses stored match data only. It stays empty until Cloudflare D1 has a real finished game for this account." />
         <div className="watch-actions">
-          <Link className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2" href={`/${locale}/play`}>
+          <Link className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2" href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never}>
             <Play size={16} />
             Play
           </Link>

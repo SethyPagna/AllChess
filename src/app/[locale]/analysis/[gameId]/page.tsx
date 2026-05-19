@@ -4,6 +4,7 @@ import { BarChart3, Brain, ChevronLeft, Pause, Play, SkipBack, SkipForward } fro
 import { InfoHint } from "@/components/info-hint";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { playGameHref } from "@/lib/routing/play-links";
 
 export default async function AnalysisPage({
   params
@@ -33,7 +34,7 @@ export default async function AnalysisPage({
           <h2>No saved review yet</h2>
           <p>Finish a game to unlock move labels, turning points, and replay controls.</p>
           <div className="watch-actions">
-            <Link href={`/${locale}/play/classic`} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
+            <Link href={playGameHref(locale, "classic", { mode: "offline", time: "rapid" }) as never} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
               <Play size={16} />
               Play first
             </Link>
