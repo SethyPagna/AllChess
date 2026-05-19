@@ -130,6 +130,7 @@ export function GameBoard({
   const [opponentQuery, setOpponentQuery] = useState("");
   const activeBotRequestRef = useRef<string | null>(null);
   const resolvedRandomSeatRef = useRef(false);
+  const outcomeModalKeyRef = useRef<string | null>(null);
 
   const timeline = useMemo(() => (history.length ? [...history, state] : [state]), [history, state]);
   const reviewMoves = useMemo(() => analyzeMoveList(state.moves), [state.moves]);
@@ -149,6 +150,7 @@ export function GameBoard({
   const botCalibrationLabel = botStrength.calibrationStatus.replace(/-/g, " ");
   const botResponseBudget = Math.min(botLevel.moveTimeMs, MAX_BOT_REPLY_MS - 180);
   const outcome = useMemo(() => describeGameOutcome(state, humanColor), [humanColor, state]);
+  const outcomeKey = state.status === "completed" ? `${state.moves.length}:${state.result ?? ""}:${state.outcomeReason ?? ""}` : null;
   const firstColor = state.clocks[0]?.color ?? "white";
   const secondColor = state.clocks[1]?.color ?? "black";
   const isThinking = thinking.status === "thinking";
@@ -595,6 +597,16 @@ export function GameBoard({
     }, 80);
     return () => window.clearTimeout(timer);
   }, [botColor, botMode, gameStarted, isReviewing, playBotMove, state, thinking.status]);
+
+  useEffect(() => {
+    if (!outcomeKey) {
+      outcomeModalKeyRef.current = null;
+      return;
+    }
+    if (outcomeModalKeyRef.current === outcomeKey) return;
+    outcomeModalKeyRef.current = outcomeKey;
+    setShowOutcome(true);
+  }, [outcomeKey]);
 
   useEffect(() => {
     if (!reviewPlaying) return;
