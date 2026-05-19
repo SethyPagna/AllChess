@@ -7,6 +7,9 @@ import type { BotStrengthBand, BotTierKey } from "@/lib/bot/strength";
 const MIN_BOT_SEARCH_MS = 8;
 const MAX_GLOBAL_TRANSPOSITIONS = 6000;
 const BOT_REPLY_SAFETY_MS = 120;
+const MAX_TERMINAL_THREAT_CANDIDATES = 32;
+const MAX_TERMINAL_THREAT_REPLIES = 40;
+const TERMINAL_THREAT_FILTER_VARIANTS = new Set(["classic", "chess960", "king-of-the-hill", "three-check"]);
 
 export { botDifficultyLevels, MAX_BOT_REPLY_MS };
 export type { BotDifficulty, BotDifficultyKey, BotPlayStyle };
@@ -172,7 +175,8 @@ export function chooseBotMoveSafe(
     }
   }
 
-  const ranked = legalMoves
+  const candidateMoves = movesThatAvoidImmediateTerminalReply(state, legalMoves, perspective, difficulty, budget);
+  const ranked = candidateMoves
     .map((move) => ({ move, score: evaluateMove(state, move, difficulty, perspective, budget) }))
     .sort((a, b) => b.score - a.score);
 
@@ -511,6 +515,53 @@ function selectRankedMove(ranked: Array<{ move: Move; score: number }>, difficul
   const bestScore = ranked[0]?.score ?? 0;
   const safeMoves = ranked.filter((entry) => entry.score >= bestScore - 28);
   return safeMoves[0] ?? ranked[0];
+}
+
+function movesThatAvoidImmediateTerminalReply(
+  state: GameState,
+  legalMoves: Move[],
+  perspective: PlayerColor,
+  difficulty: BotDifficulty,
+  budget: SearchBudget
+) {
+  if (!TERMINAL_THREAT_FILTER_VARIANTS.has(state.variantKey) || difficulty.skill < 8 || difficulty.skill > 14 || legalMoves.length > MAX_TERMINAL_THREAT_CANDIDATES || Date.now() >= budget.deadline) return legalMoves;
+
+  let lowestThreatCount = Number.POSITIVE_INFINITY;
+  const lowestThreatMoves: Move[] = [];
+  const saferMoves = legalMoves.filter((move) => {
+    const next = tryMove(state, move);
+    if (!next) return false;
+    if (next.status === "completed") return next.result === perspective || next.result === "draw";
+    const terminalReplyCount = countImmediateTerminalReplies(next, perspective, difficulty, budget);
+    if (terminalReplyCount < lowestThreatCount) {
+      lowestThreatCount = terminalReplyCount;
+      lowestThreatMoves.length = 0;
+    }
+    if (terminalReplyCount === lowestThreatCount) lowestThreatMoves.push(move);
+    return terminalReplyCount === 0;
+  });
+
+  return saferMoves.length ? saferMoves : lowestThreatMoves.length ? lowestThreatMoves : legalMoves;
+}
+
+function countImmediateTerminalReplies(state: GameState, perspective: PlayerColor, difficulty: BotDifficulty, budget: SearchBudget) {
+  if (state.status === "completed") return state.result !== "draw" && state.result !== perspective ? 1 : 0;
+  if (Date.now() >= budget.deadline) return 0;
+
+  const legalReplies = allLegalMovesCached(state, budget);
+  const repliesToScan =
+    legalReplies.length <= MAX_TERMINAL_THREAT_REPLIES
+      ? legalReplies
+      : legalReplies
+          .map((move) => ({ move, score: staticMoveScore(state, move) }))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, difficulty.replyCheckWidth)
+          .map(({ move }) => move);
+
+  return repliesToScan.reduce((total, reply) => {
+    const next = tryMove(state, reply);
+    return total + (next?.status === "completed" && next.result !== "draw" && next.result !== perspective ? 1 : 0);
+  }, 0);
 }
 
 function beginnerMoveScore(state: GameState, move: Move, perspective: PlayerColor, difficulty: BotDifficulty, budget: SearchBudget) {

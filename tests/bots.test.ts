@@ -121,6 +121,36 @@ describe("bot difficulty ladder", () => {
     expect(hardSearch.elapsedMs).toBeLessThan(MAX_BOT_REPLY_MS);
   });
 
+  test("normal difficulty blocks an immediate variant objective threat", () => {
+    let state = createInitialState("king-of-the-hill", "block-hill-threat");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[4][2].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[7][4].piece = { id: "white-rook", code: "r", owner: "white", labelKey: "chess.rook" };
+    state.board[7][7].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+
+    const opponentTurnState = { ...state, turn: "black" as const };
+    const initialTerminalReplies = opponentTurnState.board
+      .flatMap((row) => row.flatMap((cell) => getLegalMoves(opponentTurnState, cell.square)))
+      .filter((reply) => {
+        const afterReply = applyMove(opponentTurnState, reply);
+        return afterReply.status === "completed" && afterReply.result === "black";
+      });
+    const move = chooseBotMove(state, "normal", { engine: "internal", maxSearchTimeMs: 80 });
+    const afterMove = applyMove(state, move);
+    const terminalReplies = afterMove.board
+      .flatMap((row) => row.flatMap((cell) => getLegalMoves(afterMove, cell.square)))
+      .filter((reply) => {
+        const afterReply = applyMove(afterMove, reply);
+        return afterReply.status === "completed" && afterReply.result === "black";
+      });
+
+    expect(terminalReplies.length).toBeLessThan(initialTerminalReplies.length);
+  });
+
   test("legend difficulty values promotion as a decisive strategic gain", () => {
     let state = createInitialState("classic", "bot-promotion");
     state = {
