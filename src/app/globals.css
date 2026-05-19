@@ -3477,6 +3477,42 @@ select {
   white-space: nowrap;
 }
 
+.analysis-detail-list {
+  display: grid;
+  gap: 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  padding: 0.75rem;
+}
+
+.analysis-detail-list h3 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.analysis-detail-list span {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  color: var(--text);
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.analysis-detail-list strong {
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 950;
+  text-transform: capitalize;
+}
+
 .analysis-review-shell svg {
   color: var(--accent);
 }

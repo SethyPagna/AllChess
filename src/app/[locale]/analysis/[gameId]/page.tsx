@@ -29,6 +29,8 @@ export default async function AnalysisPage({
   const statusLabel = hasAnalysis ? `${review.source.toUpperCase()} review` : "No saved review";
   const selectedMoveIndex = normalizeSelectedMoveIndex(query.ply, review.moves);
   const selectedMove = review.moves[selectedMoveIndex] ?? null;
+  const reviewMoments = extractReviewMoments(review.analysis?.report);
+  const trainingIdeas = extractTrainingIdeas(review.analysis?.report);
 
   return (
     <section className="analysis-page mx-auto grid max-w-5xl gap-5">
@@ -64,6 +66,25 @@ export default async function AnalysisPage({
                 <dd>{review.moves.length}</dd>
               </div>
             </dl>
+            {reviewMoments.length ? (
+              <div className="analysis-detail-list" aria-label="Key review moments">
+                <h3>Key moments</h3>
+                {reviewMoments.map((moment) => (
+                  <span key={`${moment.move}-${moment.label}`}>
+                    <strong>{moment.label}</strong>
+                    {moment.move}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            {trainingIdeas.length ? (
+              <div className="analysis-detail-list" aria-label="Training ideas">
+                <h3>Train next</h3>
+                {trainingIdeas.map((idea) => (
+                  <span key={idea}>{idea}</span>
+                ))}
+              </div>
+            ) : null}
           </article>
         ) : (
           <article className="panel account-empty-state">
@@ -195,4 +216,37 @@ function analysisPlyHref(locale: string, gameId: string, ply: number, options: {
   const autoplayParam = options.autoplay ? "&autoplay=1" : "";
 
   return `/${locale}/analysis/${encodeURIComponent(gameId)}?ply=${ply}${autoplayParam}`;
+}
+
+type ReviewMoment = {
+  label: string;
+  move: string;
+};
+
+function extractReviewMoments(report: unknown): ReviewMoment[] {
+  if (!isRecord(report) || !Array.isArray(report.moments)) return [];
+
+  return report.moments
+    .map((moment) => {
+      if (!isRecord(moment)) return null;
+      const label = normalizeDetailText(moment.label);
+      const move = normalizeDetailText(moment.move);
+      return label || move ? { label: label || "Moment", move: move || "Saved position" } : null;
+    })
+    .filter((moment): moment is ReviewMoment => Boolean(moment))
+    .slice(0, 4);
+}
+
+function extractTrainingIdeas(report: unknown): string[] {
+  if (!isRecord(report) || !Array.isArray(report.training)) return [];
+
+  return report.training.map(normalizeDetailText).filter(Boolean).slice(0, 4);
+}
+
+function normalizeDetailText(value: unknown) {
+  return String(value ?? "").trim();
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }

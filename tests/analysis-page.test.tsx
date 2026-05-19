@@ -28,7 +28,7 @@ function createAnalysisPageD1() {
                 provider: "openai",
                 model: "gpt-test",
                 summary: "White converted a central tactic.",
-                report: JSON.stringify({ moments: [{ move: "e4", label: "excellent" }] }),
+                report: JSON.stringify({ moments: [{ move: "e4", label: "excellent" }], training: ["Review central pawn breaks."] }),
                 created_at: "2026-05-18T00:00:00.000Z"
               };
             },
@@ -83,6 +83,10 @@ describe("analysis page review navigation", () => {
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain("Saved review");
+    expect(markup).toContain("Key moments");
+    expect(markup).toContain("excellent");
+    expect(markup).toContain("Train next");
+    expect(markup).toContain("Review central pawn breaks.");
     expect(markup).toContain("Selected move");
     expect(markup).toContain("Ply 2 of 3");
     expect(markup).toContain("/en/analysis/game-1?ply=1");
