@@ -4,7 +4,7 @@ import type { LucideIcon } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
 import { PlayGamePicker } from "@/components/play-game-picker";
-import { getGameCatalog } from "@/lib/catalog";
+import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { timeControls } from "@/lib/game/time-controls";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { playGameHref, playSetupHref } from "@/lib/routing/play-links";
@@ -32,6 +32,8 @@ const quickActions = [
   { label: "Play a Friend", detail: "Room invite", Icon: Handshake, mode: "room" }
 ] satisfies Array<{ label: string; detail: string; Icon: LucideIcon; mode: PlayModeKey }>;
 
+export const dynamic = "force-dynamic";
+
 export default async function PlaySetupPage({
   params,
   searchParams
@@ -46,7 +48,7 @@ export default async function PlaySetupPage({
   const selectedTimeControl = parseTimeControl(query?.time, "rapid") ?? "rapid";
   const selectedModeLabel = playModes.find((mode) => mode.key === selectedMode)?.label ?? "Online";
   const selectedTimeLabel = timeControls.find((control) => control.key === selectedTimeControl)?.label ?? "Rapid 10+0";
-  const playable = getGameCatalog().filter((entry) => entry.playability === "playable" && entry.variantKey);
+  const playable = (await getRuntimeCatalogEntries()).filter((entry) => entry.playability === "playable" && entry.variantKey);
 
   return (
     <section className="play-setup-page grid gap-5">

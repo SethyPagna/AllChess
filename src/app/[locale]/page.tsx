@@ -2,7 +2,8 @@ import Link from "next/link";
 import { Bot, Eye, Library, LogIn, Play, Swords } from "lucide-react";
 
 import { PieceIcon } from "@/components/piece-icon";
-import { getCatalogStats, getGameCatalog } from "@/lib/catalog";
+import { getCatalogStats } from "@/lib/catalog";
+import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { playSetupHref } from "@/lib/routing/play-links";
@@ -43,11 +44,13 @@ const introPieces: Record<number, { code: string; owner: PlayerColor }> = {
   63: { code: "r", owner: "white" }
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
-  const catalogStats = getCatalogStats(getGameCatalog());
+  const catalogStats = getCatalogStats(await getRuntimeCatalogEntries());
   const workflows = [
     { Icon: Play, label: "Pick a board", detail: "Chess, variants, and rules in one place.", href: playSetupHref(locale, { mode: "online", time: "rapid" }) },
     { Icon: Bot, label: "Train fast", detail: "Bots explain source, tier, and threat.", href: playSetupHref(locale, { mode: "bot", time: "rapid" }) },

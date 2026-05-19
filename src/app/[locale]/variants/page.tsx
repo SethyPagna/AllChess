@@ -4,9 +4,12 @@ import { CatalogBrowser } from "@/components/catalog-browser";
 import { InfoHint } from "@/components/info-hint";
 import { getBotTrainingGateSummary, listBotKnowledgeSummary } from "@/lib/bot/training";
 import { listBotStrengthBands } from "@/lib/bot/strength";
-import { gameFamilies, getCatalogStats, getGameCatalog, type GameFamilyKey, type PlayabilityStatus } from "@/lib/catalog";
+import { gameFamilies, getCatalogStats, type GameFamilyKey, type PlayabilityStatus } from "@/lib/catalog";
+import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+
+export const dynamic = "force-dynamic";
 
 export default async function VariantsPage({
   params,
@@ -19,7 +22,7 @@ export default async function VariantsPage({
   const query = (await searchParams) ?? {};
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
-  const entries = getGameCatalog();
+  const entries = await getRuntimeCatalogEntries();
   const stats = getCatalogStats(entries);
   const knowledge = listBotKnowledgeSummary();
   const trainingGate = getBotTrainingGateSummary();

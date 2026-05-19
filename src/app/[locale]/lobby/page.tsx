@@ -2,17 +2,20 @@ import Link from "next/link";
 import { BarChart3, Bot, Clock, Eye, Library, Lock, Radio, Swords, Trophy, Users } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
-import { displayGameName, displayRulesReadiness, gameFamilies, getCatalogStats, getGameCatalog } from "@/lib/catalog";
+import { displayGameName, displayRulesReadiness, gameFamilies, getCatalogStats } from "@/lib/catalog";
+import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { playGameHref, playSetupHref } from "@/lib/routing/play-links";
 import { createDefaultStats } from "@/lib/stats";
 
+export const dynamic = "force-dynamic";
+
 export default async function LobbyPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
-  const catalog = getGameCatalog();
+  const catalog = await getRuntimeCatalogEntries();
   const stats = getCatalogStats(catalog);
   const featured = catalog.filter((entry) => entry.playability === "playable").slice(0, 6);
   const familyHighlights = gameFamilies.slice(0, 6);
