@@ -89,6 +89,7 @@ test("login explains unavailable Google sign-in", async ({ page }) => {
 test("login masks unknown auth errors", async ({ page }) => {
   await page.goto("/en/login?error=%3Cscript%3Ebad()%3C%2Fscript%3E");
 
+  await expect(page).toHaveURL(/\/en\/login\?error=auth-error$/);
   await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
   await expect(page.locator(".auth-error")).toContainText("We could not complete sign-in.");
   await expect(page.locator(".auth-error")).not.toContainText("bad()");

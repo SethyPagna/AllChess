@@ -144,10 +144,10 @@ describe("compact page copy", () => {
     expect(markup).not.toContain("CLOUDFLARE");
   });
 
-  test("login does not echo unknown auth error query text", async () => {
+  test("login shows the sanitized generic auth error", async () => {
     const element = await LoginPage({
       params: Promise.resolve({ locale: "en" }),
-      searchParams: Promise.resolve({ error: "<script>bad()</script>" })
+      searchParams: Promise.resolve({ error: "auth-error" })
     });
     const markup = renderToStaticMarkup(element);
 
