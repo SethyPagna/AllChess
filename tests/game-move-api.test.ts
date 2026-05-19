@@ -67,4 +67,29 @@ describe("game move API", () => {
       ])
     );
   });
+
+  test("rejects stale D1 move submissions before applying a move", async () => {
+    const authoritativeState = {
+      ...createInitialState("classic", "d1-game"),
+      ply: 4
+    };
+    const { db, calls } = createMoveApiD1(authoritativeState);
+    runtime.env = { ALLCHESS_D1: db };
+
+    const { POST } = await import("@/app/api/games/[id]/move/route");
+    const response = await POST(
+      new Request("http://allchess.test/api/games/d1-game/move", {
+        method: "POST",
+        body: JSON.stringify({
+          expectedPly: 3,
+          move: { from: { row: 6, col: 4 }, to: { row: 4, col: 4 } }
+        })
+      }),
+      { params: Promise.resolve({ id: "d1-game" }) }
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({ error: "Stale game state.", expectedPly: 4 });
+    expect(calls.some((call) => call.sql.includes("insert into moves"))).toBe(false);
+  });
 });

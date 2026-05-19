@@ -33,6 +33,7 @@ const movePayloadSchema = z
 
 const moveSchema = z.object({
   state: z.custom<GameState>().optional(),
+  expectedPly: z.number().int().nonnegative().optional(),
   move: movePayloadSchema
 });
 
@@ -43,6 +44,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   if (!env.ALLCHESS_D1) {
     if (!parsed.state) return NextResponse.json({ error: "A game state is required when D1 is unavailable." }, { status: 400 });
+    if (parsed.expectedPly !== undefined && parsed.state.ply !== parsed.expectedPly) {
+      return NextResponse.json({ error: "Stale game state.", expectedPly: parsed.state.ply }, { status: 409 });
+    }
     const nextState = applyMove(parsed.state, parsed.move as Move);
     return NextResponse.json({ mode: "demo", gameId: id, state: nextState });
   }
@@ -51,6 +55,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const repository = createD1GameRepository(env.ALLCHESS_D1);
     const currentState = await repository.getGameState(id);
     if (!currentState) return NextResponse.json({ error: "Game not found." }, { status: 404 });
+    if (parsed.expectedPly !== undefined && currentState.ply !== parsed.expectedPly) {
+      return NextResponse.json({ error: "Stale game state.", expectedPly: currentState.ply }, { status: 409 });
+    }
     const move = parsed.move as Move;
     const nextState = applyMove(currentState, move);
     await repository.recordMove({ gameId: id, state: nextState, move });
