@@ -2,6 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vitest";
 
 import HistoryPage from "@/app/[locale]/history/page";
+import LeaderboardsPage from "@/app/[locale]/leaderboards/page";
 import LobbyPage from "@/app/[locale]/lobby/page";
 import LoginPage from "@/app/[locale]/login/page";
 import PlaySetupPage from "@/app/[locale]/play/page";
@@ -58,6 +59,17 @@ describe("compact page copy", () => {
     expect(markup).toContain("Search unlocks after saved matches");
     expect(markup).toContain("aria-disabled=\"true\"");
     expect(markup).not.toContain("redirect");
+  });
+
+  test("leaderboards are honest while rated results are empty", async () => {
+    const element = await LeaderboardsPage({ params: Promise.resolve({ locale: "en" }) });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("Leaderboards");
+    expect(markup).toContain("No rated results yet.");
+    expect(markup).toContain("aria-label=\"Leaderboard filters\"");
+    expect(markup).toContain("aria-disabled=\"true\"");
+    expect(markup).toContain("Leaderboards stay empty until real games are recorded.");
   });
 
   test("settings page keeps preference rows compact", async () => {

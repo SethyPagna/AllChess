@@ -3167,6 +3167,14 @@ select {
   font-weight: 850;
 }
 
+.leaderboard-filter-bar.is-empty {
+  opacity: 0.82;
+}
+
+.leaderboard-filter-bar.is-empty span {
+  cursor: not-allowed;
+}
+
 .leaderboard-feature-grid {
   display: grid;
   gap: 0.8rem;

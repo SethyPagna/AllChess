@@ -18,13 +18,13 @@ export default async function LeaderboardsPage({ params }: { params: Promise<{ l
         <h1 className="text-4xl font-black sm:text-5xl">Leaderboards</h1>
         <InfoHint text="Rated tables stay empty until real match results are recorded. No seeded players or guessed rankings." />
       </div>
-      <div className="panel leaderboard-filter-bar">
-        <span>
+      <div className="panel leaderboard-filter-bar is-empty" aria-label="Leaderboard filters">
+        <span aria-disabled="true" title="Scope filters unlock when rated results exist.">
           <Filter size={16} />
           Scope
         </span>
-        <span>Rated only</span>
-        <span>Real results</span>
+        <span aria-disabled="true" title="Only real rated games appear here.">Rated only</span>
+        <span aria-disabled="true" title="Leaderboards stay empty until real games are recorded.">Real results</span>
       </div>
       <div className="leaderboard-feature-grid">
         {primaryScopes.map((scope) => (
