@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, Brain, ChevronLeft, Play } from "lucide-react";
+import { BarChart3, Brain, ChevronLeft, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
 import { createTranslator } from "@/lib/i18n/dictionary";
@@ -44,10 +44,27 @@ export default async function AnalysisPage({
             <BarChart3 size={18} />
             Review tools
           </h2>
+          <div className="analysis-review-controls" aria-label="Review playback controls">
+            <button type="button" disabled title="First move unlocks when this game has saved move history.">
+              <SkipBack size={15} />
+              First
+            </button>
+            <button type="button" disabled title="Playback unlocks after a completed game is saved.">
+              <Play size={15} />
+              Play
+            </button>
+            <button type="button" disabled title="Next move unlocks when review snapshots are available.">
+              <SkipForward size={15} />
+              Next
+            </button>
+          </div>
           <div className="analysis-review-rows">
             <span>Move timeline</span>
             <span>Best / excellent / mistake / blunder labels</span>
-            <span>First, previous, play, next, last controls</span>
+            <span>
+              <Pause size={14} />
+              Playback controls unlock after saved moves
+            </span>
             <span>Position notes and engine-ready explanations</span>
           </div>
         </article>

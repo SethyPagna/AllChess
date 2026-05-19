@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vitest";
 
+import AnalysisPage from "@/app/[locale]/analysis/[gameId]/page";
 import HistoryPage from "@/app/[locale]/history/page";
 import LeaderboardsPage from "@/app/[locale]/leaderboards/page";
 import LobbyPage from "@/app/[locale]/lobby/page";
@@ -81,6 +82,17 @@ describe("compact page copy", () => {
     expect(markup).toContain("No public rooms right now");
     expect(markup).toContain("aria-label=\"Watch room controls\"");
     expect(markup).toContain("Search unlocks when public rooms are available.");
+    expect(markup).toContain("disabled=\"\"");
+  });
+
+  test("analysis keeps empty review controls visible but disabled", async () => {
+    const element = await AnalysisPage({ params: Promise.resolve({ locale: "en", gameId: "demo" }) });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("Review tools");
+    expect(markup).toContain("aria-label=\"Review playback controls\"");
+    expect(markup).toContain("First move unlocks when this game has saved move history.");
+    expect(markup).toContain("Playback controls unlock after saved moves");
     expect(markup).toContain("disabled=\"\"");
   });
 

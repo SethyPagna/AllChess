@@ -158,6 +158,17 @@ test("watch rooms and catalog filters land on honest real-data views", async ({ 
   await expectNoHorizontalOverflow(page);
 });
 
+test("analysis empty review controls are explicit and disabled", async ({ page }) => {
+  await page.goto("/en/analysis/demo-game");
+
+  await expect(page.getByRole("heading", { name: "AI analysis" })).toBeVisible();
+  await expect(page.getByLabel("Review playback controls").getByRole("button", { name: "First" })).toBeDisabled();
+  await expect(page.getByLabel("Review playback controls").getByRole("button", { name: "Play" })).toBeDisabled();
+  await expect(page.getByLabel("Review playback controls").getByRole("button", { name: "Next" })).toBeDisabled();
+  await expect(page.getByText("Playback controls unlock after saved moves")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("legacy practice route redirects into the unified games and rules flow", async ({ page }) => {
   await page.goto("/en/practice");
 
