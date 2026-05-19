@@ -3407,10 +3407,6 @@ select {
   gap: 0.45rem;
 }
 
-.practice-page {
-  max-width: 1180px;
-}
-
 .play-setup-page {
   max-width: 1180px;
 }
@@ -3660,27 +3656,6 @@ select {
   font-size: 0.82rem;
 }
 
-.practice-hero {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem;
-}
-
-.practice-hero h1 {
-  margin: 0.2rem 0;
-  font-size: clamp(1.8rem, 4vw, 3rem);
-  font-weight: 950;
-  line-height: 1;
-}
-
-.practice-hero p {
-  max-width: 45rem;
-  color: var(--muted);
-  font-weight: 750;
-}
-
 .games-rules-heading {
   display: flex;
   flex-wrap: wrap;
@@ -3738,75 +3713,6 @@ select {
   overflow-wrap: anywhere;
   font-size: clamp(1.1rem, 2.4vw, 1.55rem);
   font-weight: 950;
-}
-
-.practice-grid {
-  display: grid;
-  gap: 0.8rem;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
-}
-
-.practice-card {
-  display: grid;
-  gap: 0.85rem;
-  align-content: start;
-  padding: 1rem;
-}
-
-.practice-card h2 {
-  margin: 0.15rem 0;
-  font-size: 1.15rem;
-  font-weight: 950;
-}
-
-.practice-card p,
-.practice-card-meta {
-  color: var(--muted);
-  font-size: 0.86rem;
-  font-weight: 750;
-}
-
-.practice-readiness {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
-  align-items: center;
-}
-
-.practice-readiness strong,
-.practice-readiness span {
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 16%, var(--surface-strong));
-  padding: 0.28rem 0.55rem;
-  font-size: 0.74rem;
-  font-weight: 900;
-  color: var(--text);
-}
-
-.practice-readiness span {
-  background: var(--surface-strong);
-  color: var(--muted);
-}
-
-.practice-readiness[data-status="rules-gated"] strong {
-  background: color-mix(in srgb, var(--warning) 22%, var(--surface-strong));
-  color: var(--warning);
-}
-
-.practice-readiness[data-status="rules-gated"] span:first-of-type {
-  background: color-mix(in srgb, var(--danger) 14%, var(--surface-strong));
-  color: var(--danger);
-}
-
-.practice-card-meta {
-  display: grid;
-  gap: 0.35rem;
-}
-
-.practice-card-meta span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
 }
 
 .catalog-card-meta {
@@ -4477,7 +4383,6 @@ select {
     min-height: 2rem;
   }
 
-  .practice-hero,
   .play-setup-hero {
     align-items: flex-start;
     flex-direction: column;

@@ -155,6 +155,15 @@ test("watch rooms and catalog filters land on honest real-data views", async ({ 
   await expectNoHorizontalOverflow(page);
 });
 
+test("practice redirects into the unified games and rules flow", async ({ page }) => {
+  await page.goto("/en/practice");
+
+  await expect(page).toHaveURL(/\/en\/variants\?playability=playable$/);
+  await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
+  await expect(page.getByLabel("Playability")).toHaveValue("playable");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("language menu keeps the current route", async ({ page }) => {
   await page.goto("/en/play/classic");
 
