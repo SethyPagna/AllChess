@@ -167,6 +167,8 @@ describe("compact page copy", () => {
     expect(markup).toContain("No profile history yet");
     expect(markup).toContain('class="info-hint');
     expect(markup).toContain("Guest-ready");
+    expect(markup).toContain("/en/history");
+    expect(markup).toContain("Full history");
     expect(markup).not.toContain("Finished games will appear here after Cloudflare D1 records");
     expect(markup).not.toContain("AllChess will show real per-game ratings");
   });

@@ -89,6 +89,10 @@ function ProfileEmptyState({ locale }: { locale: string }) {
           <BarChart3 size={16} />
           View ratings
         </Link>
+        <Link href={`/${locale}/history`} className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-2">
+          <History size={16} />
+          Full history
+        </Link>
       </div>
     </div>
   );
@@ -100,6 +104,10 @@ function ProfileResults({ history, locale }: { history: RuntimeProfileHistory; l
       <div className="compact-section-heading">
         <h2 className="section-title">Recent matches</h2>
         <InfoHint text="These rows come from saved Cloudflare D1 match results for this profile." />
+        <Link href={`/${locale}/history`} className="action-secondary focus-ring inline-flex items-center gap-2 px-3 py-2 text-sm">
+          <History size={15} />
+          Full history
+        </Link>
       </div>
       <div>
         {history.results.map((result) => (
