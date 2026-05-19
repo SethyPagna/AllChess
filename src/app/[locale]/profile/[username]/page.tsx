@@ -4,7 +4,10 @@ import { BarChart3, History, Play, Settings } from "lucide-react";
 import { InfoHint } from "@/components/info-hint";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { getRuntimeProfileHistory, type RuntimeProfileHistory } from "@/lib/profile/runtime";
 import { playSetupHref } from "@/lib/routing/play-links";
+
+export const dynamic = "force-dynamic";
 
 export default async function ProfilePage({
   params
@@ -15,6 +18,8 @@ export default async function ProfilePage({
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
   const displayName = username === "player" ? "Guest player" : username;
+  const history = await getRuntimeProfileHistory(username, 5);
+  const summary = summarizeProfileHistory(history);
 
   return (
     <section className="account-page mx-auto grid max-w-5xl gap-5">
@@ -26,8 +31,8 @@ export default async function ProfilePage({
           <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">Profile & history</p>
           <h1 className="truncate text-4xl font-black">@{displayName}</h1>
           <div className="account-profile-meta">
-            <span>Guest-ready</span>
-            <span>Unrated</span>
+            <span>{history.source === "d1" ? "Cloudflare profile" : "Guest-ready"}</span>
+            <span>{summary.bestRating ? `${Math.round(summary.bestRating)} peak` : "Unrated"}</span>
             <InfoHint text="Ratings, records, favorite games, and review highlights sync here after signed-in games are saved." />
           </div>
         </div>
@@ -38,9 +43,9 @@ export default async function ProfilePage({
       </div>
       <div className="account-stat-grid">
         {[
-          { label: t("chess.rating"), value: "Unrated", Icon: BarChart3 },
-          { label: "Saved games", value: "0", Icon: History },
-          { label: "Best game", value: "Pending", Icon: Play }
+          { label: t("chess.rating"), value: summary.bestRating ? String(Math.round(summary.bestRating)) : "Unrated", Icon: BarChart3 },
+          { label: "Saved games", value: String(summary.gamesPlayed), Icon: History },
+          { label: "Best game", value: summary.recentResult ?? "Pending", Icon: Play }
         ].map(({ Icon, label, value }) => (
           <div key={label} className="panel account-stat-card">
             <Icon size={18} />
@@ -49,22 +54,63 @@ export default async function ProfilePage({
           </div>
         ))}
       </div>
-      <div className="panel account-empty-state">
-        <History size={26} />
-        <h2>No profile history yet</h2>
-        <p>Start a game to build recent matches, favorite games, and review highlights.</p>
-        <InfoHint text="Profile history uses saved game data only, so this area stays empty until real matches are recorded." />
-        <div className="watch-actions">
-          <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
-            <Play size={16} />
-            Start playing
-          </Link>
-          <Link href={`/${locale}/leaderboards`} className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-2">
-            <BarChart3 size={16} />
-            View ratings
-          </Link>
-        </div>
-      </div>
+      {history.results.length > 0 ? <ProfileResults history={history} locale={locale} /> : <ProfileEmptyState locale={locale} />}
     </section>
+  );
+}
+
+function summarizeProfileHistory(history: RuntimeProfileHistory) {
+  const gamesPlayed = history.stats.reduce((total, stat) => total + stat.gamesPlayed, 0);
+  const bestRating = history.stats.reduce<number | null>((best, stat) => {
+    if (stat.bestRating == null) return best;
+    return best == null ? stat.bestRating : Math.max(best, stat.bestRating);
+  }, null);
+  const recentResult = history.results[0]?.result;
+  return {
+    gamesPlayed,
+    bestRating,
+    recentResult: recentResult ? recentResult[0].toUpperCase() + recentResult.slice(1) : null
+  };
+}
+
+function ProfileEmptyState({ locale }: { locale: string }) {
+  return (
+    <div className="panel account-empty-state">
+      <History size={26} />
+      <h2>No profile history yet</h2>
+      <p>Start a game to build recent matches, favorite games, and review highlights.</p>
+      <InfoHint text="Profile history uses saved game data only, so this area stays empty until real matches are recorded." />
+      <div className="watch-actions">
+        <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
+          <Play size={16} />
+          Start playing
+        </Link>
+        <Link href={`/${locale}/leaderboards`} className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-2">
+          <BarChart3 size={16} />
+          View ratings
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+function ProfileResults({ history, locale }: { history: RuntimeProfileHistory; locale: string }) {
+  return (
+    <div className="panel profile-history-list">
+      <div className="compact-section-heading">
+        <h2 className="section-title">Recent matches</h2>
+        <InfoHint text="These rows come from saved Cloudflare D1 match results for this profile." />
+      </div>
+      <div>
+        {history.results.map((result) => (
+          <Link key={result.id} href={`/${locale}/analysis/${result.gameId}`} className="focus-ring profile-history-row">
+            <span>{result.variantKey}</span>
+            <strong>{result.result}</strong>
+            <span>{result.outcomeReason ?? "recorded result"}</span>
+            <span>{result.ratingDelta == null ? "unrated" : `${result.ratingDelta > 0 ? "+" : ""}${result.ratingDelta}`}</span>
+          </Link>
+        ))}
+      </div>
+    </div>
   );
 }

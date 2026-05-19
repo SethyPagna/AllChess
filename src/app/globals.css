@@ -3173,6 +3173,44 @@ select {
   line-height: 1.45;
 }
 
+.profile-history-list {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+.profile-history-list > div:last-child {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.profile-history-row {
+  display: grid;
+  grid-template-columns: minmax(6rem, 1fr) auto minmax(8rem, 1.2fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  padding: 0.65rem 0.75rem;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.profile-history-row span {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-history-row strong {
+  color: var(--accent);
+  text-transform: capitalize;
+}
+
 .leaderboard-filter-bar,
 .analysis-command-bar {
   display: flex;
