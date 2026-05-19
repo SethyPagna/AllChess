@@ -96,6 +96,19 @@ test("login masks unknown auth errors", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("invalid login keeps the active locale", async ({ page }) => {
+  await page.goto("/fr/login");
+
+  await page.locator('input[name="email"]').fill("player@example.com");
+  await page.locator('input[name="password"]').fill("x");
+  await Promise.all([
+    page.waitForURL(/\/fr\/login\?error=invalid-credentials$/),
+    page.getByRole("button", { name: "Connexion" }).click()
+  ]);
+  await expect(page.locator(".auth-error")).toContainText("Enter a valid email");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("mobile shell language, notifications, and board controls stay in bounds", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
   await page.goto("/en/play/classic");
