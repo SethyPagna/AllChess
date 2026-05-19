@@ -102,6 +102,11 @@ describe("universal game catalog", () => {
       ])
     });
 
+    const invalidFilteredCatalog = await catalogGet(new Request("http://allchess.test/api/catalog?family=bad&playability=broken"));
+    await expect(invalidFilteredCatalog.json()).resolves.toMatchObject({
+      stats: { totalGames: gameCatalog.length }
+    });
+
     const item = await catalogItemGet(new Request("http://allchess.test/api/catalog/dou-shou-qi"), { params: Promise.resolve({ gameId: "dou-shou-qi" }) });
     await expect(item.json()).resolves.toMatchObject({ id: "jungle", name: { native: "鬥獸棋" } });
 
@@ -126,5 +131,13 @@ describe("universal game catalog", () => {
       variantKey: "oware",
       numberedBasics: expect.arrayContaining([expect.stringContaining("Sow seeds")])
     });
+  });
+
+  test("catalog and rules APIs return clean 404s for malformed route ids", async () => {
+    const catalogItem = await catalogItemGet(new Request("http://allchess.test/api/catalog/%E0%A4%A"), { params: Promise.resolve({ gameId: "%E0%A4%A" }) });
+    const rules = await rulesGet(new Request("http://allchess.test/api/rules/%E0%A4%A"), { params: Promise.resolve({ variantKey: "%E0%A4%A" }) });
+
+    expect(catalogItem.status).toBe(404);
+    expect(rules.status).toBe(404);
   });
 });

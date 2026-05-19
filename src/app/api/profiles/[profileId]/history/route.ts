@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { parseBoundedInteger, safeDecodeRouteSegment } from "@/lib/api/route-params";
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
 
@@ -9,25 +10,30 @@ type RouteContext = {
 
 export async function GET(request: Request, context: RouteContext) {
   const { profileId } = await context.params;
+  const decodedProfileId = safeDecodeRouteSegment(profileId);
+  if (!decodedProfileId) {
+    return NextResponse.json({ error: "Unknown profile." }, { status: 404 });
+  }
+
   const url = new URL(request.url);
-  const limit = Number(url.searchParams.get("limit") ?? 20);
+  const limit = parseBoundedInteger(url.searchParams.get("limit"), 20, { min: 1, max: 100 });
   const env = await getCloudflareRuntimeEnv();
 
   if (!env.ALLCHESS_D1) {
     return NextResponse.json({
       source: "empty-live-data",
-      profileId,
+      profileId: decodedProfileId,
       stats: [],
       results: []
     });
   }
 
   const repository = createD1GameRepository(env.ALLCHESS_D1);
-  const [stats, results] = await Promise.all([repository.getProfileGameStats(profileId), repository.getProfileGameResults(profileId, limit)]);
+  const [stats, results] = await Promise.all([repository.getProfileGameStats(decodedProfileId), repository.getProfileGameResults(decodedProfileId, limit)]);
 
   return NextResponse.json({
     source: "d1",
-    profileId,
+    profileId: decodedProfileId,
     stats,
     results
   });

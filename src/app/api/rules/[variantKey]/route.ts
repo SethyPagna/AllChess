@@ -1,14 +1,20 @@
 import { NextResponse } from "next/server";
 
+import { safeDecodeRouteSegment } from "@/lib/api/route-params";
 import { getGameCatalogEntry } from "@/lib/catalog";
 import { getVariantRuleSummary } from "@/lib/rules-atlas";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ variantKey: string }> }) {
   const { variantKey } = await params;
+  const decodedVariantKey = safeDecodeRouteSegment(variantKey);
+  if (!decodedVariantKey) {
+    return NextResponse.json({ error: "Unknown game." }, { status: 404 });
+  }
+
   try {
-    return NextResponse.json(getVariantRuleSummary(variantKey));
+    return NextResponse.json(getVariantRuleSummary(decodedVariantKey));
   } catch {
-    const entry = getGameCatalogEntry(decodeURIComponent(variantKey));
+    const entry = getGameCatalogEntry(decodedVariantKey);
     if (!entry) {
       return NextResponse.json({ error: "Unknown game." }, { status: 404 });
     }

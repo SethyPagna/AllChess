@@ -119,4 +119,26 @@ describe("profile history API", () => {
       ])
     );
   });
+
+  test("sanitizes route profile id and clamps unsafe limits", async () => {
+    const { db, calls } = createProfileHistoryD1();
+    runtime.env = { ALLCHESS_D1: db };
+
+    const response = await GET(new Request("http://allchess.test/api/profiles/profile%201/history?limit=9999"), {
+      params: Promise.resolve({ profileId: "profile%201" })
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ profileId: "profile 1" });
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ sql: expect.stringContaining("from profile_game_results"), values: ["profile 1", 100] })
+      ])
+    );
+
+    const invalid = await GET(new Request("http://allchess.test/api/profiles/%E0%A4%A/history?limit=bad"), {
+      params: Promise.resolve({ profileId: "%E0%A4%A" })
+    });
+    expect(invalid.status).toBe(404);
+  });
 });
