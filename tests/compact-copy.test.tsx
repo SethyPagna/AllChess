@@ -129,4 +129,18 @@ describe("compact page copy", () => {
     expect(markup).toContain('class="info-hint');
     expect(markup).not.toContain("<p>Sign in with AllChess auth");
   });
+
+  test("login explains auth redirects without exposing secrets", async () => {
+    const element = await LoginPage({
+      params: Promise.resolve({ locale: "en" }),
+      searchParams: Promise.resolve({ error: "google-oauth-not-configured" })
+    });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("role=\"alert\"");
+    expect(markup).toContain("Google sign-in is not configured yet.");
+    expect(markup).toContain("Use email/password or continue as guest.");
+    expect(markup).not.toContain("GOOGLE_CLIENT_SECRET");
+    expect(markup).not.toContain("CLOUDFLARE");
+  });
 });

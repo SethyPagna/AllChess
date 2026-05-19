@@ -4,10 +4,12 @@ import type { LocaleCode } from "@/lib/i18n/locales";
 
 export function AuthCard({
   locale,
-  copy
+  copy,
+  error
 }: {
   locale: LocaleCode;
   copy: Record<"title" | "subtitle" | "email" | "password" | "login" | "demo", string>;
+  error?: string | null;
 }) {
   return (
     <section className="auth-page mx-auto grid max-w-5xl gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
@@ -27,6 +29,11 @@ export function AuthCard({
         </form>
       </div>
       <div className="panel auth-form-card">
+        {error ? (
+          <div className="auth-error" role="alert">
+            {error}
+          </div>
+        ) : null}
         <form action={signInWithPassword} className="grid gap-4">
           <input type="hidden" name="locale" value={locale} />
           <label className="grid gap-2 text-sm font-bold">

@@ -77,6 +77,15 @@ test("settings exposes language and theme controls", async ({ page }) => {
   await expect(page.getByRole("main").getByRole("button", { name: "Dark" })).toBeVisible();
 });
 
+test("login explains unavailable Google sign-in", async ({ page }) => {
+  await page.goto("/en/login?error=google-oauth-not-configured");
+
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  await expect(page.locator(".auth-error")).toContainText("Google sign-in is not configured yet.");
+  await expect(page.getByRole("button", { name: "Continue with Google" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
 test("mobile shell language, notifications, and board controls stay in bounds", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
   await page.goto("/en/play/classic");
