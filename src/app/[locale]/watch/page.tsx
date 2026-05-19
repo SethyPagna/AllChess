@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eye, Radio, Swords, Trophy } from "lucide-react";
+import { Eye, Radio, Search, Swords, Trophy, Users } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
@@ -49,6 +49,20 @@ export default async function WatchPage({ params }: { params: Promise<{ locale: 
             <p>Start a room or check back when a public game is live.</p>
           </>
         )}
+        <div className="watch-room-tools is-empty" aria-label="Watch room controls">
+          <button type="button" disabled title="Search unlocks when public rooms are available.">
+            <Search size={15} />
+            Search rooms
+          </button>
+          <button type="button" disabled title="Spectator list unlocks after a live room is published.">
+            <Users size={15} />
+            Spectators
+          </button>
+          <button type="button" disabled title="Live filters stay disabled until real room data exists.">
+            <Radio size={15} />
+            Live only
+          </button>
+        </div>
         <div className="watch-actions">
           <Link href={`/${locale}/play`} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
             <Swords size={16} />

@@ -9,6 +9,7 @@ import PlaySetupPage from "@/app/[locale]/play/page";
 import ProfilePage from "@/app/[locale]/profile/[username]/page";
 import SettingsPage from "@/app/[locale]/settings/page";
 import VariantsPage from "@/app/[locale]/variants/page";
+import WatchPage from "@/app/[locale]/watch/page";
 import { ThemeProvider } from "@/components/theme-provider";
 
 describe("compact page copy", () => {
@@ -70,6 +71,17 @@ describe("compact page copy", () => {
     expect(markup).toContain("aria-label=\"Leaderboard filters\"");
     expect(markup).toContain("aria-disabled=\"true\"");
     expect(markup).toContain("Leaderboards stay empty until real games are recorded.");
+  });
+
+  test("watch rooms disables live controls until room data exists", async () => {
+    const element = await WatchPage({ params: Promise.resolve({ locale: "en" }) });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("Watch rooms");
+    expect(markup).toContain("No public rooms right now");
+    expect(markup).toContain("aria-label=\"Watch room controls\"");
+    expect(markup).toContain("Search unlocks when public rooms are available.");
+    expect(markup).toContain("disabled=\"\"");
   });
 
   test("settings page keeps preference rows compact", async () => {

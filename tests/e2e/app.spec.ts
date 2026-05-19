@@ -147,6 +147,9 @@ test("watch rooms and catalog filters land on honest real-data views", async ({ 
 
   await expect(page.getByRole("heading", { name: "Watch rooms" })).toBeVisible();
   await expect(page.getByText(/No public rooms|Live room list/)).toBeVisible();
+  await expect(page.getByLabel("Watch room controls").getByRole("button", { name: "Search rooms" })).toBeDisabled();
+  await expect(page.getByLabel("Watch room controls").getByRole("button", { name: "Spectators" })).toBeDisabled();
+  await expect(page.getByLabel("Watch room controls").getByRole("button", { name: "Live only" })).toBeDisabled();
   await expectNoHorizontalOverflow(page);
 
   await page.goto("/en/variants?playability=learn");
