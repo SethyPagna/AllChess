@@ -5,8 +5,9 @@ import type { LucideIcon } from "lucide-react";
 import { InfoHint } from "@/components/info-hint";
 import { PlayGamePicker } from "@/components/play-game-picker";
 import { getGameCatalog } from "@/lib/catalog";
+import { timeControls } from "@/lib/game/time-controls";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { parsePlayMode, type PlayModeKey } from "@/lib/routing/params";
+import { parsePlayMode, parseTimeControl, type PlayModeKey } from "@/lib/routing/params";
 
 const playModes: Array<{ key: PlayModeKey; label: string; description: string; Icon: LucideIcon }> = [
   { key: "online", label: "Online", description: "Queue for a live opponent with matching settings.", Icon: Globe2 },
@@ -35,13 +36,15 @@ export default async function PlaySetupPage({
   searchParams
 }: {
   params: Promise<{ locale: string }>;
-  searchParams?: Promise<{ mode?: string }>;
+  searchParams?: Promise<{ mode?: string; time?: string }>;
 }) {
   const { locale: rawLocale } = await params;
   const query = await searchParams;
   const locale = normalizeLocale(rawLocale);
   const selectedMode = parsePlayMode(query?.mode, "online") ?? "online";
+  const selectedTimeControl = parseTimeControl(query?.time, "rapid") ?? "rapid";
   const selectedModeLabel = playModes.find((mode) => mode.key === selectedMode)?.label ?? "Online";
+  const selectedTimeLabel = timeControls.find((control) => control.key === selectedTimeControl)?.label ?? "Rapid 10+0";
   const playable = getGameCatalog().filter((entry) => entry.playability === "playable" && entry.variantKey);
 
   return (
@@ -84,10 +87,28 @@ export default async function PlaySetupPage({
           </div>
           <div className="play-mode-rail-list">
             {playModes.map(({ key, label, description, Icon }) => (
-              <Link key={key} href={`/${locale}/play?mode=${key}`} className={`focus-ring play-mode-rail-item ${selectedMode === key ? "is-selected" : ""}`} aria-current={selectedMode === key ? "page" : undefined}>
+              <Link key={key} href={`/${locale}/play?mode=${key}&time=${selectedTimeControl}`} className={`focus-ring play-mode-rail-item ${selectedMode === key ? "is-selected" : ""}`} aria-current={selectedMode === key ? "page" : undefined}>
                 <Icon size={18} />
                 <span>{label}</span>
                 <InfoHint text={description} />
+              </Link>
+            ))}
+          </div>
+          <div className="compact-section-heading mt-4">
+            <h2 className="section-title">Clock</h2>
+            <InfoHint text={`Selected: ${selectedTimeLabel}. The chosen clock follows each game link.`} />
+          </div>
+          <div className="play-mode-rail-list" aria-label="Time controls">
+            {timeControls.map((control) => (
+              <Link
+                key={control.key}
+                href={`/${locale}/play?mode=${selectedMode}&time=${control.key}`}
+                className={`focus-ring play-mode-rail-item ${selectedTimeControl === control.key ? "is-selected" : ""}`}
+                aria-current={selectedTimeControl === control.key ? "page" : undefined}
+              >
+                <Clock3 size={18} />
+                <span>{control.label}</span>
+                <InfoHint text={control.description} />
               </Link>
             ))}
           </div>
@@ -97,7 +118,7 @@ export default async function PlaySetupPage({
             <h2 className="section-title">Game</h2>
             <InfoHint text="Pick a ruleset. Use the info button for basics, endings, status, bot mode, and the full guide." />
           </div>
-          <PlayGamePicker entries={playable} locale={locale} selectedMode={selectedMode} />
+          <PlayGamePicker entries={playable} locale={locale} selectedMode={selectedMode} selectedTimeControl={selectedTimeControl} />
         </div>
       </div>
     </section>

@@ -87,6 +87,28 @@ test("bot thinking time is charged to the bot clock", async ({ page }) => {
   expect(runtimeErrors).toEqual([]);
 });
 
+test("play setup carries selected clock into game links", async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
+  });
+
+  await page.goto("/en/play?mode=bot&time=blitz");
+  await expect(page.getByRole("heading", { name: "Choose how you want to play" })).toBeVisible();
+  await expect(page.getByLabel("Time controls").getByText("Blitz 5+0")).toBeVisible();
+
+  const classicRow = page.locator(".play-game-row").filter({ hasText: "Classic Chess" });
+  const botLink = classicRow.getByRole("link", { name: "Bot" });
+  await expect(botLink).toHaveAttribute("href", "/en/play/classic?bot=normal&mode=bot&time=blitz");
+  await botLink.click();
+
+  await expect(page).toHaveURL(/\/en\/play\/classic\?bot=normal&mode=bot&time=blitz$/);
+  await expect(page.getByLabel("Bot difficulty")).toHaveValue("normal");
+  await expect(page.locator(".play-time-grid .is-selected")).toContainText("Blitz 5+0");
+  expect(runtimeErrors).toEqual([]);
+});
+
 test("checkmate shows match-over feedback without resizing the board", async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));

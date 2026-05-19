@@ -1,6 +1,6 @@
 import { applyMove, getLegalMoves, sameSquare, type GameState, type Move, type PlayerColor } from "@/lib/variants";
 import { lookupBotKnowledge, type BotKnowledgeSource, type BotMoveExplanation } from "@/lib/bot/training";
-import { moveToUci, requestStockfishMove, shouldUseStockfish, type BotEngineMode } from "@/lib/bot/stockfish-engine";
+import { isStockfishRuntimeReady, moveToUci, requestStockfishMove, shouldUseStockfish, warmStockfishRuntime, type BotEngineMode } from "@/lib/bot/stockfish-engine";
 import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficulty, type BotDifficultyKey, type BotPlayStyle } from "@/lib/bot/config";
 import type { BotStrengthBand, BotTierKey } from "@/lib/bot/strength";
 
@@ -284,37 +284,41 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
         }
 
         if (shouldUseStockfish(state, options.engine ?? "auto")) {
-          const playedMoves = state.moves.map((move) => moveToUci(state, move));
-          const stockfish = await requestStockfishMove(state, difficultyKey, playedMoves, remainingSearchMs());
-          if (stockfish && !requestState.cancelled) {
-            finish({
-              requestId,
-              status: "ok",
-              engine: "stockfish",
-              tier: difficultyKey,
-              strength: tierConfig.strength,
-              move: stockfish.move,
-              uciMove: stockfish.uciMove,
-              principalVariation: stockfish.principalVariation,
-              pv: stockfish.principalVariation,
-              reason: "ok",
-              score: stockfish.evaluation,
-              evaluation: stockfish.evaluation,
-              confidence: confidenceFor(stockfish.evaluation, stockfish.depthReached, difficultyKey),
-              benchmarkVersion: tierConfig.benchmarkVersion,
-              legal: true,
-              legalValidated: true,
-              depth: stockfish.depthReached,
-              nodes: stockfish.nodesSearched,
-              depthReached: stockfish.depthReached,
-              nodesSearched: stockfish.nodesSearched,
-              elapsedMs: Date.now() - startedAt,
-              validatedLegal: true,
-              searchEfficiency: emptySearchEfficiency(stockfish.nodesSearched),
-              knowledgeSource: "engine-search",
-              explanation: explanationForMove("engine-search", state, stockfish.move, stockfish.evaluation, difficultyKey)
-            });
-            return;
+          if (isStockfishRuntimeReady()) {
+            const playedMoves = state.moves.map((move) => moveToUci(state, move));
+            const stockfish = await requestStockfishMove(state, difficultyKey, playedMoves, remainingSearchMs());
+            if (stockfish && !requestState.cancelled) {
+              finish({
+                requestId,
+                status: "ok",
+                engine: "stockfish",
+                tier: difficultyKey,
+                strength: tierConfig.strength,
+                move: stockfish.move,
+                uciMove: stockfish.uciMove,
+                principalVariation: stockfish.principalVariation,
+                pv: stockfish.principalVariation,
+                reason: "ok",
+                score: stockfish.evaluation,
+                evaluation: stockfish.evaluation,
+                confidence: confidenceFor(stockfish.evaluation, stockfish.depthReached, difficultyKey),
+                benchmarkVersion: tierConfig.benchmarkVersion,
+                legal: true,
+                legalValidated: true,
+                depth: stockfish.depthReached,
+                nodes: stockfish.nodesSearched,
+                depthReached: stockfish.depthReached,
+                nodesSearched: stockfish.nodesSearched,
+                elapsedMs: Date.now() - startedAt,
+                validatedLegal: true,
+                searchEfficiency: emptySearchEfficiency(stockfish.nodesSearched),
+                knowledgeSource: "engine-search",
+                explanation: explanationForMove("engine-search", state, stockfish.move, stockfish.evaluation, difficultyKey)
+              });
+              return;
+            }
+          } else {
+            warmStockfishRuntime();
           }
         }
 

@@ -17,15 +17,19 @@ import { ThemeProvider } from "@/components/theme-provider";
 
 describe("compact page copy", () => {
   test("play setup uses info affordances instead of visible paragraph-heavy mode cards", async () => {
-    const element = await PlaySetupPage({ params: Promise.resolve({ locale: "en" }) });
+    const element = await PlaySetupPage({ params: Promise.resolve({ locale: "en" }), searchParams: Promise.resolve({ mode: "bot", time: "blitz" }) });
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain('aria-label="More information"');
     expect(markup).toContain('aria-label="Play modes"');
+    expect(markup).toContain('aria-label="Time controls"');
     expect(markup).toContain("Mode");
+    expect(markup).toContain("Clock");
     expect(markup).toContain("Game");
     expect(markup).toContain("Online");
     expect(markup).toContain("Bots");
+    expect(markup).toContain("Blitz 5+0");
+    expect(markup).toContain("/en/play/classic?bot=normal&amp;mode=bot&amp;time=blitz");
     expect(markup).not.toContain("<p>Pick a mode first");
     expect(markup).not.toContain("play-mode-card");
   });

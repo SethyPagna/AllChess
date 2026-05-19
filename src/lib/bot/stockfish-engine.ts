@@ -46,6 +46,7 @@ type StockfishScriptElement = HTMLScriptElement & {
 };
 
 let stockfishRuntimePromise: Promise<StockfishRuntime> | null = null;
+let stockfishRuntimeReady = false;
 
 export function shouldUseStockfish(state: GameState, engine: BotEngineMode = "auto") {
   if (engine === "internal") return false;
@@ -55,6 +56,15 @@ export function shouldUseStockfish(state: GameState, engine: BotEngineMode = "au
 
 export function getStockfishDifficultyConfig(key: BotDifficultyKey) {
   return configs[key] ?? configs.normal;
+}
+
+export function isStockfishRuntimeReady() {
+  return stockfishRuntimeReady;
+}
+
+export function warmStockfishRuntime() {
+  if (!canUseStockfishRuntime()) return;
+  void getStockfishRuntime().catch(() => null);
 }
 
 export function buildStockfishCommands(state: GameState, difficultyKey: BotDifficultyKey, playedMoves: string[] = [], maxMoveTimeMs?: number) {
@@ -173,7 +183,16 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T) {
 }
 
 async function getStockfishRuntime() {
-  stockfishRuntimePromise ??= loadStockfishRuntime();
+  stockfishRuntimePromise ??= loadStockfishRuntime()
+    .then((runtime) => {
+      stockfishRuntimeReady = true;
+      return runtime;
+    })
+    .catch((error) => {
+      stockfishRuntimeReady = false;
+      stockfishRuntimePromise = null;
+      throw error;
+    });
   return stockfishRuntimePromise;
 }
 

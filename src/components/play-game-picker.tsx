@@ -6,11 +6,22 @@ import { BookOpen, Play, Radio, Search } from "lucide-react";
 
 import { CatalogInfoOverlay } from "@/components/catalog-browser";
 import { displayGameName, displayRulesReadiness, type GameCatalogEntry } from "@/lib/catalog";
+import type { TimeControlKey } from "@/lib/game/time-controls";
 import type { LocaleCode } from "@/lib/i18n/locales";
 
 type PlayModeKey = "online" | "bot" | "offline" | "room" | "matchmaking" | "spectate";
 
-export function PlayGamePicker({ entries, locale, selectedMode }: { entries: GameCatalogEntry[]; locale: LocaleCode; selectedMode: PlayModeKey }) {
+export function PlayGamePicker({
+  entries,
+  locale,
+  selectedMode,
+  selectedTimeControl
+}: {
+  entries: GameCatalogEntry[];
+  locale: LocaleCode;
+  selectedMode: PlayModeKey;
+  selectedTimeControl: TimeControlKey;
+}) {
   const [query, setQuery] = useState("");
   const [selectedEntry, setSelectedEntry] = useState<GameCatalogEntry | null>(null);
 
@@ -49,7 +60,7 @@ export function PlayGamePicker({ entries, locale, selectedMode }: { entries: Gam
               </button>
             </div>
             <div className="play-game-row-actions">
-              <Link href={gameModeHref(locale, entry.variantKey, selectedMode)} className="focus-ring action-primary">
+              <Link href={gameModeHref(locale, entry.variantKey, selectedMode, selectedTimeControl)} className="focus-ring action-primary">
                 <Play size={14} />
                 {modeActionLabel(selectedMode)}
               </Link>
@@ -75,10 +86,10 @@ function modeActionLabel(mode: PlayModeKey) {
   return labels[mode];
 }
 
-function gameModeHref(locale: string, variantKey: string | undefined, mode: PlayModeKey) {
+function gameModeHref(locale: string, variantKey: string | undefined, mode: PlayModeKey, timeControl: TimeControlKey) {
   if (mode === "spectate") return `/${locale}/watch` as never;
-  if (mode === "bot") return `/${locale}/play/${variantKey}?bot=normal&mode=bot` as never;
-  return `/${locale}/play/${variantKey}?mode=${mode}` as never;
+  if (mode === "bot") return `/${locale}/play/${variantKey}?bot=normal&mode=bot&time=${timeControl}` as never;
+  return `/${locale}/play/${variantKey}?mode=${mode}&time=${timeControl}` as never;
 }
 
 function normalize(value: string) {
