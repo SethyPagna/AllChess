@@ -32,6 +32,15 @@ function createLeaderboardD1() {
                       rated_only: 1,
                       period: "all-time",
                       computed_at: "2026-05-18T00:00:00.000Z"
+                    },
+                    {
+                      id: "xiangqi-rapid",
+                      scope_id: "family:asian-chess",
+                      game_id: "xiangqi",
+                      family_key: "asian-chess",
+                      rated_only: 1,
+                      period: "all-time",
+                      computed_at: "2026-05-18T00:00:00.000Z"
                     }
                   ]
                 };
@@ -68,11 +77,12 @@ describe("leaderboards API", () => {
   test("returns empty live data when no D1 binding is configured", async () => {
     runtime.env = {};
 
-    const response = await GET();
+    const response = await GET(new Request("http://allchess.test/api/leaderboards"));
 
     await expect(response.json()).resolves.toMatchObject({
       source: "empty-live-data",
-      leaderboards: []
+      leaderboards: [],
+      filters: { scope: "all" }
     });
   });
 
@@ -80,31 +90,50 @@ describe("leaderboards API", () => {
     const { db, calls } = createLeaderboardD1();
     runtime.env = { ALLCHESS_D1: db };
 
-    const response = await GET();
+    const response = await GET(new Request("http://allchess.test/api/leaderboards"));
     const body = await response.json();
 
-    expect(body).toMatchObject({
-      source: "d1",
-      leaderboards: [
-        {
+    expect(body.source).toBe("d1");
+    expect(body.totalLeaderboards).toBe(2);
+    expect(body.leaderboards).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
           id: "classic-rapid",
           scopeId: "global",
-          entries: [
-            {
+          entries: expect.arrayContaining([
+            expect.objectContaining({
               rank: 1,
               displayName: "Sharp Player",
               rating: 1801,
               metadata: { country: "HK" }
-            }
-          ]
-        }
-      ]
-    });
+            })
+          ])
+        })
+      ])
+    );
     expect(calls).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ sql: expect.stringContaining("from leaderboards") }),
         expect.objectContaining({ sql: expect.stringContaining("from leaderboard_entries"), values: ["classic-rapid"] })
       ])
     );
+  });
+
+  test("filters D1 leaderboard rows by scope", async () => {
+    const { db } = createLeaderboardD1();
+    runtime.env = { ALLCHESS_D1: db };
+
+    const response = await GET(new Request("http://allchess.test/api/leaderboards?scope=family:asian-chess"));
+
+    await expect(response.json()).resolves.toMatchObject({
+      source: "d1",
+      filters: { scope: "family:asian-chess" },
+      leaderboards: [
+        expect.objectContaining({
+          id: "xiangqi-rapid",
+          familyKey: "asian-chess"
+        })
+      ]
+    });
   });
 });

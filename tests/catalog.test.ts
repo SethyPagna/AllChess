@@ -124,7 +124,7 @@ describe("universal game catalog", () => {
       ])
     });
 
-    const leaderboards = await leaderboardsGet();
+    const leaderboards = await leaderboardsGet(new Request("http://allchess.test/api/leaderboards"));
     await expect(leaderboards.json()).resolves.toMatchObject({ source: "empty-live-data", leaderboards: [] });
   });
 

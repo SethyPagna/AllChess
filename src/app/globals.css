@@ -3300,6 +3300,33 @@ select {
   font-weight: 850;
 }
 
+.leaderboard-scope-select {
+  display: inline-flex;
+  min-height: 2.25rem;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  padding: 0 0.65rem;
+  color: var(--muted);
+}
+
+.leaderboard-scope-select select {
+  min-width: 9rem;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.84rem;
+  font-weight: 850;
+  outline: none;
+}
+
+.leaderboard-scope-select:has(select:disabled) {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
 .leaderboard-filter-bar.is-empty {
   opacity: 0.82;
 }
