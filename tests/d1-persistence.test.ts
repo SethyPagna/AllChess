@@ -442,6 +442,63 @@ describe("D1 persistence", () => {
     );
   });
 
+  test("loads latest analysis report and saved move snapshots", async () => {
+    const { db, calls } = createMockD1(
+      {
+        "from analysis_reports": {
+          id: "analysis-1",
+          game_id: "game-1",
+          requested_by: "profile-1",
+          provider: "openai",
+          model: "gpt-test",
+          summary: "Black missed a back-rank tactic.",
+          report: JSON.stringify({ moments: [{ move: "Re8", label: "blunder" }] }),
+          created_at: "2026-05-18T00:00:00.000Z"
+        }
+      },
+      {
+        "from moves": [
+          {
+            game_id: "game-1",
+            ply: 1,
+            move: JSON.stringify({ from: { row: 6, col: 4 }, to: { row: 4, col: 4 } }),
+            notation: "e4",
+            board_state_after: JSON.stringify({ id: "game-1", ply: 1 }),
+            created_at: "2026-05-18T00:00:01.000Z"
+          }
+        ]
+      }
+    );
+    const repository = createD1GameRepository(db);
+
+    await expect(repository.getLatestAnalysis("game-1")).resolves.toEqual({
+      id: "analysis-1",
+      gameId: "game-1",
+      requestedBy: "profile-1",
+      provider: "openai",
+      model: "gpt-test",
+      summary: "Black missed a back-rank tactic.",
+      report: { moments: [{ move: "Re8", label: "blunder" }] },
+      createdAt: "2026-05-18T00:00:00.000Z"
+    });
+    await expect(repository.getSavedMoves("game-1", 5)).resolves.toEqual([
+      {
+        gameId: "game-1",
+        ply: 1,
+        move: { from: { row: 6, col: 4 }, to: { row: 4, col: 4 } },
+        notation: "e4",
+        boardStateAfter: { id: "game-1", ply: 1 },
+        createdAt: "2026-05-18T00:00:01.000Z"
+      }
+    ]);
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ sql: expect.stringContaining("from analysis_reports"), values: ["game-1"] }),
+        expect.objectContaining({ sql: expect.stringContaining("from moves"), values: ["game-1", 5] })
+      ])
+    );
+  });
+
   test("loads profile game stat summaries from normalized rows", async () => {
     const { db, calls } = createMockD1(
       {},

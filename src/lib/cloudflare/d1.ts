@@ -161,6 +161,26 @@ export type ProfileGameStatsSnapshot = {
   updatedAt: string;
 };
 
+export type AnalysisReportSnapshot = {
+  id: string;
+  gameId: string;
+  requestedBy: string | null;
+  provider: string;
+  model: string;
+  summary: string;
+  report: unknown;
+  createdAt: string;
+};
+
+export type SavedMoveSnapshot = {
+  gameId: string;
+  ply: number;
+  move: unknown;
+  notation: string;
+  boardStateAfter: unknown;
+  createdAt: string;
+};
+
 export type GameRepository = {
   createGame(input: CreateGameInput): Promise<{ id: string; mode: "d1" }>;
   createRoom(input: { snapshot: RoomSnapshot; hostId?: string | null; roomCode?: string | null }): Promise<{ id: string; mode: "d1"; roomCode: string }>;
@@ -181,6 +201,8 @@ export type GameRepository = {
   getProfileGameResults(profileId: string, limit?: number): Promise<ProfileGameResultSnapshot[]>;
   getRecentGameResults(limit?: number): Promise<ProfileGameResultSnapshot[]>;
   saveBotBenchmark(input: SaveBotBenchmarkInput): Promise<void>;
+  getLatestAnalysis(gameId: string): Promise<AnalysisReportSnapshot | null>;
+  getSavedMoves(gameId: string, limit?: number): Promise<SavedMoveSnapshot[]>;
   saveAnalysis(input: {
     id: string;
     gameId: string;
@@ -689,6 +711,36 @@ export function createD1GameRepository(db: D1Database): GameRepository {
         .run();
     },
 
+    async getLatestAnalysis(gameId) {
+      const row = await db
+        .prepare(
+          `select id, game_id, requested_by, provider, model, summary, report, created_at
+           from analysis_reports
+           where game_id = ?
+           order by created_at desc
+           limit 1`
+        )
+        .bind(gameId)
+        .first<AnalysisReportRow>();
+
+      return row ? toAnalysisReportSnapshot(row) : null;
+    },
+
+    async getSavedMoves(gameId, limit = 120) {
+      const rows = await db
+        .prepare(
+          `select game_id, ply, move, notation, board_state_after, created_at
+           from moves
+           where game_id = ?
+           order by ply asc
+           limit ?`
+        )
+        .bind(gameId, Math.max(1, Math.min(limit, 300)))
+        .all<SavedMoveRow>();
+
+      return (rows.results ?? []).map(toSavedMoveSnapshot);
+    },
+
     async saveAnalysis(input) {
       await db
         .prepare(
@@ -789,6 +841,26 @@ type ProfileGameStatsRow = {
   total_moves?: number | null;
   best_rating?: number | null;
   updated_at: string;
+};
+
+type AnalysisReportRow = {
+  id: string;
+  game_id: string;
+  requested_by?: string | null;
+  provider: string;
+  model: string;
+  summary: string;
+  report?: string | null;
+  created_at: string;
+};
+
+type SavedMoveRow = {
+  game_id: string;
+  ply?: number | null;
+  move?: string | null;
+  notation?: string | null;
+  board_state_after?: string | null;
+  created_at: string;
 };
 
 async function persistNormalizedGameStart(db: D1Database, state: GameState, createdBy?: string | null, roomPlayers?: ParticipantSeed[]) {
@@ -1030,6 +1102,30 @@ function toProfileGameStatsSnapshot(row: ProfileGameStatsRow): ProfileGameStatsS
     totalMoves: Number(row.total_moves ?? 0),
     bestRating: row.best_rating ?? null,
     updatedAt: row.updated_at
+  };
+}
+
+function toAnalysisReportSnapshot(row: AnalysisReportRow): AnalysisReportSnapshot {
+  return {
+    id: row.id,
+    gameId: row.game_id,
+    requestedBy: row.requested_by ?? null,
+    provider: row.provider,
+    model: row.model,
+    summary: row.summary,
+    report: parseJson(row.report, {}),
+    createdAt: row.created_at
+  };
+}
+
+function toSavedMoveSnapshot(row: SavedMoveRow): SavedMoveSnapshot {
+  return {
+    gameId: row.game_id,
+    ply: Number(row.ply ?? 0),
+    move: parseJson(row.move, {}),
+    notation: row.notation ?? "",
+    boardStateAfter: parseJson(row.board_state_after, {}),
+    createdAt: row.created_at
   };
 }
 
