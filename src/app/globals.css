@@ -3058,8 +3058,54 @@ select {
   opacity: 0.68;
 }
 
+.watch-room-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.watch-room-card {
+  display: grid;
+  align-items: center;
+  gap: 0.55rem;
+  grid-template-columns: minmax(0, 1fr) repeat(2, minmax(4rem, 0.35fr));
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  padding: 0.7rem;
+  text-decoration: none;
+}
+
+.watch-room-card span {
+  display: grid;
+  min-width: 0;
+  gap: 0.15rem;
+}
+
+.watch-room-card strong {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.watch-room-card small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 820;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 520px) {
   .watch-room-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .watch-room-card {
     grid-template-columns: 1fr;
   }
 }

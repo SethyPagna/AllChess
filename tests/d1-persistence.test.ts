@@ -93,6 +93,48 @@ describe("D1 persistence", () => {
     );
   });
 
+  test("lists public room snapshots from D1 for watch pages", async () => {
+    const state = createInitialState("classic", "room-game");
+    const { db, calls } = createMockD1(
+      {},
+      {
+        "from rooms r": [
+          {
+            room_id: "room-1",
+            game_id: state.id,
+            variant_key: "classic",
+            status: "active",
+            spectator_count: 4,
+            rated: 0,
+            chat_policy: "spectators",
+            board_state: JSON.stringify(state)
+          }
+        ],
+        "from game_participants": [
+          { profile_id: "p-white", participant_type: "user", seat: "white", display_name: "White Player", connected: 1, rating_at_start: 1210 },
+          { profile_id: "p-black", participant_type: "user", seat: "black", display_name: "Black Player", connected: 1, rating_at_start: 1220 }
+        ]
+      }
+    );
+    const repository = createD1GameRepository(db);
+
+    await expect(repository.listRooms({ visibility: "public", limit: 6 })).resolves.toEqual([
+      expect.objectContaining({
+        roomId: "room-1",
+        gameId: "room-game",
+        variantKey: "classic",
+        spectators: 4,
+        chatPolicy: "spectators"
+      })
+    ]);
+    expect(calls).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ sql: expect.stringContaining("r.visibility"), values: ["public", "public", 6] }),
+        expect.objectContaining({ sql: expect.stringContaining("from game_participants"), values: [state.id] })
+      ])
+    );
+  });
+
   test("persists compact bot benchmark summaries to D1", async () => {
     const { db, calls } = createMockD1();
     const repository = createD1GameRepository(db);

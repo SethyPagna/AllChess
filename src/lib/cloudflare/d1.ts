@@ -11,6 +11,8 @@ export type CreateGameInput = {
   createdBy?: string | null;
 };
 
+export type RoomVisibility = "public" | "private" | "unlisted";
+
 export type RecordMoveInput = {
   gameId: string;
   state: GameState;
@@ -183,9 +185,10 @@ export type SavedMoveSnapshot = {
 
 export type GameRepository = {
   createGame(input: CreateGameInput): Promise<{ id: string; mode: "d1" }>;
-  createRoom(input: { snapshot: RoomSnapshot; hostId?: string | null; roomCode?: string | null }): Promise<{ id: string; mode: "d1"; roomCode: string }>;
+  createRoom(input: { snapshot: RoomSnapshot; hostId?: string | null; roomCode?: string | null; visibility?: RoomVisibility }): Promise<{ id: string; mode: "d1"; roomCode: string }>;
   getGameState(gameId: string): Promise<GameState | null>;
   getRoomSnapshot(roomIdOrCode: string): Promise<RoomSnapshot | null>;
+  listRooms(input?: { visibility?: RoomVisibility | "all"; limit?: number }): Promise<RoomSnapshot[]>;
   getLiveStats(): Promise<LiveStats>;
   recordMove(input: RecordMoveInput): Promise<{ id: string; mode: "d1" }>;
   saveMatchmakingTicket(ticket: MatchmakingTicket): Promise<void>;
@@ -289,7 +292,7 @@ export function createD1GameRepository(db: D1Database): GameRepository {
           input.snapshot.spectators,
           input.snapshot.rated ? 1 : 0,
           "rapid",
-          "private",
+          input.visibility ?? "public",
           input.snapshot.chatPolicy
         )
         .run();
@@ -325,30 +328,37 @@ export function createD1GameRepository(db: D1Database): GameRepository {
         .first<RoomSnapshotRow>();
       if (!room?.board_state) return null;
 
-      const state = JSON.parse(room.board_state) as GameState;
-      const participants = await db
-        .prepare(
-          `select profile_id, participant_type, seat, display_name, connected, rating_at_start
-           from game_participants
-           where game_id = ? and participant_type <> 'spectator'
-           order by joined_at`
-        )
-        .bind(room.game_id)
-        .all<RoomParticipantRow>();
+      return createRoomSnapshotFromRow(db, room);
+    },
 
-      return {
-        roomId: room.room_id,
-        gameId: room.game_id,
-        variantKey: room.variant_key,
-        status: normalizeRoomStatus(room.status, state.status),
-        players: createRoomPlayers(state, participants.results ?? []),
-        spectators: Number(room.spectator_count ?? 0),
-        clocks: state.clocks,
-        state,
-        moveVersion: state.ply,
-        rated: Boolean(room.rated),
-        chatPolicy: normalizeChatPolicy(room.chat_policy)
-      };
+    async listRooms(input = {}) {
+      const visibility = input.visibility ?? "public";
+      const rows = await db
+        .prepare(
+          `select
+            r.id as room_id,
+            r.game_id,
+            r.variant_key,
+            r.status,
+            r.spectator_count,
+            r.rated,
+            r.chat_policy,
+            g.board_state
+           from rooms r
+           join games g on g.id = r.game_id
+           where r.status in ('waiting', 'active')
+             and (? = 'all' or r.visibility = ?)
+           order by r.created_at desc
+           limit ?`
+        )
+        .bind(visibility, visibility, Math.max(1, Math.min(input.limit ?? 20, 50)))
+        .all<RoomSnapshotRow>();
+
+      const snapshots: RoomSnapshot[] = [];
+      for (const row of rows.results ?? []) {
+        snapshots.push(await createRoomSnapshotFromRow(db, row));
+      }
+      return snapshots;
     },
 
     async getLiveStats() {
@@ -1036,6 +1046,33 @@ function createRoomPlayers(state: GameState, participants: RoomParticipantRow[])
     role: "player",
     connected: false
   }));
+}
+
+async function createRoomSnapshotFromRow(db: D1Database, room: RoomSnapshotRow): Promise<RoomSnapshot> {
+  const state = JSON.parse(room.board_state) as GameState;
+  const participants = await db
+    .prepare(
+      `select profile_id, participant_type, seat, display_name, connected, rating_at_start
+       from game_participants
+       where game_id = ? and participant_type <> 'spectator'
+       order by joined_at`
+    )
+    .bind(room.game_id)
+    .all<RoomParticipantRow>();
+
+  return {
+    roomId: room.room_id,
+    gameId: room.game_id,
+    variantKey: room.variant_key,
+    status: normalizeRoomStatus(room.status, state.status),
+    players: createRoomPlayers(state, participants.results ?? []),
+    spectators: Number(room.spectator_count ?? 0),
+    clocks: state.clocks,
+    state,
+    moveVersion: state.ply,
+    rated: Boolean(room.rated),
+    chatPolicy: normalizeChatPolicy(room.chat_policy)
+  };
 }
 
 function normalizeRoomStatus(status: string | undefined, fallback: GameState["status"]): RoomStatus {

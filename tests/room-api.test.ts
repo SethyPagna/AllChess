@@ -32,6 +32,22 @@ function createRoomApiD1(roomId: string) {
               };
             },
             async all() {
+              if (sql.includes("from rooms r")) {
+                return {
+                  results: [
+                    {
+                      room_id: roomId,
+                      game_id: state.id,
+                      variant_key: state.variantKey,
+                      status: "active",
+                      spectator_count: 2,
+                      rated: 1,
+                      chat_policy: "players",
+                      board_state: JSON.stringify(state)
+                    }
+                  ]
+                };
+              }
               if (!sql.includes("from game_participants")) return { results: [] };
               return {
                 results: [
@@ -69,6 +85,25 @@ describe("room API", () => {
           { profileId: "p2", displayName: "Player 2", color: "black", connected: false }
         ]
       }
+    });
+  });
+
+  test("returns public room lists from D1", async () => {
+    runtime.env = { ALLCHESS_D1: createRoomApiD1("room-1") };
+    const { GET } = await import("@/app/api/rooms/route");
+
+    const response = await GET(new Request("http://allchess.test/api/rooms?limit=5"));
+
+    await expect(response.json()).resolves.toMatchObject({
+      mode: "d1",
+      rooms: [
+        {
+          roomId: "room-1",
+          gameId: "room-game",
+          variantKey: "classic",
+          spectators: 2
+        }
+      ]
     });
   });
 });
