@@ -199,7 +199,7 @@ export function GameBoard({
         <div className="player-card-main">
           <div className="player-card-row">
             <strong>{isHuman ? "Your profile" : isBot ? `${botLevel.label} bot` : `${colorLabel(color)} player`}</strong>
-            <span>{clock ? formatClock(clock.remainingMs) : "--:--"}</span>
+            <span>{clock ? formatClock(clock.remainingMs, { untimed: timeControl === "freestyle" }) : "--:--"}</span>
           </div>
           <p>{isBot ? `${botStrength.display} - ${botCalibrationLabel} - ${thinking.status === "thinking" ? "thinking" : "ready"}` : isHuman ? `${colorLabel(color)} side - local profile` : `${colorLabel(color)} side`}</p>
         </div>

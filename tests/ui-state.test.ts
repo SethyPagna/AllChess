@@ -97,7 +97,8 @@ describe("time controls", () => {
 
   test("formats chess clocks compactly", () => {
     expect(formatClock(65_000)).toBe("1:05");
-    expect(formatClock(0)).toBe("∞");
+    expect(formatClock(0)).toBe("0:00");
+    expect(formatClock(0, { untimed: true })).toBe("∞");
   });
 });
 

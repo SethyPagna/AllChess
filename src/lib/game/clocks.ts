@@ -45,8 +45,9 @@ export function settleTurnClockElapsed(current: GameState, reference: GameState,
   return next;
 }
 
-export function formatClock(ms: number) {
-  if (ms <= 0) return "∞";
+export function formatClock(ms: number, options: { untimed?: boolean } = {}) {
+  if (options.untimed) return "∞";
+  if (ms <= 0) return "0:00";
   const totalSeconds = Math.ceil(ms / 1000);
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
