@@ -31,6 +31,7 @@ export default async function AnalysisPage({
   const selectedMove = review.moves[selectedMoveIndex] ?? null;
   const reviewMoments = extractReviewMoments(review.analysis?.report);
   const reviewMomentByMove = createReviewMomentByMove(reviewMoments, review.moves);
+  const selectedMoment = selectedMove ? getReviewMomentForMove(reviewMomentByMove, selectedMove) : undefined;
   const trainingIdeas = extractTrainingIdeas(review.analysis?.report);
 
   return (
@@ -111,11 +112,12 @@ export default async function AnalysisPage({
                     Ply {selectedMove.ply} of {review.moves.length}
                   </strong>
                   <span>{selectedMove.notation || "Saved move"}</span>
+                  {selectedMoment?.label ? <em>{selectedMoment.label}</em> : null}
                 </div>
               ) : null}
               <ol className="analysis-move-list" aria-label="Saved move timeline">
                 {review.moves.slice(0, 16).map((move) => {
-                  const moment = reviewMomentByMove.get(reviewMomentKey(move.notation));
+                  const moment = getReviewMomentForMove(reviewMomentByMove, move);
 
                   return (
                     <li key={`${move.gameId}-${move.ply}`} className={selectedMove?.ply === move.ply ? "is-active" : undefined}>
@@ -277,6 +279,10 @@ function createReviewMomentByMove(moments: ReviewMoment[], moves: RuntimeAnalysi
   }
 
   return matchedMoments;
+}
+
+function getReviewMomentForMove(moments: Map<string, ReviewMoment>, move: RuntimeAnalysisMoves[number]) {
+  return moments.get(reviewMomentKey(move.notation));
 }
 
 function reviewMomentKey(value: unknown) {

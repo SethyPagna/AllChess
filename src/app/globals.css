@@ -3634,6 +3634,7 @@ select {
   white-space: nowrap;
 }
 
+.analysis-selected-move em,
 .analysis-move-list em {
   border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
   border-radius: 999px;

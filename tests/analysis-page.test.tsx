@@ -116,4 +116,16 @@ describe("analysis page review navigation", () => {
     expect(markup).toContain("/en/analysis/game-1?ply=2");
     expect(markup).toContain("/en/analysis/game-1?ply=3&amp;autoplay=1");
   });
+
+  test("shows the selected move review label", async () => {
+    runtime.env = { ALLCHESS_D1: createAnalysisPageD1() };
+
+    const element = await AnalysisPage({
+      params: Promise.resolve({ locale: "en", gameId: "game-1" }),
+      searchParams: Promise.resolve({ ply: "3" })
+    });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain('aria-label="Selected move"><strong>Ply 3 of 3</strong><span>Nf3</span><em>best</em>');
+  });
 });
