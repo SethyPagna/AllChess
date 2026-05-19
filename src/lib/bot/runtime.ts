@@ -742,7 +742,7 @@ function staticMoveScore(state: GameState, move: Move) {
 
 function moveOrderingScore(state: GameState, move: Move, difficulty: BotDifficulty, budget: SearchBudget) {
   const staticScore = staticMoveScore(state, move);
-  if (difficulty.skill < 14) return staticScore;
+  if (difficulty.skill < 8) return staticScore;
 
   const movingPiece = state.board[move.from.row]?.[move.from.col]?.piece;
   const targetPiece = state.board[move.to.row]?.[move.to.col]?.piece;
@@ -751,7 +751,8 @@ function moveOrderingScore(state: GameState, move: Move, difficulty: BotDifficul
   const next = tryMove(state, move);
   if (!next) return Number.NEGATIVE_INFINITY;
 
-  return staticScore - badTradePenalty(state, next, move, movingPiece, budget) * (1.1 - difficulty.riskTolerance);
+  const tradeAwareness = difficulty.skill >= 14 ? 1.1 : 0.75;
+  return staticScore - badTradePenalty(state, next, move, movingPiece, budget) * (tradeAwareness - difficulty.riskTolerance);
 }
 
 function strategicMoveScore(state: GameState, next: GameState, move: Move, perspective: PlayerColor, difficulty: BotDifficulty, budget: SearchBudget) {

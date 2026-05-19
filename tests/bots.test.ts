@@ -112,8 +112,14 @@ describe("bot difficulty ladder", () => {
     state.board[7][7].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
 
     const defendedPawnCapture = { from: { row: 4, col: 3 }, to: { row: 3, col: 4 } };
+    const tightEasySearch = chooseBotMoveSafe(state, "easy", { engine: "internal", maxSearchTimeMs: 25 });
+    const tightNormalSearch = chooseBotMoveSafe(state, "normal", { engine: "internal", maxSearchTimeMs: 25 });
     const hardSearch = chooseBotMoveSafe(state, "hard", { engine: "internal", maxSearchTimeMs: 40 });
 
+    if (tightEasySearch.reason !== "ok") throw new Error("Expected easy search to return a legal move.");
+    if (tightNormalSearch.reason !== "ok") throw new Error("Expected normal search to return a legal move.");
+    expect(tightEasySearch.move).not.toMatchObject(defendedPawnCapture);
+    expect(tightNormalSearch.move).not.toMatchObject(defendedPawnCapture);
     expect(chooseBotMove(state, "easy", { engine: "internal", maxSearchTimeMs: 80 })).not.toMatchObject(defendedPawnCapture);
     expect(chooseBotMove(state, "normal", { engine: "internal", maxSearchTimeMs: 80 })).not.toMatchObject(defendedPawnCapture);
     if (hardSearch.reason !== "ok") throw new Error("Expected hard search to return a legal move.");
