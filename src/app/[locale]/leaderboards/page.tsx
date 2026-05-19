@@ -2,14 +2,18 @@ import Link from "next/link";
 import { Filter, Play, Trophy } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
-import { getLeaderboardScopes } from "@/lib/catalog";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { getRuntimeLeaderboards, type RuntimeLeaderboards } from "@/lib/leaderboards/runtime";
 import { playSetupHref } from "@/lib/routing/play-links";
+
+export const dynamic = "force-dynamic";
 
 export default async function LeaderboardsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
-  const scopes = getLeaderboardScopes();
+  const { leaderboards, scopes, source } = await getRuntimeLeaderboards();
+  const populatedLeaderboards = leaderboards.filter((leaderboard) => leaderboard.entries.length > 0);
+  const hasRatedResults = populatedLeaderboards.length > 0;
   const primaryScopes = scopes.slice(0, 4);
   const familyScopes = scopes.slice(4);
 
@@ -17,25 +21,19 @@ export default async function LeaderboardsPage({ params }: { params: Promise<{ l
     <section className="leaderboards-page grid gap-5">
       <div className="compact-page-heading">
         <h1 className="text-4xl font-black sm:text-5xl">Leaderboards</h1>
-        <InfoHint text="Rated tables stay empty until real match results are recorded. No seeded players or guessed rankings." />
+        <InfoHint text={source === "d1" ? "Leaderboards read Cloudflare D1 rows. Empty boards mean no rated entries have been computed yet." : "Rated tables stay empty until real match results are recorded. No seeded players or guessed rankings."} />
       </div>
-      <div className="panel leaderboard-filter-bar is-empty" aria-label="Leaderboard filters">
+      <div className={`panel leaderboard-filter-bar ${hasRatedResults ? "" : "is-empty"}`} aria-label="Leaderboard filters">
         <span aria-disabled="true" title="Scope filters unlock when rated results exist.">
           <Filter size={16} />
           Scope
         </span>
         <span aria-disabled="true" title="Only real rated games appear here.">Rated only</span>
-        <span aria-disabled="true" title="Leaderboards stay empty until real games are recorded.">Real results</span>
+        <span aria-disabled={hasRatedResults ? undefined : "true"} title={hasRatedResults ? "Showing computed Cloudflare D1 leaderboard rows." : "Leaderboards stay empty until real games are recorded."}>
+          {hasRatedResults ? `${populatedLeaderboards.length} computed boards` : "Real results"}
+        </span>
       </div>
-      <div className="leaderboard-feature-grid">
-        {primaryScopes.map((scope) => (
-          <article key={scope.id} className="panel leaderboard-card">
-            <Trophy size={24} />
-            <h2>{scope.label}</h2>
-            <p>No rated results yet.</p>
-          </article>
-        ))}
-      </div>
+      {hasRatedResults ? <PopulatedLeaderboards leaderboards={populatedLeaderboards} /> : <EmptyLeaderboardScopes scopes={primaryScopes} />}
       <div className="panel leaderboard-family-list">
         <h2>Game-family boards</h2>
         <div>
@@ -57,5 +55,41 @@ export default async function LeaderboardsPage({ params }: { params: Promise<{ l
         </Link>
       </div>
     </section>
+  );
+}
+
+function EmptyLeaderboardScopes({ scopes }: { scopes: RuntimeLeaderboards["scopes"] }) {
+  return (
+    <div className="leaderboard-feature-grid">
+      {scopes.map((scope) => (
+        <article key={scope.id} className="panel leaderboard-card">
+          <Trophy size={24} />
+          <h2>{scope.label}</h2>
+          <p>No rated results yet.</p>
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function PopulatedLeaderboards({ leaderboards }: { leaderboards: RuntimeLeaderboards["leaderboards"] }) {
+  return (
+    <div className="leaderboard-feature-grid">
+      {leaderboards.slice(0, 4).map((leaderboard) => (
+        <article key={leaderboard.id} className="panel leaderboard-card">
+          <Trophy size={24} />
+          <h2>{leaderboard.id.replace(/-/g, " ")}</h2>
+          <ol className="leaderboard-entry-list">
+            {leaderboard.entries.slice(0, 5).map((entry) => (
+              <li key={`${leaderboard.id}-${entry.rank}-${entry.displayName}`}>
+                <strong>#{entry.rank}</strong>
+                <span>{entry.displayName}</span>
+                <span>{entry.rating ? Math.round(entry.rating) : "Unrated"}</span>
+              </li>
+            ))}
+          </ol>
+        </article>
+      ))}
+    </div>
   );
 }

@@ -4120,6 +4120,32 @@ select {
   color: var(--warning);
 }
 
+.leaderboard-entry-list {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.leaderboard-entry-list li {
+  display: grid;
+  grid-template-columns: 2.8rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  padding: 0.55rem 0.65rem;
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+.leaderboard-entry-list li span:last-child {
+  color: var(--accent);
+  font-weight: 950;
+}
+
 .game-detail {
   display: grid;
   gap: 1rem;
