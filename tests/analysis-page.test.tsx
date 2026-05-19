@@ -89,8 +89,24 @@ describe("analysis page review navigation", () => {
     expect(markup).toContain("/en/analysis/game-1?ply=2");
     expect(markup).toContain("/en/analysis/game-1?ply=3");
     expect(markup).toContain("Previous");
+    expect(markup).toContain("Play");
     expect(markup).toContain("Next");
     expect(markup).toContain("Last");
+    expect(markup).toContain("/en/analysis/game-1?ply=3&amp;autoplay=1");
     expect(markup).not.toContain("Playback controls unlock after saved moves");
+  });
+
+  test("renders pause control while review autoplay is active", async () => {
+    runtime.env = { ALLCHESS_D1: createAnalysisPageD1() };
+
+    const element = await AnalysisPage({
+      params: Promise.resolve({ locale: "en", gameId: "game-1" }),
+      searchParams: Promise.resolve({ autoplay: "1", ply: "2" })
+    });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("Pause");
+    expect(markup).toContain("/en/analysis/game-1?ply=2");
+    expect(markup).toContain("/en/analysis/game-1?ply=3&amp;autoplay=1");
   });
 });

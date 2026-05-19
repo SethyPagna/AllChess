@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BarChart3, Brain, ChevronLeft, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 
+import { AnalysisReviewPlayback } from "@/components/analysis-review-playback";
 import { InfoHint } from "@/components/info-hint";
 import { getRuntimeAnalysisReview } from "@/lib/analysis/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
@@ -15,7 +16,7 @@ export default async function AnalysisPage({
   searchParams
 }: {
   params: Promise<{ locale: string; gameId: string }>;
-  searchParams?: Promise<{ ply?: string }>;
+  searchParams?: Promise<{ autoplay?: string; ply?: string }>;
 }) {
   const { locale: rawLocale, gameId } = await params;
   const query = (await searchParams) ?? {};
@@ -82,7 +83,7 @@ export default async function AnalysisPage({
             <BarChart3 size={18} />
             Review tools
           </h2>
-          {hasMoves ? <ReviewPlaybackLinks gameId={decodedGameId} locale={locale} moves={review.moves} selectedMoveIndex={selectedMoveIndex} /> : <EmptyReviewPlaybackControls />}
+          {hasMoves ? <ReviewPlaybackLinks autoPlay={query.autoplay === "1"} gameId={decodedGameId} locale={locale} moves={review.moves} selectedMoveIndex={selectedMoveIndex} /> : <EmptyReviewPlaybackControls />}
           {hasMoves ? (
             <>
               {selectedMove ? (
@@ -143,11 +144,13 @@ function EmptyReviewPlaybackControls() {
 }
 
 function ReviewPlaybackLinks({
+  autoPlay,
   gameId,
   locale,
   moves,
   selectedMoveIndex
 }: {
+  autoPlay: boolean;
   gameId: string;
   locale: string;
   moves: RuntimeAnalysisMoves;
@@ -155,28 +158,23 @@ function ReviewPlaybackLinks({
 }) {
   const firstMove = moves[0];
   const lastMove = moves.at(-1);
+  const currentMove = moves[selectedMoveIndex] ?? firstMove;
   const previousMove = moves[Math.max(0, selectedMoveIndex - 1)];
   const nextMove = moves[Math.min(moves.length - 1, selectedMoveIndex + 1)];
+  const shouldRestartPlayback = selectedMoveIndex >= moves.length - 1;
+  const playbackMove = shouldRestartPlayback ? firstMove : nextMove;
 
   return (
-    <div className="analysis-review-controls" aria-label="Review playback controls">
-      <Link href={analysisPlyHref(locale, gameId, firstMove?.ply ?? 1) as never} className="focus-ring" title="Jump to the first saved position.">
-        <SkipBack size={15} />
-        First
-      </Link>
-      <Link href={analysisPlyHref(locale, gameId, previousMove?.ply ?? firstMove?.ply ?? 1) as never} className="focus-ring" title="Step to the previous saved move.">
-        <Pause size={15} />
-        Previous
-      </Link>
-      <Link href={analysisPlyHref(locale, gameId, nextMove?.ply ?? firstMove?.ply ?? 1) as never} className="focus-ring" title="Step to the next saved move.">
-        <SkipForward size={15} />
-        Next
-      </Link>
-      <Link href={analysisPlyHref(locale, gameId, lastMove?.ply ?? firstMove?.ply ?? 1) as never} className="focus-ring" title="Jump to the final saved position.">
-        <SkipForward size={15} />
-        Last
-      </Link>
-    </div>
+    <AnalysisReviewPlayback
+      autoPlay={autoPlay}
+      firstHref={analysisPlyHref(locale, gameId, firstMove?.ply ?? 1)}
+      lastHref={analysisPlyHref(locale, gameId, lastMove?.ply ?? firstMove?.ply ?? 1)}
+      nextHref={analysisPlyHref(locale, gameId, nextMove?.ply ?? firstMove?.ply ?? 1, { autoplay: autoPlay && !shouldRestartPlayback })}
+      pauseHref={analysisPlyHref(locale, gameId, currentMove?.ply ?? firstMove?.ply ?? 1)}
+      playHref={analysisPlyHref(locale, gameId, playbackMove?.ply ?? firstMove?.ply ?? 1, { autoplay: true })}
+      previousHref={analysisPlyHref(locale, gameId, previousMove?.ply ?? firstMove?.ply ?? 1)}
+      stopAtLast={autoPlay && shouldRestartPlayback}
+    />
   );
 }
 
@@ -191,6 +189,8 @@ function normalizeSelectedMoveIndex(value: string | undefined, moves: RuntimeAna
   return requestedIndex >= 0 ? requestedIndex : 0;
 }
 
-function analysisPlyHref(locale: string, gameId: string, ply: number) {
-  return `/${locale}/analysis/${encodeURIComponent(gameId)}?ply=${ply}`;
+function analysisPlyHref(locale: string, gameId: string, ply: number, options: { autoplay?: boolean } = {}) {
+  const autoplayParam = options.autoplay ? "&autoplay=1" : "";
+
+  return `/${locale}/analysis/${encodeURIComponent(gameId)}?ply=${ply}${autoplayParam}`;
 }
