@@ -178,7 +178,7 @@ Important indexes:
 - `games(private_code)`.
 - `games(completed_at)` for archives and stats.
 
-Why: this supports user-vs-user, bot practice, bot-vs-bot, offline/local saves, rooms, matchmaking, spectating, and analysis sessions without overloading `status` or `private_code`.
+Why: this supports user-vs-user, Bot Mode, bot-vs-bot, offline/local saves, rooms, matchmaking, spectating, and analysis sessions without overloading `status` or `private_code`.
 
 ### 3.3 Participants And Seats
 
@@ -701,7 +701,7 @@ create index if not exists idx_engine_labels_variant_position on engine_labels(v
    - Strength claims should come from `bot_benchmark_runs`, not copy.
 
 6. Split rating pools.
-   - Classic rapid, Classic blitz, Chess960 rapid, Xiangqi rapid, and bot-practice ratings should not collapse into one `variant_key` number.
+   - Classic rapid, Classic blitz, Chess960 rapid, Xiangqi rapid, and bot-training ratings should not collapse into one `variant_key` number.
 
 7. Keep offline saves explicit.
    - Use `games.mode = 'offline'` and `visibility = 'local'` or sync saved local games to D1 only when the user chooses to save/sign in.
