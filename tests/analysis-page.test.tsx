@@ -51,6 +51,14 @@ function createAnalysisPageD1() {
                     notation: "e5",
                     board_state_after: JSON.stringify({ id: "game-1", ply: 2 }),
                     created_at: "2026-05-18T00:00:02.000Z"
+                  },
+                  {
+                    game_id: "game-1",
+                    ply: 3,
+                    move: JSON.stringify({ from: { row: 7, col: 6 }, to: { row: 5, col: 5 } }),
+                    notation: "Nf3",
+                    board_state_after: JSON.stringify({ id: "game-1", ply: 3 }),
+                    created_at: "2026-05-18T00:00:03.000Z"
                   }
                 ]
               };
@@ -79,8 +87,10 @@ describe("analysis page review navigation", () => {
     expect(markup).toContain("Ply 2");
     expect(markup).toContain("/en/analysis/game-1?ply=1");
     expect(markup).toContain("/en/analysis/game-1?ply=2");
+    expect(markup).toContain("/en/analysis/game-1?ply=3");
     expect(markup).toContain("Previous");
     expect(markup).toContain("Next");
+    expect(markup).toContain("Last");
     expect(markup).not.toContain("Playback controls unlock after saved moves");
   });
 });

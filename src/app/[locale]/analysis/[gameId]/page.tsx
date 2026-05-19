@@ -134,6 +134,10 @@ function EmptyReviewPlaybackControls() {
         <SkipForward size={15} />
         Next
       </button>
+      <button type="button" disabled title="Last move unlocks when this game has saved move history.">
+        <SkipForward size={15} />
+        Last
+      </button>
     </div>
   );
 }
@@ -150,6 +154,7 @@ function ReviewPlaybackLinks({
   selectedMoveIndex: number;
 }) {
   const firstMove = moves[0];
+  const lastMove = moves.at(-1);
   const previousMove = moves[Math.max(0, selectedMoveIndex - 1)];
   const nextMove = moves[Math.min(moves.length - 1, selectedMoveIndex + 1)];
 
@@ -166,6 +171,10 @@ function ReviewPlaybackLinks({
       <Link href={analysisPlyHref(locale, gameId, nextMove?.ply ?? firstMove?.ply ?? 1) as never} className="focus-ring" title="Step to the next saved move.">
         <SkipForward size={15} />
         Next
+      </Link>
+      <Link href={analysisPlyHref(locale, gameId, lastMove?.ply ?? firstMove?.ply ?? 1) as never} className="focus-ring" title="Jump to the final saved position.">
+        <SkipForward size={15} />
+        Last
       </Link>
     </div>
   );
