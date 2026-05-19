@@ -234,6 +234,20 @@ test("language menu keeps the current route", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
 });
 
+test("language menu preserves catalog filters", async ({ page }) => {
+  await page.goto("/en/variants?playability=learn");
+
+  const visibleShell = page.locator(".app-sidebar:visible, .app-mobile-header:visible");
+  await visibleShell.getByLabel("Languages").click();
+  const german = visibleShell.getByRole("link", { name: "Deutsch" });
+  await expect(german).toHaveAttribute("href", "/de/variants?playability=learn");
+  await Promise.all([page.waitForURL(/\/de\/variants\?playability=learn$/), german.click()]);
+
+  await expect(page).toHaveURL(/\/de\/variants\?playability=learn$/);
+  await expect(page.getByLabel("Playability")).toHaveValue("learn");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("catalog search finds native and romanized game names", async ({ page }) => {
   await page.goto("/en/variants");
 

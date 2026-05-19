@@ -16,6 +16,12 @@ describe("navigation helpers", () => {
     expect(localizePath("/en/play/classic?bot=normal", "km")).toBe("/km/play/classic?bot=normal");
     expect(localizePath("/settings", "fr")).toBe("/fr/settings");
   });
+
+  test("preserves query strings and hash fragments when switching languages", () => {
+    expect(localizePath("/en/variants?playability=learn&q=Dou+Shou+Qi#catalog", "ja")).toBe("/ja/variants?playability=learn&q=Dou+Shou+Qi#catalog");
+    expect(localizePath("play/classic?mode=bot#board", "de")).toBe("/de/play/classic?mode=bot#board");
+    expect(localizePath("/fr/login?error=auth-error", "en")).toBe("/en/login?error=auth-error");
+  });
 });
 
 describe("time controls", () => {
