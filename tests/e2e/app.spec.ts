@@ -20,11 +20,11 @@ test("localized game hub can open variants and a playable board", async ({ page 
   await page.goto("/en");
   await expect(page.getByRole("heading", { name: "AllChess" })).toBeVisible();
   await expect(page.getByLabel("AllChess intro")).toContainText("Play first");
-  await expect(page.getByRole("link", { name: "Start playing" })).toHaveAttribute("href", "/en/play");
+  await expect(page.getByRole("link", { name: "Start playing" })).toHaveAttribute("href", "/en/play?mode=online&time=rapid");
   await expect(page.getByLabel("AllChess intro").getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/en/login");
   await expect(page.getByLabel("How AllChess works")).toContainText("Pick a board");
-  await expect(page.getByRole("link", { name: /Pick a board/ })).toHaveAttribute("href", "/en/play");
-  await expect(page.getByRole("link", { name: /Train fast/ })).toHaveAttribute("href", "/en/variants?playability=playable");
+  await expect(page.getByRole("link", { name: /Pick a board/ })).toHaveAttribute("href", "/en/play?mode=online&time=rapid");
+  await expect(page.getByRole("link", { name: /Train fast/ })).toHaveAttribute("href", "/en/play?mode=bot&time=rapid");
   await expect(page.getByRole("link", { name: /Watch or review/ })).toHaveAttribute("href", "/en/watch");
   await expect(page.getByLabel("Classic chess board preview")).toBeVisible();
   await expectNoHorizontalOverflow(page);
