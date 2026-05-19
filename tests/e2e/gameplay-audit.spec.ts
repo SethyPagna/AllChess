@@ -26,6 +26,8 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await expect(controls.getByLabel("Bot automation controls")).toContainText("Auto");
   await expect(controls.getByLabel("Match controls")).toContainText("Resign");
   await expect(controls.getByLabel("Utility controls")).toBeVisible();
+  await expect(controls.getByRole("button", { name: "Bot Mode" })).toBeDisabled();
+  await expect(page.getByLabel("Local play status")).toContainText("assist only");
   await expect(page.getByLabel("Bot search profile")).toContainText("Budget");
   const before = await board.boundingBox();
   expect(before).toBeTruthy();

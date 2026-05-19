@@ -160,7 +160,7 @@ export function GameBoard({
   const isSearchingOnline = gameStarted && isOnlineMode && state.status === "active";
   const isWatchingMode = gameStarted && isSpectating && state.status === "active";
   const canUseAssist = gameStarted && state.status === "active" && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
-  const canUseBots = gameStarted && state.status === "active" && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
+  const canUseBots = gameStarted && state.status === "active" && isBotMode && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
   const canUndo = history.length > 0 && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
   const canRedo = future.length > 0 && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
   const canEndGame = gameStarted && state.status === "active" && !isReviewing && !isSpectating && !isSearchingOnline;
@@ -919,7 +919,7 @@ export function GameBoard({
                         title={
                           canUseBots
                             ? "Toggle bot opponent. You move your selected side; the bot replies for the other side."
-                            : "Bot opponent is disabled for online, room, spectate, review, completed, or not-started states."
+                            : "Bot opponent is only available in Bot Mode during an active local game."
                         }
                         onClick={() => {
                           setBotMode((current) => {
@@ -937,7 +937,7 @@ export function GameBoard({
                       </button>
                       <button
                         type="button"
-                        title={canUseBots ? "Let bots control both sides until you turn this off." : "Auto is disabled for online, room, spectate, review, completed, or not-started states."}
+                        title={canUseBots ? "Let bots control both sides until you turn this off." : "Auto is only available in Bot Mode during an active local game."}
                         onClick={() => setBotMode((current) => (current === "both" ? "human" : "both"))}
                         disabled={!canUseBots}
                         className={`focus-ring play-control-button ${botMode === "both" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"}`}
@@ -1022,7 +1022,7 @@ export function GameBoard({
                       {trimmedOpponentQuery ? <span>Looking for: {trimmedOpponentQuery}</span> : null}
                     </div>
                   </div>
-                ) : (
+                ) : isBotMode ? (
                   <>
                     <div className="bot-profile-card">
                       <Bot size={18} />
@@ -1043,6 +1043,15 @@ export function GameBoard({
                       </select>
                     </label>
                   </>
+                ) : (
+                  <div className="bot-profile-card status-mode-card" aria-label="Local play status">
+                    <Crown size={18} />
+                    <div>
+                      <strong>Offline Local</strong>
+                      <span>Use Suggest or Move for one-off help. Switch Setup to Bot Mode for automatic replies.</span>
+                    </div>
+                    <small>assist only</small>
+                  </div>
                 )}
                 <p className="mt-1 text-xs font-bold text-[var(--muted)]">
                   You: {colorLabel(humanColor)} · View: {visualOrientation === "second" ? colorLabel(secondColor) : colorLabel(firstColor)}

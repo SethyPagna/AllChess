@@ -2355,6 +2355,15 @@ select {
   white-space: nowrap;
 }
 
+.status-mode-card span {
+  white-space: normal;
+}
+
+.status-mode-card small {
+  background: rgb(255 255 255 / 8%);
+  color: #d2ccbf;
+}
+
 .online-search-card {
   display: flex;
   align-items: center;
