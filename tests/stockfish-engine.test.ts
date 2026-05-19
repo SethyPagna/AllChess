@@ -25,6 +25,7 @@ describe("Stockfish engine adapter", () => {
 
     expect(easy.limitStrength).toBe(true);
     expect(easy.elo).toBe(1320);
+    expect(easy.depth).toBeGreaterThanOrEqual(5);
     expect(easy.elo).toBeLessThan(legend.elo);
     expect(easy.moveTimeMs).toBeLessThan(legend.moveTimeMs);
     expect(legend.elo).toBe(3190);
@@ -40,6 +41,6 @@ describe("Stockfish engine adapter", () => {
     expect(commands).toContain("setoption name UCI_LimitStrength value true");
     expect(commands).toContain("setoption name UCI_Elo value 1900");
     expect(commands).toContain("position startpos moves e2e4");
-    expect(commands.at(-1)).toBe("go movetime 760 depth 9");
+    expect(commands.at(-1)).toBe("go movetime 920 depth 10");
   });
 });

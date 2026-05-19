@@ -28,21 +28,24 @@ describe("bot difficulty ladder", () => {
 
     const budgets = botDifficultyLevels.map((level) => level.depth * level.moveTimeMs);
     expect([...budgets].sort((a, b) => a - b)).toEqual(budgets);
-    expect(botDifficultyLevels.map((level) => level.beamWidth)).toEqual([8, 12, 18, 28, 34, 46]);
-    expect(botDifficultyLevels.map((level) => level.quiescenceDepth)).toEqual([0, 1, 1, 2, 2, 4]);
-    expect(botDifficultyLevels.map((level) => level.riskTolerance)).toEqual([0.52, 0.42, 0.28, 0.16, 0.1, 0.03]);
-    expect(botDifficultyLevels.map((level) => level.replyCheckWidth)).toEqual([3, 6, 10, 15, 17, 24]);
+    expect(botDifficultyLevels.map((level) => level.beamWidth)).toEqual([10, 16, 22, 32, 34, 46]);
+    expect(botDifficultyLevels.map((level) => level.quiescenceDepth)).toEqual([1, 1, 2, 2, 2, 4]);
+    expect(botDifficultyLevels.map((level) => level.riskTolerance)).toEqual([0.42, 0.32, 0.22, 0.13, 0.1, 0.03]);
+    expect(botDifficultyLevels.map((level) => level.replyCheckWidth)).toEqual([5, 8, 12, 17, 17, 24]);
     expect(Math.max(...botDifficultyLevels.map((level) => level.moveTimeMs))).toBeLessThanOrEqual(MAX_BOT_REPLY_MS);
   });
 
   test("lower tiers are smarter without exceeding the reply budget", () => {
     const [easy, normal, hard, veryHard] = botDifficultyLevels;
 
-    expect(easy.depth).toBeGreaterThanOrEqual(2);
-    expect(easy.skill).toBeGreaterThanOrEqual(6);
+    expect(easy.depth).toBeGreaterThanOrEqual(3);
+    expect(easy.skill).toBeGreaterThanOrEqual(8);
+    expect(easy.replyCheckWidth).toBeGreaterThanOrEqual(5);
     expect(normal.quiescenceDepth).toBeGreaterThanOrEqual(1);
-    expect(hard.replyCheckWidth).toBeGreaterThanOrEqual(10);
-    expect(veryHard.nodeBudget).toBeGreaterThan(6000);
+    expect(normal.nodeBudget).toBeGreaterThan(1500);
+    expect(hard.replyCheckWidth).toBeGreaterThanOrEqual(12);
+    expect(hard.quiescenceDepth).toBeGreaterThanOrEqual(2);
+    expect(veryHard.nodeBudget).toBeGreaterThan(8000);
     expect([easy, normal, hard, veryHard].every((level) => level.moveTimeMs < MAX_BOT_REPLY_MS)).toBe(true);
   });
 

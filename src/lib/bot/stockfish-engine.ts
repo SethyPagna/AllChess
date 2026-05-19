@@ -22,9 +22,9 @@ export type StockfishSearchResult = {
 };
 
 const configs: Record<BotDifficultyKey, StockfishDifficultyConfig> = {
-  easy: { limitStrength: true, elo: getBotStrengthBand("easy").stockfishUciElo, skillLevel: 4, moveTimeMs: 220, depth: 4 },
-  normal: { limitStrength: true, elo: getBotStrengthBand("normal").stockfishUciElo, skillLevel: 8, moveTimeMs: 420, depth: 6 },
-  hard: { limitStrength: true, elo: getBotStrengthBand("hard").stockfishUciElo, skillLevel: 12, moveTimeMs: 760, depth: 9 },
+  easy: { limitStrength: true, elo: getBotStrengthBand("easy").stockfishUciElo, skillLevel: 6, moveTimeMs: 300, depth: 5 },
+  normal: { limitStrength: true, elo: getBotStrengthBand("normal").stockfishUciElo, skillLevel: 10, moveTimeMs: 620, depth: 8 },
+  hard: { limitStrength: true, elo: getBotStrengthBand("hard").stockfishUciElo, skillLevel: 14, moveTimeMs: 920, depth: 10 },
   "very-hard": { limitStrength: true, elo: getBotStrengthBand("very-hard").stockfishUciElo, skillLevel: 16, moveTimeMs: 1300, depth: 12 },
   grandmaster: { limitStrength: true, elo: getBotStrengthBand("grandmaster").stockfishUciElo, skillLevel: 18, moveTimeMs: 1700, depth: 15 },
   legend: { limitStrength: false, elo: getBotStrengthBand("legend").stockfishUciElo, skillLevel: 20, moveTimeMs: 2400, depth: 20 }
