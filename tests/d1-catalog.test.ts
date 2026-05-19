@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { getD1CatalogEntry, listD1CatalogEntries } from "@/lib/cloudflare/d1-catalog";
+import { getD1CatalogEntry, getD1CatalogStats, listD1CatalogEntries } from "@/lib/cloudflare/d1-catalog";
 import type { D1Database } from "@cloudflare/workers-types";
 
 function createCatalogD1() {
@@ -21,6 +21,14 @@ function createCatalogD1() {
     calls.push({ sql, values });
     return {
       async all() {
+        if (sql.includes("group by family_key")) {
+          return {
+            results: [
+              { family_key: "chess-family", total_games: 5, playable_games: 4, learn_games: 1, coming_soon_games: 0 },
+              { family_key: "mancala", total_games: 3, playable_games: 0, learn_games: 0, coming_soon_games: 3 }
+            ]
+          };
+        }
         if (sql.includes("from game_catalog_entries")) {
           return {
             results: [
@@ -115,5 +123,21 @@ describe("D1 catalog reader", () => {
         })
       ])
     );
+  });
+
+  test("reads catalog stats directly from normalized D1 rows", async () => {
+    const { db } = createCatalogD1();
+
+    await expect(getD1CatalogStats(db)).resolves.toMatchObject({
+      totalGames: 8,
+      playableGames: 4,
+      learnGames: 1,
+      comingSoonGames: 3,
+      familyCounts: expect.objectContaining({
+        "chess-family": 5,
+        mancala: 3,
+        "go-family": 0
+      })
+    });
   });
 });

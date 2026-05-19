@@ -1,6 +1,6 @@
 import type { D1Database } from "@cloudflare/workers-types";
 
-import type { BoardGeometry, BotEngineAdapter, GameCatalogEntry, GameFamilyKey, PiecePresentationPack, PlayabilityStatus, PlayableGameVerification, RulesEngineAdapter } from "@/lib/catalog";
+import { gameFamilies, getCatalogStats, type BoardGeometry, type BotEngineAdapter, type CatalogStats, type GameCatalogEntry, type GameFamilyKey, type PiecePresentationPack, type PlayabilityStatus, type PlayableGameVerification, type RulesEngineAdapter } from "@/lib/catalog";
 
 type CatalogEntryRow = {
   id: string;
@@ -37,6 +37,14 @@ type RuleSourceRow = {
   game_id: string;
   name: string;
   url: string;
+};
+
+type CatalogStatsRow = {
+  family_key: string;
+  total_games?: number | null;
+  playable_games?: number | null;
+  learn_games?: number | null;
+  coming_soon_games?: number | null;
 };
 
 const emptyVerification: PlayableGameVerification = {
@@ -101,6 +109,44 @@ export async function getD1CatalogEntry(db: D1Database, idOrAlias: string): Prom
   const targetId = alias?.game_id ?? idOrAlias;
   const entries = await listD1CatalogEntries(db);
   return entries.find((entry) => entry.id === targetId || entry.variantKey === targetId || entry.aliases.includes(targetId)) ?? null;
+}
+
+export async function getD1CatalogStats(db: D1Database): Promise<CatalogStats> {
+  const rows = await db
+    .prepare(
+      `select
+        family_key,
+        count(*) as total_games,
+        sum(case when playability = 'playable' then 1 else 0 end) as playable_games,
+        sum(case when playability = 'learn' then 1 else 0 end) as learn_games,
+        sum(case when playability = 'coming-soon' then 1 else 0 end) as coming_soon_games
+       from game_catalog_entries
+       group by family_key`
+    )
+    .bind()
+    .all<CatalogStatsRow>();
+  const statsRows = rows.results ?? [];
+  if (statsRows.length === 0) return getCatalogStats();
+
+  const familyCounts = Object.fromEntries(gameFamilies.map((family) => [family.key, 0])) as CatalogStats["familyCounts"];
+  let totalGames = 0;
+  let playableGames = 0;
+  let learnGames = 0;
+  let comingSoonGames = 0;
+
+  for (const row of statsRows) {
+    const familyKey = row.family_key as GameFamilyKey;
+    const familyTotal = Number(row.total_games ?? 0);
+    if (familyKey in familyCounts) {
+      familyCounts[familyKey] = familyTotal;
+    }
+    totalGames += familyTotal;
+    playableGames += Number(row.playable_games ?? 0);
+    learnGames += Number(row.learn_games ?? 0);
+    comingSoonGames += Number(row.coming_soon_games ?? 0);
+  }
+
+  return { totalGames, playableGames, learnGames, comingSoonGames, familyCounts };
 }
 
 async function readRuleSections(db: D1Database) {

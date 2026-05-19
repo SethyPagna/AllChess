@@ -1,6 +1,7 @@
 import type { D1Database } from "@cloudflare/workers-types";
 
 import { getCatalogStats } from "@/lib/catalog";
+import { getD1CatalogStats } from "@/lib/cloudflare/d1-catalog";
 import type { GameState, Move, PlayerClock, PlayerColor } from "@/lib/variants";
 import type { ChatPolicy, LiveStats, MatchmakingTicket, RoomPlayer, RoomSnapshot, RoomStatus } from "@/lib/realtime/types";
 
@@ -328,6 +329,7 @@ export function createD1GameRepository(db: D1Database): GameRepository {
     },
 
     async getLiveStats() {
+      const catalog = await getD1CatalogStats(db).catch(() => getCatalogStats());
       const rooms = await db
         .prepare(
           `select
@@ -347,7 +349,7 @@ export function createD1GameRepository(db: D1Database): GameRepository {
         spectators: Number(rooms?.spectators ?? 0),
         botGames: 0,
         source: "durable-object",
-        catalog: getCatalogStats(),
+        catalog,
         byFamily: {}
       };
     },
