@@ -1315,10 +1315,10 @@ function terminalThreatDefenseText(state: GameState, next: GameState | null, per
   const difficulty = difficultyFor(tier);
   if (!next || !perspective || !TERMINAL_THREAT_FILTER_VARIANTS.has(state.variantKey) || difficulty.skill < 8 || difficulty.skill > 14) return undefined;
 
-  const budget = createSearchBudget(Date.now(), Math.min(60, difficulty.moveTimeMs));
+  const explanationBudgetMs = Math.min(MAX_BOT_REPLY_MS, Math.max(160, Math.min(240, difficulty.moveTimeMs)));
   const beforeThreatState = { ...state, turn: next.turn };
-  const beforeThreats = countImmediateTerminalReplies(beforeThreatState, perspective, difficulty, budget);
-  const afterThreats = countImmediateTerminalReplies(next, perspective, difficulty, budget);
+  const beforeThreats = countImmediateTerminalReplies(beforeThreatState, perspective, difficulty, createSearchBudget(Date.now(), explanationBudgetMs));
+  const afterThreats = countImmediateTerminalReplies(next, perspective, difficulty, createSearchBudget(Date.now(), explanationBudgetMs));
   if (afterThreats >= beforeThreats) return undefined;
 
   return `Threat defense: reduced opponent one-move winning replies from ${beforeThreats} to ${afterThreats}.`;
