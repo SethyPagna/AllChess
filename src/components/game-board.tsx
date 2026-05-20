@@ -883,7 +883,7 @@ export function GameBoard({
                       <button
                         type="button"
                         title={suggestedMove ? "Apply the highlighted suggestion to the board." : "Generate a suggestion first."}
-                        aria-label="Apply suggestion"
+                        aria-label="Apply move"
                         onClick={applySuggestion}
                         className="focus-ring action-primary play-control-button is-main"
                         disabled={!canUseAssist || !suggestedMove}

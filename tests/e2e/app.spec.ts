@@ -154,7 +154,7 @@ test("mobile shell language, notifications, and board controls stay in bounds", 
   await expect(page.getByLabel("Board controls")).toContainText("Suggest");
   await expect(page.getByLabel("Board controls")).toContainText("Auto");
   await expect(page.getByLabel("Board controls")).toContainText("Resign");
-  await expect(page.getByRole("button", { name: "Apply suggestion" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Apply move" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Undo" })).toBeDisabled();
   await expectNoHorizontalOverflow(page);
 });
