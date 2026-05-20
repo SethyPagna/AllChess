@@ -94,6 +94,6 @@ Before each phase commit:
 
 - Phase tracker status updated.
 - Verification log updated with commands and results.
-- `decisions.md` updated for architecture or product choices.
-- `change-log.md` updated for user-visible, technical, workflow, or documentation changes.
+- `docs/roadmap/decisions.md` updated for architecture or product choices.
+- `docs/roadmap/change-log.md` updated for user-visible, technical, workflow, or documentation changes.
 - `git status --short` reviewed so unrelated user changes are not staged.

@@ -8,7 +8,7 @@ Record decisions that affect architecture, workflow, product behavior, or releas
 
 **Date:** 2026-05-16
 
-**Status:** Accepted
+**Status:** Superseded by Decision 0004
 
 **Context:** The improvement program needs visible tracking for a 20-phase roadmap, progress, decisions, and completed changes. The requested names included `plan.md` and `progress.md`.
 
@@ -19,6 +19,24 @@ Record decisions that affect architecture, workflow, product behavior, or releas
 - The roadmap is easy to find without searching inside docs folders.
 - Future long-form research can still move into `docs/` and link back from the root files.
 - Every implementation phase has a clear place to update status and rationale.
+
+---
+
+## Decision 0004: Move Roadmap Tracking Into Docs
+
+**Date:** 2026-05-21
+
+**Status:** Accepted
+
+**Context:** The repository root has accumulated framework, deployment, and project-management files. Keeping long-running roadmap documents at root made the app layout noisier as the Cloudflare, Docker, Vercel, and test configuration surfaces matured.
+
+**Decision:** Move `plan.md`, `progress.md`, `decisions.md`, and `change-log.md` into `docs/roadmap/`, and keep README as the root pointer.
+
+**Consequences:**
+
+- Root stays focused on build, package, deployment, and runtime configuration.
+- Roadmap documents remain easy to find under a dedicated docs folder.
+- Future planning artifacts should join `docs/roadmap/` unless they are runtime-facing documentation.
 
 ---
 

@@ -70,3 +70,5 @@ docker compose -f docker-compose.selfhost.yml up --build
 Never commit real API keys or tokens. Store Cloudflare, Vercel, Google OAuth, and AI provider credentials in local ignored `.env` files or hosted secret stores. The AI analysis adapter supports the Business OS style providers Groq, Mistral, Cerebras, Google AI, and OpenAI. Rotate any broad token that was pasted into chat or logs.
 
 See `docs/cloudflare-deployment.md` and `docs/self-hosting.md` for the Cloudflare, domain, database, and object-storage paths.
+
+Project planning, progress notes, decisions, and change history live in `docs/roadmap/`.

@@ -1,6 +1,6 @@
 # AllChess Improvement Master Plan
 
-> Tracking pair: update `progress.md` after every meaningful work session, add accepted architectural choices to `decisions.md`, and summarize completed changes in `change-log.md`.
+> Tracking pair: update `docs/roadmap/progress.md` after every meaningful work session, add accepted architectural choices to `docs/roadmap/decisions.md`, and summarize completed changes in `docs/roadmap/change-log.md`.
 
 **Goal:** Improve AllChess across workflow, design, architecture, variant diversity, function coverage, and product completeness until it feels like a coherent chess ecosystem instead of a collection of partly connected surfaces.
 
@@ -16,19 +16,19 @@
 
 Use these files together:
 
-- `plan.md`: master 20-phase roadmap with mini phases, targets, subtargets, verification gates, and commit gates.
-- `progress.md`: current status, active phase, completed checks, blockers, and next actions.
-- `decisions.md`: architecture and product decisions that should not be rediscovered later.
-- `change-log.md`: human-readable summary of completed changes, grouped by date and phase.
+- `docs/roadmap/plan.md`: master 20-phase roadmap with mini phases, targets, subtargets, verification gates, and commit gates.
+- `docs/roadmap/progress.md`: current status, active phase, completed checks, blockers, and next actions.
+- `docs/roadmap/decisions.md`: architecture and product decisions that should not be rediscovered later.
+- `docs/roadmap/change-log.md`: human-readable summary of completed changes, grouped by date and phase.
 
 Each implementation session should follow this loop:
 
-1. Pick one phase and one mini phase from `plan.md`.
-2. Move the item to `In Progress` in `progress.md`.
+1. Pick one phase and one mini phase from `docs/roadmap/plan.md`.
+2. Move the item to `In Progress` in `docs/roadmap/progress.md`.
 3. Write or update tests before changing behavior when the change is functional.
 4. Make the smallest coherent implementation.
 5. Run the verification commands listed for that phase.
-6. Update `progress.md`, `decisions.md` when a decision is made, and `change-log.md`.
+6. Update `docs/roadmap/progress.md`, `docs/roadmap/decisions.md` when a decision is made, and `docs/roadmap/change-log.md`.
 7. Commit with a phase-scoped message such as `phase 03: map architecture boundaries`.
 
 ## Global Definition Of Done
@@ -42,7 +42,7 @@ A phase is complete only when all applicable checks pass:
 - `npm run audit:live` for browser-visible workflow changes
 - `npm run audit:env -- cloudflare` for deployment, auth, storage, AI, or Cloudflare configuration changes
 
-If a command cannot run locally, record the reason in `progress.md` and add the remaining risk to `change-log.md`.
+If a command cannot run locally, record the reason in `docs/roadmap/progress.md` and add the remaining risk to `docs/roadmap/change-log.md`.
 
 ---
 
@@ -54,19 +54,19 @@ If a command cannot run locally, record the reason in `progress.md` and add the 
 
 - Subtarget: Map active app routes, API routes, domain libraries, tests, scripts, and deployment files.
 - Subtarget: Identify files that are central to multiple workflows and mark them as high-risk edit areas.
-- Output: `progress.md` updated with a repository map summary and baseline risks.
+- Output: `docs/roadmap/progress.md` updated with a repository map summary and baseline risks.
 
 **Mini Phase 01B - User Journey Inventory**
 
 - Subtarget: Walk the main flows: home, variants, play, lobby, practice, watch, history, analysis, login, settings, profile, leaderboards.
 - Subtarget: Record missing transitions, confusing dead ends, inconsistent copy, and workflow friction.
-- Output: Prioritized journey gaps in `progress.md`.
+- Output: Prioritized journey gaps in `docs/roadmap/progress.md`.
 
 **Mini Phase 01C - Verification Baseline**
 
 - Subtarget: Run lint, typecheck, unit tests, build, and live audit if the browser stack is available.
 - Subtarget: Record failing commands exactly, including first actionable failure.
-- Output: Baseline verification section in `progress.md`.
+- Output: Baseline verification section in `docs/roadmap/progress.md`.
 
 **Verification Gate:** `npm run lint`, `npm run typecheck`, `npm run test`, `npm run build`.
 
@@ -82,13 +82,13 @@ If a command cannot run locally, record the reason in `progress.md` and add the 
 
 - Subtarget: Confirm each script in `package.json` has a clear purpose and works on Windows PowerShell.
 - Subtarget: Add missing helper scripts only when they reduce repeated manual command sequences.
-- Output: Script notes in `progress.md` and README updates when commands change.
+- Output: Script notes in `docs/roadmap/progress.md` and README updates when commands change.
 
 **Mini Phase 02B - Test Organization**
 
 - Subtarget: Group tests by domain intent: variants, board UI, realtime, persistence, bots, i18n, deployment, analysis.
 - Subtarget: Ensure naming makes failure ownership obvious.
-- Output: Test ownership matrix in `progress.md`.
+- Output: Test ownership matrix in `docs/roadmap/progress.md`.
 
 **Mini Phase 02C - Pull Request Checklist**
 
@@ -110,13 +110,13 @@ If a command cannot run locally, record the reason in `progress.md` and add the 
 
 - Subtarget: Define ownership for app routes, API routes, rules, catalog, variants, bots, auth, storage, realtime, analysis, and UI components.
 - Subtarget: Mark allowed dependencies between domains.
-- Output: Architecture boundary map in `decisions.md` or a dedicated docs file.
+- Output: Architecture boundary map in `docs/roadmap/decisions.md` or a dedicated docs file.
 
 **Mini Phase 03B - Shared Type Audit**
 
 - Subtarget: Review `src/lib/variants/types.ts`, catalog types, realtime types, auth session types, and API response shapes.
 - Subtarget: Identify duplicated or drifting concepts such as variant keys, game ids, player ids, move formats, and time controls.
-- Output: Type consolidation targets in `progress.md`.
+- Output: Type consolidation targets in `docs/roadmap/progress.md`.
 
 **Mini Phase 03C - Dependency Direction Cleanup**
 
@@ -138,7 +138,7 @@ If a command cannot run locally, record the reason in `progress.md` and add the 
 
 - Subtarget: Define complete states: created, waiting, active, paused, completed, abandoned, archived.
 - Subtarget: Define transitions and responsible modules for each transition.
-- Output: Lifecycle decision recorded in `decisions.md`.
+- Output: Lifecycle decision recorded in `docs/roadmap/decisions.md`.
 
 **Mini Phase 04B - Move Application Contract**
 
@@ -172,7 +172,7 @@ If a command cannot run locally, record the reason in `progress.md` and add the 
 
 - Subtarget: Build a matrix for classic chess, Chess960, xiangqi, shogi, makruk, janggi, sittuyin, courier, capablanca, crazyhouse, bughouse, atomic, horde, racing kings, antichess, three-check, king of the hill, and other launch candidates.
 - Subtarget: Mark each as playable, review-only, research, or blocked.
-- Output: Matrix in `progress.md` or docs.
+- Output: Matrix in `docs/roadmap/progress.md` or docs.
 
 **Mini Phase 05C - Rules Regression Suite**
 
@@ -250,7 +250,7 @@ If a command cannot run locally, record the reason in `progress.md` and add the 
 
 - Subtarget: Confirm each route has a clear job and a clear next action.
 - Subtarget: Remove duplicated navigation choices and dead-end pages.
-- Output: Route purpose table in `progress.md`.
+- Output: Route purpose table in `docs/roadmap/progress.md`.
 
 **Mini Phase 08B - Navigation States**
 
@@ -278,7 +278,7 @@ If a command cannot run locally, record the reason in `progress.md` and add the 
 
 - Subtarget: Audit colors, spacing, typography, borders, focus rings, z-index, and motion.
 - Subtarget: Reduce one-off styling and document token usage.
-- Output: CSS cleanup and visual notes in `decisions.md`.
+- Output: CSS cleanup and visual notes in `docs/roadmap/decisions.md`.
 
 **Mini Phase 09B - Component Consistency**
 
@@ -306,7 +306,7 @@ If a command cannot run locally, record the reason in `progress.md` and add the 
 
 - Subtarget: Audit keyboard navigation, focus visibility, landmarks, labels, dialogs, menus, color contrast, and screen reader announcements.
 - Subtarget: Fix critical blockers before cosmetic issues.
-- Output: Accessibility issue list in `progress.md`.
+- Output: Accessibility issue list in `docs/roadmap/progress.md`.
 
 **Mini Phase 10B - I18n Completeness**
 
@@ -340,7 +340,7 @@ If a command cannot run locally, record the reason in `progress.md` and add the 
 
 - Subtarget: Define profile fields, privacy settings, rating display, variant history, and account preferences.
 - Subtarget: Ensure public profile data is intentionally limited.
-- Output: Profile model decisions in `decisions.md`.
+- Output: Profile model decisions in `docs/roadmap/decisions.md`.
 
 **Mini Phase 11C - Settings Workflow**
 
@@ -586,7 +586,7 @@ If a command cannot run locally, record the reason in `progress.md` and add the 
 
 - Subtarget: Compare completed work against phases 01 through 19.
 - Subtarget: Identify remaining gaps as launch blockers, follow-up improvements, or research backlog.
-- Output: Final readiness table in `progress.md`.
+- Output: Final readiness table in `docs/roadmap/progress.md`.
 
 **Mini Phase 20B - End-To-End Validation**
 
@@ -620,7 +620,7 @@ Recommended execution order is numerical unless a blocker makes a later document
 
 - Use one commit per mini phase when implementation is meaningful; combine tiny documentation-only updates when they are part of the same tracking change.
 - Include the phase number in commit messages.
-- Update `progress.md` before each commit.
-- Update `change-log.md` after behavior, UI, architecture, docs, or workflow changes.
-- Update `decisions.md` whenever a choice affects future implementation direction.
+- Update `docs/roadmap/progress.md` before each commit.
+- Update `docs/roadmap/change-log.md` after behavior, UI, architecture, docs, or workflow changes.
+- Update `docs/roadmap/decisions.md` whenever a choice affects future implementation direction.
 - Never mark a phase complete without a verification note.

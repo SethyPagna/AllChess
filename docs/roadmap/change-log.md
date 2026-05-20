@@ -4,6 +4,20 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ---
 
+## 2026-05-21
+
+### Repository Organization
+
+- Moved roadmap tracking files into `docs/roadmap/` to keep the repository root focused on build, deployment, and runtime configuration.
+- Updated README and roadmap references to point at the new documentation location.
+
+### Ops
+
+- Hardened browser validation so it discovers the installed browser client dynamically.
+- Corrected catalog native display names and clarified catalog sync source errors.
+
+---
+
 ## 2026-05-16
 
 ### Planning And Tracking
