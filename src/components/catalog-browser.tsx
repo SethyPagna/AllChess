@@ -186,7 +186,7 @@ export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCata
           ) : null}
           <Link href={`/${locale}/games/${entry.id}` as never} className="action-secondary focus-ring">
             <BookOpen size={16} />
-            Details
+            Full guide
           </Link>
         </div>
         <div className="catalog-guide-sections">

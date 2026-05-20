@@ -14,7 +14,9 @@ import ProfilePage from "@/app/[locale]/profile/[username]/page";
 import SettingsPage from "@/app/[locale]/settings/page";
 import VariantsPage from "@/app/[locale]/variants/page";
 import WatchPage from "@/app/[locale]/watch/page";
+import { CatalogInfoOverlay } from "@/components/catalog-browser";
 import { ThemeProvider } from "@/components/theme-provider";
+import { getGameCatalogEntry } from "@/lib/catalog";
 
 describe("compact page copy", () => {
   test("intro shortcuts open real play flows with mode and clock", async () => {
@@ -70,6 +72,19 @@ describe("compact page copy", () => {
     expect(markup).toContain("/en/play/classic?mode=offline&amp;time=rapid");
     expect(markup).toContain("Games &amp; rules");
     expect(markup).not.toContain("Full Guide");
+  });
+
+  test("catalog guide overlay keeps full guide inside the focused sheet", () => {
+    const classic = getGameCatalogEntry("classic");
+    if (!classic) throw new Error("Classic Chess catalog entry is required for guide overlay tests.");
+
+    const markup = renderToStaticMarkup(<CatalogInfoOverlay entry={classic} locale="en" onClose={() => undefined} />);
+
+    expect(markup).toContain("Full guide");
+    expect(markup).toContain("Basics");
+    expect(markup).toContain("How it ends");
+    expect(markup).toContain("Status");
+    expect(markup).toContain("/en/play/classic?bot=normal&amp;mode=bot&amp;time=rapid");
   });
 
   test("game detail route safely resolves aliases and malformed ids", async () => {
