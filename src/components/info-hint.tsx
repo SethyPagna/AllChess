@@ -6,7 +6,7 @@ export function InfoHint({ label = "More information", text }: { label?: string;
 
   return (
     <details className="info-hint">
-      <summary className="info-hint-trigger" aria-controls={tooltipId} aria-label={label}>
+      <summary className="info-hint-trigger" aria-controls={tooltipId} aria-label={label} title={label}>
         <Info aria-hidden="true" size={14} />
       </summary>
       <span className="info-hint-bubble" id={tooltipId} role="tooltip">

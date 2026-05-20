@@ -2845,7 +2845,7 @@ select {
   display: grid;
   width: 1.65rem;
   height: 1.65rem;
-  cursor: help;
+  cursor: pointer;
   place-items: center;
   border: 1px solid var(--border);
   border-radius: 999px;

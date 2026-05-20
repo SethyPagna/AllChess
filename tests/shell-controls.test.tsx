@@ -40,6 +40,7 @@ describe("shell controls", () => {
     expect(markup).toContain("<details");
     expect(markup).toContain("<summary");
     expect(markup).toContain('aria-label="More information"');
+    expect(markup).toContain('title="More information"');
     expect(markup).toContain("Short extra context.");
   });
 });
