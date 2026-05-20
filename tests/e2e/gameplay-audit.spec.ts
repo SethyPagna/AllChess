@@ -224,7 +224,7 @@ test("online setup disables bot controls and shows opponent search", async ({ pa
   await expect(page.getByLabel("Online matchmaking status")).toContainText("Searching for opponent");
   await expect(page.getByLabel("Online matchmaking status")).toContainText("Bot difficulty and automation are paused");
   await expect(page.getByRole("button", { name: "Bot Mode" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Apply disabled" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Apply suggestion" })).toBeDisabled();
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();
   expect(runtimeErrors).toEqual([]);
