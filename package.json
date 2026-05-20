@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:i18n": "vitest run tests/i18n.test.ts",
+    "clean:local": "node scripts/maintenance/clean-local-artifacts.mjs",
     "test:e2e": "playwright test",
     "audit:env": "node scripts/audit/env-audit.mjs",
     "audit:browser": "node scripts/audit/browser-validation.mjs",

@@ -21,3 +21,4 @@ public/engines/stockfish/
 *.tsbuildinfo
 .vercel
 CHESS DATA/
+supabase/

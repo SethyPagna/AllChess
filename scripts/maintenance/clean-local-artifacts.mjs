@@ -1,0 +1,80 @@
+import { readdir, rm, stat } from "node:fs/promises";
+import path from "node:path";
+import process from "node:process";
+
+const repoRoot = process.cwd();
+const dryRun = process.argv.includes("--dry-run");
+
+const fixedTargets = [
+  ".next",
+  ".open-next",
+  ".wrangler",
+  "test-results",
+  "playwright-report",
+  "tsconfig.tsbuildinfo",
+  "supabase",
+];
+
+const rootLogPatterns = [
+  /^\.next-dev-\d+\.(?:err|out)\.log$/,
+  /^tmp-[\w.-]+\.(?:err|out)\.log$/,
+];
+
+function assertInsideRepo(targetPath) {
+  const relative = path.relative(repoRoot, targetPath);
+
+  if (relative === "" || relative.startsWith("..") || path.isAbsolute(relative)) {
+    throw new Error(`Refusing to clean outside repo: ${targetPath}`);
+  }
+}
+
+async function exists(targetPath) {
+  try {
+    await stat(targetPath);
+    return true;
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      return false;
+    }
+
+    throw error;
+  }
+}
+
+async function collectTargets() {
+  const targets = new Set();
+
+  for (const target of fixedTargets) {
+    const resolved = path.resolve(repoRoot, target);
+
+    if (await exists(resolved)) {
+      targets.add(resolved);
+    }
+  }
+
+  for (const entry of await readdir(repoRoot)) {
+    if (rootLogPatterns.some((pattern) => pattern.test(entry))) {
+      targets.add(path.resolve(repoRoot, entry));
+    }
+  }
+
+  return [...targets].sort((a, b) => a.localeCompare(b));
+}
+
+const targets = await collectTargets();
+
+if (targets.length === 0) {
+  console.log("No local build artifacts found.");
+  process.exit(0);
+}
+
+for (const target of targets) {
+  assertInsideRepo(target);
+  console.log(`${dryRun ? "Would remove" : "Removing"} ${path.relative(repoRoot, target)}`);
+
+  if (!dryRun) {
+    await rm(target, { force: true, recursive: true });
+  }
+}
+
+console.log(`${dryRun ? "Dry run complete" : "Local cleanup complete"}: ${targets.length} target(s).`);
