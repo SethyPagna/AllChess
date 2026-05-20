@@ -66,6 +66,14 @@ const localizedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
   "three-check": { english: "Three-check" }
 };
 
+const correctedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
+  xiangqi: { english: "Xiangqi", native: "\u8c61\u68cb", romanization: "Xi\u00e0ngq\u00ed" },
+  shogi: { english: "Shogi", native: "\u5c06\u68cb", romanization: "Sh\u014dgi" },
+  janggi: { english: "Janggi", native: "\uc7a5\uae30", romanization: "Janggi" },
+  makruk: { english: "Makruk", native: "\u0e2b\u0e21\u0e32\u0e01\u0e23\u0e38\u0e01", romanization: "Makruk" },
+  jungle: { english: "Jungle", native: "\u9b25\u7378\u68cb", romanization: "D\u00f2u Sh\u00f2u Q\u00ed", short: "Jungle / Dou Shou Qi" }
+};
+
 const completeVerification: PlayableGameVerification = {
   rulesComplete: true,
   botComplete: true,
@@ -109,7 +117,7 @@ function playableEntryFromVariant(variant: VariantDefinition): GameCatalogEntry 
   return {
     id: variant.key,
     variantKey: variant.key,
-    name: localizedPlayableNames[variant.key] ?? { english: variant.key },
+    name: playableNameFor(variant.key),
     aliases: [...variant.aliases, variant.key],
     family: playableFamilyByVariant[variant.family],
     region: playableRegion(variant.key),
@@ -126,6 +134,10 @@ function playableEntryFromVariant(variant: VariantDefinition): GameCatalogEntry 
     recommendations: relatedFor(variant.key),
     verification
   };
+}
+
+function playableNameFor(variantKey: string) {
+  return correctedPlayableNames[variantKey] ?? localizedPlayableNames[variantKey] ?? { english: variantKey };
 }
 
 function playableRegion(key: string) {
