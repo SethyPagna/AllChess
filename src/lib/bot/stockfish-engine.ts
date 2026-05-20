@@ -32,6 +32,7 @@ const configs: Record<BotDifficultyKey, StockfishDifficultyConfig> = {
 
 const stockfishScriptPath = "/engines/stockfish/stockfish-18-lite-single.js";
 const stockfishWasmPath = "/engines/stockfish/stockfish-18-lite-single.wasm";
+const stockfishScriptSelector = `script[data-allchess-stockfish="true"]`;
 
 type StockfishRuntime = {
   ccall: (name: string, returnType: null, argTypes: string[], args: string[], options?: { async?: boolean }) => unknown;
@@ -47,6 +48,7 @@ type StockfishScriptElement = HTMLScriptElement & {
 
 let stockfishRuntimePromise: Promise<StockfishRuntime> | null = null;
 let stockfishRuntimeReady = false;
+let stockfishFactoryLoadPromise: Promise<StockfishScriptElement> | null = null;
 
 export function shouldUseStockfish(state: GameState, engine: BotEngineMode = "auto") {
   if (engine === "internal") return false;
@@ -205,25 +207,60 @@ async function loadStockfishRuntime() {
 }
 
 async function loadStockfishFactory() {
-  const existing = document.querySelector<StockfishScriptElement>(`script[data-allchess-stockfish="true"]`);
-  if (existing?._exports) return existing._exports;
-
-  const script = (existing ?? document.createElement("script")) as StockfishScriptElement;
-  script.dataset.allchessStockfish = "true";
-  script.src = stockfishScriptPath;
-  if (!existing) document.head.appendChild(script);
-
-  await new Promise<void>((resolve, reject) => {
-    if (script._exports) {
-      resolve();
-      return;
-    }
-    script.addEventListener("load", () => resolve(), { once: true });
-    script.addEventListener("error", () => reject(new Error("Stockfish script failed to load.")), { once: true });
-  });
-
+  const script = await loadStockfishScript();
   if (!script._exports) throw new Error("Stockfish factory was not exported by the engine script.");
   return script._exports;
+}
+
+function loadStockfishScript() {
+  const loadedScript = findStockfishScript();
+  if (loadedScript?._exports) return Promise.resolve(loadedScript);
+  if (loadedScript?.dataset.allchessStockfishReady) return Promise.resolve(loadedScript);
+  if (stockfishFactoryLoadPromise) return stockfishFactoryLoadPromise;
+
+  const script = loadedScript?.dataset.allchessStockfishError ? createStockfishScript() : (loadedScript ?? createStockfishScript());
+  stockfishFactoryLoadPromise = new Promise<StockfishScriptElement>((resolve, reject) => {
+    script.addEventListener(
+      "load",
+      () => {
+        script.dataset.allchessStockfishReady = "true";
+        resolve(script);
+      },
+      { once: true }
+    );
+    script.addEventListener(
+      "error",
+      () => {
+        script.dataset.allchessStockfishError = "true";
+        removeFailedStockfishScript(script);
+        reject(new Error(`Stockfish engine script failed to load from ${stockfishScriptPath}.`));
+      },
+      { once: true }
+    );
+  }).catch((error) => {
+    stockfishFactoryLoadPromise = null;
+    throw error;
+  });
+
+  if (!script.parentElement) document.head.appendChild(script);
+  return stockfishFactoryLoadPromise;
+}
+
+function findStockfishScript() {
+  return document.querySelector<StockfishScriptElement>(stockfishScriptSelector);
+}
+
+function createStockfishScript() {
+  removeFailedStockfishScript(findStockfishScript());
+  const script = document.createElement("script") as StockfishScriptElement;
+  script.dataset.allchessStockfish = "true";
+  script.async = true;
+  script.src = stockfishScriptPath;
+  return script;
+}
+
+function removeFailedStockfishScript(script: StockfishScriptElement | null) {
+  if (script?.dataset.allchessStockfishError) script.remove();
 }
 
 function sendStockfishCommand(runtime: StockfishRuntime, command: string) {
