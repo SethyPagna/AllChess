@@ -2837,6 +2837,10 @@ select {
   flex: 0 0 auto;
 }
 
+.info-hint summary::-webkit-details-marker {
+  display: none;
+}
+
 .info-hint-trigger {
   display: grid;
   width: 1.65rem;
@@ -2848,11 +2852,13 @@ select {
   background: var(--surface);
   color: var(--muted);
   transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+  list-style: none;
 }
 
 .info-hint:hover .info-hint-trigger,
 .info-hint-trigger:focus-visible,
-.info-hint:focus-within .info-hint-trigger {
+.info-hint:focus-within .info-hint-trigger,
+.info-hint[open] .info-hint-trigger {
   background: var(--accent);
   color: #07140c;
   outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
@@ -2881,13 +2887,14 @@ select {
   transition: opacity 140ms ease, transform 140ms ease;
 }
 
-.info-hint:not(:hover):not(:focus-within) .info-hint-bubble {
+.info-hint:not(:hover):not(:focus-within):not([open]) .info-hint-bubble {
   display: none;
 }
 
 .info-hint:hover .info-hint-bubble,
 .info-hint-trigger:focus-visible + .info-hint-bubble,
-.info-hint:focus-within .info-hint-bubble {
+.info-hint:focus-within .info-hint-bubble,
+.info-hint[open] .info-hint-bubble {
   display: block;
   opacity: 1;
   transform: translateY(0);

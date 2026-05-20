@@ -4,6 +4,7 @@ import { describe, expect, test, vi } from "vitest";
 
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { NotificationCenter } from "@/components/notification-center";
+import { InfoHint } from "@/components/info-hint";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/en/play/classic",
@@ -31,5 +32,14 @@ describe("shell controls", () => {
     expect(markup).toContain("Review complete");
     expect(markup).toContain("Real alerts only");
     expect(markup).toContain("Mark read");
+  });
+
+  test("information hints are native expandable controls", () => {
+    const markup = renderToStaticMarkup(createElement(InfoHint, { text: "Short extra context." }));
+
+    expect(markup).toContain("<details");
+    expect(markup).toContain("<summary");
+    expect(markup).toContain('aria-label="More information"');
+    expect(markup).toContain("Short extra context.");
   });
 });

@@ -5,13 +5,13 @@ export function InfoHint({ label = "More information", text }: { label?: string;
   const tooltipId = useId();
 
   return (
-    <span className="info-hint">
-      <span className="info-hint-trigger" aria-describedby={tooltipId} aria-label={label} role="button" tabIndex={0}>
+    <details className="info-hint">
+      <summary className="info-hint-trigger" aria-controls={tooltipId} aria-label={label}>
         <Info aria-hidden="true" size={14} />
-      </span>
+      </summary>
       <span className="info-hint-bubble" id={tooltipId} role="tooltip">
         {text}
       </span>
-    </span>
+    </details>
   );
 }
