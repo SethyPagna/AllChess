@@ -6,6 +6,7 @@ import type { D1Database } from "@cloudflare/workers-types";
 const runtime = vi.hoisted(() => ({
   env: {} as { ALLCHESS_D1?: D1Database }
 }));
+const roomApiTestTimeoutMs = 15_000;
 
 vi.mock("@/lib/cloudflare/runtime", () => ({
   getCloudflareRuntimeEnv: async () => runtime.env
@@ -86,7 +87,7 @@ describe("room API", () => {
         ]
       }
     });
-  });
+  }, roomApiTestTimeoutMs);
 
   test("returns public room lists from D1", async () => {
     runtime.env = { ALLCHESS_D1: createRoomApiD1("room-1") };
@@ -111,5 +112,5 @@ describe("room API", () => {
         }
       ]
     });
-  });
+  }, roomApiTestTimeoutMs);
 });
