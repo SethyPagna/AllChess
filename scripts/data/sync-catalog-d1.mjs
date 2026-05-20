@@ -173,7 +173,13 @@ export function buildCatalogNormalizationSql(entries, options = {}) {
 
 export async function fetchCatalogEntries(sourceUrl = DEFAULT_SOURCE) {
   const url = new URL("/api/catalog", sourceUrl);
-  const response = await fetch(url);
+  let response;
+  try {
+    response = await fetch(url);
+  } catch (error) {
+    const cause = error instanceof Error ? error.message : String(error);
+    throw new Error(`Catalog fetch failed for ${url.toString()}. Start the app or pass --source <url>. Cause: ${cause}`);
+  }
   if (!response.ok) throw new Error(`Catalog fetch failed: ${response.status} ${response.statusText}`);
   const payload = await response.json();
   if (!Array.isArray(payload.entries)) throw new Error("Catalog payload did not include an entries array.");
