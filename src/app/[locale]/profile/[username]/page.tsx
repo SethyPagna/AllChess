@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { BarChart3, History, Play, Settings } from "lucide-react";
 
+import { ProfileEmptyState } from "@/components/profile/profile-empty-state";
+import { ProfileResults } from "@/components/profile/profile-results";
 import { InfoHint } from "@/components/ui/info-hint";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { getRuntimeProfileHistory, type RuntimeProfileHistory } from "@/lib/profile/runtime";
+import { getRuntimeProfileHistory } from "@/lib/profile/runtime";
 import { summarizeProfileHistory } from "@/lib/profile/summary";
-import { playSetupHref } from "@/lib/routing/play-links";
 
 export const dynamic = "force-dynamic";
 
@@ -57,55 +58,5 @@ export default async function ProfilePage({
       </div>
       {history.results.length > 0 ? <ProfileResults history={history} locale={locale} /> : <ProfileEmptyState locale={locale} />}
     </section>
-  );
-}
-
-function ProfileEmptyState({ locale }: { locale: string }) {
-  return (
-    <div className="panel account-empty-state">
-      <History size={26} />
-      <h2>No profile history yet</h2>
-      <p>Start a game to build recent matches, favorite games, and review highlights.</p>
-      <InfoHint text="Profile history uses saved game data only, so this area stays empty until real matches are recorded." />
-      <div className="watch-actions">
-        <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
-          <Play size={16} />
-          Start playing
-        </Link>
-        <Link href={`/${locale}/leaderboards`} className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-2">
-          <BarChart3 size={16} />
-          View ratings
-        </Link>
-        <Link href={`/${locale}/history`} className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-2">
-          <History size={16} />
-          Full history
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function ProfileResults({ history, locale }: { history: RuntimeProfileHistory; locale: string }) {
-  return (
-    <div className="panel profile-history-list">
-      <div className="compact-section-heading">
-        <h2 className="section-title">Recent matches</h2>
-        <InfoHint text="These rows come from saved Cloudflare D1 match results for this profile." />
-        <Link href={`/${locale}/history`} className="action-secondary focus-ring inline-flex items-center gap-2 px-3 py-2 text-sm">
-          <History size={15} />
-          Full history
-        </Link>
-      </div>
-      <div>
-        {history.results.map((result) => (
-          <Link key={result.id} href={`/${locale}/analysis/${result.gameId}`} className="focus-ring profile-history-row">
-            <span>{result.variantKey}</span>
-            <strong>{result.result}</strong>
-            <span>{result.outcomeReason ?? "recorded result"}</span>
-            <span>{result.ratingDelta == null ? "unrated" : `${result.ratingDelta > 0 ? "+" : ""}${result.ratingDelta}`}</span>
-          </Link>
-        ))}
-      </div>
-    </div>
   );
 }
