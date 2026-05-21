@@ -13,8 +13,10 @@ if (-not $Source) {
     $Source = $env:CATALOG_SOURCE_URL
   } elseif ($env:NEXT_PUBLIC_SITE_URL) {
     $Source = $env:NEXT_PUBLIC_SITE_URL
+  } elseif ($Remote) {
+    throw "Remote catalog sync needs CATALOG_SOURCE_URL or NEXT_PUBLIC_SITE_URL. Refusing to use a stale workers.dev fallback."
   } else {
-    $Source = "https://allchess.learn-app.workers.dev"
+    $Source = "http://localhost:3000"
   }
 }
 
