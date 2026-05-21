@@ -1,11 +1,11 @@
-import Link from "next/link";
-import { BarChart3, History, Play, Search } from "lucide-react";
+import { Search } from "lucide-react";
 
+import { HistoryEmptyState } from "@/components/history/history-empty-state";
+import { RecentHistoryList } from "@/components/history/recent-history-list";
 import { InfoHint } from "@/components/ui/info-hint";
-import { getRuntimeRecentHistory, type HistoryResultFilter, type RuntimeRecentHistory } from "@/lib/history/runtime";
+import { getRuntimeRecentHistory, type HistoryResultFilter } from "@/lib/history/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { playSetupHref } from "@/lib/routing/play-links";
 
 export const dynamic = "force-dynamic";
 
@@ -48,49 +48,7 @@ export default async function HistoryPage({
         </button>
         <span className="record-filter-chip" aria-disabled="true">Recent first</span>
       </form>
-      {hasVisibleResults ? <RecentHistoryList history={history} locale={locale} /> : <HistoryEmptyState locale={locale} hasSavedRows={hasSavedRows} />}
+      {hasVisibleResults ? <RecentHistoryList history={history} locale={locale} /> : <HistoryEmptyState hasSavedRows={hasSavedRows} locale={locale} />}
     </section>
-  );
-}
-
-function HistoryEmptyState({ locale, hasSavedRows }: { locale: string; hasSavedRows: boolean }) {
-  return (
-    <div className="panel account-empty-state">
-      <History size={24} />
-      <h2>{hasSavedRows ? "No matching games" : "No saved matches yet"}</h2>
-      <p>{hasSavedRows ? "Try a different search or result filter." : "Saved games, review links, and rating changes appear here after real matches."}</p>
-      <InfoHint text={hasSavedRows ? "Search filters only the saved Cloudflare D1 match rows already available." : "History uses stored match data only. It stays empty until Cloudflare D1 has a real finished game for this account."} />
-      <div className="watch-actions">
-        <Link className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2" href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never}>
-          <Play size={16} />
-          Play
-        </Link>
-        <Link className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-2" href={`/${locale}/leaderboards`}>
-          <BarChart3 size={16} />
-          Ratings
-        </Link>
-      </div>
-    </div>
-  );
-}
-
-function RecentHistoryList({ history, locale }: { history: RuntimeRecentHistory; locale: string }) {
-  return (
-    <div className="panel profile-history-list">
-      <div className="compact-section-heading">
-        <h2 className="section-title">Recent saved games</h2>
-        <InfoHint text={history.source === "d1" ? "These rows are distinct saved games from Cloudflare D1." : "History stays empty until real saved games exist."} />
-      </div>
-      <div>
-        {history.results.map((result) => (
-          <Link key={result.id} href={`/${locale}/analysis/${result.gameId}`} className="focus-ring profile-history-row">
-            <span>{result.variantKey}</span>
-            <strong>{result.result}</strong>
-            <span>{result.outcomeReason ?? result.mode}</span>
-            <span>{result.movesPlayed} moves</span>
-          </Link>
-        ))}
-      </div>
-    </div>
   );
 }
