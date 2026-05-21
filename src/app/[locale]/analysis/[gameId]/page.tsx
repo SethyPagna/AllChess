@@ -17,6 +17,7 @@ import {
 import { getRuntimeAnalysisReview } from "@/lib/analysis/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { analysisPlyHref } from "@/lib/routing/analysis-links";
 import { safeDecodeRouteSegment } from "@/lib/routing/params";
 import { playGameHref } from "@/lib/routing/play-links";
 
@@ -245,10 +246,4 @@ function ReviewMomentLink({ gameId, locale, moment, ply }: { gameId: string; loc
   ) : (
     <span>{content}</span>
   );
-}
-
-function analysisPlyHref(locale: string, gameId: string, ply: number, options: { autoplay?: boolean } = {}) {
-  const autoplayParam = options.autoplay ? "&autoplay=1" : "";
-
-  return `/${locale}/analysis/${encodeURIComponent(gameId)}?ply=${ply}${autoplayParam}`;
 }

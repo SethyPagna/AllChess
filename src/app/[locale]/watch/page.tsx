@@ -5,6 +5,7 @@ import { InfoHint } from "@/components/ui/info-hint";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getRuntimeLiveStats, getRuntimeRoomList, normalizeRoomListInput } from "@/lib/realtime/runtime";
 import { playSetupHref } from "@/lib/routing/play-links";
+import { watchHref } from "@/lib/routing/watch-links";
 
 export const dynamic = "force-dynamic";
 
@@ -117,14 +118,4 @@ export default async function WatchPage({
       </div>
     </section>
   );
-}
-
-function watchHref(locale: string, values: { q: string; status: string; sort: string }) {
-  const query = new URLSearchParams();
-  if (values.q) query.set("q", values.q);
-  if (values.status !== "all") query.set("status", values.status);
-  if (values.sort !== "recent") query.set("sort", values.sort);
-  const suffix = query.toString();
-
-  return suffix ? `/${locale}/watch?${suffix}` : `/${locale}/watch`;
 }
