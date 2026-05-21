@@ -1,36 +1,14 @@
 import Link from "next/link";
-import { Bot, Clock3, Eye, Globe2, Handshake, Lock, MonitorSmartphone, Swords, Users } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { Bot, Clock3, Swords } from "lucide-react";
 
 import { InfoHint } from "@/components/ui/info-hint";
 import { PlayGamePicker } from "@/components/play/game-picker";
+import { playModeOptions, playQuickActions, playWorkflowSteps } from "@/components/play/play-setup-options";
 import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { timeControls } from "@/lib/game/time-controls";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { playGameHref, playSetupHref } from "@/lib/routing/play-links";
-import { parsePlayMode, parseTimeControl, type PlayModeKey } from "@/lib/routing/params";
-
-const playModes: Array<{ key: PlayModeKey; label: string; description: string; Icon: LucideIcon }> = [
-  { key: "online", label: "Online", description: "Queue for a live opponent with matching settings.", Icon: Globe2 },
-  { key: "bot", label: "Bots", description: "Train from Easy through Legend with side choice.", Icon: Bot },
-  { key: "offline", label: "Local", description: "Two players on the same device.", Icon: MonitorSmartphone },
-  { key: "room", label: "Room", description: "Create a shareable room code for friends.", Icon: Lock },
-  { key: "matchmaking", label: "Match", description: "Pick time, rating band, and rated/casual.", Icon: Users },
-  { key: "spectate", label: "Watch", description: "Watch active public rooms and bot games.", Icon: Eye }
-];
-
-const workflowSteps = [
-  { label: "1. Mode", detail: "Online, bot, local, room, match, or watch." },
-  { label: "2. Game", detail: "Pick the ruleset you want to play." },
-  { label: "3. Setup", detail: "Choose side, clock, bot tier, then start." }
-];
-
-const quickActions = [
-  { label: "Play 10 min", detail: "Rapid setup", Icon: Clock3, mode: "online" },
-  { label: "New Game", detail: "Classic local setup", Icon: Swords, mode: "offline" },
-  { label: "Bot Mode", detail: "Choose tier and clock", Icon: Bot, mode: "bot" },
-  { label: "Play a Friend", detail: "Room invite", Icon: Handshake, mode: "room" }
-] satisfies Array<{ label: string; detail: string; Icon: LucideIcon; mode: PlayModeKey }>;
+import { parsePlayMode, parseTimeControl } from "@/lib/routing/params";
 
 export const dynamic = "force-dynamic";
 
@@ -46,7 +24,7 @@ export default async function PlaySetupPage({
   const locale = normalizeLocale(rawLocale);
   const selectedMode = parsePlayMode(query?.mode, "online") ?? "online";
   const selectedTimeControl = parseTimeControl(query?.time, "rapid") ?? "rapid";
-  const selectedModeLabel = playModes.find((mode) => mode.key === selectedMode)?.label ?? "Online";
+  const selectedModeLabel = playModeOptions.find((mode) => mode.key === selectedMode)?.label ?? "Online";
   const selectedTimeLabel = timeControls.find((control) => control.key === selectedTimeControl)?.label ?? "Rapid 10+0";
   const playable = (await getRuntimeCatalogEntries()).filter((entry) => entry.playability === "playable" && entry.variantKey);
 
@@ -66,7 +44,7 @@ export default async function PlaySetupPage({
         </Link>
       </div>
       <div className="play-workflow-strip" aria-label="Play workflow">
-        {workflowSteps.map((step) => (
+        {playWorkflowSteps.map((step) => (
           <div key={step.label} className="play-workflow-step">
             <strong>{step.label}</strong>
             <InfoHint text={step.detail} />
@@ -74,7 +52,7 @@ export default async function PlaySetupPage({
         ))}
       </div>
       <div className="play-quick-grid" aria-label="Fast play actions">
-        {quickActions.map(({ label, detail, Icon, mode }) => (
+        {playQuickActions.map(({ label, detail, Icon, mode }) => (
           <Link key={label} href={playGameHref(locale, "classic", { mode, time: "rapid" }) as never} className="focus-ring play-quick-card">
             <Icon size={24} />
             <span>{label}</span>
@@ -89,7 +67,7 @@ export default async function PlaySetupPage({
             <InfoHint text={`Selected: ${selectedModeLabel}. Choose a mode first, then each game row starts with that session type.`} />
           </div>
           <div className="play-mode-rail-list">
-            {playModes.map(({ key, label, description, Icon }) => (
+            {playModeOptions.map(({ key, label, description, Icon }) => (
               <Link key={key} href={playSetupHref(locale, { mode: key, time: selectedTimeControl }) as never} className={`focus-ring play-mode-rail-item ${selectedMode === key ? "is-selected" : ""}`} aria-current={selectedMode === key ? "page" : undefined}>
                 <Icon size={18} />
                 <span>{label}</span>
