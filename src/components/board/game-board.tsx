@@ -18,7 +18,6 @@ import {
   SlidersHorizontal,
   Sparkles,
   Swords,
-  Timer,
   Undo2,
   Redo2,
 } from "lucide-react";
@@ -32,7 +31,7 @@ import { redoTimeline, undoTimeline } from "@/lib/game/history";
 import { analyzeMoveList, summarizeReview } from "@/lib/game/review";
 import { describeGameOutcome } from "@/lib/game/outcome";
 import type { VariantRuleSummary } from "@/lib/variants/rules-atlas";
-import { getTimeControl, timeControls, type TimeControlKey } from "@/lib/game/time-controls";
+import { getTimeControl, type TimeControlKey } from "@/lib/game/time-controls";
 import { applyMove, createInitialState, getLegalMoves, sameSquare, serializeSquare, type GameState, type Square } from "@/lib/variants";
 import { BoardGrid } from "@/components/board/board-grid";
 import { BoardPlayerCard } from "@/components/board/board-player-card";
@@ -40,6 +39,7 @@ import { GameGuideModal } from "@/components/board/game-guide-modal";
 import { MatchResultOverlay } from "@/components/board/match-result-overlay";
 import { PlayActiveSetupCard } from "@/components/board/play-active-setup-card";
 import { PlayMatchHeader } from "@/components/board/play-match-header";
+import { PlayPregameSetupCard } from "@/components/board/play-pregame-setup-card";
 import { playModeOptions, type PanelTab, type PlayMode } from "@/components/board/game-board-options";
 import { colorLabel, formatMove, pickHumanColor, quickSuggestionMove, withTimeControl } from "@/components/board/game-board-utils";
 import { PlaySectionTabs } from "@/components/board/play-section-tabs";
@@ -666,56 +666,21 @@ export function GameBoard({
             gameStarted ? (
               <PlayActiveSetupCard humanColorLabel={colorLabel(humanColor)} modeLabel={modeDetails.label} onReset={reset} onShowStatus={() => setPanelTab("status")} timeControlLabel={getTimeControl(timeControl).label} />
             ) : (
-              <div className="play-options-card">
-                <div className="play-mode-grid" aria-label="Play modes">
-                  {playModeOptions.map(({ key, label, description, Icon }) => (
-                    <button key={key} type="button" onClick={() => selectPlayMode(key)} className={`focus-ring play-mode-button ${playMode === key ? "is-selected" : ""}`}>
-                      <Icon size={17} />
-                      <span>{label}</span>
-                      <small>{description}</small>
-                    </button>
-                  ))}
-                </div>
-                <div className="play-options-heading">
-                  <Timer size={18} />
-                  <span>{getTimeControl(timeControl).label}</span>
-                </div>
-                <label className="play-setup-field">
-                  <span>Side</span>
-                  <select aria-label="Side" value={seatChoice} onChange={(event) => changeSeatChoice(event.target.value as SeatChoice)}>
-                    <option value="random">Random side</option>
-                    <option value="first">{colorLabel(firstColor)}</option>
-                    <option value="second">{colorLabel(secondColor)}</option>
-                  </select>
-                </label>
-                <label className={`play-setup-field ${!isBotMode ? "is-disabled" : ""}`} title={isBotMode ? "Choose how strong the bot should be." : "Bot difficulty is only used in Bot Mode."}>
-                  <span>Bot difficulty</span>
-                  <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)} disabled={!isBotMode}>
-                    {botDifficultyLevels.map((level) => (
-                      <option key={level.key} value={level.key}>
-                        {level.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="play-time-grid" aria-label="Quick time controls">
-                  {timeControls.slice(0, 6).map((control) => (
-                    <button key={control.key} type="button" title={`Start a new ${control.label} game`} onClick={() => changeTimeControl(control.key)} className={`focus-ring ${timeControl === control.key ? "is-selected" : ""}`}>
-                      {control.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="play-options-row">
-                  <SlidersHorizontal size={18} />
-                  <span>Side</span>
-                  <strong>{colorLabel(humanColor)}</strong>
-                </div>
-                <button type="button" onClick={startGame} className="focus-ring action-primary inline-flex items-center justify-center gap-2 px-4 py-3 text-sm">
-                  <PlayCircle size={18} />
-                  Start Game
-                </button>
-                <p className="text-xs font-bold text-[var(--muted)]">Choose mode, side, clock, and bot tier first. During play, Status keeps the live controls compact.</p>
-              </div>
+              <PlayPregameSetupCard
+                botDifficulty={botDifficulty}
+                firstColorLabel={colorLabel(firstColor)}
+                humanColorLabel={colorLabel(humanColor)}
+                isBotMode={isBotMode}
+                onBotDifficultyChange={setBotDifficulty}
+                onModeChange={selectPlayMode}
+                onSeatChoiceChange={changeSeatChoice}
+                onStartGame={startGame}
+                onTimeControlChange={changeTimeControl}
+                playMode={playMode}
+                seatChoice={seatChoice}
+                secondColorLabel={colorLabel(secondColor)}
+                timeControl={timeControl}
+              />
             )
           ) : null}
           {panelTab === "status" ? (
