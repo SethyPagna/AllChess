@@ -56,7 +56,7 @@ Initial map from repository inspection:
 
 - App routes live in `src/app`, including locale-scoped pages for home, play, lobby, practice, watch, history, analysis, settings, login, leaderboards, variants, games, and profiles.
 - API routes live in `src/app/api`, including analysis, bots, catalog, game families, games, live stats, matchmaking, rooms, rules, and leaderboards.
-- Shared UI components live in `src/components`, including game board, navigation, catalog browser, auth card, notifications, rules panel, theme controls, and variant cards.
+- Shared UI components live in domain folders under `src/components`, including board, shell, catalog, play, auth, analysis, and small shared UI primitives.
 - Domain libraries live in `src/lib`, including variants, catalog, bots, bot training, stockfish, clocks, game review, game outcome, auth, Cloudflare, realtime, storage, i18n, and validation.
 - Tests live in `tests` with unit, component, persistence, platform, bot, i18n, performance, and Playwright coverage.
 - Deployment and runtime configuration live in `wrangler.jsonc`, `open-next.config.ts`, `vercel.json`, Docker files, Cloudflare docs, and package scripts.
