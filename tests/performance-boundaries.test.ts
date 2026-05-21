@@ -7,7 +7,7 @@ const repoRoot = process.cwd();
 
 describe("performance boundaries", () => {
   test("game board lazy-loads heavyweight bot runtime", () => {
-    const boardSource = readFileSync(join(repoRoot, "src", "components", "game-board.tsx"), "utf8");
+    const boardSource = readFileSync(join(repoRoot, "src", "components", "board", "game-board.tsx"), "utf8");
     const configSource = readFileSync(join(repoRoot, "src", "lib", "bot", "config.ts"), "utf8");
 
     expect(boardSource).not.toMatch(/import\s+\{[^}]*requestBotMove[^}]*}\s+from\s+["']@\/lib\/bot\/runtime["']/);
