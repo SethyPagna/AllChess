@@ -1,6 +1,7 @@
 import { AuthCard } from "@/components/auth/auth-card";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { safeDecodeQueryValue } from "@/lib/routing/params";
 import { redirect } from "next/navigation";
 
 const authErrorMessages: Record<string, string> = {
@@ -22,7 +23,7 @@ export default async function LoginPage({
   const query = searchParams ? await searchParams : {};
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
-  const rawError = safeDecode(query.error);
+  const rawError = safeDecodeQueryValue(query.error, { malformedFallback: "unknown" });
   if (rawError && !authErrorMessages[rawError]) {
     redirect(`/${locale}/login?error=auth-error`);
   }
@@ -42,13 +43,4 @@ export default async function LoginPage({
       }}
     />
   );
-}
-
-function safeDecode(value?: string) {
-  if (!value) return null;
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return "unknown";
-  }
 }

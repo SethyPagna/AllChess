@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { parseBotDifficulty, parseBoundedInteger, parseCatalogFamily, parsePlayabilityStatus, parsePlayMode, parseQueryFlag, parseTimeControl, safeDecodeRouteSegment } from "@/lib/routing/params";
+import { parseBotDifficulty, parseBoundedInteger, parseCatalogFamily, parsePlayabilityStatus, parsePlayMode, parseQueryFlag, parseTimeControl, safeDecodeQueryValue, safeDecodeRouteSegment } from "@/lib/routing/params";
 
 describe("API route parameter guards", () => {
   test("parses only known catalog filters", () => {
@@ -15,6 +15,13 @@ describe("API route parameter guards", () => {
     expect(safeDecodeRouteSegment("%E0%A4%A")).toBeNull();
     expect(parseBoundedInteger("999", 20, { min: 1, max: 100 })).toBe(100);
     expect(parseBoundedInteger("bad", 20, { min: 1, max: 100 })).toBe(20);
+  });
+
+  test("decodes query values with explicit malformed fallbacks", () => {
+    expect(safeDecodeQueryValue("auth-error")).toBe("auth-error");
+    expect(safeDecodeQueryValue(undefined)).toBeNull();
+    expect(safeDecodeQueryValue("%E0%A4%A")).toBeNull();
+    expect(safeDecodeQueryValue("%E0%A4%A", { malformedFallback: "unknown" })).toBe("unknown");
   });
 
   test("parses play modes and bot query flags narrowly", () => {

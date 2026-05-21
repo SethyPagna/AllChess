@@ -54,3 +54,12 @@ export function safeDecodeRouteSegment(value: string) {
     return null;
   }
 }
+
+export function safeDecodeQueryValue(value: string | undefined, options: { malformedFallback?: string | null } = {}) {
+  if (!value) return null;
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return options.malformedFallback ?? null;
+  }
+}
