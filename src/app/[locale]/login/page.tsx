@@ -1,16 +1,9 @@
 import { AuthCard } from "@/components/auth/auth-card";
+import { isLoginErrorCode, messageForLoginError } from "@/lib/auth/error-codes";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { safeDecodeQueryValue } from "@/lib/routing/params";
 import { redirect } from "next/navigation";
-
-const authErrorMessages: Record<string, string> = {
-  "google-oauth-not-configured": "Google sign-in is not configured yet. Use email/password or continue as guest.",
-  "invalid-credentials": "Enter a valid email and a password with at least 6 characters.",
-  "invalid-account": "Create an account with a valid email and a password with at least 6 characters.",
-  "account-exists": "An account already exists for this email. Sign in instead or continue as guest.",
-  "auth-error": "We could not complete sign-in. Try again or continue as guest."
-};
 
 export default async function LoginPage({
   params,
@@ -24,10 +17,10 @@ export default async function LoginPage({
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
   const rawError = safeDecodeQueryValue(query.error, { malformedFallback: "unknown" });
-  if (rawError && !authErrorMessages[rawError]) {
+  if (rawError && !isLoginErrorCode(rawError)) {
     redirect(`/${locale}/login?error=auth-error`);
   }
-  const error = rawError ? authErrorMessages[rawError] : null;
+  const error = messageForLoginError(rawError);
 
   return (
     <AuthCard
