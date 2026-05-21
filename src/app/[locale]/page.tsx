@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Bot, Eye, Library, LogIn, Play, Swords } from "lucide-react";
+import { LogIn, Swords } from "lucide-react";
 
 import { IntroBoard } from "@/components/home/intro-board";
+import { IntroNavigation } from "@/components/home/intro-navigation";
 import { getCatalogStats } from "@/lib/catalog";
 import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
@@ -15,11 +16,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
   const catalogStats = getCatalogStats(await getRuntimeCatalogEntries());
-  const workflows = [
-    { Icon: Play, label: "Pick a board", detail: "Chess, variants, and rules in one place.", href: playSetupHref(locale, { mode: "online", time: "rapid" }) },
-    { Icon: Bot, label: "Train fast", detail: "Bots explain source, tier, and threat.", href: playSetupHref(locale, { mode: "bot", time: "rapid" }) },
-    { Icon: Eye, label: "Watch or review", detail: "Rooms, history, and analysis stay connected.", href: `/${locale}/watch` }
-  ];
 
   return (
     <div className="intro-page">
@@ -47,30 +43,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         <IntroBoard />
       </section>
 
-      <section className="intro-workflow" aria-label="How AllChess works">
-        {workflows.map(({ Icon, detail, href, label }) => (
-          <Link key={label} href={href as never} className="focus-ring intro-workflow-step">
-            <Icon size={18} />
-            <strong>{label}</strong>
-            <span>{detail}</span>
-          </Link>
-        ))}
-      </section>
-
-      <nav className="intro-shortcuts" aria-label="Visitor shortcuts">
-        <Link href={playSetupHref(locale, { mode: "bot", time: "rapid" }) as never} className="focus-ring">
-          <Bot size={16} />
-          Bots
-        </Link>
-        <Link href={`/${locale}/variants`} className="focus-ring">
-          <Library size={16} />
-          Games & rules
-        </Link>
-        <Link href={`/${locale}/watch`} className="focus-ring">
-          <Eye size={16} />
-          Watch
-        </Link>
-      </nav>
+      <IntroNavigation locale={locale} />
     </div>
   );
 }
