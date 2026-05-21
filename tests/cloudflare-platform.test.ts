@@ -45,10 +45,10 @@ describe("Cloudflare platform configuration", () => {
     expect(migration).toContain("create table if not exists game_review_summaries");
   });
 
-  test("normalizes AllChess to Cloudflare-only resources without Supabase drivers", () => {
+  test("normalizes AllChess to Cloudflare-only resources without legacy database drivers", () => {
     const env = normalizeCloudflareEnv({
       DEPLOYMENT_TARGET: "vercel",
-      DATABASE_DRIVER: "supabase",
+      DATABASE_DRIVER: "legacy-database",
       OBJECT_STORAGE_DRIVER: "s3"
     });
 
@@ -85,7 +85,7 @@ describe("Cloudflare platform configuration", () => {
     expect(saved.url).toBe("https://assets.example.com/allchess/avatars/player.png");
   });
 
-  test("serializes game state into D1 instead of Supabase-shaped rows", async () => {
+  test("serializes game state into D1-native rows", async () => {
     const mock = createMockD1();
     const repo = createD1GameRepository(mock.db as never);
     const state = createInitialState("classic", "game-d1");
@@ -155,7 +155,7 @@ describe("Cloudflare platform configuration", () => {
 });
 
 describe("Cloudflare-owned auth primitives", () => {
-  test("hashes and verifies passwords without Supabase auth", async () => {
+  test("hashes and verifies passwords with Cloudflare-owned auth", async () => {
     const hashed = await hashPassword("correct horse battery staple");
 
     expect(hashed).toMatch(/^pbkdf2-sha256\$/);
