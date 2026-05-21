@@ -5,6 +5,7 @@ import { InfoHint } from "@/components/ui/info-hint";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getRuntimeProfileHistory, type RuntimeProfileHistory } from "@/lib/profile/runtime";
+import { summarizeProfileHistory } from "@/lib/profile/summary";
 import { playSetupHref } from "@/lib/routing/play-links";
 
 export const dynamic = "force-dynamic";
@@ -57,20 +58,6 @@ export default async function ProfilePage({
       {history.results.length > 0 ? <ProfileResults history={history} locale={locale} /> : <ProfileEmptyState locale={locale} />}
     </section>
   );
-}
-
-function summarizeProfileHistory(history: RuntimeProfileHistory) {
-  const gamesPlayed = history.stats.reduce((total, stat) => total + stat.gamesPlayed, 0);
-  const bestRating = history.stats.reduce<number | null>((best, stat) => {
-    if (stat.bestRating == null) return best;
-    return best == null ? stat.bestRating : Math.max(best, stat.bestRating);
-  }, null);
-  const recentResult = history.results[0]?.result;
-  return {
-    gamesPlayed,
-    bestRating,
-    recentResult: recentResult ? recentResult[0].toUpperCase() + recentResult.slice(1) : null
-  };
 }
 
 function ProfileEmptyState({ locale }: { locale: string }) {
