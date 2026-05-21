@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, BookOpen, Bot, Play } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 import { GameDetailGate } from "@/components/games/game-detail-gate";
+import { GameDetailHero } from "@/components/games/game-detail-hero";
+import { GameDetailRuleSections } from "@/components/games/game-detail-rule-sections";
 import { GameDetailSources } from "@/components/games/game-detail-sources";
-import { InfoHint } from "@/components/ui/info-hint";
 import { safeDecodeRouteSegment } from "@/lib/routing/params";
-import { displayBotReadiness, displayGameName, displayPiecePresentation, displayPlayabilityStatus, displayRulesReadiness, gameFamilies } from "@/lib/catalog";
+import { gameFamilies } from "@/lib/catalog";
 import { getRuntimeCatalogEntry } from "@/lib/catalog/runtime";
 import { listBotTrainingReadiness } from "@/lib/bot/training";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { playGameHref } from "@/lib/routing/play-links";
 import { findVariantRuleCompletion } from "@/lib/variants/rules-atlas";
 
 export const dynamic = "force-dynamic";
@@ -32,83 +32,12 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
         <ArrowLeft size={16} />
         Games & rules
       </Link>
-      <div className="game-detail-hero panel">
-        <div>
-          <p className="inline-flex items-center gap-2">
-            {family?.label}
-            <InfoHint text={family?.description ?? "Game family and rule lineage."} />
-          </p>
-          <h1>{displayGameName(entry)}</h1>
-          <div className="game-detail-tags">
-            <span>{displayPlayabilityStatus(entry.playability)}</span>
-            <span>{entry.board.description}</span>
-            <span>{displayRulesReadiness(entry)}</span>
-            <span>{displayBotReadiness(entry)}</span>
-          </div>
-        </div>
-        {entry.playability === "playable" && entry.variantKey ? (
-          <div className="game-detail-actions">
-            <Link href={playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) as never} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-3">
-              <Play size={18} />
-              Play
-            </Link>
-            <Link href={playGameHref(locale, entry.variantKey, { mode: "bot", time: "rapid" }) as never} className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-3">
-              <Bot size={18} />
-              Bot Mode
-            </Link>
-          </div>
-        ) : (
-          <span className="action-secondary inline-flex items-center gap-2 px-4 py-3">
-            <BookOpen size={18} />
-            Rule guide
-          </span>
-        )}
-      </div>
+      <GameDetailHero entry={entry} family={family} locale={locale} />
       {isGated ? (
         <GameDetailGate primaryGap={readiness?.primaryGap ?? completion?.remainingGates[0]} />
       ) : null}
       <div className="game-detail-grid">
-        <article className="panel game-detail-section">
-          <h2>Basic rules</h2>
-          <ol>
-            {entry.shortRules.map((rule, index) => (
-              <li key={rule}>
-                <strong>{index + 1}.</strong>
-                <span>{rule}</span>
-              </li>
-            ))}
-          </ol>
-        </article>
-        <article className="panel game-detail-section">
-          <h2>How it ends</h2>
-          <ul>
-            {entry.winConditions.map((condition) => (
-              <li key={condition}>{condition}</li>
-            ))}
-          </ul>
-        </article>
-        <article className="panel game-detail-section">
-          <h2>Training focus</h2>
-          <div className="game-detail-note">
-            <span>{displayPiecePresentation(entry)}</span>
-            <span>{displayBotReadiness(entry)}</span>
-          </div>
-          <ul>
-            {entry.reviewFocus.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </article>
-        {completion ? (
-          <article className="panel game-detail-section">
-            <h2>{completion.status === "verified-playable" ? "Verified rules" : "Rules gate"}</h2>
-            <ul>
-              {(completion.status === "verified-playable" ? completion.verifiedEdgeCases : completion.remainingGates).slice(0, 4).map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </article>
-        ) : null}
+        <GameDetailRuleSections completion={completion} entry={entry} />
         <GameDetailSources sources={entry.ruleSourceLinks} />
       </div>
     </section>
