@@ -1,11 +1,7 @@
-import Link from "next/link";
-import { Filter, Play } from "lucide-react";
-
-import { EmptyLeaderboardScopes, PopulatedLeaderboards } from "@/components/leaderboards/leaderboard-cards";
+import { EmptyLeaderboardScopes, LeaderboardActions, LeaderboardFamilyList, LeaderboardFilterBar, PopulatedLeaderboards } from "@/components/leaderboards/leaderboard-cards";
 import { InfoHint } from "@/components/ui/info-hint";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getRuntimeLeaderboards } from "@/lib/leaderboards/runtime";
-import { playSetupHref } from "@/lib/routing/play-links";
 
 export const dynamic = "force-dynamic";
 
@@ -32,44 +28,10 @@ export default async function LeaderboardsPage({
         <h1 className="text-4xl font-black sm:text-5xl">Leaderboards</h1>
         <InfoHint text={source === "d1" ? "Leaderboards read Cloudflare D1 rows. Empty boards mean no rated entries have been computed yet." : "Rated tables stay empty until real match results are recorded. No seeded players or guessed rankings."} />
       </div>
-      <form className={`panel leaderboard-filter-bar ${hasComputedBoards ? "" : "is-empty"}`} aria-label="Leaderboard filters">
-        <label className="leaderboard-scope-select" title="Choose a leaderboard scope. Empty scopes stay visible until rated games create rows.">
-          <Filter size={16} />
-          <span className="sr-only">Scope</span>
-          <select name="scope" aria-label="Leaderboard scope" defaultValue={filters.scope}>
-            <option value="all">All scopes</option>
-            {scopes.map((scope) => (
-              <option key={scope.id} value={scope.id}>{scope.label}</option>
-            ))}
-          </select>
-        </label>
-        <span aria-disabled="true" title="Only real rated games appear here.">Rated only</span>
-        <span aria-disabled={hasRatedResults ? undefined : "true"} title={hasRatedResults ? "Showing computed Cloudflare D1 leaderboard rows." : "Leaderboards stay empty until real games are recorded."}>
-          {hasRatedResults ? `${populatedLeaderboards.length} computed boards` : "Real results"}
-        </span>
-        <button type="submit" className="focus-ring record-filter-chip">Apply</button>
-      </form>
+      <LeaderboardFilterBar filters={filters} hasComputedBoards={hasComputedBoards} hasRatedResults={hasRatedResults} populatedCount={populatedLeaderboards.length} scopes={scopes} />
       {hasRatedResults ? <PopulatedLeaderboards leaderboards={populatedLeaderboards} /> : <EmptyLeaderboardScopes scopes={primaryScopes} />}
-      <div className="panel leaderboard-family-list">
-        <h2>Game-family boards</h2>
-        <div>
-          {familyScopes.map((scope) => (
-            <article key={scope.id}>
-              <strong>{scope.label}</strong>
-              <span>Waiting for rated games</span>
-            </article>
-          ))}
-        </div>
-      </div>
-      <div className="watch-actions">
-        <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
-          <Play size={16} />
-          Play rated
-        </Link>
-        <Link href={`/${locale}/lobby`} className="action-secondary focus-ring inline-flex w-fit items-center gap-2 px-4 py-2">
-          Back to lobby
-        </Link>
-      </div>
+      <LeaderboardFamilyList scopes={familyScopes} />
+      <LeaderboardActions locale={locale} />
     </section>
   );
 }
