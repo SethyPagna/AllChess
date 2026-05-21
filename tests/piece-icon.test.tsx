@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vitest";
 
-import { PieceIcon } from "@/components/piece-icon";
+import { PieceIcon } from "@/components/board/piece-icon";
 
 describe("PieceIcon", () => {
   test("renders visually distinct full-size western king and queen icons", () => {

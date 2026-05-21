@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Bot, Eye, Library, LogIn, Play, Swords } from "lucide-react";
 
-import { PieceIcon } from "@/components/piece-icon";
+import { PieceIcon } from "@/components/board/piece-icon";
 import { getCatalogStats } from "@/lib/catalog";
 import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
