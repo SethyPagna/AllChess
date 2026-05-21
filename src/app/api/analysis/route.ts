@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
-import { generateChessAnalysis } from "@/lib/ai-provider";
+import { generateChessAnalysis } from "@/lib/analysis/ai-provider";
 import { getRuntimeAnalysisReview } from "@/lib/analysis/runtime";
 
 const analysisSchema = z.object({

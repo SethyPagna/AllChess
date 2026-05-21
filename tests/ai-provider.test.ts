@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
 
-import { generateChessAnalysis, resolveAiProviderConfig } from "@/lib/ai-provider";
+import { generateChessAnalysis, resolveAiProviderConfig } from "@/lib/analysis/ai-provider";
 
 describe("AI provider adapter", () => {
   afterEach(() => {
