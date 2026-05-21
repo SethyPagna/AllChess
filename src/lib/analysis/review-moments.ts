@@ -59,6 +59,13 @@ export function createReviewMomentByMove(moments: ReviewMoment[], moves: Analysi
   return matchedMoments;
 }
 
+export function createReviewMomentLinks(moments: ReviewMoment[], momentsByMove: Map<string, ReviewMoment>) {
+  return moments.map((moment) => ({
+    moment,
+    ply: moment.ply ?? momentsByMove.get(reviewMomentKey(moment.move))?.ply
+  }));
+}
+
 export function countReviewLabels(moments: ReviewMoment[]) {
   const counts = new Map<string, number>();
   for (const moment of moments) {

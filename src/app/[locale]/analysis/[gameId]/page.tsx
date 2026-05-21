@@ -4,11 +4,11 @@ import { AnalysisSummaryCard } from "@/components/analysis/analysis-summary-card
 import { InfoHint } from "@/components/ui/info-hint";
 import {
   countReviewLabels,
+  createReviewMomentLinks,
   createReviewMomentByMove,
   extractReviewMoments,
   extractTrainingIdeas,
-  normalizeSelectedMoveIndex,
-  reviewMomentKey
+  normalizeSelectedMoveIndex
 } from "@/lib/analysis/review-moments";
 import { getRuntimeAnalysisReview } from "@/lib/analysis/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
@@ -36,10 +36,7 @@ export default async function AnalysisPage({
   const reviewMoments = extractReviewMoments(review.analysis?.report);
   const reviewMomentByMove = createReviewMomentByMove(reviewMoments, review.moves);
   const reviewLabelCounts = countReviewLabels(reviewMoments);
-  const reviewMomentLinks = reviewMoments.map((moment) => ({
-    moment,
-    ply: moment.ply ?? reviewMomentByMove.get(reviewMomentKey(moment.move))?.ply
-  }));
+  const reviewMomentLinks = createReviewMomentLinks(reviewMoments, reviewMomentByMove);
   const trainingIdeas = extractTrainingIdeas(review.analysis?.report);
 
   return (
