@@ -63,7 +63,7 @@ Initial map from repository inspection:
 
 ## High-Risk Edit Areas
 
-- `src/components/game-board.tsx`: central board UI; changes can affect every play surface.
+- `src/components/board/game-board.tsx`: central board UI; changes can affect every play surface.
 - `src/lib/variants/*`: rules behavior and catalog compatibility; changes can invalidate many variants.
 - `src/app/api/games/*`: move application and persistence path; changes affect live games and history.
 - `src/lib/realtime/*`: room state and Durable Object behavior; changes affect multiplayer reliability.
