@@ -15,7 +15,7 @@ import SettingsPage from "@/app/[locale]/settings/page";
 import VariantsPage from "@/app/[locale]/variants/page";
 import WatchPage from "@/app/[locale]/watch/page";
 import { CatalogInfoOverlay } from "@/components/catalog-browser";
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/shell/theme-provider";
 import { getGameCatalogEntry } from "@/lib/catalog";
 
 describe("compact page copy", () => {

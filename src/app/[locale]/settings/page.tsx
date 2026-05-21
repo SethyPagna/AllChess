@@ -1,9 +1,9 @@
 import { Suspense } from "react";
 
 import { InfoHint } from "@/components/info-hint";
-import { LocaleSwitcher } from "@/components/locale-switcher";
-import { NotificationCenter } from "@/components/notification-center";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { LocaleSwitcher } from "@/components/shell/locale-switcher";
+import { NotificationCenter } from "@/components/shell/notification-center";
+import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 

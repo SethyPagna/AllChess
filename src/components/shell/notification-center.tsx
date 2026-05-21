@@ -3,7 +3,7 @@
 import { Bell, CheckCircle2, Radio, Sparkles } from "lucide-react";
 import { useState } from "react";
 
-import { closeOtherShellMenus } from "./shell-menu-utils";
+import { closeOtherShellMenus } from "./menu-utils";
 
 const notifications = [
   {

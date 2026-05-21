@@ -2,8 +2,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 import { describe, expect, test, vi } from "vitest";
 
-import { LocaleSwitcher } from "@/components/locale-switcher";
-import { NotificationCenter } from "@/components/notification-center";
+import { LocaleSwitcher } from "@/components/shell/locale-switcher";
+import { NotificationCenter } from "@/components/shell/notification-center";
 import { InfoHint } from "@/components/info-hint";
 
 vi.mock("next/navigation", () => ({

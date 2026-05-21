@@ -2,7 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test, vi } from "vitest";
 
-import { AppMobileNavigation, AppSidebarNavigation, type AppNavGroup } from "@/components/app-navigation";
+import { AppMobileNavigation, AppSidebarNavigation, type AppNavGroup } from "@/components/shell/app-navigation";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/en/play/classic"

@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 import { localeNames, locales, type LocaleCode } from "@/lib/i18n/locales";
 import { localizePath } from "@/lib/i18n/navigation";
-import { closeOtherShellMenus } from "./shell-menu-utils";
+import { closeOtherShellMenus } from "./menu-utils";
 
 export function LocaleSwitcher({ active }: { active: LocaleCode }) {
   const pathname = usePathname();

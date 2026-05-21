@@ -3,7 +3,7 @@
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { useTheme } from "@/components/theme-provider";
+import { useTheme } from "@/components/shell/theme-provider";
 
 export function ThemeToggle({ labels }: { labels: Record<"light" | "dark" | "system", string> }) {
   const { resolvedTheme, setTheme } = useTheme();

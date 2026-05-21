@@ -3,11 +3,11 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Crown, Menu } from "lucide-react";
 
-import { AppMobileNavigation, AppSidebarNavigation, type AppNavGroup } from "@/components/app-navigation";
-import { LocaleSwitcher } from "@/components/locale-switcher";
-import { NotificationCenter } from "@/components/notification-center";
-import { ThemeProvider } from "@/components/theme-provider";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { AppMobileNavigation, AppSidebarNavigation, type AppNavGroup } from "@/components/shell/app-navigation";
+import { LocaleSwitcher } from "@/components/shell/locale-switcher";
+import { NotificationCenter } from "@/components/shell/notification-center";
+import { ThemeProvider } from "@/components/shell/theme-provider";
+import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { locales, normalizeLocale, rtlLocales, type LocaleCode } from "@/lib/i18n/locales";
 

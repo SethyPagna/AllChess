@@ -2,7 +2,7 @@ import { describe, expect, test } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 
-import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/shell/theme-provider";
 import { createDefaultStats } from "@/lib/realtime/stats";
 import { timeControls } from "@/lib/game/time-controls";
 import { applyBotMoveAfterThinking, settleBotThinkingSnapshot } from "@/lib/game/bot-clock";
