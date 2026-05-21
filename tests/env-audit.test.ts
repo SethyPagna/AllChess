@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { auditEnv, formatEnvAudit, maskSecret } from "@/lib/env-audit";
+import { auditEnv, formatEnvAudit, maskSecret } from "@/lib/validation/env-audit";
 
 describe("environment audit", () => {
   test("validates Vercel required variables without exposing secret values", () => {
