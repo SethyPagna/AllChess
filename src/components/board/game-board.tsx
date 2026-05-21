@@ -25,7 +25,6 @@ import {
   Timer,
   Undo2,
   Redo2,
-  X,
 } from "lucide-react";
 
 import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/lib/bot/config";
@@ -40,6 +39,7 @@ import type { VariantRuleSummary } from "@/lib/variants/rules-atlas";
 import { getTimeControl, timeControls, type TimeControlKey } from "@/lib/game/time-controls";
 import { applyMove, createInitialState, getLegalMoves, sameSquare, serializeSquare, type GameState, type Square } from "@/lib/variants";
 import { BoardPlayerCard } from "@/components/board/board-player-card";
+import { MatchResultOverlay } from "@/components/board/match-result-overlay";
 import { PieceIcon } from "@/components/board/piece-icon";
 import { panelTabOptions, playModeOptions, type PanelTab, type PlayMode } from "@/components/board/game-board-options";
 import { colorLabel, formatMove, pickHumanColor, pieceName, quickSuggestionMove, squareName, withTimeControl } from "@/components/board/game-board-utils";
@@ -665,46 +665,16 @@ export function GameBoard({
               </div>
             ) : null}
             {outcome && !isReviewing ? (
-              <>
-                <div className={`match-result-banner match-result-${outcome.result}`} role="status">
-                  <strong>{outcome.headline}</strong>
-                  <span>{outcome.detail}</span>
-                </div>
-                {outcome.celebrate ? <div className="win-celebration" aria-hidden="true" /> : null}
-                {showOutcome ? (
-                  <div className={`match-result-modal match-result-${outcome.result}`} role="dialog" aria-label="Match over" aria-modal="false">
-                    <button type="button" className="match-result-close focus-ring" aria-label="Close match result" title="Close this result panel and view the board." onClick={() => setShowOutcome(false)}>
-                      <X size={16} />
-                    </button>
-                    <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">Match over</p>
-                    <h2>{outcome.headline}</h2>
-                    <p>{outcome.detail}</p>
-                    <ul className="match-result-context">
-                      {outcome.context.map((item) => (
-                        <li key={item}>{item}</li>
-                      ))}
-                    </ul>
-                    <div className="mt-4 flex flex-wrap justify-center gap-2">
-                      <button type="button" onClick={reset} className="focus-ring action-primary px-4 py-2 text-sm">
-                        Play again
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowOutcome(false);
-                          startReview();
-                        }}
-                        className="focus-ring action-secondary px-4 py-2 text-sm"
-                      >
-                        Review moves
-                      </button>
-                      <button type="button" onClick={() => setShowOutcome(false)} className="focus-ring action-secondary px-4 py-2 text-sm">
-                        Close
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-              </>
+              <MatchResultOverlay
+                outcome={outcome}
+                showModal={showOutcome}
+                onClose={() => setShowOutcome(false)}
+                onPlayAgain={reset}
+                onReview={() => {
+                  setShowOutcome(false);
+                  startReview();
+                }}
+              />
             ) : null}
           </div>
         </div>
