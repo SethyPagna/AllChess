@@ -40,6 +40,7 @@ import { getTimeControl, timeControls, type TimeControlKey } from "@/lib/game/ti
 import { applyMove, createInitialState, getLegalMoves, sameSquare, serializeSquare, type GameState, type Square } from "@/lib/variants";
 import { BoardGrid } from "@/components/board/board-grid";
 import { BoardPlayerCard } from "@/components/board/board-player-card";
+import { GameGuideModal } from "@/components/board/game-guide-modal";
 import { MatchResultOverlay } from "@/components/board/match-result-overlay";
 import { panelTabOptions, playModeOptions, type PanelTab, type PlayMode } from "@/components/board/game-board-options";
 import { colorLabel, formatMove, pickHumanColor, quickSuggestionMove, withTimeControl } from "@/components/board/game-board-utils";
@@ -1066,58 +1067,7 @@ export function GameBoard({
           ) : null}
         </div>
       </aside>
-      {showRules && rulesSummary ? (
-        <div className="rules-modal-backdrop" role="presentation" onClick={() => setShowRules(false)}>
-          <section className="rules-modal panel" role="dialog" aria-label="Game guide" aria-modal="true" onClick={(event) => event.stopPropagation()}>
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">Game guide</p>
-                <h2>{rulesSummary.variantKey}</h2>
-              </div>
-              <button type="button" title="Close guide" onClick={() => setShowRules(false)} className="focus-ring action-secondary px-3 py-2 text-sm">
-                Close
-              </button>
-            </div>
-            <div className="catalog-guide-sections">
-              <details open>
-                <summary>Basics</summary>
-                <ol className="rules-numbered-list">
-                  {rulesSummary.numberedBasics.map((rule, index) => (
-                    <li key={rule}>
-                      <span>{index + 1}</span>
-                      <p>{rule}</p>
-                    </li>
-                  ))}
-                </ol>
-              </details>
-              <details>
-                <summary>How it ends</summary>
-                <div className="rules-modal-grid">
-                  <p>
-                    <strong>Win:</strong> {rulesSummary.winConditions.join("; ")}
-                  </p>
-                  <p>
-                    <strong>Draw:</strong> {rulesSummary.drawConditions.join("; ")}
-                  </p>
-                  <p>
-                    <strong>Illegal:</strong> {rulesSummary.illegalMoveNotes.join("; ")}
-                  </p>
-                </div>
-              </details>
-              <details>
-                <summary>Sources</summary>
-                <div className="flex flex-wrap gap-2">
-                  {rulesSummary.sourceLinks.map((source) => (
-                    <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="focus-ring rounded-md border border-[var(--border)] px-2 py-1 text-xs font-bold text-[var(--muted)]">
-                      {source.name}
-                    </a>
-                  ))}
-                </div>
-              </details>
-            </div>
-          </section>
-        </div>
-      ) : null}
+      <GameGuideModal show={showRules} rulesSummary={rulesSummary} onClose={() => setShowRules(false)} />
     </div>
   );
 }
