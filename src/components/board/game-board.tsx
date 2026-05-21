@@ -32,13 +32,14 @@ import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/
 import { getVariantBotStrengthProfile } from "@/lib/bot/strength";
 import type { BotMoveResult } from "@/lib/bot/runtime";
 import { applyBotMoveAfterThinking, settleBotThinkingSnapshot } from "@/lib/game/bot-clock";
-import { formatClock, tickGameClock } from "@/lib/game/clocks";
+import { tickGameClock } from "@/lib/game/clocks";
 import { redoTimeline, undoTimeline } from "@/lib/game/history";
 import { analyzeMoveList, summarizeReview } from "@/lib/game/review";
 import { describeGameOutcome } from "@/lib/game/outcome";
 import type { VariantRuleSummary } from "@/lib/variants/rules-atlas";
 import { getTimeControl, timeControls, type TimeControlKey } from "@/lib/game/time-controls";
 import { applyMove, createInitialState, getLegalMoves, sameSquare, serializeSquare, type GameState, type Square } from "@/lib/variants";
+import { BoardPlayerCard } from "@/components/board/board-player-card";
 import { PieceIcon } from "@/components/board/piece-icon";
 import { panelTabOptions, playModeOptions, type PanelTab, type PlayMode } from "@/components/board/game-board-options";
 import { colorLabel, formatMove, pickHumanColor, pieceName, quickSuggestionMove, squareName, withTimeControl } from "@/components/board/game-board-utils";
@@ -181,32 +182,22 @@ export function GameBoard({
   );
 
   function playerCard(color: string, placement: "top" | "bottom") {
-    const isHuman = color === humanColor;
-    const isBot = color === botColor && botMode !== "human";
-    const capturedPieces = capturedBy(color);
-    const clock = state.clocks.find((entry) => entry.color === color);
     return (
-      <div className={`board-player-card board-player-card-${placement} ${state.turn === color ? "is-active" : ""}`} aria-label={`${colorLabel(color)} player card`}>
-        <div className="player-avatar" aria-hidden="true">{isBot ? "AI" : isHuman ? "You" : colorLabel(color).slice(0, 2)}</div>
-        <div className="player-card-main">
-          <div className="player-card-row">
-            <strong>{isHuman ? "Your profile" : isBot ? `${botLevel.label} bot` : `${colorLabel(color)} player`}</strong>
-            <span aria-label={`${colorLabel(color)} clock`}>{clock ? formatClock(clock.remainingMs, { untimed: timeControl === "freestyle" }) : "--:--"}</span>
-          </div>
-          <p>{isBot ? `${botStrength.display} - ${botCalibrationLabel} - ${thinking.status === "thinking" ? "thinking" : "ready"}` : isHuman ? `${colorLabel(color)} side - local profile` : `${colorLabel(color)} side`}</p>
-        </div>
-        <div className="captured-strip" aria-label={`${colorLabel(color)} captured pieces`}>
-          {capturedPieces.length ? (
-            capturedPieces.slice(0, 12).map((piece, index) => (
-              <span key={`${piece.id}-${index}`} className="captured-piece">
-                <PieceIcon code={piece.code} owner={piece.owner} variantKey={displayState.variantKey} promoted={piece.promoted} />
-              </span>
-            ))
-          ) : (
-            <span className="captured-empty">No captures</span>
-          )}
-        </div>
-      </div>
+      <BoardPlayerCard
+        botCalibrationLabel={botCalibrationLabel}
+        botLevelLabel={botLevel.label}
+        botModeActive={color === botColor && botMode !== "human"}
+        botStrengthDisplay={botStrength.display}
+        capturedPieces={capturedBy(color)}
+        clock={state.clocks.find((entry) => entry.color === color)}
+        color={color}
+        humanColor={humanColor}
+        isActive={state.turn === color}
+        placement={placement}
+        thinking={thinking.status === "thinking"}
+        timeControl={timeControl}
+        variantKey={displayState.variantKey}
+      />
     );
   }
 
