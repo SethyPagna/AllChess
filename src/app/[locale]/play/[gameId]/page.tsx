@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { GameBoard } from "@/components/game-board";
+import { GameBoard } from "@/components/board/game-board";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { parseBotDifficulty, parsePlayMode, parseQueryFlag, parseTimeControl, safeDecodeRouteSegment } from "@/lib/routing/params";
