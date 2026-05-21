@@ -7,7 +7,14 @@
 
 ## Folder Organization Rules
 1. Keep Next.js routes under `src/app` because the framework expects that structure.
-2. Keep shared React UI under `src/components`, then split into subfolders only when a domain has enough components to justify it.
+2. Keep shared React UI under `src/components/<domain>`:
+   - `src/components/analysis`: analysis and review playback UI.
+   - `src/components/auth`: sign-in and guest account UI.
+   - `src/components/board`: board, square, and piece presentation UI.
+   - `src/components/catalog`: games/rules catalog and guide overlays.
+   - `src/components/play`: play setup and game picker UI.
+   - `src/components/shell`: navigation, language, theme, and notification controls.
+   - `src/components/ui`: small shared primitives such as info/help controls.
 3. Group domain logic under `src/lib/<domain>`:
    - `src/lib/bot`: bot runtime, strength bands, training metadata, Stockfish bridge, difficulty config.
    - `src/lib/cloudflare`: D1, R2, Workers, runtime env, and REST adapters.
@@ -21,7 +28,7 @@
 ## Migration Order
 1. Bot domain: move flat bot files into `src/lib/bot/` and update all imports.
 2. Gameplay domain: review whether `clocks`, `game-outcome`, `game-review`, and `time-controls` should move under `src/lib/game/`.
-3. UI domain: split large board/catalog components only after route behavior is stable.
+3. UI domain: keep board, catalog, play, shell, auth, analysis, and shared UI primitives in their current component subfolders.
 4. Scripts domain: keep scripts grouped by `audit`, `deploy`, `training`, and `assets`.
 5. Remove empty or obsolete folders after confirming Git tracks no files inside them.
 
