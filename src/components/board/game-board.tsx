@@ -3,11 +3,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   Activity,
-  BookOpen,
   Bot,
   Brain,
   Crown,
-  Eye,
   Flag,
   FlipHorizontal2,
   Handshake,
@@ -15,7 +13,6 @@ import {
   PauseCircle,
   PlayCircle,
   RotateCcw,
-  Share2,
   Search,
   SkipBack,
   SkipForward,
@@ -42,6 +39,7 @@ import { BoardGrid } from "@/components/board/board-grid";
 import { BoardPlayerCard } from "@/components/board/board-player-card";
 import { GameGuideModal } from "@/components/board/game-guide-modal";
 import { MatchResultOverlay } from "@/components/board/match-result-overlay";
+import { PlayMatchHeader } from "@/components/board/play-match-header";
 import { playModeOptions, type PanelTab, type PlayMode } from "@/components/board/game-board-options";
 import { colorLabel, formatMove, pickHumanColor, quickSuggestionMove, withTimeControl } from "@/components/board/game-board-utils";
 import { PlaySectionTabs } from "@/components/board/play-section-tabs";
@@ -644,37 +642,24 @@ export function GameBoard({
       </div>
 
       <aside className="game-side-panel play-panel grid content-start gap-4 p-4">
-        <div className="play-panel-match-header">
-          <div className="play-title-block">
-            <div className="play-title-row">
-              <h1>{title}</h1>
-              <div className="play-title-actions" aria-label="Match actions">
-                {rulesSummary ? (
-                  <button type="button" title="Open guide, win conditions, and draw notes." onClick={() => setShowRules(true)} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" aria-label="Game guide">
-                    <BookOpen size={16} />
-                    Guide
-                  </button>
-                ) : null}
-                <button type="button" onClick={() => { selectPlayMode("room"); setPanelTab("setup"); setNotice("Room setup selected. Bot controls are disabled while waiting for a player."); }} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Switch to room setup for a shareable game.">
-                  <Share2 size={16} />
-                  <span className="button-label">Room</span>
-                </button>
-                <button type="button" onClick={() => { selectPlayMode("spectate"); setPanelTab("setup"); }} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Switch to spectator mode for live rooms.">
-                  <Eye size={16} />
-                  <span className="button-label">Watch</span>
-                </button>
-              </div>
-            </div>
-            <div className="play-title-meta" aria-label="Match summary">
-              <span className="inline-flex items-center gap-2">
-                <Swords size={14} />
-                {meta}
-              </span>
-              <strong title={objective}>{modeSummary}</strong>
-              <em>{phaseLabel}</em>
-            </div>
-          </div>
-        </div>
+        <PlayMatchHeader
+          meta={meta}
+          modeSummary={modeSummary}
+          objective={objective}
+          onOpenGuide={() => setShowRules(true)}
+          onSelectRoom={() => {
+            selectPlayMode("room");
+            setPanelTab("setup");
+            setNotice("Room setup selected. Bot controls are disabled while waiting for a player.");
+          }}
+          onSelectWatch={() => {
+            selectPlayMode("spectate");
+            setPanelTab("setup");
+          }}
+          phaseLabel={phaseLabel}
+          showGuide={Boolean(rulesSummary)}
+          title={title}
+        />
         <PlaySectionTabs activeTab={panelTab} onChange={setPanelTab} />
         <div className="play-tab-panel">
           {panelTab === "setup" ? (
