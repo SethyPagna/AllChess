@@ -8,7 +8,7 @@ import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getRuntimeLiveStats } from "@/lib/realtime/runtime";
 import { playGameHref, playSetupHref } from "@/lib/routing/play-links";
-import { createDefaultStats } from "@/lib/stats";
+import { createDefaultStats } from "@/lib/realtime/stats";
 
 export const dynamic = "force-dynamic";
 

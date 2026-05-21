@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 
 import { ThemeProvider } from "@/components/theme-provider";
-import { createDefaultStats } from "@/lib/stats";
+import { createDefaultStats } from "@/lib/realtime/stats";
 import { timeControls } from "@/lib/game/time-controls";
 import { applyBotMoveAfterThinking, settleBotThinkingSnapshot } from "@/lib/game/bot-clock";
 import { formatClock, settleTurnClockElapsed, tickGameClock } from "@/lib/game/clocks";
