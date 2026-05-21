@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { Filter, Play, Trophy } from "lucide-react";
+import { Filter, Play } from "lucide-react";
 
+import { EmptyLeaderboardScopes, PopulatedLeaderboards } from "@/components/leaderboards/leaderboard-cards";
 import { InfoHint } from "@/components/ui/info-hint";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { getRuntimeLeaderboards, type RuntimeLeaderboards } from "@/lib/leaderboards/runtime";
+import { getRuntimeLeaderboards } from "@/lib/leaderboards/runtime";
 import { playSetupHref } from "@/lib/routing/play-links";
 
 export const dynamic = "force-dynamic";
@@ -70,41 +71,5 @@ export default async function LeaderboardsPage({
         </Link>
       </div>
     </section>
-  );
-}
-
-function EmptyLeaderboardScopes({ scopes }: { scopes: RuntimeLeaderboards["scopes"] }) {
-  return (
-    <div className="leaderboard-feature-grid">
-      {scopes.map((scope) => (
-        <article key={scope.id} className="panel leaderboard-card">
-          <Trophy size={24} />
-          <h2>{scope.label}</h2>
-          <p>No rated results yet.</p>
-        </article>
-      ))}
-    </div>
-  );
-}
-
-function PopulatedLeaderboards({ leaderboards }: { leaderboards: RuntimeLeaderboards["leaderboards"] }) {
-  return (
-    <div className="leaderboard-feature-grid">
-      {leaderboards.slice(0, 4).map((leaderboard) => (
-        <article key={leaderboard.id} className="panel leaderboard-card">
-          <Trophy size={24} />
-          <h2>{leaderboard.id.replace(/-/g, " ")}</h2>
-          <ol className="leaderboard-entry-list">
-            {leaderboard.entries.slice(0, 5).map((entry) => (
-              <li key={`${leaderboard.id}-${entry.rank}-${entry.displayName}`}>
-                <strong>#{entry.rank}</strong>
-                <span>{entry.displayName}</span>
-                <span>{entry.rating ? Math.round(entry.rating) : "Unrated"}</span>
-              </li>
-            ))}
-          </ol>
-        </article>
-      ))}
-    </div>
   );
 }
