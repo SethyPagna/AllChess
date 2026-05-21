@@ -1,4 +1,4 @@
-import { AuthCard } from "@/components/auth-card";
+import { AuthCard } from "@/components/auth/auth-card";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { redirect } from "next/navigation";
