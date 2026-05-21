@@ -1,6 +1,4 @@
-import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
-
+import { AnalysisCommandBar } from "@/components/analysis/analysis-command-bar";
 import { AnalysisReviewTools } from "@/components/analysis/analysis-review-tools";
 import { AnalysisSummaryCard } from "@/components/analysis/analysis-summary-card";
 import { InfoHint } from "@/components/ui/info-hint";
@@ -50,14 +48,7 @@ export default async function AnalysisPage({
         <h1 className="text-4xl font-black">{t("analysis.title")}</h1>
         <InfoHint text={t("analysis.subtitle")} />
       </div>
-      <div className="panel analysis-command-bar">
-        <span>Game {decodedGameId}</span>
-        <span>{statusLabel}</span>
-        <Link href={`/${locale}/profile/player`} className="action-secondary focus-ring inline-flex items-center gap-2 px-3 py-2 text-sm">
-          <ChevronLeft size={16} />
-          Records
-        </Link>
-      </div>
+      <AnalysisCommandBar gameId={decodedGameId} locale={locale} statusLabel={statusLabel} />
       <div className="analysis-grid">
         <AnalysisSummaryCard analysis={review.analysis} gameId={decodedGameId} locale={locale} moveCount={review.moves.length} reviewLabelCounts={reviewLabelCounts} reviewMomentLinks={reviewMomentLinks} trainingIdeas={trainingIdeas} />
         <AnalysisReviewTools autoPlay={query.autoplay === "1"} gameId={decodedGameId} locale={locale} moves={review.moves} reviewMomentByMove={reviewMomentByMove} selectedMoveIndex={selectedMoveIndex} />
