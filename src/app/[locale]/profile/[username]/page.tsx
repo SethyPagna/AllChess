@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { BarChart3, History, Play, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 
 import { ProfileEmptyState } from "@/components/profile/profile-empty-state";
 import { ProfileResults } from "@/components/profile/profile-results";
+import { ProfileStats } from "@/components/profile/profile-stats";
 import { InfoHint } from "@/components/ui/info-hint";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
@@ -43,19 +44,7 @@ export default async function ProfilePage({
           Settings
         </Link>
       </div>
-      <div className="account-stat-grid">
-        {[
-          { label: t("chess.rating"), value: summary.bestRating ? String(Math.round(summary.bestRating)) : "Unrated", Icon: BarChart3 },
-          { label: "Saved games", value: String(summary.gamesPlayed), Icon: History },
-          { label: "Best game", value: summary.recentResult ?? "Pending", Icon: Play }
-        ].map(({ Icon, label, value }) => (
-          <div key={label} className="panel account-stat-card">
-            <Icon size={18} />
-            <span>{label}</span>
-            <strong>{value}</strong>
-          </div>
-        ))}
-      </div>
+      <ProfileStats ratingLabel={t("chess.rating")} summary={summary} />
       {history.results.length > 0 ? <ProfileResults history={history} locale={locale} /> : <ProfileEmptyState locale={locale} />}
     </section>
   );
