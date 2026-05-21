@@ -3,6 +3,17 @@ import { BarChart3, Brain, ChevronLeft, Pause, Play, SkipBack, SkipForward } fro
 
 import { AnalysisReviewPlayback } from "@/components/analysis/review-playback";
 import { InfoHint } from "@/components/ui/info-hint";
+import {
+  countReviewLabels,
+  createReviewMomentByMove,
+  extractReviewMoments,
+  extractTrainingIdeas,
+  getReviewMomentForMove,
+  normalizeSelectedMoveIndex,
+  reviewLabelTone,
+  reviewMomentKey,
+  type ReviewMoment
+} from "@/lib/analysis/review-moments";
 import { getRuntimeAnalysisReview } from "@/lib/analysis/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
@@ -236,110 +247,8 @@ function ReviewMomentLink({ gameId, locale, moment, ply }: { gameId: string; loc
   );
 }
 
-function normalizeSelectedMoveIndex(value: string | undefined, moves: RuntimeAnalysisMoves) {
-  if (!moves.length) return 0;
-  const requestedPly = Number.parseInt(value ?? "", 10);
-  if (!Number.isFinite(requestedPly)) return 0;
-  const requestedIndex = moves.findIndex((move) => move.ply === requestedPly);
-
-  return requestedIndex >= 0 ? requestedIndex : 0;
-}
-
 function analysisPlyHref(locale: string, gameId: string, ply: number, options: { autoplay?: boolean } = {}) {
   const autoplayParam = options.autoplay ? "&autoplay=1" : "";
 
   return `/${locale}/analysis/${encodeURIComponent(gameId)}?ply=${ply}${autoplayParam}`;
-}
-
-type ReviewMoment = {
-  label: string;
-  move: string;
-  ply?: number;
-};
-
-type ReviewLabelTone = "critical" | "neutral" | "positive" | "warning";
-
-const POSITIVE_REVIEW_LABELS = new Set(["best", "brilliant", "excellent", "good", "great"]);
-const WARNING_REVIEW_LABELS = new Set(["dubious", "inaccuracy", "mistake", "missed chance"]);
-const CRITICAL_REVIEW_LABELS = new Set(["blunder", "critical", "miss", "missed win"]);
-
-function extractReviewMoments(report: unknown): ReviewMoment[] {
-  if (!isRecord(report) || !Array.isArray(report.moments)) return [];
-
-  return report.moments
-    .map((moment) => {
-      if (!isRecord(moment)) return null;
-      const label = normalizeDetailText(moment.label);
-      const move = normalizeDetailText(moment.move);
-      const ply = normalizePly(moment.ply);
-      if (!label && !move && !ply) return null;
-      const reviewMoment: ReviewMoment = { label: label || "Moment", move: move || (ply ? `Ply ${ply}` : "Saved position") };
-      if (ply) reviewMoment.ply = ply;
-      return reviewMoment;
-    })
-    .filter((moment): moment is ReviewMoment => Boolean(moment))
-    .slice(0, 4);
-}
-
-function createReviewMomentByMove(moments: ReviewMoment[], moves: RuntimeAnalysisMoves) {
-  const momentsByMove = new Map<string, ReviewMoment>();
-  for (const moment of moments) {
-    const key = reviewMomentKey(moment.move);
-    if (key) momentsByMove.set(key, moment);
-  }
-
-  const matchedMoments = new Map<string, ReviewMoment>();
-  for (const move of moves) {
-    const key = reviewMomentKey(move.notation);
-    const moment = moments.find((item) => item.ply === move.ply) ?? momentsByMove.get(key);
-    if (moment) matchedMoments.set(key, { ...moment, ply: move.ply });
-  }
-
-  return matchedMoments;
-}
-
-function countReviewLabels(moments: ReviewMoment[]) {
-  const counts = new Map<string, number>();
-  for (const moment of moments) {
-    const label = normalizeDetailText(moment.label).toLowerCase();
-    if (label) counts.set(label, (counts.get(label) ?? 0) + 1);
-  }
-
-  return Array.from(counts, ([label, count]) => ({ count, label, tone: reviewLabelTone(label) })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
-}
-
-function reviewLabelTone(label: string): ReviewLabelTone {
-  const normalizedLabel = normalizeDetailText(label).toLowerCase();
-  if (POSITIVE_REVIEW_LABELS.has(normalizedLabel)) return "positive";
-  if (WARNING_REVIEW_LABELS.has(normalizedLabel)) return "warning";
-  if (CRITICAL_REVIEW_LABELS.has(normalizedLabel)) return "critical";
-
-  return "neutral";
-}
-
-function getReviewMomentForMove(moments: Map<string, ReviewMoment>, move: RuntimeAnalysisMoves[number]) {
-  return moments.get(reviewMomentKey(move.notation));
-}
-
-function reviewMomentKey(value: unknown) {
-  return normalizeDetailText(value).toLowerCase();
-}
-
-function extractTrainingIdeas(report: unknown): string[] {
-  if (!isRecord(report) || !Array.isArray(report.training)) return [];
-
-  return report.training.map(normalizeDetailText).filter(Boolean).slice(0, 4);
-}
-
-function normalizeDetailText(value: unknown) {
-  return String(value ?? "").trim();
-}
-
-function normalizePly(value: unknown) {
-  const ply = Number(value);
-  return Number.isInteger(ply) && ply > 0 ? ply : undefined;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
