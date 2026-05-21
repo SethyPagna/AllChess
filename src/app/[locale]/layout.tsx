@@ -3,8 +3,9 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { Crown, Menu } from "lucide-react";
 
-import { AppMobileNavigation, AppSidebarNavigation, type AppNavGroup } from "@/components/shell/app-navigation";
+import { AppMobileNavigation, AppSidebarNavigation } from "@/components/shell/app-navigation";
 import { LocaleSwitcher } from "@/components/shell/locale-switcher";
+import { createAppNavGroups } from "@/components/shell/navigation-config";
 import { NotificationCenter } from "@/components/shell/notification-center";
 import { ThemeProvider } from "@/components/shell/theme-provider";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
@@ -39,35 +40,7 @@ export default async function LocaleLayout({
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
-  const navGroups: AppNavGroup[] = [
-    {
-      label: t("nav.play"),
-      icon: "swords",
-      links: [
-        { href: "lobby", icon: "home", label: t("nav.lobby") },
-        { href: "play", icon: "swords", label: t("nav.play") },
-        { href: "variants", icon: "library", label: t("nav.gamesRules") }
-      ]
-    },
-    {
-      label: t("nav.watch"),
-      icon: "eye",
-      links: [
-        { href: "watch", icon: "eye", label: t("nav.watchRooms") },
-        { href: "leaderboards", icon: "trophy", label: t("nav.leaderboards") }
-      ]
-    },
-    {
-      label: t("nav.history"),
-      icon: "history",
-      links: [{ href: "history", icon: "history", label: t("nav.history") }]
-    },
-    {
-      label: t("nav.settings"),
-      icon: "settings",
-      links: [{ href: "settings", icon: "settings", label: t("nav.settings") }]
-    }
-  ];
+  const navGroups = createAppNavGroups(t);
   const profileHref = `/${locale}/profile/player`;
   const loginHref = `/${locale}/login`;
 
