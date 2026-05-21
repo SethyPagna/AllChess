@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, BookOpen, Bot, ExternalLink, Play } from "lucide-react";
+import { ArrowLeft, BookOpen, Bot, Play } from "lucide-react";
 
+import { GameDetailGate } from "@/components/games/game-detail-gate";
+import { GameDetailSources } from "@/components/games/game-detail-sources";
 import { InfoHint } from "@/components/ui/info-hint";
 import { safeDecodeRouteSegment } from "@/lib/routing/params";
 import { displayBotReadiness, displayGameName, displayPiecePresentation, displayPlayabilityStatus, displayRulesReadiness, gameFamilies } from "@/lib/catalog";
@@ -63,15 +65,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
         )}
       </div>
       {isGated ? (
-        <div className="game-detail-gate panel" aria-label="Training and rules gate">
-          <div>
-            <strong>Guide gated for play</strong>
-            <span>
-              This game stays as a rule guide until native rules, legal bot moves, review, persistence, and E2E fixtures are complete.
-            </span>
-          </div>
-          <span>{readiness?.primaryGap ?? completion?.remainingGates[0] ?? "Complete the verification matrix before enabling play."}</span>
-        </div>
+        <GameDetailGate primaryGap={readiness?.primaryGap ?? completion?.remainingGates[0]} />
       ) : null}
       <div className="game-detail-grid">
         <article className="panel game-detail-section">
@@ -115,23 +109,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
             </ul>
           </article>
         ) : null}
-        <article className="panel game-detail-section">
-          <div className="game-detail-source-head">
-            <h2>Sources</h2>
-            <InfoHint text="Rule guides stay linked here so playable games can be checked against credible references." />
-          </div>
-          <ul>
-            {entry.ruleSourceLinks.slice(0, 3).map((source) => (
-              <li key={source.url}>
-                <a className="focus-ring inline-flex items-center gap-2" href={source.url} rel="noreferrer" target="_blank">
-                  {source.name}
-                  <ExternalLink size={14} />
-                </a>
-              </li>
-            ))}
-          </ul>
-          {entry.ruleSourceLinks.length > 3 ? <p className="game-detail-source-more">+{entry.ruleSourceLinks.length - 3} more references kept in the catalog record.</p> : null}
-        </article>
+        <GameDetailSources sources={entry.ruleSourceLinks} />
       </div>
     </section>
   );
