@@ -5,7 +5,7 @@ import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { parseBotDifficulty, parsePlayMode, parseQueryFlag, parseTimeControl, safeDecodeRouteSegment } from "@/lib/routing/params";
 import { getVariantRuleSummary } from "@/lib/variants/rules-atlas";
-import { getVariant } from "@/lib/variants";
+import { formatVariantPlayMeta, getVariant } from "@/lib/variants";
 
 export default async function PlayPage({
   params,
@@ -43,14 +43,10 @@ export default async function PlayPage({
           initialPlayMode={initialPlayMode}
           initialTimeControl={initialTimeControl}
           title={t(variant.nameKey)}
-          meta={formatPlayMeta(variant)}
+          meta={formatVariantPlayMeta(variant)}
           objective={variant.objective}
         />
       </div>
     </section>
   );
-}
-function formatPlayMeta(variant: ReturnType<typeof getVariant>) {
-  const engineLabel = variant.engineProtocol === "internal" ? "AllChess bot" : "Engine-assisted bot";
-  return `Rules checked / ${engineLabel}`;
 }

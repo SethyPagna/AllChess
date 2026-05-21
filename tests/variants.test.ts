@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { applyMove, createInitialState, getLegalMoves, getVariant, variantCatalog } from "@/lib/variants";
+import { applyMove, createInitialState, formatVariantPlayMeta, getLegalMoves, getVariant, variantCatalog } from "@/lib/variants";
 import { ruleSources } from "@/lib/variants/rule-sources";
 
 describe("variant catalog", () => {
@@ -45,6 +45,11 @@ describe("variant catalog", () => {
     expect(ruleSources.xiangqi[0].name).toContain("World Xiangqi Federation");
     expect(ruleSources.shogi[0].name).toContain("Japan Shogi Association");
     expect(ruleSources.jungle[0].scope).toContain("den");
+  });
+
+  test("formats play metadata from variant engine support", () => {
+    expect(formatVariantPlayMeta(getVariant("classic"))).toBe("Rules checked / Engine-assisted bot");
+    expect(formatVariantPlayMeta(getVariant("jungle"))).toBe("Rules checked / AllChess bot");
   });
 });
 
