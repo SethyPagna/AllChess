@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import { GET } from "@/app/api/rules/[variantKey]/route";
-import { allVariantRuleSummaries, getVariantRuleSummary } from "@/lib/variants/rules-atlas";
+import { allVariantRuleSummaries, findVariantRuleCompletion, getVariantRuleSummary } from "@/lib/variants/rules-atlas";
 import { variantCatalog } from "@/lib/variants";
 
 describe("rules atlas", () => {
@@ -31,6 +31,11 @@ describe("rules atlas", () => {
     expect(getVariantRuleSummary("antichess").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Mandatory captures")]));
     expect(getVariantRuleSummary("horde").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("horde-elimination")]));
     expect(getVariantRuleSummary("horde").completion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("E2E")]));
+  });
+
+  test("returns nullable completion for optional detail page lookups", () => {
+    expect(findVariantRuleCompletion("classic")?.status).toBe("verified-playable");
+    expect(findVariantRuleCompletion("unknown")).toBeNull();
   });
 
   test("rules API returns a variant summary and rejects unknown variants", async () => {

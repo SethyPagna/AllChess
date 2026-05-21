@@ -275,6 +275,14 @@ export function getVariantRuleSummary(key: string) {
   };
 }
 
+export function findVariantRuleCompletion(key: string) {
+  try {
+    return getVariantRuleSummary(key).completion;
+  } catch {
+    return null;
+  }
+}
+
 export function allVariantRuleSummaries() {
   return variantCatalog.map((variant) => getVariantRuleSummary(variant.key));
 }

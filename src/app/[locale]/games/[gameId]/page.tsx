@@ -9,7 +9,7 @@ import { getRuntimeCatalogEntry } from "@/lib/catalog/runtime";
 import { listBotTrainingReadiness } from "@/lib/bot/training";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { playGameHref } from "@/lib/routing/play-links";
-import { getVariantRuleSummary } from "@/lib/variants/rules-atlas";
+import { findVariantRuleCompletion } from "@/lib/variants/rules-atlas";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +20,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
   const entry = decodedGameId ? await getRuntimeCatalogEntry(decodedGameId) : undefined;
   if (!entry) notFound();
   const family = gameFamilies.find((item) => item.key === entry.family);
-  const completion = entry.variantKey ? getRuleCompletion(entry.variantKey) : null;
+  const completion = entry.variantKey ? findVariantRuleCompletion(entry.variantKey) : null;
   const readiness = entry.variantKey ? listBotTrainingReadiness(entry.variantKey)[0] : null;
   const isGated = completion?.status !== "verified-playable" || readiness?.coverageStatus === "rules-gated";
 
@@ -135,12 +135,4 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
       </div>
     </section>
   );
-}
-
-function getRuleCompletion(variantKey: string) {
-  try {
-    return getVariantRuleSummary(variantKey).completion;
-  } catch {
-    return null;
-  }
 }
