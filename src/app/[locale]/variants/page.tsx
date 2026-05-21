@@ -4,10 +4,11 @@ import { CatalogBrowser } from "@/components/catalog/catalog-browser";
 import { InfoHint } from "@/components/ui/info-hint";
 import { getBotTrainingGateSummary, listBotKnowledgeSummary } from "@/lib/bot/training";
 import { listBotStrengthBands } from "@/lib/bot/strength";
-import { gameFamilies, getCatalogStats, type GameFamilyKey, type PlayabilityStatus } from "@/lib/catalog";
+import { getCatalogStats } from "@/lib/catalog";
 import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { parseCatalogFamily, parsePlayabilityStatus } from "@/lib/routing/params";
 
 export const dynamic = "force-dynamic";
 
@@ -28,8 +29,8 @@ export default async function VariantsPage({
   const trainingGate = getBotTrainingGateSummary();
   const strengthBands = listBotStrengthBands();
   const legendBand = strengthBands[strengthBands.length - 1];
-  const initialFamily = isGameFamily(query.family) ? query.family : "all";
-  const initialStatus = isPlayability(query.playability) ? query.playability : "all";
+  const initialFamily = parseCatalogFamily(query.family ?? null) ?? "all";
+  const initialStatus = parsePlayabilityStatus(query.playability ?? null) ?? "all";
 
   return (
     <section className="grid gap-6">
@@ -80,12 +81,4 @@ export default async function VariantsPage({
       <CatalogBrowser entries={entries} initialFamily={initialFamily} initialStatus={initialStatus} locale={locale} />
     </section>
   );
-}
-
-function isGameFamily(value: string | undefined): value is GameFamilyKey {
-  return Boolean(value && gameFamilies.some((family) => family.key === value));
-}
-
-function isPlayability(value: string | undefined): value is PlayabilityStatus {
-  return value === "playable" || value === "learn" || value === "coming-soon";
 }
