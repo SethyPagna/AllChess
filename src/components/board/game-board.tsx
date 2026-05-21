@@ -40,27 +40,12 @@ import type { VariantRuleSummary } from "@/lib/variants/rules-atlas";
 import { getTimeControl, timeControls, type TimeControlKey } from "@/lib/game/time-controls";
 import { applyMove, createInitialState, getLegalMoves, sameSquare, serializeSquare, type GameState, type Square } from "@/lib/variants";
 import { PieceIcon } from "@/components/board/piece-icon";
+import { panelTabOptions, playModeOptions, type PanelTab, type PlayMode } from "@/components/board/game-board-options";
 import { colorLabel, formatMove, pickHumanColor, pieceName, quickSuggestionMove, squareName, withTimeControl } from "@/components/board/game-board-utils";
 
 type BotMode = "human" | "opponent" | "both";
-type PlayMode = "online" | "bot" | "offline" | "room" | "matchmaking" | "spectate";
 type SeatChoice = "random" | "first" | "second";
 type BoardOrientation = "auto" | "first" | "second";
-type PanelTab = "setup" | "status";
-
-const playModeOptions: Array<{ key: PlayMode; label: string; description: string; Icon: typeof Swords }> = [
-  { key: "online", label: "Play Online", description: "Match with a player", Icon: Swords },
-  { key: "bot", label: "Bot Mode", description: "Train by tier", Icon: Bot },
-  { key: "offline", label: "Offline Local", description: "Same device", Icon: Crown },
-  { key: "room", label: "Create Room", description: "Invite by code", Icon: Flag },
-  { key: "matchmaking", label: "Matchmaking", description: "Queue by settings", Icon: Timer },
-  { key: "spectate", label: "Spectate", description: "Watch rooms", Icon: Eye }
-];
-
-const panelTabOptions: Array<{ key: PanelTab; label: string; Icon: typeof Swords }> = [
-  { key: "setup", label: "Setup", Icon: SlidersHorizontal },
-  { key: "status", label: "Status", Icon: Activity }
-];
 
 type ThinkingState = {
   status: "idle" | "thinking" | "cancelled" | "failed";
