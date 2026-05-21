@@ -9,7 +9,7 @@ import { getRuntimeCatalogEntry } from "@/lib/catalog/runtime";
 import { listBotTrainingReadiness } from "@/lib/bot/training";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { playGameHref } from "@/lib/routing/play-links";
-import { getVariantRuleSummary } from "@/lib/rules-atlas";
+import { getVariantRuleSummary } from "@/lib/variants/rules-atlas";
 
 export const dynamic = "force-dynamic";
 

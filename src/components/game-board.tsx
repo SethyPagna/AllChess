@@ -36,7 +36,7 @@ import { formatClock, tickGameClock } from "@/lib/game/clocks";
 import { redoTimeline, undoTimeline } from "@/lib/game/history";
 import { analyzeMoveList, summarizeReview } from "@/lib/game/review";
 import { describeGameOutcome } from "@/lib/game/outcome";
-import type { VariantRuleSummary } from "@/lib/rules-atlas";
+import type { VariantRuleSummary } from "@/lib/variants/rules-atlas";
 import { getTimeControl, timeControls, type TimeControlKey } from "@/lib/game/time-controls";
 import { applyMove, createInitialState, getLegalMoves, sameSquare, serializeSquare, type GameState, type Square } from "@/lib/variants";
 import { PieceIcon } from "@/components/piece-icon";

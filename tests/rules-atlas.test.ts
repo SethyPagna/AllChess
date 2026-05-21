@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import { GET } from "@/app/api/rules/[variantKey]/route";
-import { allVariantRuleSummaries, getVariantRuleSummary } from "@/lib/rules-atlas";
+import { allVariantRuleSummaries, getVariantRuleSummary } from "@/lib/variants/rules-atlas";
 import { variantCatalog } from "@/lib/variants";
 
 describe("rules atlas", () => {

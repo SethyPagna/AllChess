@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import type { LocaleCode } from "@/lib/i18n/locales";
 import { playGameHref } from "@/lib/routing/play-links";
-import type { VariantRuleSummary } from "@/lib/rules-atlas";
+import type { VariantRuleSummary } from "@/lib/variants/rules-atlas";
 import type { VariantDefinition } from "@/lib/variants";
 
 export function VariantCard({

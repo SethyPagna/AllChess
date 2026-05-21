@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { createCatalogRuleSummary } from "@/lib/catalog/rule-summary";
 import { getRuntimeCatalogEntry } from "@/lib/catalog/runtime";
 import { safeDecodeRouteSegment } from "@/lib/routing/params";
-import { getVariantRuleSummary } from "@/lib/rules-atlas";
+import { getVariantRuleSummary } from "@/lib/variants/rules-atlas";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ variantKey: string }> }) {
   const { variantKey } = await params;

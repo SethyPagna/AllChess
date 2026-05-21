@@ -1,4 +1,4 @@
-import { getVariantRuleSummary } from "@/lib/rules-atlas";
+import { getVariantRuleSummary } from "@/lib/variants/rules-atlas";
 import { variantCatalog, type VariantDefinition } from "@/lib/variants";
 
 import type { BoardGeometry, CatalogStats, GameCatalogEntry, GameFamilyKey, LeaderboardScope, PiecePresentationPack, PlayabilityStatus, PlayableGameVerification } from "./types";

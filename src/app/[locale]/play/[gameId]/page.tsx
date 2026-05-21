@@ -4,7 +4,7 @@ import { GameBoard } from "@/components/game-board";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { parseBotDifficulty, parsePlayMode, parseQueryFlag, parseTimeControl, safeDecodeRouteSegment } from "@/lib/routing/params";
-import { getVariantRuleSummary } from "@/lib/rules-atlas";
+import { getVariantRuleSummary } from "@/lib/variants/rules-atlas";
 import { getVariant } from "@/lib/variants";
 
 export default async function PlayPage({
