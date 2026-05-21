@@ -42,8 +42,9 @@ import { BoardGrid } from "@/components/board/board-grid";
 import { BoardPlayerCard } from "@/components/board/board-player-card";
 import { GameGuideModal } from "@/components/board/game-guide-modal";
 import { MatchResultOverlay } from "@/components/board/match-result-overlay";
-import { panelTabOptions, playModeOptions, type PanelTab, type PlayMode } from "@/components/board/game-board-options";
+import { playModeOptions, type PanelTab, type PlayMode } from "@/components/board/game-board-options";
 import { colorLabel, formatMove, pickHumanColor, quickSuggestionMove, withTimeControl } from "@/components/board/game-board-utils";
+import { PlaySectionTabs } from "@/components/board/play-section-tabs";
 
 type BotMode = "human" | "opponent" | "both";
 type SeatChoice = "random" | "first" | "second";
@@ -674,14 +675,7 @@ export function GameBoard({
             </div>
           </div>
         </div>
-        <div className="play-section-tabs" aria-label="Game tool sections">
-          {panelTabOptions.map(({ key, label, Icon }) => (
-            <button key={key} type="button" title={`Show ${label} tools`} onClick={() => setPanelTab(key)} className={`focus-ring ${panelTab === key ? "is-active" : ""}`}>
-              <Icon size={15} />
-              <span>{label}</span>
-            </button>
-          ))}
-        </div>
+        <PlaySectionTabs activeTab={panelTab} onChange={setPanelTab} />
         <div className="play-tab-panel">
           {panelTab === "setup" ? (
             gameStarted ? (
