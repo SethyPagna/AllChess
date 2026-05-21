@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { BarChart3, Bot, Clock, Eye, Library, Lock, Radio, Swords, Trophy, Users } from "lucide-react";
+import { BarChart3, Bot, Eye, Library, Radio, Swords, Trophy } from "lucide-react";
 
+import { LobbyActivity } from "@/components/lobby/lobby-activity";
 import { InfoHint } from "@/components/ui/info-hint";
 import { displayGameName, displayRulesReadiness, gameFamilies, getCatalogStats } from "@/lib/catalog";
 import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
@@ -21,14 +22,6 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
   const featured = catalog.filter((entry) => entry.playability === "playable").slice(0, 6);
   const familyHighlights = gameFamilies.slice(0, 6);
   const siteStats = createDefaultStats(liveStats);
-  const lobbyActions = [
-    { Icon: Swords, title: t("lobby.quickPair"), href: playSetupHref(locale, { mode: "matchmaking", time: "rapid" }), body: "Find an even opponent by rating and preferred time control." },
-    { Icon: Lock, title: t("lobby.privateRoom"), href: playSetupHref(locale, { mode: "room", time: "rapid" }), body: "Create a shareable room code for friends." },
-    { Icon: Clock, title: t("lobby.correspondence"), href: playSetupHref(locale, { mode: "online", time: "correspondence" }), body: "Play long-form games across time zones." },
-    { Icon: Eye, title: "Watch rooms", href: `/${locale}/watch`, body: "Spectate public rooms when real games are active." },
-    { Icon: Bot, title: t("lobby.aiPractice"), href: playSetupHref(locale, { mode: "bot", time: "rapid" }), body: "Choose a verified board, then train against Easy through Legend bot levels." },
-    { Icon: Users, title: "Presence", href: `/${locale}/watch`, body: `${siteStats.playersOnline.value} online / ${siteStats.activeRooms.value} rooms / ${siteStats.spectators.value} spectators.` }
-  ];
 
   return (
     <section className="lobby-dashboard">
@@ -104,26 +97,7 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
           ))}
         </div>
       </div>
-      <aside className="panel grid content-start gap-4 p-5">
-        <div className="compact-section-heading">
-          <h2 className="section-title">Rooms & Activity</h2>
-          <InfoHint text="Every row opens the matching flow; room and presence counts stay empty until Cloudflare reports real activity." />
-        </div>
-        {lobbyActions.map(({ Icon, title, href, body }) => (
-          <div key={title} className="lobby-tool-row rounded-md bg-[var(--surface-strong)] p-3">
-            <Link href={href as never} className="focus-ring lobby-tool-link">
-              <span>
-                <Icon size={16} className="text-[var(--accent)]" />
-                {title}
-              </span>
-              <span aria-hidden="true">Open</span>
-            </Link>
-            <div className="lobby-tool-info">
-              <InfoHint text={body} />
-            </div>
-          </div>
-        ))}
-      </aside>
+      <LobbyActivity locale={locale} siteStats={siteStats} t={t} />
     </section>
   );
 }
