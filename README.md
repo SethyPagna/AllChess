@@ -37,6 +37,20 @@ npm run audit:live
 npm run audit:env -- vercel
 ```
 
+## Maintenance
+
+Use the storage cleanup command when local builds, test runs, or Git objects start taking too much disk space:
+
+```bash
+npm run clean:storage
+```
+
+This removes local build/test artifacts such as `.next`, `.open-next`, `.wrangler`, reports, logs, and `tsconfig.tsbuildinfo`, then runs `git gc --prune=now`. It intentionally keeps `CHESS DATA`, `node_modules`, `.env` files, and generated public runtime assets. For a preview, run:
+
+```bash
+npm run clean:local -- --dry-run
+```
+
 ## Deploy
 
 Cloudflare:
