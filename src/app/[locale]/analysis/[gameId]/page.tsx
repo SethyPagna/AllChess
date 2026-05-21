@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { BarChart3, Brain, ChevronLeft, Pause, Play } from "lucide-react";
+import { BarChart3, ChevronLeft, Pause } from "lucide-react";
 
-import { EmptyReviewPlaybackControls, ReviewMomentLink, ReviewPlaybackLinks } from "@/components/analysis/review-controls";
+import { AnalysisSummaryCard } from "@/components/analysis/analysis-summary-card";
+import { EmptyReviewPlaybackControls, ReviewPlaybackLinks } from "@/components/analysis/review-controls";
 import { InfoHint } from "@/components/ui/info-hint";
 import {
   countReviewLabels,
@@ -18,7 +19,6 @@ import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { analysisPlyHref } from "@/lib/routing/analysis-links";
 import { safeDecodeRouteSegment } from "@/lib/routing/params";
-import { playGameHref } from "@/lib/routing/play-links";
 
 export const dynamic = "force-dynamic";
 
@@ -44,6 +44,10 @@ export default async function AnalysisPage({
   const reviewMomentByMove = createReviewMomentByMove(reviewMoments, review.moves);
   const selectedMoment = selectedMove ? getReviewMomentForMove(reviewMomentByMove, selectedMove) : undefined;
   const reviewLabelCounts = countReviewLabels(reviewMoments);
+  const reviewMomentLinks = reviewMoments.map((moment) => ({
+    moment,
+    ply: moment.ply ?? reviewMomentByMove.get(reviewMomentKey(moment.move))?.ply
+  }));
   const trainingIdeas = extractTrainingIdeas(review.analysis?.report);
 
   return (
@@ -61,65 +65,7 @@ export default async function AnalysisPage({
         </Link>
       </div>
       <div className="analysis-grid">
-        {review.analysis ? (
-          <article className="panel analysis-summary-card">
-            <Brain size={26} />
-            <h2>Saved review</h2>
-            <p>{review.analysis.summary}</p>
-            <dl>
-              <div>
-                <dt>Provider</dt>
-                <dd>{review.analysis.provider}</dd>
-              </div>
-              <div>
-                <dt>Model</dt>
-                <dd>{review.analysis.model}</dd>
-              </div>
-              <div>
-                <dt>Moves</dt>
-                <dd>{review.moves.length}</dd>
-              </div>
-            </dl>
-            {reviewLabelCounts.length ? (
-              <div className="analysis-label-counts" aria-label="Review label counts">
-                {reviewLabelCounts.map((item) => (
-                  <span key={item.label} data-label={item.tone}>
-                    <strong>{item.count}</strong>
-                    {item.label}
-                  </span>
-                ))}
-              </div>
-            ) : null}
-            {reviewMoments.length ? (
-              <div className="analysis-detail-list" aria-label="Key review moments">
-                <h3>Key moments</h3>
-                {reviewMoments.map((moment) => (
-                  <ReviewMomentLink key={`${moment.move}-${moment.label}-${moment.ply ?? "move"}`} gameId={decodedGameId} locale={locale} moment={moment} ply={moment.ply ?? reviewMomentByMove.get(reviewMomentKey(moment.move))?.ply} />
-                ))}
-              </div>
-            ) : null}
-            {trainingIdeas.length ? (
-              <div className="analysis-detail-list" aria-label="Training ideas">
-                <h3>Train next</h3>
-                {trainingIdeas.map((idea) => (
-                  <span key={idea}>{idea}</span>
-                ))}
-              </div>
-            ) : null}
-          </article>
-        ) : (
-          <article className="panel account-empty-state">
-            <Brain size={26} />
-            <h2>No saved review yet</h2>
-            <p>Finish a game to unlock move labels, turning points, and replay controls.</p>
-            <div className="watch-actions">
-              <Link href={playGameHref(locale, "classic", { mode: "offline", time: "rapid" }) as never} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
-                <Play size={16} />
-                Play first
-              </Link>
-            </div>
-          </article>
-        )}
+        <AnalysisSummaryCard analysis={review.analysis} gameId={decodedGameId} locale={locale} moveCount={review.moves.length} reviewLabelCounts={reviewLabelCounts} reviewMomentLinks={reviewMomentLinks} trainingIdeas={trainingIdeas} />
         <article className="panel analysis-review-shell">
           <h2>
             <BarChart3 size={18} />
