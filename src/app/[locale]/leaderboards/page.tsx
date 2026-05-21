@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Filter, Play, Trophy } from "lucide-react";
 
-import { InfoHint } from "@/components/info-hint";
+import { InfoHint } from "@/components/ui/info-hint";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getRuntimeLeaderboards, type RuntimeLeaderboards } from "@/lib/leaderboards/runtime";
 import { playSetupHref } from "@/lib/routing/play-links";

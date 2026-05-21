@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Bot, Clock3, Eye, Globe2, Handshake, Lock, MonitorSmartphone, Swords, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { InfoHint } from "@/components/info-hint";
+import { InfoHint } from "@/components/ui/info-hint";
 import { PlayGamePicker } from "@/components/play/game-picker";
 import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { timeControls } from "@/lib/game/time-controls";

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, BookOpen, Bot, ExternalLink, Play } from "lucide-react";
 
-import { InfoHint } from "@/components/info-hint";
+import { InfoHint } from "@/components/ui/info-hint";
 import { safeDecodeRouteSegment } from "@/lib/routing/params";
 import { displayBotReadiness, displayGameName, displayPiecePresentation, displayPlayabilityStatus, displayRulesReadiness, gameFamilies } from "@/lib/catalog";
 import { getRuntimeCatalogEntry } from "@/lib/catalog/runtime";

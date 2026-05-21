@@ -1,5 +1,5 @@
 import { continueAsGuest, signInWithGoogle, signInWithPassword, signUpWithPassword } from "@/app/actions";
-import { InfoHint } from "@/components/info-hint";
+import { InfoHint } from "@/components/ui/info-hint";
 import type { LocaleCode } from "@/lib/i18n/locales";
 
 export function AuthCard({

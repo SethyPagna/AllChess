@@ -1,7 +1,7 @@
 import { Bot, Brain, Database, Gauge } from "lucide-react";
 
 import { CatalogBrowser } from "@/components/catalog/catalog-browser";
-import { InfoHint } from "@/components/info-hint";
+import { InfoHint } from "@/components/ui/info-hint";
 import { getBotTrainingGateSummary, listBotKnowledgeSummary } from "@/lib/bot/training";
 import { listBotStrengthBands } from "@/lib/bot/strength";
 import { gameFamilies, getCatalogStats, type GameFamilyKey, type PlayabilityStatus } from "@/lib/catalog";

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BarChart3, Bot, Clock, Eye, Library, Lock, Radio, Swords, Trophy, Users } from "lucide-react";
 
-import { InfoHint } from "@/components/info-hint";
+import { InfoHint } from "@/components/ui/info-hint";
 import { displayGameName, displayRulesReadiness, gameFamilies, getCatalogStats } from "@/lib/catalog";
 import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";

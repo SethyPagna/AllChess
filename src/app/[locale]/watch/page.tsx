@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Eye, Radio, Search, Swords, Trophy, Users } from "lucide-react";
 
-import { InfoHint } from "@/components/info-hint";
+import { InfoHint } from "@/components/ui/info-hint";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getRuntimeLiveStats, getRuntimeRoomList, normalizeRoomListInput } from "@/lib/realtime/runtime";
 import { playSetupHref } from "@/lib/routing/play-links";

@@ -4,7 +4,7 @@ import { describe, expect, test, vi } from "vitest";
 
 import { LocaleSwitcher } from "@/components/shell/locale-switcher";
 import { NotificationCenter } from "@/components/shell/notification-center";
-import { InfoHint } from "@/components/info-hint";
+import { InfoHint } from "@/components/ui/info-hint";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/en/play/classic",

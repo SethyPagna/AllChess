@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BarChart3, Brain, ChevronLeft, Pause, Play, SkipBack, SkipForward } from "lucide-react";
 
 import { AnalysisReviewPlayback } from "@/components/analysis/review-playback";
-import { InfoHint } from "@/components/info-hint";
+import { InfoHint } from "@/components/ui/info-hint";
 import { getRuntimeAnalysisReview } from "@/lib/analysis/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
