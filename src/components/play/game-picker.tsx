@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { BookOpen, Play, Radio, Search } from "lucide-react";
 
-import { CatalogInfoOverlay } from "@/components/catalog-browser";
+import { CatalogInfoOverlay } from "@/components/catalog/catalog-browser";
 import { displayGameName, displayRulesReadiness, type GameCatalogEntry } from "@/lib/catalog";
 import type { TimeControlKey } from "@/lib/game/time-controls";
 import type { LocaleCode } from "@/lib/i18n/locales";

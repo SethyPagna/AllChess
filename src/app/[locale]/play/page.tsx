@@ -3,7 +3,7 @@ import { Bot, Clock3, Eye, Globe2, Handshake, Lock, MonitorSmartphone, Swords, U
 import type { LucideIcon } from "lucide-react";
 
 import { InfoHint } from "@/components/info-hint";
-import { PlayGamePicker } from "@/components/play-game-picker";
+import { PlayGamePicker } from "@/components/play/game-picker";
 import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { timeControls } from "@/lib/game/time-controls";
 import { normalizeLocale } from "@/lib/i18n/locales";

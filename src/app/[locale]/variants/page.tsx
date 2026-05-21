@@ -1,6 +1,6 @@
 import { Bot, Brain, Database, Gauge } from "lucide-react";
 
-import { CatalogBrowser } from "@/components/catalog-browser";
+import { CatalogBrowser } from "@/components/catalog/catalog-browser";
 import { InfoHint } from "@/components/info-hint";
 import { getBotTrainingGateSummary, listBotKnowledgeSummary } from "@/lib/bot/training";
 import { listBotStrengthBands } from "@/lib/bot/strength";
