@@ -19,6 +19,7 @@ const maxOpeningPly = Number(options.maxOpeningPly ?? 10);
 const pythonExecutable = process.env.PYTHON ?? "python";
 const maxChecksumBytes = Number(options.maxChecksumBytes ?? 1_000_000);
 const runtimeBudgetMs = 2800;
+const runGeneratedAt = new Date().toISOString();
 const verifiedTrainingVariants = new Set(["classic", "chess960", "xiangqi", "antichess", "king-of-the-hill", "three-check"]);
 const ignoredDataDirectories = new Set([".git", "archive", "node_modules"]);
 
@@ -91,8 +92,8 @@ const generatedPositions = new Set(entries.map((entry) => `${entry.variantKey}|$
 const scannedRecords = manifests.reduce((total, manifest) => total + Number(manifest.sampledRecords ?? 0), 0);
 
 const output = {
-  version: `allchess-local-knowledge-${new Date().toISOString().slice(0, 10)}`,
-  generatedAt: new Date().toISOString(),
+  version: `allchess-local-knowledge-${runGeneratedAt.slice(0, 10)}`,
+  generatedAt: runGeneratedAt,
   sourceRoot: "CHESS DATA",
   summary: {
     filesScanned: manifests.length,
@@ -107,9 +108,9 @@ const output = {
   },
   trainingRuns: [
     {
-      id: `training-${new Date().toISOString().slice(0, 10)}`,
+      id: `training-${runGeneratedAt.slice(0, 10)}`,
       mode: "two-track",
-      generatedAt: new Date().toISOString(),
+      generatedAt: runGeneratedAt,
       scannedRecords,
       generatedPositions,
       runtimeBudgetMs,
@@ -522,7 +523,6 @@ function compilePuzzleEntries(csvText, limit) {
 }
 
 function applyKnowledgeMetadata(entry, manifests) {
-  const generatedAt = new Date().toISOString();
   entry.tierTargets ??= tiersAtOrAbove(entry.minTier);
   entry.positionHash ??= stableId(`${entry.variantKey}|${entry.positionKey}|${entry.boardSignature ?? ""}|${entry.moveUci}`);
   entry.sourceFileId ??= sourceFileForEntry(entry, manifests).id;
@@ -530,7 +530,7 @@ function applyKnowledgeMetadata(entry, manifests) {
   entry.labelDepth ??= depthForEntry(entry);
   entry.engine ??= engineForEntry(entry);
   entry.split ??= splitForId(entry.id);
-  entry.generatedAt ??= generatedAt;
+  entry.generatedAt ??= runGeneratedAt;
 }
 
 function buildVariantCoverage(entries, manifests) {
