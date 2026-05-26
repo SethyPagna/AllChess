@@ -2,6 +2,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "allchess",
   "main": ".open-next/worker.js",
+  "account_id": "d105a82bc26b6913575355352c2d1bb1",
+  "workers_dev": true,
   "compatibility_date": "2026-05-13",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
@@ -69,6 +71,7 @@
   "env": {
     "production": {
       "name": "allchess",
+      "workers_dev": true,
       "services": [
         {
           "binding": "WORKER_SELF_REFERENCE",
@@ -113,12 +116,6 @@
       "ai": {
         "binding": "AI"
       },
-      "routes": [
-        {
-          "pattern": "allchess.example.com",
-          "custom_domain": true
-        }
-      ],
       "vars": {
         "DEPLOYMENT_TARGET": "cloudflare",
         "OBJECT_STORAGE_DRIVER": "r2",
