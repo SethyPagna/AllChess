@@ -3,7 +3,7 @@ import { gameFamilies, type GameFamilyKey, type PlayabilityStatus } from "@/lib/
 import { timeControls, type TimeControlKey } from "@/lib/game/time-controls";
 
 const playabilityStatuses: PlayabilityStatus[] = ["playable", "learn", "coming-soon"];
-const playModes = ["online", "bot", "offline", "room", "matchmaking", "spectate"] as const;
+const playModes = ["online", "bot", "offline", "room", "spectate"] as const;
 const truthyQueryValues = new Set(["1", "true", "yes", "on"]);
 
 export type PlayModeKey = (typeof playModes)[number];
@@ -21,6 +21,7 @@ export function parsePlayabilityStatus(value: string | null): PlayabilityStatus 
 export function parsePlayMode(value: string | string[] | undefined, fallback?: PlayModeKey): PlayModeKey | undefined {
   const mode = Array.isArray(value) ? value[0] : value;
   if (!mode) return fallback;
+  if (mode === "matchmaking") return "online";
   return playModes.includes(mode as PlayModeKey) ? (mode as PlayModeKey) : fallback;
 }
 

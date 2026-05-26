@@ -667,6 +667,98 @@ select {
   white-space: nowrap;
 }
 
+.play-title-picker {
+  position: relative;
+  min-width: 0;
+}
+
+.play-title-button {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.35rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+.play-title-button svg {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+.play-title-picker-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 0.55rem);
+  left: 0;
+  display: grid;
+  width: min(31rem, calc(100vw - 2rem));
+  gap: 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface) 96%, black);
+  box-shadow: var(--shadow);
+  padding: 0.55rem;
+}
+
+.play-title-picker-search {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface-strong);
+  padding: 0.45rem 0.55rem;
+}
+
+.play-title-picker-search svg {
+  color: var(--muted);
+}
+
+.play-title-picker-search input {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.play-title-picker-list {
+  display: grid;
+  max-height: 17rem;
+  gap: 0.32rem;
+  overflow: auto;
+}
+
+.play-title-picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  border-radius: 7px;
+  color: var(--foreground);
+  padding: 0.45rem 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 950;
+}
+
+.play-title-picker-row:hover,
+.play-title-picker-row.is-current {
+  background: color-mix(in srgb, var(--accent) 15%, var(--surface-strong));
+}
+
+.play-title-picker-row small,
+.play-title-picker-list p {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
 .play-title-meta {
   display: flex;
   flex-wrap: wrap;
@@ -1743,8 +1835,8 @@ select {
 
 .play-mode-grid {
   display: grid;
-  gap: 0.45rem;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.38rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .play-mode-button {
@@ -1756,7 +1848,8 @@ select {
   border-radius: 8px;
   background: #2d2b28;
   color: #f8f6ef;
-  padding: 0.65rem;
+  min-height: 3.9rem;
+  padding: 0.5rem 0.55rem;
   text-align: left;
 }
 
@@ -1766,13 +1859,13 @@ select {
 }
 
 .play-mode-button span {
-  font-size: 0.82rem;
+  font-size: 0.76rem;
   font-weight: 950;
 }
 
 .play-mode-button small {
   color: #bdb6aa;
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   font-weight: 800;
 }
 
@@ -1982,7 +2075,7 @@ select {
 
 .play-control-card {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.5rem;
   background: #24231f;
 }
 
@@ -1998,7 +2091,7 @@ select {
 }
 
 .play-control-heading strong {
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 950;
 }
 
@@ -2029,7 +2122,7 @@ select {
 
 .play-control-groups {
   display: grid;
-  gap: 0.55rem;
+  gap: 0.42rem;
 }
 
 .play-control-strip {
@@ -2040,7 +2133,7 @@ select {
 
 .play-control-section {
   display: grid;
-  gap: 0.35rem;
+  gap: 0.25rem;
 }
 
 .play-control-group-label {
@@ -2087,9 +2180,10 @@ select {
 }
 
 .play-control-group-utility {
-  grid-template-columns: repeat(5, minmax(2.25rem, 1fr));
+  grid-template-columns: repeat(5, minmax(2rem, 2.35rem));
+  justify-content: start;
   border-top: 1px solid rgb(255 255 255 / 8%);
-  padding-top: 0.55rem;
+  padding-top: 0.35rem;
 }
 
 .play-control-button,
@@ -2099,10 +2193,10 @@ select {
   justify-content: center;
   gap: 0.45rem;
   min-width: 0;
-  min-height: 2.1rem;
+  min-height: 1.8rem;
   border-radius: 7px;
-  padding: 0.42rem 0.5rem;
-  font-size: 0.72rem;
+  padding: 0.32rem 0.45rem;
+  font-size: 0.68rem;
   font-weight: 950;
   line-height: 1;
 }
@@ -2121,12 +2215,13 @@ select {
 }
 
 .play-control-button.is-main {
-  min-height: 2.1rem;
-  font-size: 0.74rem;
+  min-height: 1.8rem;
+  font-size: 0.7rem;
 }
 
 .play-icon-button {
-  aspect-ratio: 1;
+  width: 2.2rem;
+  aspect-ratio: auto;
   padding-inline: 0.45rem;
 }
 

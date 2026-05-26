@@ -1,6 +1,6 @@
-import { Activity, Bot, Crown, Eye, Flag, SlidersHorizontal, Swords, Timer, type LucideIcon } from "lucide-react";
+import { Activity, Bot, Crown, Eye, Flag, SlidersHorizontal, Swords, type LucideIcon } from "lucide-react";
 
-export type PlayMode = "online" | "bot" | "offline" | "room" | "matchmaking" | "spectate";
+export type PlayMode = "online" | "bot" | "offline" | "room" | "spectate";
 export type PanelTab = "setup" | "status";
 
 export const playModeOptions: Array<{ key: PlayMode; label: string; description: string; Icon: LucideIcon }> = [
@@ -8,7 +8,6 @@ export const playModeOptions: Array<{ key: PlayMode; label: string; description:
   { key: "bot", label: "Bot Mode", description: "Train by tier", Icon: Bot },
   { key: "offline", label: "Offline Local", description: "Same device", Icon: Crown },
   { key: "room", label: "Create Room", description: "Invite by code", Icon: Flag },
-  { key: "matchmaking", label: "Matchmaking", description: "Queue by settings", Icon: Timer },
   { key: "spectate", label: "Spectate", description: "Watch rooms", Icon: Eye }
 ];
 

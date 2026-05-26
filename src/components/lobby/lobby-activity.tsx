@@ -25,7 +25,7 @@ type LobbyAction = {
 
 export function LobbyActivity({ locale, siteStats, t }: LobbyActivityProps) {
   const lobbyActions: LobbyAction[] = [
-    { Icon: Swords, title: t("lobby.quickPair"), href: playSetupHref(locale, { mode: "matchmaking", time: "rapid" }), body: "Find an even opponent by rating and preferred time control." },
+    { Icon: Swords, title: t("lobby.quickPair"), href: playSetupHref(locale, { mode: "online", time: "rapid" }), body: "Find an even opponent by rating and preferred time control." },
     { Icon: Lock, title: t("lobby.privateRoom"), href: playSetupHref(locale, { mode: "room", time: "rapid" }), body: "Create a shareable room code for friends." },
     { Icon: Clock, title: t("lobby.correspondence"), href: playSetupHref(locale, { mode: "online", time: "correspondence" }), body: "Play long-form games across time zones." },
     { Icon: Eye, title: "Watch rooms", href: `/${locale}/watch`, body: "Spectate public rooms when real games are active." },

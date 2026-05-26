@@ -28,21 +28,18 @@ describe("compact page copy", () => {
     expect(markup).toContain("/en/watch");
   });
 
-  test("play setup uses info affordances instead of visible paragraph-heavy mode cards", async () => {
+  test("play setup opens the board-first setup flow", async () => {
     const element = await PlaySetupPage({ params: Promise.resolve({ locale: "en" }), searchParams: Promise.resolve({ mode: "bot", time: "blitz" }) });
     const markup = renderToStaticMarkup(element);
 
-    expect(markup).toContain('aria-label="More information"');
+    expect(markup).toContain("Classic Chess");
+    expect(markup).toContain("Choose setup first");
     expect(markup).toContain('aria-label="Play modes"');
-    expect(markup).toContain('aria-label="Time controls"');
-    expect(markup).toContain("Mode");
-    expect(markup).toContain("Clock");
-    expect(markup).toContain("Game");
-    expect(markup).toContain("Online");
-    expect(markup).toContain("Bots");
+    expect(markup).toContain("Play Online");
+    expect(markup).toContain("Bot Mode");
+    expect(markup).not.toContain("Matchmaking");
     expect(markup).toContain("Blitz 5+0");
-    expect(markup).toContain("/en/play/classic?bot=normal&amp;mode=bot&amp;time=blitz");
-    expect(markup).not.toContain("<p>Pick a mode first");
+    expect(markup).toContain('aria-label="Choose game"');
     expect(markup).not.toContain("play-mode-card");
   });
 
@@ -53,7 +50,7 @@ describe("compact page copy", () => {
     expect(markup).toContain("Play Now");
     expect(markup).toContain("Games &amp; Rules");
     expect(markup).toContain("Rooms &amp; Activity");
-    expect(markup).toContain("/en/play?mode=matchmaking&amp;time=rapid");
+    expect(markup).toContain("/en/play?mode=online&amp;time=rapid");
     expect(markup).toContain("/en/play?mode=online&amp;time=correspondence");
     expect(markup).toContain("/en/play/classic?bot=normal&amp;mode=bot&amp;time=rapid");
     expect(markup).not.toContain("time=daily");

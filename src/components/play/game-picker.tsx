@@ -10,7 +10,7 @@ import type { TimeControlKey } from "@/lib/game/time-controls";
 import type { LocaleCode } from "@/lib/i18n/locales";
 import { playGameHref } from "@/lib/routing/play-links";
 
-type PlayModeKey = "online" | "bot" | "offline" | "room" | "matchmaking" | "spectate";
+type PlayModeKey = "online" | "bot" | "offline" | "room" | "spectate";
 
 export function PlayGamePicker({
   entries,
@@ -81,7 +81,6 @@ function modeActionLabel(mode: PlayModeKey) {
     bot: "Bot",
     offline: "Local",
     room: "Room",
-    matchmaking: "Match",
     spectate: "Watch"
   };
   return labels[mode];

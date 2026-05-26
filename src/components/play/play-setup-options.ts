@@ -1,4 +1,4 @@
-import { Bot, Clock3, Eye, Globe2, Handshake, Lock, MonitorSmartphone, Swords, Users } from "lucide-react";
+import { Bot, Clock3, Eye, Globe2, Handshake, Lock, MonitorSmartphone, Swords } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 import type { PlayModeKey } from "@/lib/routing/params";
@@ -27,12 +27,11 @@ export const playModeOptions: PlayModeOption[] = [
   { key: "bot", label: "Bots", description: "Train from Easy through Legend with side choice.", Icon: Bot },
   { key: "offline", label: "Local", description: "Two players on the same device.", Icon: MonitorSmartphone },
   { key: "room", label: "Room", description: "Create a shareable room code for friends.", Icon: Lock },
-  { key: "matchmaking", label: "Match", description: "Pick time, rating band, and rated/casual.", Icon: Users },
   { key: "spectate", label: "Watch", description: "Watch active public rooms and bot games.", Icon: Eye }
 ];
 
 export const playWorkflowSteps: PlayWorkflowStep[] = [
-  { label: "1. Mode", detail: "Online, bot, local, room, match, or watch." },
+  { label: "1. Mode", detail: "Online, bot, local, room, or watch." },
   { label: "2. Game", detail: "Pick the ruleset you want to play." },
   { label: "3. Setup", detail: "Choose side, clock, bot tier, then start." }
 ];

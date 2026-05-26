@@ -1,11 +1,9 @@
-import { InfoHint } from "@/components/ui/info-hint";
-import { PlayGamePicker } from "@/components/play/game-picker";
-import { PlayModeRail, PlayQuickGrid, PlaySetupHero, PlayWorkflowStrip } from "@/components/play/play-setup-panels";
-import { playModeOptions } from "@/components/play/play-setup-options";
-import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
-import { timeControls } from "@/lib/game/time-controls";
+import { GameBoard } from "@/components/board/game-board";
+import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { parsePlayMode, parseTimeControl } from "@/lib/routing/params";
+import { parseBotDifficulty, parsePlayMode, parseQueryFlag, parseTimeControl } from "@/lib/routing/params";
+import { formatVariantPlayMeta, getVariant } from "@/lib/variants";
+import { getVariantRuleSummary } from "@/lib/variants/rules-atlas";
 
 export const dynamic = "force-dynamic";
 
@@ -14,31 +12,33 @@ export default async function PlaySetupPage({
   searchParams
 }: {
   params: Promise<{ locale: string }>;
-  searchParams?: Promise<{ mode?: string; time?: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale: rawLocale } = await params;
-  const query = await searchParams;
+  const query = searchParams ? await searchParams : {};
   const locale = normalizeLocale(rawLocale);
-  const selectedMode = parsePlayMode(query?.mode, "online") ?? "online";
-  const selectedTimeControl = parseTimeControl(query?.time, "rapid") ?? "rapid";
-  const selectedModeLabel = playModeOptions.find((mode) => mode.key === selectedMode)?.label ?? "Online";
-  const selectedTimeLabel = timeControls.find((control) => control.key === selectedTimeControl)?.label ?? "Rapid 10+0";
-  const playable = (await getRuntimeCatalogEntries()).filter((entry) => entry.playability === "playable" && entry.variantKey);
+  const t = createTranslator(locale);
+  const variant = getVariant("classic");
+  const initialPlayMode = parsePlayMode(query.mode, "online") ?? "online";
+  const initialBotDifficulty = parseBotDifficulty(query.bot);
+  const initialTimeControl = parseTimeControl(query.time ?? query.clock, "rapid");
+  const initialBotMode = initialBotDifficulty || parseQueryFlag(query.bot) || initialPlayMode === "bot" ? "opponent" : "human";
 
   return (
-    <section className="play-setup-page grid gap-5">
-      <PlaySetupHero locale={locale} />
-      <PlayWorkflowStrip />
-      <PlayQuickGrid locale={locale} />
-      <div className="play-setup-shell">
-        <PlayModeRail locale={locale} selectedMode={selectedMode} selectedModeLabel={selectedModeLabel} selectedTimeControl={selectedTimeControl} selectedTimeLabel={selectedTimeLabel} />
-        <div className="panel play-game-picker">
-          <div className="compact-section-heading">
-            <h2 className="section-title">Game</h2>
-            <InfoHint text="Pick a ruleset. Use the info button for basics, endings, status, bot mode, and the full guide." />
-          </div>
-          <PlayGamePicker entries={playable} locale={locale} selectedMode={selectedMode} selectedTimeControl={selectedTimeControl} />
-        </div>
+    <section className="play-arena">
+      <div className="play-core grid gap-3">
+        <GameBoard
+          variantKey={variant.key}
+          rulesSummary={getVariantRuleSummary(variant.key)}
+          initialBotMode={initialBotMode}
+          initialBotDifficulty={initialBotDifficulty}
+          initialPlayMode={initialPlayMode}
+          initialTimeControl={initialTimeControl}
+          locale={locale}
+          title={t(variant.nameKey)}
+          meta={formatVariantPlayMeta(variant)}
+          objective={variant.objective}
+        />
       </div>
     </section>
   );

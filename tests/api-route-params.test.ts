@@ -27,6 +27,7 @@ describe("API route parameter guards", () => {
   test("parses play modes and bot query flags narrowly", () => {
     expect(parsePlayMode("bot")).toBe("bot");
     expect(parsePlayMode(["spectate", "bot"])).toBe("spectate");
+    expect(parsePlayMode("matchmaking")).toBe("online");
     expect(parsePlayMode("broken", "online")).toBe("online");
     expect(parseBotDifficulty("normal")).toBe("normal");
     expect(parseBotDifficulty("grandmaster")).toBe("grandmaster");

@@ -102,13 +102,17 @@ test("play setup carries selected clock into game links", async ({ page }) => {
   });
 
   await page.goto("/en/play?mode=bot&time=blitz");
-  await expect(page.getByRole("heading", { name: "Choose how you want to play" })).toBeVisible();
-  await expect(page.getByLabel("Time controls").getByText("Blitz 5+0")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Classic Chess" })).toBeVisible();
+  await expect(page.getByLabel("Game board")).toBeVisible();
+  await expect(page.locator(".play-time-grid .is-selected")).toContainText("Blitz 5+0");
+  await expect(page.getByLabel("Play modes")).toContainText("Bot Mode");
+  await expect(page.getByLabel("Play modes")).not.toContainText("Matchmaking");
 
-  const classicRow = page.locator(".play-game-row").filter({ hasText: "Classic Chess" });
-  const botLink = classicRow.getByRole("link", { name: "Bot" });
-  await expect(botLink).toHaveAttribute("href", "/en/play/classic?bot=normal&mode=bot&time=blitz");
-  await botLink.click();
+  await page.getByRole("button", { name: "Choose game" }).click();
+  await page.getByPlaceholder("Search games").fill("classic");
+  const classicLink = page.getByRole("link", { name: /Classic Chess/ }).first();
+  await expect(classicLink).toHaveAttribute("href", "/en/play/classic?bot=normal&mode=bot&time=blitz");
+  await classicLink.click();
 
   await expect(page).toHaveURL(/\/en\/play\/classic\?bot=normal&mode=bot&time=blitz$/);
   await expect(page.getByLabel("Bot difficulty")).toHaveValue("normal");
@@ -163,7 +167,8 @@ test("setup flow supports Bot Mode as black with an automatic first reply", asyn
   });
 
   await page.goto("/en/play");
-  await expect(page.getByRole("heading", { name: "Choose how you want to play" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Classic Chess" })).toBeVisible();
+  await expect(page.getByLabel("Game board")).toBeVisible();
 
   await page.goto("/en/play/classic?mode=bot&bot=normal");
   const board = page.getByLabel("Game board");

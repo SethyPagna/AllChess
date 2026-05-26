@@ -72,6 +72,7 @@ export function GameBoard({
   initialBotDifficulty = "normal",
   initialPlayMode,
   initialTimeControl = "rapid",
+  locale = "en",
   title = "Game",
   meta = "AllChess",
   objective = "Play a legal game."
@@ -83,6 +84,7 @@ export function GameBoard({
   initialBotDifficulty?: BotDifficultyKey;
   initialPlayMode?: PlayMode;
   initialTimeControl?: TimeControlKey;
+  locale?: string;
   title?: string;
   meta?: string;
   objective?: string;
@@ -135,11 +137,11 @@ export function GameBoard({
   const firstColor = state.clocks[0]?.color ?? "white";
   const secondColor = state.clocks[1]?.color ?? "black";
   const isThinking = thinking.status === "thinking";
-  const isOnlineMode = playMode === "online" || playMode === "matchmaking" || playMode === "room";
+  const isOnlineMode = playMode === "online" || playMode === "room";
   const isBotMode = playMode === "bot";
   const isSpectating = playMode === "spectate";
-  const isSearchingOnline = gameStarted && isOnlineMode && state.status === "active";
-  const isWatchingMode = gameStarted && isSpectating && state.status === "active";
+  const isSearchingOnline = gameStarted && isOnlineMode && state.status !== "completed";
+  const isWatchingMode = gameStarted && isSpectating && state.status !== "completed";
   const canUseAssist = gameStarted && state.status === "active" && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
   const canUseBots = gameStarted && state.status === "active" && isBotMode && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
   const canUndo = history.length > 0 && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
@@ -492,6 +494,7 @@ export function GameBoard({
     setBoardOrientation("auto");
     setLastBotResult(null);
     setGameStarted(true);
+    setState((current) => (isOnlineMode || isSpectating ? { ...current, status: "waiting" } : { ...current, status: "active" }));
     setPanelTab("status");
     setNotice(
       isOnlineMode
@@ -509,8 +512,8 @@ export function GameBoard({
       setBotMode("human");
       setLastBotResult(null);
     }
-    if (nextMode === "online" || nextMode === "matchmaking" || nextMode === "room") {
-      setNotice("Online play selected. Bot controls are disabled while matchmaking or room pairing is active.");
+    if (nextMode === "online" || nextMode === "room") {
+      setNotice("Online play selected. Bot controls are disabled while player pairing or room setup is active.");
     } else if (nextMode === "spectate") {
       setNotice("Spectate mode selected. Bot controls are disabled while you watch rooms.");
     } else {
@@ -599,11 +602,11 @@ export function GameBoard({
       const now = Date.now();
       const elapsed = now - lastTick;
       lastTick = now;
-      if (!gameStarted) return;
+      if (!gameStarted || isSearchingOnline || isWatchingMode) return;
       setState((current) => tickGameClock(current, elapsed));
     }, 250);
     return () => window.clearInterval(timer);
-  }, [gameStarted]);
+  }, [gameStarted, isSearchingOnline, isWatchingMode]);
 
   return (
     <div className="game-board-layout grid gap-4">
@@ -637,6 +640,8 @@ export function GameBoard({
 
       <aside className="game-side-panel play-panel grid content-start gap-4 p-4">
         <PlayMatchHeader
+          currentVariantKey={variantKey}
+          locale={locale}
           meta={meta}
           modeSummary={modeSummary}
           objective={objective}
@@ -651,7 +656,9 @@ export function GameBoard({
             setPanelTab("setup");
           }}
           phaseLabel={phaseLabel}
+          playMode={playMode}
           showGuide={Boolean(rulesSummary)}
+          timeControl={timeControl}
           title={title}
         />
         <PlaySectionTabs activeTab={panelTab} onChange={setPanelTab} />
@@ -724,7 +731,7 @@ export function GameBoard({
                     <Swords size={18} />
                     <div>
                       <strong>{isSearchingOnline ? "Searching for opponent" : "Online opponent required"}</strong>
-                      <span>{isSearchingOnline ? "Bot difficulty and automation are paused while AllChess looks for a human player." : "Choose Online, Room, or Matchmaking settings, then start searching."}</span>
+                      <span>{isSearchingOnline ? "Bot difficulty and automation are paused while AllChess looks for a human player." : "Choose Online or Room settings, then start searching."}</span>
                       <form
                         className="opponent-search-form"
                         onSubmit={(event) => {

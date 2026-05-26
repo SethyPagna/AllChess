@@ -42,6 +42,7 @@ export default async function PlayPage({
           initialBotDifficulty={initialBotDifficulty}
           initialPlayMode={initialPlayMode}
           initialTimeControl={initialTimeControl}
+          locale={locale}
           title={t(variant.nameKey)}
           meta={formatVariantPlayMeta(variant)}
           objective={variant.objective}
