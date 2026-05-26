@@ -524,7 +524,7 @@ function movesThatAvoidImmediateTerminalReply(
   difficulty: BotDifficulty,
   budget: SearchBudget
 ) {
-  if (!TERMINAL_THREAT_FILTER_VARIANTS.has(state.variantKey) || difficulty.skill < 8 || difficulty.skill > 14 || legalMoves.length > MAX_TERMINAL_THREAT_CANDIDATES || Date.now() >= budget.deadline) return legalMoves;
+  if (!TERMINAL_THREAT_FILTER_VARIANTS.has(state.variantKey) || difficulty.skill < 8 || difficulty.skill > 14 || legalMoves.length > MAX_TERMINAL_THREAT_CANDIDATES) return legalMoves;
 
   let lowestThreatCount = Number.POSITIVE_INFINITY;
   const lowestThreatMoves: Move[] = [];
@@ -546,7 +546,6 @@ function movesThatAvoidImmediateTerminalReply(
 
 function countImmediateTerminalReplies(state: GameState, perspective: PlayerColor, difficulty: BotDifficulty, budget: SearchBudget) {
   if (state.status === "completed") return state.result !== "draw" && state.result !== perspective ? 1 : 0;
-  if (Date.now() >= budget.deadline) return 0;
 
   const legalReplies = allLegalMovesCached(state, budget);
   const repliesToScan =
