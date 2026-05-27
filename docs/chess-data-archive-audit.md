@@ -6,7 +6,7 @@ Date: 2026-05-19
 
 No raw chess-data files were moved or deleted in this pass.
 
-The current `CHESS DATA` archives and extracted folders are still referenced by `scripts/training/train-bot-knowledge.mjs` and by the generated runtime manifest at `src/data/bot-knowledge.generated.json`. Moving them now would make the default training command stop finding the same source paths.
+The current `CHESS DATA` archives and extracted folders are still referenced by `scripts/training/train-bot-knowledge.ts` and by the generated runtime manifest at `src/data/bot-knowledge.generated.json`. Moving them now would make the default training command stop finding the same source paths.
 
 ## Current Data Roots
 
@@ -26,7 +26,7 @@ The current `CHESS DATA` archives and extracted folders are still referenced by 
 Only move a data file to `CHESS DATA/archive` when all are true:
 
 1. It is not referenced by `src/data/bot-knowledge.generated.json`.
-2. It is not needed by `scripts/training/train-bot-knowledge.mjs`.
+2. It is not needed by `scripts/training/train-bot-knowledge.ts`.
 3. It is either a duplicate, an obsolete generated extraction, or a failed partial download.
 4. A replacement source path has already been added to the training manifest.
 

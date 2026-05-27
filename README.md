@@ -85,7 +85,7 @@ Vercel should host the app only. Database and object storage stay on Cloudflare.
 Docker self-deploy:
 
 ```bash
-docker compose -f docker-compose.selfhost.yml up --build
+docker compose -f infra/docker/docker-compose.selfhost.yml up --build
 ```
 
 ## Secrets

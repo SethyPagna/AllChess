@@ -8,7 +8,7 @@ Last reviewed: 2026-05-19
 
 This review scanned first-party source only: Cloudflare D1 migrations, API routes, repository code, Durable Object code, game/rules/bot/catalog types, scripts, and tests. The app does not currently use an ORM. The effective data contract is:
 
-- D1 SQL migrations in `cloudflare/d1/migrations`.
+- D1 SQL migrations in `infra/cloudflare/d1/migrations`.
 - Raw SQL in `src/lib/cloudflare/d1.ts` and auth SQL in `src/lib/auth/d1.ts`.
 - API response and request shapes under `src/app/api`.
 - Durable Object snapshots in `src/lib/realtime/durable-objects.ts`.
@@ -24,10 +24,10 @@ Dependency folders, Next build output, and generated reports are intentionally e
 | Services | D1 repository, auth repository, realtime helpers, bot/training/rules services | `src/lib/cloudflare/d1.ts`, `src/lib/auth/d1.ts`, `src/lib/realtime/*`, `src/lib/bots.ts`, `src/lib/bot-training.ts`, `src/lib/variants/*`, `src/lib/catalog/*`, `src/lib/game-review.ts`, `src/lib/game-outcome.ts` |
 | Controllers | Next API route handlers | `src/app/api/**/route.ts` |
 | Models | TypeScript domain types, no ORM models | `src/lib/variants/types.ts`, `src/lib/realtime/types.ts`, `src/lib/catalog/types.ts`, `src/lib/bot-training.ts` |
-| Migrations | Cloudflare D1 raw SQL | `cloudflare/d1/migrations/0001_initial.sql` through `0009_catalog_rules_normalization.sql` |
+| Migrations | Cloudflare D1 raw SQL | `infra/cloudflare/d1/migrations/0001_initial.sql` through `0009_catalog_rules_normalization.sql` |
 | Seeds | No dedicated seed migrations found | Catalog and curated bot knowledge are currently code/generated-data driven |
 | Tests | Unit, integration, E2E, Cloudflare schema/persistence tests | `tests/**/*.ts`, `tests/**/*.tsx`, `tests/e2e/*.spec.ts` |
-| Scripts | Training, env, deploy/worker patch helpers | `scripts/<domain>/*.mjs` |
+| Scripts | Training, env, deploy/worker patch helpers | `scripts/<domain>/*.ts` |
 
 ## 2. Verification Sweeps
 

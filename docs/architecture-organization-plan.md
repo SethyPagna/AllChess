@@ -22,7 +22,7 @@
    - `src/lib/realtime`: Durable Object room, matchmaking, live stats, protocol types.
    - `src/lib/catalog`: universal game catalog, family metadata, release gates.
    - `src/lib/i18n`: locale dictionaries, vocabulary, navigation labels.
-4. Keep migrations in `cloudflare/d1/migrations` and schema docs in `docs`.
+4. Keep migrations in `infra/cloudflare/d1/migrations` and schema docs in `docs`.
 5. Keep generated compact runtime data in `src/data`; raw training archives stay outside commits or in R2.
 
 ## Migration Order

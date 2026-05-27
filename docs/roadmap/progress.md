@@ -69,7 +69,7 @@ Initial map from repository inspection:
 - `src/lib/realtime/*`: room state and Durable Object behavior; changes affect multiplayer reliability.
 - `src/lib/bots*` and `src/lib/stockfish-engine.ts`: bot strength, generated knowledge, and runtime asset behavior.
 - `src/lib/auth/*`: session and identity behavior; changes must be security-reviewed.
-- `cloudflare/d1/migrations/*`: production data integrity; changes require explicit migration verification.
+- `infra/cloudflare/d1/migrations/*`: production data integrity; changes require explicit migration verification.
 - `src/app/globals.css`: broad UI impact; changes require responsive and visual review.
 
 ## Verification Log

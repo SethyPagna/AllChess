@@ -12,7 +12,7 @@ Cloudflare D1 and R2 remain the source of truth, so no Supabase, Postgres, MinIO
 
 ```bash
 copy .env.example .env
-docker compose -f docker-compose.selfhost.yml up --build
+docker compose -f infra/docker/docker-compose.selfhost.yml up --build
 ```
 
 Open `http://localhost:3000/en`.

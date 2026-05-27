@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-const migrationsDir = join(process.cwd(), "cloudflare", "d1", "migrations");
+const migrationsDir = join(process.cwd(), "infra", "cloudflare", "d1", "migrations");
 const schema = [
   "0001_initial.sql",
   "0002_realtime_training.sql",

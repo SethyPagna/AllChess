@@ -37,7 +37,7 @@ function createMockD1() {
 
 describe("Cloudflare platform configuration", () => {
   test("includes D1 tables for catalog metadata, rules versions, leaderboards, and review summaries", () => {
-    const migration = readFileSync("cloudflare/d1/migrations/0003_catalog_leaderboards.sql", "utf8");
+    const migration = readFileSync("infra/cloudflare/d1/migrations/0003_catalog_leaderboards.sql", "utf8");
 
     expect(migration).toContain("create table if not exists game_catalog_entries");
     expect(migration).toContain("create table if not exists rules_versions");
