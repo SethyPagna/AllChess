@@ -9,8 +9,6 @@ const ignoredFilePrefixes = ["public/engines/"];
 const allowedRootFiles = new Set([
   ".gitignore",
   ".vercelignore",
-  "README.md",
-  "eslint.config.ts",
   "next-env.d.ts",
   "next.config.ts",
   "open-next.config.ts",
@@ -51,6 +49,20 @@ describe("project organization", () => {
       .sort();
 
     expect(rootFiles).toEqual([...allowedRootFiles].sort());
+  });
+
+  test("keeps root TypeScript config as a small discovery shim", () => {
+    const tsconfig = JSON.parse(readFileSync(join(repoRoot, "tsconfig.json"), "utf8")) as {
+      extends?: string;
+      compilerOptions?: Record<string, unknown>;
+      include?: string[];
+      exclude?: string[];
+    };
+
+    expect(tsconfig.extends).toBe("./config/typescript/tsconfig.app.json");
+    expect(tsconfig.compilerOptions).toBeUndefined();
+    expect(tsconfig.include).toBeUndefined();
+    expect(tsconfig.exclude).toBeUndefined();
   });
 
   test("keeps first-party source and config in TypeScript instead of JavaScript", () => {
