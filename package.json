@@ -8,7 +8,7 @@
     "dev": "npm run prepare:stockfish && next dev",
     "build": "npm run prepare:stockfish && next build --webpack",
     "start": "next start",
-    "lint": "eslint .",
+    "lint": "eslint . -c config/lint/eslint.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --config config/test/vitest.config.ts",
     "test:watch": "vitest --config config/test/vitest.config.ts",
