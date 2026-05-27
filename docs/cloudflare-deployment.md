@@ -24,7 +24,7 @@ npx wrangler d1 create allchess
 npm run db:migrate:remote
 ```
 
-Copy the D1 database id into `wrangler.jsonc` and set the same value as `CLOUDFLARE_D1_DATABASE_ID` anywhere the app runs outside Workers.
+Copy the D1 database id into `infra/cloudflare/wrangler.jsonc` and set the same value as `CLOUDFLARE_D1_DATABASE_ID` anywhere the app runs outside Workers.
 Use the existing Worker/Pages project named `allchess` when it exists; redeploy that target instead of creating a duplicate. Preferred short hostnames are `allchess.<domain>` first, then `allchess-app.<domain>` if the shorter name is unavailable.
 
 ## Secrets
