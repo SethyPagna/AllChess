@@ -71,6 +71,8 @@ npm run db:migrate:remote
 npm run cf:deploy
 ```
 
+The current workers.dev deployment URL for this Cloudflare account is `https://allchess.learn-app.workers.dev`.
+
 Vercel:
 
 ```bash

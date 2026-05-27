@@ -4,6 +4,7 @@
   "main": ".open-next/worker.js",
   "account_id": "d105a82bc26b6913575355352c2d1bb1",
   "workers_dev": true,
+  "preview_urls": false,
   "compatibility_date": "2026-05-13",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
@@ -72,6 +73,7 @@
     "production": {
       "name": "allchess",
       "workers_dev": true,
+      "preview_urls": false,
       "services": [
         {
           "binding": "WORKER_SELF_REFERENCE",
