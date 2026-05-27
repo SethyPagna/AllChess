@@ -51,6 +51,13 @@ This removes local build/test artifacts such as `.next`, `.open-next`, `.wrangle
 npm run clean:local -- --dry-run
 ```
 
+If a dev server or audit run leaves background Node processes behind, stop only the ones launched from this workspace:
+
+```bash
+npm run stop:local
+npm run stop:local -- --dry-run
+```
+
 ## Deploy
 
 Cloudflare:

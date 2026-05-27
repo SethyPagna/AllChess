@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:i18n": "vitest run tests/i18n.test.ts",
+    "stop:local": "node scripts/maintenance/stop-local-node.mjs",
     "clean:local": "node scripts/maintenance/clean-local-artifacts.mjs",
     "clean:storage": "node scripts/maintenance/clean-local-artifacts.mjs --git-gc",
     "test:e2e": "playwright test",
