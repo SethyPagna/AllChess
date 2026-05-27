@@ -1,10 +1,10 @@
 # AllChess Progress Tracker
 
-**Current Phase:** Phase 01 - Product Baseline And Workflow Audit
+**Current Phase:** Phase 02 - Development Workflow And Quality Gates
 
-**Current Status:** Planning baseline created. Implementation has not started.
+**Current Status:** Repository organization and verification workflow cleanup are complete; next work should continue phase-scoped product improvements.
 
-**Last Updated:** 2026-05-16
+**Last Updated:** 2026-05-28
 
 ---
 
@@ -20,9 +20,9 @@
 
 | Phase | Name | Status | Target Outcome | Verification Note |
 | --- | --- | --- | --- | --- |
-| 01 | Product Baseline And Workflow Audit | In Progress | Baseline repo, workflow, and product journey map | Planning docs created; audit commands still need to run for this phase |
-| 02 | Development Workflow And Quality Gates | Not Started | Reliable local workflow and PR checklist | Not run |
-| 03 | Architecture Boundaries And Module Ownership | Not Started | Clear module ownership and dependency direction | Not run |
+| 01 | Product Baseline And Workflow Audit | Done | Baseline repo, workflow, and product journey map | Repository map, high-risk areas, and current verification status are recorded |
+| 02 | Development Workflow And Quality Gates | In Progress | Reliable local workflow and PR checklist | Root config cleanup, TypeScript scripts, and docs freshness tests are in place |
+| 03 | Architecture Boundaries And Module Ownership | In Progress | Clear module ownership and dependency direction | Domain folders and infrastructure folders are documented |
 | 04 | Core Game Domain Completeness | Not Started | Complete lifecycle, move, outcome, and clock contracts | Not run |
 | 05 | Rules Engine Normalization | Not Started | Predictable rules adapter surface for all variants | Not run |
 | 06 | Variant Diversity And Catalog Depth | Not Started | Richer catalog taxonomy and honest support statuses | Not run |
@@ -45,10 +45,10 @@
 
 ## Active Work Queue
 
-1. Complete Phase 01A by mapping files and high-risk edit areas.
-2. Complete Phase 01B by walking user journeys in the browser.
-3. Complete Phase 01C by running baseline verification commands.
-4. Commit baseline docs and notes.
+1. Continue Phase 02 by keeping package scripts, docs, and verification commands aligned.
+2. Continue Phase 03 by moving only domain files that can be verified with focused tests.
+3. Use `npm run verify` before claiming root, script, config, or docs cleanup is complete.
+4. Record accepted architecture or workflow changes in `docs/roadmap/decisions.md` and `docs/roadmap/change-log.md`.
 
 ## Baseline Repository Map
 
@@ -59,7 +59,7 @@ Initial map from repository inspection:
 - Shared UI components live in domain folders under `src/components`, including board, shell, catalog, play, auth, analysis, and small shared UI primitives.
 - Domain libraries live in `src/lib`, including variants, catalog, bots, bot training, stockfish, clocks, game review, game outcome, auth, Cloudflare, realtime, storage, i18n, and validation.
 - Tests live in `tests` with unit, component, persistence, platform, bot, i18n, performance, and Playwright coverage.
-- Deployment and runtime configuration live in `infra/cloudflare/wrangler.jsonc`, `open-next.config.ts`, `vercel.json`, Docker files, Cloudflare docs, and package scripts.
+- Deployment and runtime configuration live in `infra/cloudflare/wrangler.jsonc`, `infra/docker/*`, `config/test/*`, `config/lint/*`, `config/typescript/*`, `open-next.config.ts`, `vercel.json`, Cloudflare docs, and package scripts.
 
 ## High-Risk Edit Areas
 
@@ -67,7 +67,7 @@ Initial map from repository inspection:
 - `src/lib/variants/*`: rules behavior and catalog compatibility; changes can invalidate many variants.
 - `src/app/api/games/*`: move application and persistence path; changes affect live games and history.
 - `src/lib/realtime/*`: room state and Durable Object behavior; changes affect multiplayer reliability.
-- `src/lib/bots*` and `src/lib/stockfish-engine.ts`: bot strength, generated knowledge, and runtime asset behavior.
+- `src/lib/bot/*`: bot strength, generated knowledge, Stockfish bridge, and runtime asset behavior.
 - `src/lib/auth/*`: session and identity behavior; changes must be security-reviewed.
 - `infra/cloudflare/d1/migrations/*`: production data integrity; changes require explicit migration verification.
 - `src/app/globals.css`: broad UI impact; changes require responsive and visual review.
@@ -77,6 +77,8 @@ Initial map from repository inspection:
 | Date | Phase | Command | Result | Notes |
 | --- | --- | --- | --- | --- |
 | 2026-05-16 | Planning | `git status --short --branch` | Pass | Branch `main` was clean and ahead of `origin/main` by 1 commit before planning docs were added |
+| 2026-05-28 | Repository organization | `npm run verify` | Pass | Lint, typecheck, unit tests, and production build passed after root config and TypeScript script cleanup |
+| 2026-05-28 | Documentation freshness | `npm test -- tests/markdown-docs.test.ts` | Pass | Markdown docs are checked for moved paths and current package stack versions |
 
 ## Blockers
 
