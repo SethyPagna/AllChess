@@ -1,0 +1,90 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, test, vi } from "vitest";
+
+import { AppMobileNavigation, AppSidebarNavigation, type AppNavGroup } from "@/components/shell/app-navigation";
+import { createAppNavGroups } from "@/components/shell/navigation-config";
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/en/play/classic"
+}));
+
+const groups: AppNavGroup[] = [
+  {
+    icon: "swords",
+    label: "Play",
+    links: [
+      { href: "lobby", icon: "home", label: "Lobby" },
+      { href: "play", icon: "swords", label: "Play" }
+    ]
+  },
+  {
+    icon: "library",
+    label: "Games & rules",
+    links: [{ href: "variants", icon: "library", label: "Games & rules" }]
+  },
+  {
+    icon: "history",
+    label: "History",
+    links: [{ href: "history", icon: "history", label: "History" }]
+  },
+  {
+    icon: "settings",
+    label: "Settings",
+    links: [{ href: "settings", icon: "settings", label: "Settings" }]
+  }
+];
+
+describe("app navigation", () => {
+  test("marks the active route and parent group in the sidebar", () => {
+    const markup = renderToStaticMarkup(createElement(AppSidebarNavigation, { groups, locale: "en" }));
+
+    expect(markup).toContain('aria-current="page"');
+    expect(markup).toContain('class="app-nav-group is-active"');
+    expect(markup).toContain('class="app-nav-group-summary focus-ring is-active"');
+  });
+
+  test("keeps mobile navigation grouped instead of one long undifferentiated list", () => {
+    const markup = renderToStaticMarkup(createElement(AppMobileNavigation, { groups, locale: "en" }));
+
+    expect(markup).toContain("app-menu-section-label");
+    expect(markup).toContain(">Play<");
+    expect(markup).toContain(">Games &amp; rules<");
+    expect(markup).toContain(">History<");
+    expect(markup).toContain(">Settings<");
+    expect(markup).not.toContain(">Account<");
+  });
+
+  test("keeps profile history as the single account shortcut", () => {
+    const markup = renderToStaticMarkup(
+      createElement(AppSidebarNavigation, {
+        account: { href: "/en/profile/player", icon: "user", label: "Profile & history" },
+        auth: { href: "/en/login", icon: "login", label: "Sign in" },
+        groups,
+        locale: "en"
+      })
+    );
+
+    expect(markup).toContain(">Profile &amp; history<");
+    expect(markup).toContain('aria-label="Sign in"');
+    expect(markup).toContain(">History<");
+    expect(markup).not.toContain(">Account<");
+    expect(markup).not.toContain(">Community<");
+  });
+
+  test("builds the app shell navigation without account/community groups", () => {
+    const builtGroups = createAppNavGroups((key) => ({
+      "nav.play": "Play",
+      "nav.lobby": "Lobby",
+      "nav.gamesRules": "Games & rules",
+      "nav.watch": "Watch",
+      "nav.watchRooms": "Watch rooms",
+      "nav.leaderboards": "Leaderboards",
+      "nav.history": "History",
+      "nav.settings": "Settings"
+    })[key] ?? key);
+
+    expect(builtGroups.map((group) => group.label)).toEqual(["Play", "Watch", "History", "Settings"]);
+    expect(builtGroups.flatMap((group) => group.links.map((link) => link.href))).toEqual(["lobby", "play", "variants", "watch", "leaderboards", "history", "settings"]);
+  });
+});

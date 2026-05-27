@@ -1,0 +1,138 @@
+Chinese Chess Game – User Manual
+
+1. Overview:
+This Chinese Chess Game is a Python-based application structured using a clean MVC-style architecture. The project separates concerns into controller, model, view, and data folders to improve maintainability and readability.
+The game is designed to be *easy to run*. You only need to execute the `main.py` file, which automatically imports all required modules and folders.
+
+---
+
+2. System Requirements:
+Python 3.8 or higher
+Operating System: Windows, macOS, or Linux
+No additional external libraries are required
+
+---
+
+3. Installation & Setup:
+ --1. Extract the project folder from the ZIP file.
+ --2. Ensure the folder structure remains unchanged.
+ --3. Open a terminal or command prompt inside the main project directory.
+
+Example directory structure:
+```
+    ChineseChessGame/
+    ├── controller/
+    ├── model/
+    ├── view/
+    ├── data/
+    ├── implementation/
+    ├── main.py
+    ├── README.md
+    └── test.py
+```
+
+4. How to Run the Game
+
+Method 1: Terminal / Command Prompt
+Navigate to the project directory and run: python main.py
+...
+or
+...
+python3 main.py
+...
+
+Method 2: IDE (VS Code, PyCharm, etc.)
+
+1. Open the project folder in your IDE.
+2. Right-click `main.py`.
+3. Select Run.
+
+✅ `main.py` will automatically load all modules and start the game interface.
+
+5. Game Controls & Interaction
+The game runs through a text-based interface provided by `userinterface.py`.
+
+Typical commands include:
+- Move piece: Enter source and destination positions
+- Save game
+- Load game
+- Resign
+- Restart game
+
+
+#IMPORTANT: Instructions and prompts will appear on screen during gameplay.
+
+6. Folder Structure Description
+---|controller/
+------|`game_controller.py` – Handles game logic and command management
+------|model/
+------|`board.py` – Game board structure
+------|`game.py` – Core game flow
+------|`game_rules.py` – Rules and validations
+------|`piece.py` – Chess piece definitions
+------|`player.py` – Player handling
+------|`rank.py` – Ranking and move evaluation
+------|`save_game.py` – Save/load functionality
+---|view/
+------|`userinterface.py` – Console user interface
+---data/ - Contains saved games and predefined scenarios:
+------|`.jungle` files – Game setups
+------|`.record` files – Move records
+---|implementation/ - User and Developer documentation
+
+7. Saving & Loading Games
+- Saved games are stored in the `data/` folder.
+- Use in-game save/load commands when prompted.
+- Files use `.record` and `.jungle` formats to store game state and replay data.
+
+---
+
+8. Common Issues & Solutions
+| Issue               | Solution                             |
+| ------------------- | ------------------------------------ |
+| Python not found    | Install Python and add to PATH       |
+| Module import error | Ensure folder structure is unchanged |
+| Game not starting   | Run `main.py` from project root      |
+
+---
+
+9. Notes
+- Do NOT move files between folders.
+- Always run the game from the root directory.
+- All modules are auto-imported by `main.py`.
+
+---
+
+10. Support
+
+For further details, refer to:
+- `implementation/user_manual.txt`
+- `implementation/developer_manual.txt`
+
+---
+
+Quick Start Summary
+1. Open terminal
+2. Navigate to project folder
+3. Run:
+```
+python main.py
+```
+## Command Interface
+
+### Validation & Feedback
+- All user inputs undergo validation with immediate feedback
+- Invalid commands display clear error messages and re-prompt
+- Type `help` to view available commands (disabled during active input sequences)
+
+### Navigation & Control
+- Commands `exit` or `quit` available at any prompt to cancel current action
+- Automatic command lists displayed at turn start and after actions
+
+### Display Behavior
+- Rapid screen updates may cause brief messages to scroll out of view
+- Scroll terminal history to review missed feedback
+- Important notifications include intentional pauses for readability
+
+
+That's All

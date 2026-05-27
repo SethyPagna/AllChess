@@ -1,0 +1,283 @@
+import { expect, test, type Locator, type Page } from "@playwright/test";
+
+async function expectNoHorizontalOverflow(page: Page) {
+  const overflow = await page.evaluate(() => Math.ceil(document.documentElement.scrollWidth - document.documentElement.clientWidth));
+  expect(overflow).toBeLessThanOrEqual(1);
+}
+
+async function expectWithinViewport(page: Page, locator: Locator) {
+  const box = await locator.boundingBox();
+  const viewport = page.viewportSize();
+  expect(box).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  expect(Math.floor(box!.x)).toBeGreaterThanOrEqual(0);
+  expect(Math.ceil(box!.x + box!.width)).toBeLessThanOrEqual(viewport!.width);
+  expect(Math.floor(box!.y)).toBeGreaterThanOrEqual(0);
+  expect(Math.ceil(box!.y + box!.height)).toBeLessThanOrEqual(viewport!.height);
+}
+
+test("localized game hub can open variants and a playable board", async ({ page }) => {
+  await page.goto("/en");
+  await expect(page.getByRole("heading", { name: "AllChess" })).toBeVisible();
+  await expect(page.getByLabel("AllChess intro")).toContainText("Play first");
+  await expect(page.getByRole("link", { name: "Start playing" })).toHaveAttribute("href", "/en/play?mode=online&time=rapid");
+  await expect(page.getByLabel("AllChess intro").getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/en/login");
+  await expect(page.getByLabel("How AllChess works")).toContainText("Pick a board");
+  await expect(page.getByRole("link", { name: /Pick a board/ })).toHaveAttribute("href", "/en/play?mode=online&time=rapid");
+  await expect(page.getByRole("link", { name: /Train fast/ })).toHaveAttribute("href", "/en/play?mode=bot&time=rapid");
+  await expect(page.getByRole("link", { name: /Watch or review/ })).toHaveAttribute("href", "/en/watch");
+  await expect(page.getByLabel("Classic chess board preview")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  await page.goto("/en/variants");
+  await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Xiangqi / Xiàngqí / 象棋" })).toBeVisible();
+  await page.getByRole("button", { name: /Open guide for Xiangqi/ }).click();
+  await expect(page.getByRole("dialog", { name: /Xiangqi.*guide/ })).toContainText("Verified ready");
+  await expect(page.getByRole("dialog")).toContainText("Status");
+  await page.getByRole("button", { name: "Close guide" }).click();
+  await expectNoHorizontalOverflow(page);
+
+  await page.goto("/en/play");
+  await expect(page.getByRole("heading", { name: "Classic Chess" })).toBeVisible();
+  await expect(page.getByLabel("Game board")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Choose game" })).toBeVisible();
+  await expect(page.getByLabel("Play modes")).toContainText("Play Online");
+  await expect(page.getByLabel("Play modes")).toContainText("Bot Mode");
+  await expect(page.getByLabel("Play modes")).not.toContainText("Matchmaking");
+  await expectNoHorizontalOverflow(page);
+  await page.getByRole("button", { name: "Bot Mode" }).click();
+  await expect(page.getByRole("heading", { name: "Classic Chess" })).toBeVisible();
+  await expect(page.getByLabel("Game board")).toBeVisible();
+  await expect(page.getByLabel("Bot difficulty")).toContainText("Grandmaster");
+  await expect(page.getByLabel("Bot difficulty")).toContainText("Legend");
+  await expect(page.getByLabel("Game guide")).toBeVisible();
+  await expect(page.locator(".play-title-actions").getByRole("button", { name: "Room" })).toBeVisible();
+  await expect(page.locator(".play-title-actions").getByRole("button", { name: "Watch" })).toBeVisible();
+  await page.getByRole("button", { name: "Status" }).click();
+  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
+  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();
+  await page.locator(".play-title-actions").getByRole("button", { name: "Room" }).click();
+  await expect(page.getByLabel("Match summary")).toContainText("Create Room setup");
+  await expect(page.getByLabel("Bot difficulty")).toBeDisabled();
+  await page.locator(".play-title-actions").getByRole("button", { name: "Watch" }).click();
+  await expect(page.getByLabel("Match summary")).toContainText("Spectate setup");
+  await expect(page.getByLabel("Bot difficulty")).toBeDisabled();
+  await expect(
+    page.locator(".play-title-actions .button-label").evaluateAll((labels) => labels.every((label) => label.getBoundingClientRect().width > 12))
+  ).resolves.toBe(true);
+  await expectNoHorizontalOverflow(page);
+});
+
+test("settings exposes language and theme controls", async ({ page }) => {
+  await page.goto("/ar/settings");
+
+  await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
+  await expect(page.getByRole("heading", { name: "Preferences" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.getByRole("main").getByLabel("Languages").click();
+  await expect(page.getByRole("link", { name: "English" })).toBeVisible();
+  await expect(page.getByRole("main").getByRole("button", { name: "Dark" })).toBeVisible();
+});
+
+test("login explains unavailable Google sign-in", async ({ page }) => {
+  await page.goto("/en/login?error=google-oauth-not-configured");
+
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  await expect(page.locator(".auth-error")).toContainText("Google sign-in is not configured yet.");
+  await expect(page.getByRole("button", { name: "Continue with Google" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("login masks unknown auth errors", async ({ page }) => {
+  await page.goto("/en/login?error=%3Cscript%3Ebad()%3C%2Fscript%3E");
+
+  await expect(page).toHaveURL(/\/en\/login\?error=auth-error$/);
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  await expect(page.locator(".auth-error")).toContainText("We could not complete sign-in.");
+  await expect(page.locator(".auth-error")).not.toContainText("bad()");
+  await expectNoHorizontalOverflow(page);
+});
+
+test("invalid login keeps the active locale", async ({ page }) => {
+  await page.goto("/fr/login");
+
+  await page.locator('input[name="email"]').fill("player@example.com");
+  await page.locator('input[name="password"]').fill("x");
+  await Promise.all([
+    page.waitForURL(/\/fr\/login\?error=invalid-credentials$/),
+    page.getByRole("button", { name: "Connexion" }).click()
+  ]);
+  await expect(page.locator(".auth-error")).toContainText("Enter a valid email");
+  await expectNoHorizontalOverflow(page);
+});
+
+test("login explains duplicate account code", async ({ page }) => {
+  await page.goto("/en/login?error=account-exists");
+
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
+  await expect(page.locator(".auth-error")).toContainText("An account already exists for this email.");
+  await expect(page.locator(".auth-error")).toContainText("Sign in instead");
+  await expectNoHorizontalOverflow(page);
+});
+
+test("mobile shell language, notifications, and board controls stay in bounds", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await page.goto("/en/play/classic");
+
+  await expect(page.getByRole("heading", { name: "Classic Chess" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  const mobileHeader = page.locator(".app-mobile-header");
+  await mobileHeader.getByLabel("Languages").click();
+  await expect(mobileHeader.getByRole("link", { name: "Français" })).toBeVisible();
+  await expectWithinViewport(page, mobileHeader.locator(".language-menu-panel"));
+  await mobileHeader.getByLabel(/Notifications/).click();
+  await expect(mobileHeader.locator(".language-menu-panel")).toBeHidden();
+  await expect(mobileHeader.getByText("3 unread")).toBeVisible();
+  await expectWithinViewport(page, mobileHeader.locator(".notification-panel"));
+  await mobileHeader.getByLabel("Languages").click();
+  await expect(mobileHeader.locator(".notification-panel")).toBeHidden();
+  await expectWithinViewport(page, mobileHeader.locator(".language-menu-panel"));
+  await Promise.all([page.waitForURL(/\/fr\/play\/classic$/), mobileHeader.getByRole("link", { name: "Français" }).click()]);
+  await expect(page).toHaveURL(/\/fr\/play\/classic$/);
+  await expectNoHorizontalOverflow(page);
+
+  await page.goto("/en/play/classic");
+  await mobileHeader.getByLabel(/Notifications/).click();
+  await expect(mobileHeader.getByText("3 unread")).toBeVisible();
+  await expect(mobileHeader.getByRole("button", { name: "Mark read" })).toBeVisible();
+  await expectWithinViewport(page, mobileHeader.locator(".notification-panel"));
+  await expectNoHorizontalOverflow(page);
+  await mobileHeader.getByLabel(/Notifications/).click();
+  await expect(mobileHeader.locator(".notification-panel")).toBeHidden();
+
+  await page.getByRole("button", { name: "Status" }).click();
+  await expect(page.getByLabel("Board controls")).toBeVisible();
+  await expect(page.getByLabel("Board controls")).toContainText("Suggest");
+  await expect(page.getByLabel("Board controls")).toContainText("Auto");
+  await expect(page.getByLabel("Board controls")).toContainText("Resign");
+  await expect(page.getByRole("button", { name: "Apply move" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Undo" })).toBeDisabled();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("games and rules shows compact bot training status", async ({ page }) => {
+  await page.goto("/en/variants?playability=playable");
+
+  await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
+  await expect(page.getByLabel("Bot training status")).toContainText("Book & tactics");
+  await expect(page.getByLabel("Bot training status")).toContainText("tactics");
+  await expect(page.getByLabel("Bot training status")).toContainText("3190+ benchmark");
+  await expect(page.getByLabel("Bot training status")).toContainText("guide gated");
+  await expect(page.getByRole("link", { name: "Play" }).first()).toBeVisible();
+  await expect(page.locator(".catalog-status").filter({ hasText: "Ready to play" }).first()).toBeVisible();
+  await page.getByRole("button", { name: /Open guide for Classic Chess/ }).click();
+  await expect(page.getByRole("dialog", { name: /Classic Chess guide/ })).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("link", { name: "Play" })).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("link", { name: "Bot Mode" })).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("link", { name: "Full guide" })).toBeVisible();
+  await expect(page.getByRole("dialog")).toContainText("Basics");
+  await expect(page.getByRole("dialog")).toContainText("How it ends");
+  await expect(page.getByRole("dialog")).toContainText("Status");
+  await expect(page.getByRole("dialog")).toContainText("Verified");
+  await page.getByRole("button", { name: "Close guide" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+});
+
+test("watch rooms and catalog filters land on honest real-data views", async ({ page }) => {
+  await page.goto("/en/watch");
+
+  await expect(page.getByRole("heading", { name: "Watch rooms" })).toBeVisible();
+  await expect(page.getByText(/No public rooms|Live room list/)).toBeVisible();
+  await expect(page.getByLabel("Watch room controls").getByLabel("Search rooms")).toBeVisible();
+  await expect(page.getByLabel("Watch room controls").getByRole("button", { name: "Search" })).toBeEnabled();
+  await expect(page.getByLabel("Watch room controls").getByRole("link", { name: "Live" })).toHaveAttribute("href", "/en/watch?status=active");
+  await expect(page.getByLabel("Watch room controls").getByRole("link", { name: "Spectators" })).toHaveAttribute("href", "/en/watch?sort=spectators");
+  await expectNoHorizontalOverflow(page);
+
+  await page.goto("/en/variants?playability=learn");
+  await expect(page.getByLabel("Playability")).toHaveValue("learn");
+  await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  await page.goto("/en/leaderboards?scope=family:asian-chess");
+  await expect(page.getByRole("heading", { name: "Leaderboards" })).toBeVisible();
+  await expect(page.getByLabel("Leaderboard scope")).toBeEnabled();
+  await expect(page.getByLabel("Leaderboard scope")).toHaveValue("family:asian-chess");
+  await expect(page.getByRole("button", { name: "Apply" })).toBeEnabled();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("analysis empty review controls are explicit and disabled", async ({ page }) => {
+  await page.goto("/en/analysis/demo-game");
+
+  await expect(page.getByRole("heading", { name: "AI analysis" })).toBeVisible();
+  await expect(page.getByLabel("Review playback controls").getByRole("button", { name: "First" })).toBeDisabled();
+  await expect(page.getByLabel("Review playback controls").getByRole("button", { name: "Play" })).toBeDisabled();
+  await expect(page.getByLabel("Review playback controls").getByRole("button", { name: "Next" })).toBeDisabled();
+  await expect(page.getByLabel("Review playback controls").getByRole("button", { name: "Last" })).toBeDisabled();
+  await expect(page.getByText("Playback controls unlock after saved moves")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("legacy practice route redirects into the unified games and rules flow", async ({ page }) => {
+  await page.goto("/en/practice");
+
+  await expect(page).toHaveURL(/\/en\/variants\?playability=playable$/);
+  await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
+  await expect(page.getByLabel("Playability")).toHaveValue("playable");
+  await expectNoHorizontalOverflow(page);
+});
+
+test("language menu keeps the current route", async ({ page }) => {
+  await page.goto("/en/play/classic");
+
+  const visibleShell = page.locator(".app-sidebar:visible, .app-mobile-header:visible");
+  await visibleShell.getByLabel("Languages").click();
+  await expectWithinViewport(page, visibleShell.locator(".language-menu-panel"));
+  const french = visibleShell.getByRole("link", { name: "Français" });
+  await expect(french).toHaveAttribute("href", "/fr/play/classic");
+  await Promise.all([page.waitForURL(/\/fr\/play\/classic$/), french.click()]);
+
+  await expect(page).toHaveURL(/\/fr\/play\/classic$/);
+  await expect(page.getByRole("heading", { name: "Classic Chess" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("language menu preserves catalog filters", async ({ page }) => {
+  await page.goto("/en/variants?playability=learn");
+
+  const visibleShell = page.locator(".app-sidebar:visible, .app-mobile-header:visible");
+  await visibleShell.getByLabel("Languages").click();
+  const german = visibleShell.getByRole("link", { name: "Deutsch" });
+  await expect(german).toHaveAttribute("href", "/de/variants?playability=learn");
+  await Promise.all([page.waitForURL(/\/de\/variants\?playability=learn$/), german.click()]);
+
+  await expect(page).toHaveURL(/\/de\/variants\?playability=learn$/);
+  await expect(page.getByLabel("Playability")).toHaveValue("learn");
+  await expectNoHorizontalOverflow(page);
+});
+
+test("catalog search finds native and romanized game names", async ({ page }) => {
+  await page.goto("/en/variants");
+
+  await page.getByPlaceholder("Search names, aliases, native names").fill("Dou Shou Qi");
+  await expect(page.getByRole("heading", { name: /Jungle/ })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  await page.getByPlaceholder("Search names, aliases, native names").fill("Oware");
+  await page.getByRole("button", { name: /Open guide for Oware/ }).click();
+  await expect(page.getByRole("dialog").getByRole("link", { name: "Full guide" })).toHaveAttribute("href", "/en/games/oware");
+  await page.goto("/en/games/oware");
+  await expect(page.getByRole("heading", { name: /Oware/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Basic rules" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  await page.goto("/en/games/shogi");
+  await expect(page.getByRole("heading", { name: "Rules gate" })).toBeVisible();
+  await expect(page.getByLabel("Training and rules gate")).toContainText("Guide gated for play");
+  await expect(page.getByText("Nifu pawn-drop fixtures")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
