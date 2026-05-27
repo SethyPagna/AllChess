@@ -4,6 +4,27 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ---
 
+## 2026-05-28
+
+### Repository Organization
+
+- Moved nonessential root configuration into `config/` and `infra/`, leaving root-discovered tool files at the top level.
+- Converted local utility scripts and config files to TypeScript entry points.
+- Added organization tests for root files, TypeScript scripts, infrastructure folders, and Markdown freshness.
+
+### Documentation
+
+- Updated documentation paths for env templates, Wrangler config, D1 migrations, Docker Compose, and moved TypeScript config.
+- Added current package stack ranges to `docs/README.md`.
+- Updated progress, decisions, and change-log entries to reflect the current repository structure.
+
+### Dependencies
+
+- Updated verified non-major development packages: Cloudflare Workers types, OpenNext Cloudflare, React types, Vitest, and Wrangler.
+- Left major upgrade lanes documented as migration candidates instead of applying them opportunistically.
+
+---
+
 ## 2026-05-21
 
 ### Repository Organization

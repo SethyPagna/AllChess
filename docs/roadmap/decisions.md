@@ -40,6 +40,24 @@ Record decisions that affect architecture, workflow, product behavior, or releas
 
 ---
 
+## Decision 0005: Keep Root As A Tool Discovery Surface
+
+**Date:** 2026-05-28
+
+**Status:** Accepted
+
+**Context:** The repository root had accumulated documentation and configuration files. Some tools still discover specific files from the root by convention, while others can be pointed at organized folders.
+
+**Decision:** Move nonessential documentation and configuration into `docs/`, `config/`, and `infra/`. Keep only package metadata and root-discovered framework files at the root, with `tsconfig.json` as a tiny shim that extends `config/typescript/tsconfig.app.json`.
+
+**Consequences:**
+
+- Root is smaller without breaking Next.js, npm, TypeScript, Vercel, or PostCSS discovery.
+- ESLint, Vitest, Playwright, Wrangler, Docker, and env examples live in named folders.
+- `tests/project-organization.test.ts` and `tests/markdown-docs.test.ts` guard the structure against drift.
+
+---
+
 ## Decision 0002: Keep AllChess Cloudflare-First
 
 **Date:** 2026-05-16
