@@ -21,13 +21,13 @@ Dependency folders, Next build output, and generated reports are intentionally e
 
 | Area requested | Current repo equivalent | Files reviewed |
 | --- | --- | --- |
-| Services | D1 repository, auth repository, realtime helpers, bot/training/rules services | `src/lib/cloudflare/d1.ts`, `src/lib/auth/d1.ts`, `src/lib/realtime/*`, `src/lib/bots.ts`, `src/lib/bot-training.ts`, `src/lib/variants/*`, `src/lib/catalog/*`, `src/lib/game-review.ts`, `src/lib/game-outcome.ts` |
+| Services | D1 repository, auth repository, realtime helpers, bot/training/rules services | `src/lib/cloudflare/d1.ts`, `src/lib/auth/d1.ts`, `src/lib/realtime/*`, `src/lib/bot/*`, `src/lib/variants/*`, `src/lib/catalog/*`, `src/lib/game/review.ts`, `src/lib/game/outcome.ts` |
 | Controllers | Next API route handlers | `src/app/api/**/route.ts` |
-| Models | TypeScript domain types, no ORM models | `src/lib/variants/types.ts`, `src/lib/realtime/types.ts`, `src/lib/catalog/types.ts`, `src/lib/bot-training.ts` |
+| Models | TypeScript domain types, no ORM models | `src/lib/variants/types.ts`, `src/lib/realtime/types.ts`, `src/lib/catalog/types.ts`, `src/lib/bot/training.ts` |
 | Migrations | Cloudflare D1 raw SQL | `infra/cloudflare/d1/migrations/0001_initial.sql` through `0009_catalog_rules_normalization.sql` |
 | Seeds | No dedicated seed migrations found | Catalog and curated bot knowledge are currently code/generated-data driven |
 | Tests | Unit, integration, E2E, Cloudflare schema/persistence tests | `tests/**/*.ts`, `tests/**/*.tsx`, `tests/e2e/*.spec.ts` |
-| Scripts | Training, env, deploy/worker patch helpers | `scripts/<domain>/*.ts` |
+| Scripts | Training, env, deploy/worker patch helpers | `scripts/assets/*.ts`, `scripts/audit/*.ts`, `scripts/data/*.ts`, `scripts/deploy/*.ts`, `scripts/maintenance/*.ts`, `scripts/training/*.ts` |
 
 ## 2. Verification Sweeps
 
