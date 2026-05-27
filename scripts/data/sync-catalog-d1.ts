@@ -5,7 +5,73 @@ const DEFAULT_DATABASE = "allchess";
 const DEFAULT_CONFIG = "wrangler.jsonc";
 const RULES_VERSION = "catalog-v1";
 
-export function normalizeAlias(value) {
+type CatalogSourceLink = {
+  name: string;
+  url: string;
+  publisher?: string;
+  accessedAt?: string;
+};
+
+type CatalogEntry = {
+  id: string;
+  variantKey?: string | null;
+  family: string;
+  name?: {
+    english?: string;
+    native?: string;
+    romanization?: string;
+    short?: string;
+  };
+  aliases?: string[];
+  region?: string[];
+  board?: Record<string, unknown>;
+  piecePresentation?: string;
+  playability?: string;
+  rulesAdapter?: string;
+  botAdapter?: string;
+  learningStatus?: string;
+  ruleSourceLinks?: CatalogSourceLink[];
+  shortRules?: string[];
+  winConditions?: string[];
+  reviewFocus?: string[];
+  verification?: {
+    rulesComplete?: boolean;
+    botComplete?: boolean;
+    reviewComplete?: boolean;
+    persistenceComplete?: boolean;
+    e2eComplete?: boolean;
+    knownGaps?: string[];
+  };
+};
+
+type CatalogSyncOptions = {
+  now?: string;
+};
+
+type CatalogSyncArgs = {
+  source: string;
+  database: string;
+  config: string;
+  target: "print" | "remote" | "local";
+  out: string | null;
+};
+
+type AliasRow = {
+  value: string;
+  kind: string;
+  locale: string;
+};
+
+type RuleSectionRow = {
+  id: string;
+  type: string;
+  order: number;
+  title: string;
+  body: string;
+  examples: unknown[];
+};
+
+export function normalizeAlias(value: unknown): string {
   return String(value ?? "")
     .normalize("NFKD")
     .toLowerCase()
@@ -13,7 +79,7 @@ export function normalizeAlias(value) {
     .replace(/[^a-z0-9\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]+/g, "");
 }
 
-export function buildCatalogNormalizationSql(entries, options = {}) {
+export function buildCatalogNormalizationSql(entries: CatalogEntry[], options: CatalogSyncOptions = {}) {
   const now = options.now ?? new Date().toISOString();
   const statements = [
     "delete from playable_game_verification;",
@@ -118,7 +184,7 @@ export function buildCatalogNormalizationSql(entries, options = {}) {
       );
     }
 
-    sourceLinks.forEach((source, index) => {
+    sourceLinks.forEach((source: CatalogSourceLink, index: number) => {
       counts.ruleSources += 1;
       statements.push(
         `insert or replace into rule_sources (id, game_id, name, url, publisher, accessed_at, sort_order, created_at) values (${[
@@ -171,7 +237,7 @@ export function buildCatalogNormalizationSql(entries, options = {}) {
   return { sql: `${statements.join("\n")}\n`, counts };
 }
 
-export async function fetchCatalogEntries(sourceUrl = DEFAULT_SOURCE) {
+export async function fetchCatalogEntries(sourceUrl = DEFAULT_SOURCE): Promise<CatalogEntry[]> {
   const url = new URL("/api/catalog", sourceUrl);
   let response;
   try {
@@ -186,16 +252,16 @@ export async function fetchCatalogEntries(sourceUrl = DEFAULT_SOURCE) {
   return payload.entries;
 }
 
-function aliasRows(entry) {
+function aliasRows(entry: CatalogEntry): AliasRow[] {
   const rows = [
     { value: entry.id, kind: "common", locale: "und" },
     { value: entry.name?.english, kind: "english", locale: "en" },
     { value: entry.name?.native, kind: "native", locale: "und" },
     { value: entry.name?.romanization, kind: "romanization", locale: "und" },
     { value: entry.name?.short, kind: "common", locale: "und" },
-    ...(entry.aliases ?? []).map((value) => ({ value, kind: "common", locale: "und" }))
-  ].filter((row) => row.value);
-  const seen = new Set();
+    ...(entry.aliases ?? []).map((value: string) => ({ value, kind: "common", locale: "und" }))
+  ].filter((row): row is AliasRow => Boolean(row.value));
+  const seen = new Set<string>();
   return rows.filter((row) => {
     const key = `${row.kind}:${row.locale}:${row.value}`;
     if (seen.has(key)) return false;
@@ -204,7 +270,7 @@ function aliasRows(entry) {
   });
 }
 
-function sectionRows(entry, rulesVersionId) {
+function sectionRows(entry: CatalogEntry, rulesVersionId: string): RuleSectionRow[] {
   return [
     {
       id: `${entry.id}:basics`,
@@ -233,7 +299,7 @@ function sectionRows(entry, rulesVersionId) {
   ].filter((section) => section.body.length > 0 && rulesVersionId);
 }
 
-function verificationFor(entry) {
+function verificationFor(entry: CatalogEntry) {
   const verification = entry.verification;
   const ready = entry.playability === "playable";
   const allComplete =
@@ -250,21 +316,21 @@ function verificationFor(entry) {
   };
 }
 
-function sql(value) {
+function sql(value: unknown): string {
   if (value === null || value === undefined) return "null";
   return `'${String(value).replaceAll("'", "''")}'`;
 }
 
-function json(value) {
+function json(value: unknown): string {
   return sql(JSON.stringify(value));
 }
 
-function bit(value) {
+function bit(value: boolean | undefined): string {
   return value ? "1" : "0";
 }
 
-function parseArgs(argv) {
-  const args = {
+function parseArgs(argv: string[]): CatalogSyncArgs {
+  const args: CatalogSyncArgs = {
     source: DEFAULT_SOURCE,
     database: DEFAULT_DATABASE,
     config: DEFAULT_CONFIG,
@@ -306,7 +372,7 @@ async function main() {
   throw new Error("Use --print or --out with this Node generator. Use scripts/data/sync-catalog-d1.ps1 for local or remote Wrangler execution on Windows.");
 }
 
-if (import.meta.url === `file://${process.argv[1]?.replaceAll("\\", "/")}` || process.argv[1]?.endsWith("sync-catalog-d1.mjs")) {
+if (import.meta.url === `file://${process.argv[1]?.replaceAll("\\", "/")}` || process.argv[1]?.endsWith("sync-catalog-d1.ts")) {
   main().catch((error) => {
     console.error(error instanceof Error ? error.message : error);
     process.exit(1);

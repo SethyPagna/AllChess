@@ -21,7 +21,7 @@ const result = {
 
 console.log(JSON.stringify(result, null, 2));
 
-async function findBrowserClientCandidates(root) {
+async function findBrowserClientCandidates(root: string): Promise<string[]> {
   const directCandidates = [
     join(root, "openai-bundled", "browser", "0.1.0-alpha2", "scripts", "browser-client.mjs"),
     join(root, "openai-bundled", "browser", "0.1.0-alpha2", "skills", "browser", "scripts", "browser-client.mjs")
@@ -31,12 +31,12 @@ async function findBrowserClientCandidates(root) {
     return directCandidates;
   }
 
-  const discovered = [];
+  const discovered: string[] = [];
   await collectBrowserClients(root, discovered, 0);
   return [...new Set([...discovered, ...directCandidates])];
 }
 
-async function collectBrowserClients(directory, output, depth) {
+async function collectBrowserClients(directory: string, output: string[], depth: number): Promise<void> {
   if (depth > 7 || output.length >= 50) return;
 
   let entries;

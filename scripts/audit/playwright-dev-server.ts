@@ -34,7 +34,7 @@ function copyStandaloneAssets() {
   copyDirectory("public", ".next/standalone/public");
 }
 
-function copyDirectory(source, destination) {
+function copyDirectory(source: string, destination: string): void {
   if (!existsSync(source)) return;
   rmSync(destination, { force: true, recursive: true });
   cpSync(source, destination, { recursive: true });

@@ -35,7 +35,7 @@ describe("bot knowledge training script", () => {
       execFileSync(
         "node",
         [
-          "scripts/training/train-bot-knowledge.mjs",
+          "scripts/training/train-bot-knowledge.ts",
           "--data-root",
           dataRoot,
           "--output",

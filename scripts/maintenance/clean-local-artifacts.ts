@@ -22,7 +22,7 @@ const rootLogPatterns = [
   /^tmp-[\w.-]+\.(?:err|out)\.log$/,
 ];
 
-function assertInsideRepo(targetPath) {
+function assertInsideRepo(targetPath: string): void {
   const relative = path.relative(repoRoot, targetPath);
 
   if (relative === "" || relative.startsWith("..") || path.isAbsolute(relative)) {
@@ -30,12 +30,12 @@ function assertInsideRepo(targetPath) {
   }
 }
 
-async function exists(targetPath) {
+async function exists(targetPath: string): Promise<boolean> {
   try {
     await stat(targetPath);
     return true;
-  } catch (error) {
-    if (error?.code === "ENOENT") {
+  } catch (error: unknown) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
       return false;
     }
 
@@ -43,8 +43,8 @@ async function exists(targetPath) {
   }
 }
 
-async function collectTargets() {
-  const targets = new Set();
+async function collectTargets(): Promise<string[]> {
+  const targets = new Set<string>();
 
   for (const target of fixedTargets) {
     const resolved = path.resolve(repoRoot, target);
@@ -63,8 +63,8 @@ async function collectTargets() {
   return [...targets].sort((a, b) => a.localeCompare(b));
 }
 
-async function runCommand(command, args) {
-  await new Promise((resolve, reject) => {
+async function runCommand(command: string, args: string[]): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
     const child = spawn(command, args, { cwd: repoRoot, stdio: "inherit" });
 
     child.on("error", reject);

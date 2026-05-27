@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-// @ts-expect-error The catalog sync script is a Node ESM utility, not a typed app module.
-import { buildCatalogNormalizationSql, normalizeAlias } from "../scripts/data/sync-catalog-d1.mjs";
+import { buildCatalogNormalizationSql, normalizeAlias } from "../scripts/data/sync-catalog-d1";
 
 const sampleEntries = [
   {

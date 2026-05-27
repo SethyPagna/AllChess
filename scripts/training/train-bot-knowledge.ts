@@ -5,11 +5,66 @@ import { dirname, extname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Chess } from "chess.js";
 
+type ScriptOptions = Record<string, string>;
+
+type TrainingManifest = {
+  id: string;
+  path: string;
+  kind: string;
+  variantKey: string;
+  bytes?: number;
+  checksum?: string;
+  readStatus: string;
+  sampledRecords: number;
+  license: string;
+  storagePlan: string;
+};
+
+type ToolManifest = Record<string, unknown>;
+
+type KnowledgeEntry = {
+  id: string;
+  variantKey: string;
+  source: string;
+  minTier: string;
+  positionKey?: string;
+  boardSignature?: string;
+  moveUci?: string;
+  sourceFileId?: string;
+  sourceLicense?: string;
+  tierTargets?: string[];
+  positionHash?: string;
+  labelDepth?: number;
+  engine?: string;
+  split?: string;
+  generatedAt?: string;
+  [key: string]: unknown;
+};
+
+type OpeningMove = {
+  moveUci: string;
+  count: number;
+  sourceFileId: string;
+  sourceLicense: string;
+};
+
+type TierProfile = {
+  key: string;
+  policy: string;
+  cacheThreshold: number;
+  latencyTargetMs: number;
+};
+
+type TextSample = {
+  status: string;
+  text: string;
+};
+
 const repoRoot = dirname(fileURLToPath(new URL("../../package.json", import.meta.url)));
 const defaultDataRoot = join(repoRoot, "CHESS DATA");
 const defaultOutput = join(repoRoot, "src", "data", "bot-knowledge.generated.json");
 
-const options = parseArgs(process.argv.slice(2));
+const options: ScriptOptions = parseArgs(process.argv.slice(2));
 const dataRoot = options.dataRoot ?? defaultDataRoot;
 const outputPath = options.output ?? defaultOutput;
 const maxGames = Number(options.maxGames ?? 1000);
@@ -44,8 +99,8 @@ if (!existsSync(dataRoot)) {
 const files = scanFiles(dataRoot);
 const manifests = files.map((file) => describeFile(dataRoot, file));
 const toolManifests = files.map((file) => describeTool(dataRoot, file)).filter(Boolean);
-const openingBook = new Map();
-const entries = [];
+const openingBook = new Map<string, number>();
+const entries: KnowledgeEntry[] = [];
 let puzzleCount = 0;
 
 for (const file of files) {
@@ -67,7 +122,7 @@ for (const file of files) {
   }
 
   if (isParquetFile(file)) {
-    const sample = inspectParquetReadiness(file);
+    const sample = inspectParquetReadiness();
     manifest.readStatus = sample.status;
     manifest.sampledRecords = sample.records;
   }
@@ -133,12 +188,12 @@ writeFileSync(outputPath, `${JSON.stringify(output, null, 2)}\n`);
 console.log(`Wrote ${entries.length} knowledge entries to ${relative(repoRoot, outputPath)}`);
 console.log(`Scanned ${manifests.length} files from ${relative(repoRoot, dataRoot)}`);
 
-function parseArgs(args) {
-  const parsed = {};
+function parseArgs(args: string[]): ScriptOptions {
+  const parsed: ScriptOptions = {};
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
     if (!arg.startsWith("--")) continue;
-    const key = arg.slice(2).replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+    const key = arg.slice(2).replace(/-([a-z])/g, (_: string, letter: string) => letter.toUpperCase());
     const next = args[index + 1];
     if (!next || next.startsWith("--")) {
       parsed[key] = "true";
@@ -150,7 +205,7 @@ function parseArgs(args) {
   return parsed;
 }
 
-function guardAgainstKnowledgeRegression(path, nextOutput, parsedOptions) {
+function guardAgainstKnowledgeRegression(path: string, nextOutput: { summary?: Record<string, unknown>; entries?: KnowledgeEntry[]; manifests: TrainingManifest[] }, parsedOptions: ScriptOptions): void {
   if (parsedOptions.allowRegression === "true" || !existsSync(path)) return;
 
   let current;
@@ -177,8 +232,8 @@ function guardAgainstKnowledgeRegression(path, nextOutput, parsedOptions) {
   );
 }
 
-function scanFiles(root) {
-  const found = [];
+function scanFiles(root: string): string[] {
+  const found: string[] = [];
   const stack = [root];
   while (stack.length) {
     const current = stack.pop();
@@ -196,7 +251,7 @@ function scanFiles(root) {
   return found.sort();
 }
 
-function describeFile(root, file) {
+function describeFile(root: string, file: string): TrainingManifest {
   const stats = statSync(file);
   const path = normalizePath(relative(root, file));
   return {
@@ -213,7 +268,7 @@ function describeFile(root, file) {
   };
 }
 
-function describeTool(root, file) {
+function describeTool(root: string, file: string): ToolManifest | null {
   const path = normalizePath(relative(root, file));
   const name = path.toLowerCase();
   if (!name.endsWith(".zip")) return null;
@@ -236,7 +291,7 @@ function describeTool(root, file) {
   };
 }
 
-function toolProfile(name) {
+function toolProfile(name: string): ToolManifest | null {
   if (name.endsWith("stockfish-master.zip")) {
     return {
       name: "Stockfish source",
@@ -290,7 +345,7 @@ function toolProfile(name) {
   return null;
 }
 
-function detectKind(file) {
+function detectKind(file: string): string {
   const lower = file.toLowerCase();
   if (lower.endsWith(".pgn") || lower.endsWith(".pgn.zst")) return "pgn";
   if (lower.endsWith(".csv") || lower.endsWith(".csv.zst")) return "csv";
@@ -299,7 +354,7 @@ function detectKind(file) {
   return extname(lower).replace(".", "") || "unknown";
 }
 
-function detectVariantKey(path) {
+function detectVariantKey(path: string): string {
   const parts = path.toLowerCase().split(/[\\/]/);
   if (parts.includes("antichess")) return "antichess";
   if (parts.includes("atomic")) return "atomic";
@@ -310,28 +365,28 @@ function detectVariantKey(path) {
   return "unknown";
 }
 
-function licenseFor(path) {
+function licenseFor(path: string): string {
   const lower = path.toLowerCase();
   if (lower.includes("lichess") || lower.includes("puzzle")) return "public Lichess data; verify downstream license before publishing derived models";
   if (lower.includes("aix-lichess-database")) return "cc0-1.0";
   return "local-unverified";
 }
 
-function isPgnFile(file) {
+function isPgnFile(file: string): boolean {
   const lower = file.toLowerCase();
   return lower.endsWith(".pgn") || lower.endsWith(".pgn.zst");
 }
 
-function isCsvFile(file) {
+function isCsvFile(file: string): boolean {
   const lower = file.toLowerCase();
   return lower.endsWith(".csv") || lower.endsWith(".csv.zst");
 }
 
-function isParquetFile(file) {
+function isParquetFile(file: string): boolean {
   return file.toLowerCase().endsWith(".parquet");
 }
 
-function readTextSample(file, limitBytes) {
+function readTextSample(file: string, limitBytes: number): TextSample {
   if (file.toLowerCase().endsWith(".zst")) {
     return readZstdTextSample(file, limitBytes);
   }
@@ -344,7 +399,7 @@ function readTextSample(file, limitBytes) {
   }
 }
 
-function readZstdTextSample(file, limitBytes) {
+function readZstdTextSample(file: string, limitBytes: number): TextSample {
   const python = spawnSync(pythonExecutable, ["-c", "import zstandard"], { encoding: "utf8" });
   if (python.status !== 0) {
     return { status: `skipped: install Python package zstandard for ${pythonExecutable} to stream .zst samples`, text: "" };
@@ -380,14 +435,14 @@ with open(path, "rb") as source:
   return { status: "sampled-zst", text: result.stdout };
 }
 
-function parsePgnGames(text) {
+function parsePgnGames(text: string): string[] {
   return text
     .split(/\n(?=\[Event\s+")/g)
     .map((game) => game.trim())
     .filter(Boolean);
 }
 
-function inspectParquetReadiness() {
+function inspectParquetReadiness(): { status: string; records: number } {
   const python = spawnSync(pythonExecutable, ["-c", "import pyarrow.parquet"], { encoding: "utf8" });
   if (python.status !== 0) {
     return { status: `skipped-pyarrow: install pyarrow for ${pythonExecutable} to stream parquet training records`, records: 0 };
@@ -396,7 +451,14 @@ function inspectParquetReadiness() {
   return { status: "sampled-parquet", records: 0 };
 }
 
-function addOpeningGame(book, pgn, maxPly, variantKey = "classic", sourceFileId = `source-${variantKey}-seeded`, sourceLicense = "local-derived-seed") {
+function addOpeningGame(
+  book: Map<string, number>,
+  pgn: string,
+  maxPly: number,
+  variantKey = "classic",
+  sourceFileId = `source-${variantKey}-seeded`,
+  sourceLicense = "local-derived-seed"
+): void {
   const chess = new Chess();
   const tokens = extractMoveTokens(pgn);
   const played = [];
@@ -416,7 +478,7 @@ function addOpeningGame(book, pgn, maxPly, variantKey = "classic", sourceFileId 
   }
 }
 
-function addSeededOpenings(book, maxPly) {
+function addSeededOpenings(book: Map<string, number>, maxPly: number): void {
   for (const seed of seededOpeningLines) {
     for (let index = 0; index < seed.weight; index += 1) {
       addOpeningGame(book, seed.line, maxPly);
@@ -424,7 +486,7 @@ function addSeededOpenings(book, maxPly) {
   }
 }
 
-function extractMoveTokens(pgn) {
+function extractMoveTokens(pgn: string): string[] {
   const body = pgn
     .replace(/\{[^}]*}/g, " ")
     .replace(/\([^)]*\)/g, " ")
@@ -437,8 +499,8 @@ function extractMoveTokens(pgn) {
     .map((token) => token.replace(/[!?+#]+$/g, ""));
 }
 
-function compileOpeningEntries(book) {
-  const byPosition = new Map();
+function compileOpeningEntries(book: Map<string, number>): KnowledgeEntry[] {
+  const byPosition = new Map<string, OpeningMove[]>();
   for (const [key, count] of book.entries()) {
     const [positionKey, rest] = key.split("|move:");
     const [moveUci, sourceFileId = "source-classic-seeded", sourceLicense = "local-derived-seed"] = rest.split("|source:").flatMap((part) => part.split("|license:"));
@@ -447,7 +509,7 @@ function compileOpeningEntries(book) {
     byPosition.set(positionKey, moves);
   }
 
-  const entries = [];
+  const entries: KnowledgeEntry[] = [];
   for (const [positionKey, moves] of byPosition.entries()) {
     const total = moves.reduce((sum, move) => sum + move.count, 0);
     const best = moves.sort((a, b) => b.count - a.count)[0];
@@ -476,7 +538,7 @@ function compileOpeningEntries(book) {
   return entries.slice(0, 80);
 }
 
-function compilePuzzleEntries(csvText, limit) {
+function compilePuzzleEntries(csvText: string, limit: number): KnowledgeEntry[] {
   const rows = csvText.split(/\r?\n/).filter(Boolean);
   if (!rows.length) return [];
   const header = splitCsvLine(rows[0]);
@@ -486,7 +548,7 @@ function compilePuzzleEntries(csvText, limit) {
   const themesIndex = header.indexOf("Themes");
   if (fenIndex < 0 || movesIndex < 0) return [];
 
-  const entries = [];
+  const entries: KnowledgeEntry[] = [];
   for (const row of rows.slice(1)) {
     if (entries.length >= limit) break;
     const columns = splitCsvLine(row);
@@ -522,7 +584,7 @@ function compilePuzzleEntries(csvText, limit) {
   return entries;
 }
 
-function applyKnowledgeMetadata(entry, manifests) {
+function applyKnowledgeMetadata(entry: KnowledgeEntry, manifests: TrainingManifest[]): void {
   entry.tierTargets ??= tiersAtOrAbove(entry.minTier);
   entry.positionHash ??= stableId(`${entry.variantKey}|${entry.positionKey}|${entry.boardSignature ?? ""}|${entry.moveUci}`);
   entry.sourceFileId ??= sourceFileForEntry(entry, manifests).id;
@@ -533,7 +595,7 @@ function applyKnowledgeMetadata(entry, manifests) {
   entry.generatedAt ??= runGeneratedAt;
 }
 
-function buildVariantCoverage(entries, manifests) {
+function buildVariantCoverage(entries: KnowledgeEntry[], manifests: TrainingManifest[]) {
   const variants = [...new Set([...entries.map((entry) => entry.variantKey), ...manifests.map((manifest) => manifest.variantKey)])]
     .filter((variantKey) => variantKey && variantKey !== "unknown")
     .sort();
@@ -557,7 +619,7 @@ function buildVariantCoverage(entries, manifests) {
   });
 }
 
-function sourceVariants(entries, manifests) {
+function sourceVariants(entries: KnowledgeEntry[], manifests: TrainingManifest[]): string[] {
   return [
     ...new Set([
       ...entries.map((entry) => entry.variantKey),
@@ -566,7 +628,7 @@ function sourceVariants(entries, manifests) {
   ].sort();
 }
 
-function sourceFileForEntry(entry, manifests) {
+function sourceFileForEntry(entry: KnowledgeEntry, manifests: TrainingManifest[]): { id: string; license: string } {
   if (entry.source === "tactic-cache") {
     const puzzle = manifests.find((manifest) => manifest.path.toLowerCase().includes("puzzle"));
     return {
@@ -581,12 +643,12 @@ function sourceFileForEntry(entry, manifests) {
   };
 }
 
-function tiersAtOrAbove(minTier) {
+function tiersAtOrAbove(minTier: string): string[] {
   const rank = Object.fromEntries(tierProfiles().map((tier, index) => [tier.key, index]));
   return tierProfiles().filter((tier) => rank[tier.key] >= rank[minTier]).map((tier) => tier.key);
 }
 
-function tierProfiles() {
+function tierProfiles(): TierProfile[] {
   return [
     { key: "easy", policy: "not naive: common book moves and obvious blunder filters", cacheThreshold: 0.82, latencyTargetMs: 160 },
     { key: "normal", policy: "one-reply checks and defended-piece awareness", cacheThreshold: 0.78, latencyTargetMs: 280 },
@@ -597,7 +659,7 @@ function tierProfiles() {
   ];
 }
 
-function depthForEntry(entry) {
+function depthForEntry(entry: KnowledgeEntry): number {
   if (entry.minTier === "legend") return 22;
   if (entry.minTier === "grandmaster") return 18;
   if (entry.minTier === "very-hard") return 16;
@@ -606,7 +668,7 @@ function depthForEntry(entry) {
   return 6;
 }
 
-function engineForEntry(entry) {
+function engineForEntry(entry: KnowledgeEntry): string {
   if (entry.source === "opening-book") return "local-opening-frequency";
   if (entry.source === "tactic-cache") return "lichess-puzzle-solution";
   if (entry.source === "endgame-cache") return "tablebase-style-cache";
@@ -614,14 +676,14 @@ function engineForEntry(entry) {
   return entry.source;
 }
 
-function splitForId(id) {
+function splitForId(id: string): string {
   const bucket = Number.parseInt(stableId(id).slice(0, 2), 16) % 10;
   if (bucket === 0) return "test";
   if (bucket <= 2) return "eval";
   return "train";
 }
 
-function checksumFileSample(file) {
+function checksumFileSample(file: string): string {
   const stats = statSync(file);
   const length = Math.min(stats.size, maxChecksumBytes);
   const buffer = Buffer.alloc(length);
@@ -634,8 +696,8 @@ function checksumFileSample(file) {
   return `sha256:${createHash("sha256").update(buffer).digest("hex")}`;
 }
 
-function splitCsvLine(line) {
-  const result = [];
+function splitCsvLine(line: string): string[] {
+  const result: string[] = [];
   let value = "";
   let quoted = false;
   for (let index = 0; index < line.length; index += 1) {
@@ -656,7 +718,7 @@ function splitCsvLine(line) {
   return result;
 }
 
-function fenToClassicBoardSignature(fen) {
+function fenToClassicBoardSignature(fen: string): string | null {
   const [placement, turn] = fen.split(/\s+/);
   if (!placement || !turn) return null;
   const rows = placement.split("/");
@@ -677,10 +739,10 @@ function fenToClassicBoardSignature(fen) {
   return `classic|turn:${turn === "w" ? "white" : "black"}|board:${boardRows.join("/")}`;
 }
 
-function stableId(value) {
+function stableId(value: string): string {
   return createHash("sha1").update(value).digest("hex").slice(0, 12);
 }
 
-function normalizePath(path) {
+function normalizePath(path: string): string {
   return path.split(sep).join("/");
 }

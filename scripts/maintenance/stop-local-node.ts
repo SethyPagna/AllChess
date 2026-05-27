@@ -3,6 +3,10 @@ import process from "node:process";
 
 const root = process.cwd();
 const dryRun = process.argv.includes("--dry-run");
+type NodeProcessInfo = {
+  pid: number;
+  commandLine: string;
+};
 
 const candidates = process.platform === "win32" ? findWindowsNodeProcesses(root) : findUnixNodeProcesses(root);
 const targets = candidates.filter((candidate) => candidate.pid !== process.pid);
@@ -26,7 +30,7 @@ for (const target of targets) {
 
 console.log(`${dryRun ? "Dry run complete" : "Stopped"} ${targets.length} AllChess Node process(es).`);
 
-function findWindowsNodeProcesses(workspaceRoot) {
+function findWindowsNodeProcesses(workspaceRoot: string): NodeProcessInfo[] {
   const script = [
     "$root = [Environment]::GetEnvironmentVariable('ALLCHESS_WORKSPACE_ROOT')",
     "Get-CimInstance Win32_Process -Filter \"name = 'node.exe'\" | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($root) } | Select-Object @{Name='pid';Expression={[int]$_.ProcessId}}, @{Name='commandLine';Expression={$_.CommandLine}} | ConvertTo-Json -Compress"
@@ -40,21 +44,21 @@ function findWindowsNodeProcesses(workspaceRoot) {
   return parseJsonProcessList(output);
 }
 
-function findUnixNodeProcesses(workspaceRoot) {
+function findUnixNodeProcesses(workspaceRoot: string): NodeProcessInfo[] {
   const output = execFileSync("ps", ["-eo", "pid=,command="], { encoding: "utf8" });
   return output
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean)
-    .map((line) => {
+    .map((line): NodeProcessInfo | null => {
       const match = line.match(/^(\d+)\s+(.+)$/);
       if (!match) return null;
       return { pid: Number(match[1]), commandLine: match[2] };
     })
-    .filter((entry) => entry && entry.commandLine.includes("node") && entry.commandLine.includes(workspaceRoot));
+    .filter((entry): entry is NodeProcessInfo => Boolean(entry && entry.commandLine.includes("node") && entry.commandLine.includes(workspaceRoot)));
 }
 
-function parseJsonProcessList(output) {
+function parseJsonProcessList(output: string): NodeProcessInfo[] {
   if (!output) return [];
   const parsed = JSON.parse(output);
   return (Array.isArray(parsed) ? parsed : [parsed]).map((entry) => ({

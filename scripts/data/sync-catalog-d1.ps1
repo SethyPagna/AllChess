@@ -24,7 +24,7 @@ $target = if ($Remote) { "--remote" } elseif ($Local) { "--local" } else { "--lo
 $tempFile = Join-Path ([System.IO.Path]::GetTempPath()) ("allchess-catalog-" + [System.Guid]::NewGuid().ToString("N") + ".sql")
 
 try {
-  node scripts/data/sync-catalog-d1.mjs --source $Source --out $tempFile
+  node scripts/data/sync-catalog-d1.ts --source $Source --out $tempFile
   if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
   }
