@@ -9,9 +9,16 @@ coverage/
 playwright-report/
 test-results/
 .vercel/
+.open-next/
+.wrangler/
+.wrangler-dry-run/
+public/engines/stockfish/
 .env
 .env.local
 .env.*.local
 !.env.example
 *.log
 *.tsbuildinfo
+.vercel
+CHESS DATA/
+supabase/

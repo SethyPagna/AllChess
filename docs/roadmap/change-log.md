@@ -1,0 +1,33 @@
+# AllChess Change Log
+
+This file tracks meaningful changes made during the improvement program. Keep newest entries first.
+
+---
+
+## 2026-05-21
+
+### Repository Organization
+
+- Moved roadmap tracking files into `docs/roadmap/` to keep the repository root focused on build, deployment, and runtime configuration.
+- Updated README and roadmap references to point at the new documentation location.
+
+### Ops
+
+- Hardened browser validation so it discovers the installed browser client dynamically.
+- Corrected catalog native display names and clarified catalog sync source errors.
+
+---
+
+## 2026-05-16
+
+### Planning And Tracking
+
+- Added `plan.md` with a 20-phase improvement roadmap covering workflow, design, architecture, variant diversity, functional completeness, testing, security, deployment, and launch readiness.
+- Added `progress.md` with phase statuses, active queue, baseline repository map, high-risk edit areas, verification log, blockers, decisions needed, and commit checklist.
+- Added `decisions.md` with initial decisions for root-level tracking, Cloudflare-first architecture, and variant support capability tracking.
+- Added `change-log.md` as the running record for roadmap changes.
+
+### Verification
+
+- Confirmed the branch was clean before adding planning files.
+- Full phase verification commands have not yet been run because this commit only introduces planning and tracking documents.

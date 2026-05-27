@@ -1,0 +1,9 @@
+CHESS DATA/
+.env*
+!.env.example
+.next/
+node_modules/
+test-results/
+playwright-report/
+coverage/
+*.log

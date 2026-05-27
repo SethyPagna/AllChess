@@ -1,38 +1,53 @@
 import { notFound } from "next/navigation";
 
-import { GameBoard } from "@/components/game-board";
+import { GameBoard } from "@/components/board/game-board";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { getVariant } from "@/lib/variants";
+import { parseBotDifficulty, parsePlayMode, parseQueryFlag, parseTimeControl, safeDecodeRouteSegment } from "@/lib/routing/params";
+import { getVariantRuleSummary } from "@/lib/variants/rules-atlas";
+import { formatVariantPlayMeta, getVariant } from "@/lib/variants";
 
 export default async function PlayPage({
-  params
+  params,
+  searchParams
 }: {
   params: Promise<{ locale: string; gameId: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale: rawLocale, gameId } = await params;
+  const query = searchParams ? await searchParams : {};
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
+  const decodedGameId = safeDecodeRouteSegment(gameId);
+  if (!decodedGameId) notFound();
+
   let variant;
   try {
-    variant = getVariant(gameId);
+    variant = getVariant(decodedGameId);
   } catch {
     notFound();
   }
+  const initialPlayMode = parsePlayMode(query.mode);
+  const initialBotDifficulty = parseBotDifficulty(query.bot);
+  const initialTimeControl = parseTimeControl(query.time ?? query.clock);
+  const initialBotMode = initialBotDifficulty || parseQueryFlag(query.bot) || initialPlayMode === "bot" ? "opponent" : "human";
 
   return (
-    <section className="grid gap-5">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-black">{t(variant.nameKey)}</h1>
-          <p className="text-[var(--muted)]">{variant.objective}</p>
-        </div>
-        <div className="flex gap-2">
-          <button className="focus-ring rounded-md border border-[var(--border)] px-4 py-2">{t("play.draw")}</button>
-          <button className="focus-ring rounded-md border border-[var(--danger)] px-4 py-2 text-[var(--danger)]">{t("play.resign")}</button>
-        </div>
+    <section className="play-arena">
+      <div className="play-core grid gap-3">
+        <GameBoard
+          variantKey={variant.key}
+          rulesSummary={getVariantRuleSummary(variant.key)}
+          initialBotMode={initialBotMode}
+          initialBotDifficulty={initialBotDifficulty}
+          initialPlayMode={initialPlayMode}
+          initialTimeControl={initialTimeControl}
+          locale={locale}
+          title={t(variant.nameKey)}
+          meta={formatVariantPlayMeta(variant)}
+          objective={variant.objective}
+        />
       </div>
-      <GameBoard variantKey={variant.key} />
     </section>
   );
 }

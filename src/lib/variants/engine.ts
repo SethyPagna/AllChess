@@ -33,6 +33,7 @@ export function createInitialState(variantKey: string, id = crypto.randomUUID())
     moves: [],
     captured: [],
     checks: {},
+    halfmoveClock: 0,
     clocks: variant.players.map((color) => ({
       color,
       remainingMs: 600000,
@@ -55,11 +56,52 @@ export function buildBoard(variant: VariantDefinition): BoardCell[][] {
 }
 
 export function getLegalMoves(state: GameState, from: Square): Move[] {
+  if (state.status !== "active") return [];
+
   const cell = cellAt(state, from);
   if (!cell?.piece || cell.piece.owner !== state.turn) return [];
 
-  const directions = movementDirections(cell.piece.code);
-  const sliding = isSlidingPiece(cell.piece.code);
+  const variant = getVariant(state.variantKey);
+  const pseudoMoves =
+    variant.supportsCastling && cell.piece.code === "k"
+      ? [...getPseudoLegalMoves(state, from), ...castlingMoves(state, from, cell.piece)]
+      : getPseudoLegalMoves(state, from);
+
+  const legalMoves = pseudoMoves.filter((move) => {
+    const target = cellAt(state, move.to)?.piece;
+    if (variant.supportsCheck && target && isRoyal(target)) return false;
+    if (!variant.supportsCheck) return true;
+    return !wouldLeaveRoyalInCheck(state, move, cell.piece!.owner);
+  });
+
+  if (variant.key === "antichess" && hasAnyCaptureMove(state, state.turn)) {
+    return legalMoves.filter((move) => isCaptureMove(state, move));
+  }
+
+  return legalMoves;
+}
+
+function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
+  const cell = cellAt(state, from);
+  if (!cell?.piece) return [];
+
+  const piece = cell.piece;
+  const variant = getVariant(state.variantKey);
+  if (variant.key === "xiangqi" || variant.key === "janggi") {
+    return eastAsianPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
+  }
+  if (variant.key === "jungle") {
+    return junglePieceMoves(state, piece, from);
+  }
+  if (piece.code === "p" && ["western", "southeast-asian"].includes(variant.family)) {
+    return westernPawnMoves(state, piece, from, variant.family === "western").filter((move) => terrainAllows(state, piece, move.to));
+  }
+  if (piece.code === "p" && (variant.key === "xiangqi" || variant.key === "janggi")) {
+    return xiangqiSoldierMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
+  }
+
+  const directions = movementDirections(piece.code);
+  const sliding = isSlidingPiece(piece.code);
   const moves: Move[] = [];
 
   for (const [dr, dc] of directions) {
@@ -82,10 +124,240 @@ export function getLegalMoves(state: GameState, from: Square): Move[] {
     }
   }
 
-  return moves.filter((move) => terrainAllows(state, cell.piece, move.to));
+  return moves.filter((move) => terrainAllows(state, piece, move.to));
+}
+
+function westernPawnMoves(state: GameState, piece: Piece, from: Square, allowDouble: boolean) {
+  const forward = orient(piece.owner, -1);
+  const moves: Move[] = [];
+  const one = { row: from.row + forward, col: from.col };
+  if (isInside(state, one) && !cellAt(state, one)?.piece) {
+    moves.push({ from, to: one });
+    const startRow = ["black", "blue", "gote"].includes(piece.owner) ? 1 : state.board.length - 2;
+    const two = { row: from.row + forward * 2, col: from.col };
+    if (allowDouble && from.row === startRow && isInside(state, two) && !cellAt(state, two)?.piece) {
+      moves.push({ from, to: two });
+    }
+  }
+
+  for (const dc of [-1, 1]) {
+    const capture = { row: from.row + forward, col: from.col + dc };
+    const target = cellAt(state, capture);
+    if (target?.piece && target.piece.owner !== piece.owner) {
+      moves.push({ from, to: capture });
+    }
+  }
+
+  return moves;
+}
+
+function xiangqiSoldierMoves(state: GameState, piece: Piece, from: Square) {
+  const forward = orient(piece.owner, -1);
+  const crossedRiver = ["black", "blue", "gote"].includes(piece.owner)
+    ? from.row >= Math.floor(state.board.length / 2)
+    : from.row < Math.floor(state.board.length / 2);
+  const directions: Array<[number, number]> = crossedRiver ? [[forward, 0], [0, -1], [0, 1]] : [[forward, 0]];
+  return directions.flatMap(([dr, dc]) => {
+    const to = { row: from.row + dr, col: from.col + dc };
+    const target = cellAt(state, to);
+    return target && (!target.piece || target.piece.owner !== piece.owner) ? [{ from, to }] : [];
+  });
+}
+
+function eastAsianPieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
+  switch (piece.code) {
+    case "g":
+      return [
+        ...steppingMoves(state, piece, from, [
+          [-1, 0],
+          [1, 0],
+          [0, -1],
+          [0, 1]
+        ]).filter((move) => inPalace(state, piece.owner, move.to)),
+        ...flyingGeneralMoves(state, piece, from)
+      ];
+    case "a":
+      return steppingMoves(state, piece, from, [
+        [-1, -1],
+        [-1, 1],
+        [1, -1],
+        [1, 1]
+      ]).filter((move) => inPalace(state, piece.owner, move.to));
+    case "e":
+      return elephantMoves(state, piece, from);
+    case "h":
+    case "n":
+      return horseMoves(state, piece, from);
+    case "c":
+      return cannonMoves(state, piece, from);
+    case "r":
+      return rayMoves(state, piece, from, [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1]
+      ]);
+    case "p":
+      return xiangqiSoldierMoves(state, piece, from);
+    default:
+      return steppingMoves(state, piece, from, movementDirections(piece.code));
+  }
+}
+
+function steppingMoves(state: GameState, piece: Piece, from: Square, directions: Array<[number, number]>) {
+  return directions.flatMap(([dr, dc]) => {
+    const to = { row: from.row + dr, col: from.col + dc };
+    return canOccupy(state, piece, to) ? [{ from, to }] : [];
+  });
+}
+
+function rayMoves(state: GameState, piece: Piece, from: Square, directions: Array<[number, number]>) {
+  const moves: Move[] = [];
+  for (const [dr, dc] of directions) {
+    let to = { row: from.row + dr, col: from.col + dc };
+    while (isInside(state, to)) {
+      const target = cellAt(state, to)?.piece;
+      if (!target) {
+        moves.push({ from, to: { ...to } });
+      } else {
+        if (target.owner !== piece.owner) moves.push({ from, to: { ...to } });
+        break;
+      }
+      to = { row: to.row + dr, col: to.col + dc };
+    }
+  }
+  return moves;
+}
+
+function cannonMoves(state: GameState, piece: Piece, from: Square) {
+  const moves: Move[] = [];
+  for (const [dr, dc] of [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1]
+  ] satisfies Array<[number, number]>) {
+    let to = { row: from.row + dr, col: from.col + dc };
+    let screens = 0;
+    while (isInside(state, to)) {
+      const target = cellAt(state, to)?.piece;
+      if (!target && screens === 0) {
+        moves.push({ from, to: { ...to } });
+      } else if (target) {
+        screens += 1;
+        if (screens === 2) {
+          if (target.owner !== piece.owner) moves.push({ from, to: { ...to } });
+          break;
+        }
+      }
+      to = { row: to.row + dr, col: to.col + dc };
+    }
+  }
+  return moves;
+}
+
+function horseMoves(state: GameState, piece: Piece, from: Square) {
+  const candidates = [
+    { to: { row: from.row - 2, col: from.col - 1 }, leg: { row: from.row - 1, col: from.col } },
+    { to: { row: from.row - 2, col: from.col + 1 }, leg: { row: from.row - 1, col: from.col } },
+    { to: { row: from.row + 2, col: from.col - 1 }, leg: { row: from.row + 1, col: from.col } },
+    { to: { row: from.row + 2, col: from.col + 1 }, leg: { row: from.row + 1, col: from.col } },
+    { to: { row: from.row - 1, col: from.col - 2 }, leg: { row: from.row, col: from.col - 1 } },
+    { to: { row: from.row + 1, col: from.col - 2 }, leg: { row: from.row, col: from.col - 1 } },
+    { to: { row: from.row - 1, col: from.col + 2 }, leg: { row: from.row, col: from.col + 1 } },
+    { to: { row: from.row + 1, col: from.col + 2 }, leg: { row: from.row, col: from.col + 1 } }
+  ];
+  return candidates.flatMap(({ to, leg }) => (!cellAt(state, leg)?.piece && canOccupy(state, piece, to) ? [{ from, to }] : []));
+}
+
+function elephantMoves(state: GameState, piece: Piece, from: Square) {
+  return [
+    { to: { row: from.row - 2, col: from.col - 2 }, eye: { row: from.row - 1, col: from.col - 1 } },
+    { to: { row: from.row - 2, col: from.col + 2 }, eye: { row: from.row - 1, col: from.col + 1 } },
+    { to: { row: from.row + 2, col: from.col - 2 }, eye: { row: from.row + 1, col: from.col - 1 } },
+    { to: { row: from.row + 2, col: from.col + 2 }, eye: { row: from.row + 1, col: from.col + 1 } }
+  ].flatMap(({ to, eye }) => {
+    if (cellAt(state, eye)?.piece || !canOccupy(state, piece, to) || crossesXiangqiRiver(piece, to)) return [];
+    return [{ from, to }];
+  });
+}
+
+function flyingGeneralMoves(state: GameState, piece: Piece, from: Square) {
+  const moves: Move[] = [];
+  for (const dr of [-1, 1]) {
+    let to = { row: from.row + dr, col: from.col };
+    while (isInside(state, to)) {
+      const target = cellAt(state, to)?.piece;
+      if (target) {
+        if (target.owner !== piece.owner && isRoyal(target)) moves.push({ from, to: { ...to } });
+        break;
+      }
+      to = { row: to.row + dr, col: to.col };
+    }
+  }
+  return moves;
+}
+
+function junglePieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
+  const stepMoves = steppingMoves(state, piece, from, [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1]
+  ]).filter((move) => canJungleMoveTo(state, piece, from, move.to));
+
+  if (!["l", "t"].includes(piece.code)) return stepMoves;
+
+  return [
+    ...stepMoves,
+    ...jungleJumpMoves(state, piece, from)
+  ];
+}
+
+function jungleJumpMoves(state: GameState, piece: Piece, from: Square): Move[] {
+  return [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1]
+  ].flatMap(([dr, dc]) => {
+    const first = { row: from.row + dr, col: from.col + dc };
+    if (!isInside(state, first) || cellAt(state, first)?.terrain !== "river") return [];
+
+    let to = first;
+    while (isInside(state, to) && cellAt(state, to)?.terrain === "river") {
+      if (cellAt(state, to)?.piece?.code === "r") return [];
+      to = { row: to.row + dr, col: to.col + dc };
+    }
+
+    return canJungleMoveTo(state, piece, from, to) ? [{ from, to }] : [];
+  });
+}
+
+function canJungleMoveTo(state: GameState, piece: Piece, from: Square, to: Square) {
+  const target = cellAt(state, to);
+  if (!target || isJungleOwnDen(piece.owner, to)) return false;
+  if (target.terrain === "river" && piece.code !== "r") return false;
+  if (!target.piece) return true;
+  return target.piece.owner !== piece.owner && canJungleCapture(state, piece, from, target.piece, to);
+}
+
+function canJungleCapture(state: GameState, attacker: Piece, from: Square, defender: Piece, to: Square) {
+  const fromTerrain = cellAt(state, from)?.terrain;
+  const toTerrain = cellAt(state, to)?.terrain;
+  if (attacker.code === "r" && defender.code === "e" && fromTerrain !== "river" && toTerrain !== "river") return true;
+  if (attacker.code === "e" && defender.code === "r") return false;
+  if (defender.code === "r" && toTerrain === "river") return attacker.code === "r";
+
+  const defenderRank = isJungleOwnTrap(defender.owner, to) ? 0 : jungleRank(defender.code);
+  return jungleRank(attacker.code) >= defenderRank;
 }
 
 export function applyMove(state: GameState, move: Move): GameState {
+  if (state.status !== "active") {
+    throw new Error("errors.gameCompleted");
+  }
+
   const legal = getLegalMoves(state, move.from).some((candidate) => sameSquare(candidate.to, move.to));
   if (!legal) {
     throw new Error("errors.invalidMove");
@@ -96,14 +368,146 @@ export function applyMove(state: GameState, move: Move): GameState {
   const toCell = cellAt(next, move.to);
   if (!fromCell?.piece || !toCell) throw new Error("errors.invalidMove");
 
+  const variant = getVariant(state.variantKey);
+  const movingPiece = fromCell.piece;
   const captured = toCell.piece;
   if (captured) next.captured.push(captured);
-  toCell.piece = { ...fromCell.piece, promoted: move.promotion || fromCell.piece.promoted };
+  const promoted = shouldPromote(variant, movingPiece, move.to, move.promotion);
+  toCell.piece = {
+    ...movingPiece,
+    code: promoted ? promotionCodeFor(variant, movingPiece) : movingPiece.code,
+    promoted: promoted || movingPiece.promoted
+  };
   fromCell.piece = null;
+  if (variant.supportsCastling && movingPiece.code === "k" && Math.abs(move.to.col - move.from.col) === 2) {
+    moveCastlingRook(next, move);
+  }
   next.ply += 1;
   next.turn = next.turn === next.clocks[0]?.color ? next.clocks[1]?.color ?? "black" : next.clocks[0]?.color ?? "white";
-  next.moves.push({ ...move, notation: notationFor(fromCell.piece, move) });
-  return next;
+  next.moves.push({ ...move, notation: notationFor(movingPiece, move) });
+  const moverClock = next.clocks.find((clock) => clock.color === movingPiece.owner);
+  if (moverClock) {
+    moverClock.remainingMs += moverClock.incrementMs;
+  }
+  next.halfmoveClock = captured || movingPiece.code === "p" ? 0 : (state.halfmoveClock ?? 0) + 1;
+
+  if (variant.key === "horde" && countPieces(next, "white") === 0) {
+    next.status = "completed";
+    next.result = "black";
+    next.outcomeReason = "objective";
+    return next;
+  }
+
+  if (variant.key === "antichess") {
+    return withAntichessOutcome(next);
+  }
+
+  if (variant.key === "jungle") {
+    return withJungleOutcome(next, movingPiece.owner, move.to);
+  }
+
+  if (!variant.supportsCheck && captured && isRoyal(captured)) {
+    next.status = "completed";
+    next.result = movingPiece.owner;
+    next.outcomeReason = "royal-captured";
+    return next;
+  }
+  return withOutcome(next, movingPiece.owner, move.to);
+}
+
+function withAntichessOutcome(state: GameState): GameState {
+  const variant = getVariant(state.variantKey);
+  const winnerWithNoPieces = variant.players.find((player) => countPieces(state, player) === 0);
+  if (winnerWithNoPieces) {
+    state.status = "completed";
+    state.result = winnerWithNoPieces;
+    state.outcomeReason = "lost-all-pieces";
+    return state;
+  }
+
+  const playerToMove = state.turn;
+  if (!hasAnyLegalMove(state, playerToMove)) {
+    state.status = "completed";
+    state.result = playerToMove;
+    state.outcomeReason = "no-legal-moves";
+  }
+
+  return state;
+}
+
+function withJungleOutcome(state: GameState, mover: PlayerColor, destination: Square): GameState {
+  const movedPiece = cellAt(state, destination)?.piece;
+  if (movedPiece && isJungleOpponentDen(movedPiece.owner, destination)) {
+    state.status = "completed";
+    state.result = mover;
+    state.outcomeReason = "objective";
+    return state;
+  }
+
+  const opponent = getVariant(state.variantKey).players.find((player) => player !== mover);
+  if (opponent && countPieces(state, opponent) === 0) {
+    state.status = "completed";
+    state.result = mover;
+    state.outcomeReason = "objective";
+  }
+
+  return state;
+}
+
+function withOutcome(state: GameState, mover: PlayerColor, destination: Square): GameState {
+  const variant = getVariant(state.variantKey);
+  const movedPiece = cellAt(state, destination)?.piece;
+
+  if (variant.key === "king-of-the-hill" && movedPiece && isRoyal(movedPiece) && isCenterSquare(state, destination)) {
+    state.status = "completed";
+    state.result = mover;
+    state.outcomeReason = "objective";
+    return state;
+  }
+
+  if (!variant.supportsCheck) return state;
+
+  const drawReason = drawReasonFor(state);
+  if (drawReason) {
+    state.status = "completed";
+    state.result = "draw";
+    state.outcomeReason = drawReason;
+    return state;
+  }
+
+  const defender = state.turn;
+  const defenderInCheck = isInCheck(state, defender);
+  if (defenderInCheck) {
+    state.checks[defender] = (state.checks[defender] ?? 0) + 1;
+    if (variant.key === "three-check" && (state.checks[defender] ?? 0) >= 3) {
+      state.status = "completed";
+      state.result = mover;
+      state.outcomeReason = "three-check";
+      return state;
+    }
+  }
+
+  if (!hasAnyLegalMove(state, defender)) {
+    state.status = "completed";
+    state.result = defenderInCheck || variant.key === "xiangqi" ? mover : "draw";
+    state.outcomeReason = defenderInCheck ? "checkmate" : state.result === "draw" ? "stalemate" : "no-legal-moves";
+  }
+
+  return state;
+}
+
+function drawReasonFor(state: GameState): "insufficient-material" | "fifty-move" | null {
+  const variant = getVariant(state.variantKey);
+  if (variant.family === "western" && state.halfmoveClock >= 100) return "fifty-move";
+  if (!["classic", "chess960", "king-of-the-hill", "three-check"].includes(variant.key)) return null;
+
+  const pieces = state.board.flatMap((row) => row.map((cell) => cell.piece).filter(Boolean) as Piece[]);
+  const nonRoyal = pieces.filter((piece) => !isRoyal(piece));
+  if (!nonRoyal.length && variant.players.every((player) => pieces.some((piece) => piece.owner === player && isRoyal(piece)))) {
+    return "insufficient-material";
+  }
+
+  return null;
 }
 
 export function serializeSquare(square: Square) {
@@ -120,6 +524,157 @@ function cellAt(state: GameState, square: Square) {
 
 function isInside(state: GameState, square: Square) {
   return square.row >= 0 && square.col >= 0 && square.row < state.board.length && square.col < (state.board[0]?.length ?? 0);
+}
+
+function canOccupy(state: GameState, piece: Piece, to: Square) {
+  const target = cellAt(state, to);
+  return Boolean(target && (!target.piece || target.piece.owner !== piece.owner));
+}
+
+function inPalace(state: GameState, owner: PlayerColor, square: Square) {
+  if (!isInside(state, square) || square.col < 3 || square.col > 5) return false;
+  const topSide = ["black", "blue", "gote"].includes(owner);
+  return topSide ? square.row >= 0 && square.row <= 2 : square.row >= state.board.length - 3 && square.row < state.board.length;
+}
+
+function crossesXiangqiRiver(piece: Piece, to: Square) {
+  if (!["red", "black"].includes(piece.owner)) return false;
+  return piece.owner === "red" ? to.row < 5 : to.row > 4;
+}
+
+function castlingMoves(state: GameState, from: Square, king: Piece) {
+  const variant = getVariant(state.variantKey);
+  if (!variant.supportsCastling || from.col !== 4 || hasMovedFrom(state, from) || isInCheck(state, king.owner)) return [];
+
+  const row = from.row;
+  return [
+    { rookFrom: { row, col: 7 }, through: [{ row, col: 5 }, { row, col: 6 }], to: { row, col: 6 } },
+    { rookFrom: { row, col: 0 }, through: [{ row, col: 3 }, { row, col: 2 }], to: { row, col: 2 }, empty: [{ row, col: 1 }] }
+  ].flatMap(({ rookFrom, through, to, empty = [] }) => {
+    const rook = cellAt(state, rookFrom)?.piece;
+    if (!rook || rook.owner !== king.owner || rook.code !== "r" || hasMovedFrom(state, rookFrom)) return [];
+    if ([...through, ...empty].some((square) => cellAt(state, square)?.piece)) return [];
+    const enemies = getVariant(state.variantKey).players.filter((player) => player !== king.owner);
+    if (through.some((square) => enemies.some((enemy) => isSquareAttacked(state, square, enemy)))) return [];
+    return [{ from, to }];
+  });
+}
+
+function hasMovedFrom(state: GameState, square: Square) {
+  return state.moves.some((move) => sameSquare(move.from, square));
+}
+
+function shouldPromote(variant: VariantDefinition, piece: Piece, to: Square, requested?: boolean) {
+  if (!variant.supportsPromotion || piece.code !== "p") return false;
+  if (variant.family === "western") {
+    return to.row === 0 || to.row === variant.board.rows - 1;
+  }
+  return Boolean(requested);
+}
+
+function promotionCodeFor(variant: VariantDefinition, piece: Piece) {
+  if (variant.family === "western" && piece.code === "p") return "q";
+  if (variant.key === "makruk" && piece.code === "p") return "a";
+  return piece.code;
+}
+
+function moveCastlingRook(state: GameState, kingMove: Move) {
+  const row = kingMove.from.row;
+  const kingSide = kingMove.to.col > kingMove.from.col;
+  const rookFrom = { row, col: kingSide ? 7 : 0 };
+  const rookTo = { row, col: kingSide ? 5 : 3 };
+  const fromCell = cellAt(state, rookFrom);
+  const toCell = cellAt(state, rookTo);
+  if (!fromCell?.piece || !toCell) return;
+  toCell.piece = fromCell.piece;
+  fromCell.piece = null;
+}
+
+function wouldLeaveRoyalInCheck(state: GameState, move: Move, owner: PlayerColor) {
+  const next: GameState = structuredClone(state);
+  const fromCell = cellAt(next, move.from);
+  const toCell = cellAt(next, move.to);
+  if (!fromCell?.piece || !toCell) return true;
+  toCell.piece = { ...fromCell.piece, promoted: move.promotion || fromCell.piece.promoted };
+  fromCell.piece = null;
+  return isInCheck(next, owner);
+}
+
+function isInCheck(state: GameState, color: PlayerColor) {
+  const royal = findRoyal(state, color);
+  if (!royal) return false;
+  const attackers = getVariant(state.variantKey).players.filter((player) => player !== color);
+  return attackers.some((attacker) => isSquareAttacked(state, royal.square, attacker));
+}
+
+function isSquareAttacked(state: GameState, square: Square, byColor: PlayerColor) {
+  return state.board.some((row) =>
+    row.some((cell) => {
+      if (cell.piece?.owner !== byColor) return false;
+      return getPseudoLegalMoves(state, cell.square).some((move) => sameSquare(move.to, square));
+    })
+  );
+}
+
+function findRoyal(state: GameState, color: PlayerColor) {
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (cell.piece?.owner === color && isRoyal(cell.piece)) return cell;
+    }
+  }
+  return null;
+}
+
+function hasAnyLegalMove(state: GameState, color: PlayerColor) {
+  if (state.turn !== color) return false;
+  return state.board.some((row) => row.some((cell) => cell.piece?.owner === color && getLegalMoves(state, cell.square).length > 0));
+}
+
+function hasAnyCaptureMove(state: GameState, color: PlayerColor) {
+  return state.board.some((row) =>
+    row.some((cell) => cell.piece?.owner === color && getPseudoLegalMoves(state, cell.square).some((move) => isCaptureMove(state, move)))
+  );
+}
+
+function isCaptureMove(state: GameState, move: Move) {
+  const movingPiece = cellAt(state, move.from)?.piece;
+  const targetPiece = cellAt(state, move.to)?.piece;
+  return Boolean(movingPiece && targetPiece && targetPiece.owner !== movingPiece.owner);
+}
+
+function countPieces(state: GameState, owner: PlayerColor) {
+  return state.board.reduce(
+    (count, row) => count + row.filter((cell) => cell.piece?.owner === owner).length,
+    0
+  );
+}
+
+function isRoyal(piece: Piece) {
+  return piece.code === "k" || piece.code === "g";
+}
+
+function isCenterSquare(state: GameState, square: Square) {
+  const centerRows = state.board.length % 2 === 0 ? [state.board.length / 2 - 1, state.board.length / 2] : [Math.floor(state.board.length / 2)];
+  const width = state.board[0]?.length ?? 0;
+  const centerCols = width % 2 === 0 ? [width / 2 - 1, width / 2] : [Math.floor(width / 2)];
+  return centerRows.includes(square.row) && centerCols.includes(square.col);
+}
+
+function jungleRank(code: string) {
+  return ({ r: 1, c: 2, d: 3, w: 4, p: 5, t: 6, l: 7, e: 8 } as Record<string, number>)[code] ?? 0;
+}
+
+function isJungleOwnDen(owner: PlayerColor, square: Square) {
+  return owner === "white" ? square.row === 8 && square.col === 3 : owner === "black" && square.row === 0 && square.col === 3;
+}
+
+function isJungleOpponentDen(owner: PlayerColor, square: Square) {
+  return owner === "white" ? square.row === 0 && square.col === 3 : owner === "black" && square.row === 8 && square.col === 3;
+}
+
+function isJungleOwnTrap(owner: PlayerColor, square: Square) {
+  if (![2, 3, 4].includes(square.col)) return false;
+  return owner === "white" ? square.row >= 7 : owner === "black" && square.row <= 1;
 }
 
 function makePiece(token: string, owner: PlayerColor, row: number, col: number): Piece {
@@ -190,6 +745,11 @@ function orient(owner: PlayerColor, deltaRow: number) {
 function terrainAllows(state: GameState, piece: Piece, to: Square) {
   const target = cellAt(state, to);
   if (!target) return false;
+  if (state.variantKey === "jungle") {
+    if (isJungleOwnDen(piece.owner, to)) return false;
+    if (target.terrain === "river" && piece.code !== "r") return false;
+    return true;
+  }
   if (target.terrain === "river" && piece.code !== "r") return false;
   if (target.terrain === "den" && piece.owner === state.turn) return false;
   return true;

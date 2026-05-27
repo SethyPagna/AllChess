@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
+import { Crown, Menu } from "lucide-react";
 
-import { LocaleSwitcher } from "@/components/locale-switcher";
-import { ThemeProvider } from "@/components/theme-provider";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { AppMobileNavigation, AppSidebarNavigation } from "@/components/shell/app-navigation";
+import { LocaleSwitcher } from "@/components/shell/locale-switcher";
+import { createAppNavGroups } from "@/components/shell/navigation-config";
+import { NotificationCenter } from "@/components/shell/notification-center";
+import { ThemeProvider } from "@/components/shell/theme-provider";
+import { ThemeToggle } from "@/components/shell/theme-toggle";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { locales, normalizeLocale, rtlLocales, type LocaleCode } from "@/lib/i18n/locales";
 
@@ -35,58 +40,71 @@ export default async function LocaleLayout({
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
-  const nav = [
-    ["lobby", t("nav.lobby")],
-    ["variants", t("nav.variants")],
-    ["history", t("nav.history")],
-    ["settings", t("nav.settings")]
-  ] as const;
+  const navGroups = createAppNavGroups(t);
+  const profileHref = `/${locale}/profile/player`;
+  const loginHref = `/${locale}/login`;
 
   return (
     <html lang={locale} dir={rtlLocales.has(locale) ? "rtl" : "ltr"} suppressHydrationWarning>
       <body>
         <ThemeProvider>
-          <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
-            <header className="glass sticky top-3 z-30 mb-6 flex flex-wrap items-center gap-3 rounded-lg px-4 py-3">
-              <Link href={`/${locale}`} className="focus-ring mr-auto flex items-center gap-3 rounded-md">
-                <span className="grid h-10 w-10 place-items-center rounded-md bg-[var(--accent)] font-black text-black">
-                  AC
+          <div className="app-shell">
+            <aside className="app-sidebar" aria-label="Primary navigation">
+              <Link href={`/${locale}`} className="app-brand focus-ring">
+                <span className="app-brand-mark">
+                  <Crown size={22} strokeWidth={2.7} />
                 </span>
                 <span>
-                  <span className="block text-lg font-bold leading-tight">{t("app.name")}</span>
-                  <span className="block text-xs text-[var(--muted)]">{t("app.tagline")}</span>
+                  <span className="app-brand-name">{t("app.name")}</span>
                 </span>
               </Link>
-              <nav className="flex flex-wrap items-center gap-1 text-sm text-[var(--muted)]">
-                {nav.map(([href, label]) => (
-                  <Link
-                    key={href}
-                    href={`/${locale}/${href}`}
-                    className="focus-ring rounded-md px-3 py-2 transition hover:bg-[var(--surface-strong)] hover:text-[var(--foreground)]"
-                  >
-                    {label}
-                  </Link>
-                ))}
-              </nav>
-              <ThemeToggle
-                labels={{
-                  light: t("settings.light"),
-                  dark: t("settings.dark"),
-                  system: t("settings.system")
-                }}
-              />
-              <Link
-                href={`/${locale}/login`}
-                className="focus-ring rounded-md bg-[var(--foreground)] px-4 py-2 text-sm font-semibold text-[var(--background)]"
-              >
-                {t("nav.login")}
-              </Link>
-            </header>
-            <main className="flex-1">{children}</main>
-            <footer className="mt-10 space-y-3 border-t border-[var(--border)] py-6 text-sm text-[var(--muted)]">
-              <LocaleSwitcher active={locale as LocaleCode} />
-              <p>{t("app.description")}</p>
-            </footer>
+              <AppSidebarNavigation account={{ href: profileHref, icon: "user", label: t("nav.profileHistory") }} auth={{ href: loginHref, icon: "login", label: t("nav.login") }} groups={navGroups} locale={locale} />
+              <div className="app-responsive-tools" aria-label="Quick settings">
+                <ThemeToggle
+                  labels={{
+                    light: t("settings.light"),
+                    dark: t("settings.dark"),
+                    system: t("settings.system")
+                  }}
+                />
+                <Suspense fallback={<span className="action-secondary grid h-10 w-10 place-items-center text-sm">...</span>}>
+                  <LocaleSwitcher active={locale as LocaleCode} />
+                </Suspense>
+                <NotificationCenter />
+              </div>
+            </aside>
+            <div className="app-main">
+              <header className="app-mobile-header">
+                <Link href={`/${locale}`} className="app-mobile-brand focus-ring">
+                  <span className="app-brand-mark">
+                    <Crown size={20} strokeWidth={2.7} />
+                  </span>
+                  <span>{t("app.name")}</span>
+                </Link>
+                <div className="app-mobile-tools" aria-label="Quick settings">
+                  <ThemeToggle
+                    labels={{
+                      light: t("settings.light"),
+                      dark: t("settings.dark"),
+                      system: t("settings.system")
+                    }}
+                  />
+                  <Suspense fallback={<span className="action-secondary grid h-10 w-10 place-items-center text-sm">...</span>}>
+                    <LocaleSwitcher active={locale as LocaleCode} />
+                  </Suspense>
+                  <NotificationCenter />
+                </div>
+                <details className="app-menu">
+                  <summary className="focus-ring grid h-10 w-10 cursor-pointer list-none place-items-center rounded-md border border-[var(--border)]">
+                    <Menu size={18} />
+                  </summary>
+                  <div className="app-menu-panel">
+                    <AppMobileNavigation account={{ href: profileHref, icon: "user", label: t("nav.profileHistory") }} auth={{ href: loginHref, icon: "login", label: t("nav.login") }} groups={navGroups} locale={locale} />
+                  </div>
+                </details>
+              </header>
+              <main className="app-content">{children}</main>
+            </div>
           </div>
         </ThemeProvider>
       </body>

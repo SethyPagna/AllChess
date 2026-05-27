@@ -1,0 +1,19 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: infra/docker/Dockerfile
+    container_name: allchess-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DEPLOYMENT_TARGET: self-hosted
+      DATABASE_DRIVER: d1
+      OBJECT_STORAGE_DRIVER: r2
+      CLOUDFLARE_ACCOUNT_ID: ${CLOUDFLARE_ACCOUNT_ID}
+      CLOUDFLARE_D1_DATABASE_ID: ${CLOUDFLARE_D1_DATABASE_ID}
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
+      R2_PUBLIC_BASE_URL: ${R2_PUBLIC_BASE_URL}
+    ports:
+      - "3000:3000"

@@ -1,53 +1,36 @@
-import Link from "next/link";
-
+import { HistoryEmptyState } from "@/components/history/history-empty-state";
+import { HistoryFilterBar } from "@/components/history/history-filter-bar";
+import { RecentHistoryList } from "@/components/history/recent-history-list";
+import { InfoHint } from "@/components/ui/info-hint";
+import { getRuntimeRecentHistory, type HistoryResultFilter } from "@/lib/history/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 
-const demoRecords = [
-  { id: "classic", white: "Sethy", black: "Codex", result: "1-0", moves: 42 },
-  { id: "xiangqi", white: "Red Lotus", black: "River Guard", result: "0-1", moves: 67 },
-  { id: "shogi", white: "Sente", black: "Gote", result: "draw", moves: 112 }
-];
+export const dynamic = "force-dynamic";
 
-export default async function HistoryPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function HistoryPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams?: Promise<{ q?: string; result?: string }>;
+}) {
   const { locale: rawLocale } = await params;
+  const query = await searchParams;
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
+  const history = await getRuntimeRecentHistory(20, { query: query?.q, result: query?.result as HistoryResultFilter | undefined });
+  const hasSavedRows = history.totalResults > 0;
+  const hasVisibleResults = history.results.length > 0;
 
   return (
-    <section className="grid gap-6">
-      <div>
-        <h1 className="text-4xl font-black">{t("history.title")}</h1>
-        <p className="mt-2 text-[var(--muted)]">{t("history.subtitle")}</p>
+    <section className="records-page grid gap-4">
+      <div className="compact-page-heading">
+        <h1 className="text-3xl font-black">{t("history.title")}</h1>
+        <InfoHint text={t("history.subtitle")} />
       </div>
-      <div className="panel overflow-hidden">
-        <table className="w-full border-collapse text-left text-sm">
-          <thead className="bg-[var(--surface-strong)] text-[var(--muted)]">
-            <tr>
-              <th className="p-4">Game</th>
-              <th className="p-4">Players</th>
-              <th className="p-4">Result</th>
-              <th className="p-4">Moves</th>
-              <th className="p-4">Replay</th>
-            </tr>
-          </thead>
-          <tbody>
-            {demoRecords.map((record) => (
-              <tr key={record.id} className="border-t border-[var(--border)]">
-                <td className="p-4 font-bold">{record.id}</td>
-                <td className="p-4">{record.white} vs {record.black}</td>
-                <td className="p-4">{record.result}</td>
-                <td className="p-4">{record.moves}</td>
-                <td className="p-4">
-                  <Link className="font-bold text-[var(--accent-strong)]" href={`/${locale}/play/${record.id}`}>
-                    {t("chess.replay")}
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <HistoryFilterBar hasSavedRows={hasSavedRows} history={history} />
+      {hasVisibleResults ? <RecentHistoryList history={history} locale={locale} /> : <HistoryEmptyState hasSavedRows={hasSavedRows} locale={locale} />}
     </section>
   );
 }

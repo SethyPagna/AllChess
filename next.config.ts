@@ -1,9 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
+  output: "standalone",
   typedRoutes: true,
-  experimental: {
-    reactCompiler: true
+  turbopack: {
+    root: __dirname
   }
 };
 

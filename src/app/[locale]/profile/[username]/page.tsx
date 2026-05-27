@@ -1,5 +1,13 @@
+import { ProfileEmptyState } from "@/components/profile/profile-empty-state";
+import { ProfileHero } from "@/components/profile/profile-hero";
+import { ProfileResults } from "@/components/profile/profile-results";
+import { ProfileStats } from "@/components/profile/profile-stats";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { getRuntimeProfileHistory } from "@/lib/profile/runtime";
+import { summarizeProfileHistory } from "@/lib/profile/summary";
+
+export const dynamic = "force-dynamic";
 
 export default async function ProfilePage({
   params
@@ -9,26 +17,15 @@ export default async function ProfilePage({
   const { locale: rawLocale, username } = await params;
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
+  const displayName = username === "player" ? "Guest player" : username;
+  const history = await getRuntimeProfileHistory(username, 5);
+  const summary = summarizeProfileHistory(history);
 
   return (
-    <section className="mx-auto grid max-w-4xl gap-6">
-      <div className="panel flex flex-wrap items-center gap-5 p-5">
-        <div className="grid h-20 w-20 place-items-center rounded-lg bg-[var(--accent)] text-2xl font-black text-black">
-          {username.slice(0, 2).toUpperCase()}
-        </div>
-        <div>
-          <h1 className="text-4xl font-black">@{username}</h1>
-          <p className="text-[var(--muted)]">{t("chess.rating")}: 1200</p>
-        </div>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-3">
-        {["classic", "xiangqi", "shogi"].map((variant) => (
-          <div key={variant} className="panel p-4">
-            <p className="text-sm text-[var(--muted)]">{variant}</p>
-            <p className="text-3xl font-black">12-4-2</p>
-          </div>
-        ))}
-      </div>
+    <section className="account-page mx-auto grid max-w-5xl gap-5">
+      <ProfileHero displayName={displayName} history={history} locale={locale} summary={summary} />
+      <ProfileStats ratingLabel={t("chess.rating")} summary={summary} />
+      {history.results.length > 0 ? <ProfileResults history={history} locale={locale} /> : <ProfileEmptyState locale={locale} />}
     </section>
   );
 }
