@@ -1,7 +1,7 @@
 param(
   [string]$Source = "",
   [string]$Database = "allchess",
-  [string]$Config = "wrangler.jsonc",
+  [string]$Config = "infra/cloudflare/wrangler.jsonc",
   [switch]$Remote,
   [switch]$Local
 )

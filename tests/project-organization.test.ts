@@ -6,6 +6,20 @@ import { describe, expect, test } from "vitest";
 const repoRoot = process.cwd();
 const ignoredDirectories = new Set([".git", ".next", ".open-next", ".vercel", ".wrangler", "node_modules"]);
 const ignoredFilePrefixes = ["public/engines/"];
+const allowedRootFiles = new Set([
+  ".gitignore",
+  ".vercelignore",
+  "README.md",
+  "eslint.config.ts",
+  "next-env.d.ts",
+  "next.config.ts",
+  "open-next.config.ts",
+  "package-lock.json",
+  "package.json",
+  "postcss.config.ts",
+  "tsconfig.json",
+  "vercel.json"
+]);
 
 function walkFiles(directory: string): string[] {
   const files: string[] = [];
@@ -29,6 +43,16 @@ function toRepoPath(path: string): string {
 }
 
 describe("project organization", () => {
+  test("keeps root files limited to package and root-discovered tool files", () => {
+    const rootFiles = readdirSync(repoRoot, { withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name)
+      .filter((name) => !name.endsWith(".tsbuildinfo"))
+      .sort();
+
+    expect(rootFiles).toEqual([...allowedRootFiles].sort());
+  });
+
   test("keeps first-party source and config in TypeScript instead of JavaScript", () => {
     const javaScriptFiles = walkFiles(repoRoot)
       .map(toRepoPath)

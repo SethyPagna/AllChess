@@ -2,7 +2,7 @@ import { writeFileSync } from "node:fs";
 
 const DEFAULT_SOURCE = process.env.CATALOG_SOURCE_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 const DEFAULT_DATABASE = "allchess";
-const DEFAULT_CONFIG = "wrangler.jsonc";
+const DEFAULT_CONFIG = "infra/cloudflare/wrangler.jsonc";
 const RULES_VERSION = "catalog-v1";
 
 type CatalogSourceLink = {

@@ -59,7 +59,7 @@ Initial map from repository inspection:
 - Shared UI components live in domain folders under `src/components`, including board, shell, catalog, play, auth, analysis, and small shared UI primitives.
 - Domain libraries live in `src/lib`, including variants, catalog, bots, bot training, stockfish, clocks, game review, game outcome, auth, Cloudflare, realtime, storage, i18n, and validation.
 - Tests live in `tests` with unit, component, persistence, platform, bot, i18n, performance, and Playwright coverage.
-- Deployment and runtime configuration live in `wrangler.jsonc`, `open-next.config.ts`, `vercel.json`, Docker files, Cloudflare docs, and package scripts.
+- Deployment and runtime configuration live in `infra/cloudflare/wrangler.jsonc`, `open-next.config.ts`, `vercel.json`, Docker files, Cloudflare docs, and package scripts.
 
 ## High-Risk Edit Areas
 
