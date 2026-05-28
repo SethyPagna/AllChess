@@ -10,7 +10,7 @@ The active app is a Next.js 16 application deployed as `allchess`, with Cloudfla
 - React: `^19.2.6`
 - TypeScript: `^6.0.3`
 - ESLint: `^10.4.0`
-- Lucide React: `^1.16.0`
+- Lucide React: `^1.17.0`
 - Vitest: `^4.1.7`
 - Playwright: `^1.60.0`
 - Tailwind CSS: `^4.3.0`

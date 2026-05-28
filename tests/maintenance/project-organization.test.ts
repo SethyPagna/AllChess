@@ -136,6 +136,19 @@ describe("project organization", () => {
     expect(packageJson.dependencies).not.toHaveProperty("xiangqiops");
   });
 
+  test("keeps Vercel CLI out of the local dependency graph", () => {
+    const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as {
+      dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
+      scripts: Record<string, string>;
+    };
+
+    expect(packageJson.dependencies).not.toHaveProperty("vercel");
+    expect(packageJson.devDependencies).not.toHaveProperty("vercel");
+    expect(packageJson.scripts["deploy:preview"]).toContain("npx --yes vercel@latest");
+    expect(packageJson.scripts["deploy:prod"]).toContain("npx --yes vercel@latest");
+  });
+
   test("keeps infrastructure files grouped under infra", () => {
     expect(existsSync(join(repoRoot, "infra", "docker", "Dockerfile"))).toBe(true);
     expect(existsSync(join(repoRoot, "infra", "cloudflare", "d1", "migrations"))).toBe(true);
