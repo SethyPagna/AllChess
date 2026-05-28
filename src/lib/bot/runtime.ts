@@ -418,8 +418,16 @@ export function cancelBotMove(requestId: string) {
   if (request) request.cancelled = true;
 }
 
-export function allLegalMoves(state: GameState) {
-  return state.board.flatMap((row) => row.flatMap((cell) => getLegalMoves(state, cell.square)));
+export function allLegalMoves(state: GameState): Move[] {
+  const moves: Move[] = [];
+
+  for (const row of state.board) {
+    for (const cell of row) {
+      moves.push(...getLegalMoves(state, cell.square));
+    }
+  }
+
+  return moves;
 }
 
 function createSearchBudget(startedAt: number, searchTimeMs: number): SearchBudget {
