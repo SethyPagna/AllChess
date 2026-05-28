@@ -78,7 +78,7 @@ Initial map from repository inspection:
 | --- | --- | --- | --- | --- |
 | 2026-05-16 | Planning | `git status --short --branch` | Pass | Branch `main` was clean and ahead of `origin/main` by 1 commit before planning docs were added |
 | 2026-05-28 | Repository organization | `npm run verify` | Pass | Lint, typecheck, unit tests, and production build passed after root config and TypeScript script cleanup |
-| 2026-05-28 | Documentation freshness | `npm test -- tests/markdown-docs.test.ts` | Pass | Markdown docs are checked for moved paths and current package stack versions |
+| 2026-05-28 | Documentation freshness | `npm test -- tests/maintenance/markdown-docs.test.ts` | Pass | Markdown docs are checked for moved paths and current package stack versions |
 
 ## Blockers
 

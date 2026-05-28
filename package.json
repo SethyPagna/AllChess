@@ -12,7 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --config config/test/vitest.config.ts",
     "test:watch": "vitest --config config/test/vitest.config.ts",
-    "test:i18n": "vitest run --config config/test/vitest.config.ts tests/i18n.test.ts",
+    "test:i18n": "vitest run --config config/test/vitest.config.ts tests/app/i18n.test.ts",
     "stop:local": "node scripts/maintenance/stop-local-node.ts",
     "clean:local": "node scripts/maintenance/clean-local-artifacts.ts",
     "clean:storage": "node scripts/maintenance/clean-local-artifacts.ts --git-gc",
