@@ -213,11 +213,15 @@ function verificationFromRow(row: CatalogEntryRow): PlayableGameVerification {
 }
 
 function linesFor(sections: RuleSectionRow[], sectionType: RuleSectionRow["section_type"]) {
-  return sections
-    .filter((section) => section.section_type === sectionType)
-    .flatMap((section) => section.body.split("\n"))
-    .map((line) => line.trim())
-    .filter(Boolean);
+  const lines: string[] = [];
+  for (const section of sections) {
+    if (section.section_type !== sectionType) continue;
+    for (const rawLine of section.body.split("\n")) {
+      const line = rawLine.trim();
+      if (line) lines.push(line);
+    }
+  }
+  return lines;
 }
 
 function groupRows<T>(rows: T[], keyFor: (row: T) => string) {
