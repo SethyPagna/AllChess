@@ -157,11 +157,17 @@ function xiangqiSoldierMoves(state: GameState, piece: Piece, from: Square) {
     ? from.row >= Math.floor(state.board.length / 2)
     : from.row < Math.floor(state.board.length / 2);
   const directions: Array<[number, number]> = crossedRiver ? [[forward, 0], [0, -1], [0, 1]] : [[forward, 0]];
-  return directions.flatMap(([dr, dc]) => {
+  const moves: Move[] = [];
+
+  for (const [dr, dc] of directions) {
     const to = { row: from.row + dr, col: from.col + dc };
     const target = cellAt(state, to);
-    return target && (!target.piece || target.piece.owner !== piece.owner) ? [{ from, to }] : [];
-  });
+    if (target && (!target.piece || target.piece.owner !== piece.owner)) {
+      moves.push({ from, to });
+    }
+  }
+
+  return moves;
 }
 
 function eastAsianPieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
@@ -205,10 +211,16 @@ function eastAsianPieceMoves(state: GameState, piece: Piece, from: Square): Move
 }
 
 function steppingMoves(state: GameState, piece: Piece, from: Square, directions: Array<[number, number]>) {
-  return directions.flatMap(([dr, dc]) => {
+  const moves: Move[] = [];
+
+  for (const [dr, dc] of directions) {
     const to = { row: from.row + dr, col: from.col + dc };
-    return canOccupy(state, piece, to) ? [{ from, to }] : [];
-  });
+    if (canOccupy(state, piece, to)) {
+      moves.push({ from, to });
+    }
+  }
+
+  return moves;
 }
 
 function rayMoves(state: GameState, piece: Piece, from: Square, directions: Array<[number, number]>) {
@@ -267,19 +279,33 @@ function horseMoves(state: GameState, piece: Piece, from: Square) {
     { to: { row: from.row - 1, col: from.col + 2 }, leg: { row: from.row, col: from.col + 1 } },
     { to: { row: from.row + 1, col: from.col + 2 }, leg: { row: from.row, col: from.col + 1 } }
   ];
-  return candidates.flatMap(({ to, leg }) => (!cellAt(state, leg)?.piece && canOccupy(state, piece, to) ? [{ from, to }] : []));
+  const moves: Move[] = [];
+
+  for (const { to, leg } of candidates) {
+    if (!cellAt(state, leg)?.piece && canOccupy(state, piece, to)) {
+      moves.push({ from, to });
+    }
+  }
+
+  return moves;
 }
 
 function elephantMoves(state: GameState, piece: Piece, from: Square) {
-  return [
+  const candidates = [
     { to: { row: from.row - 2, col: from.col - 2 }, eye: { row: from.row - 1, col: from.col - 1 } },
     { to: { row: from.row - 2, col: from.col + 2 }, eye: { row: from.row - 1, col: from.col + 1 } },
     { to: { row: from.row + 2, col: from.col - 2 }, eye: { row: from.row + 1, col: from.col - 1 } },
     { to: { row: from.row + 2, col: from.col + 2 }, eye: { row: from.row + 1, col: from.col + 1 } }
-  ].flatMap(({ to, eye }) => {
-    if (cellAt(state, eye)?.piece || !canOccupy(state, piece, to) || crossesXiangqiRiver(piece, to)) return [];
-    return [{ from, to }];
-  });
+  ];
+  const moves: Move[] = [];
+
+  for (const { to, eye } of candidates) {
+    if (!cellAt(state, eye)?.piece && canOccupy(state, piece, to) && !crossesXiangqiRiver(piece, to)) {
+      moves.push({ from, to });
+    }
+  }
+
+  return moves;
 }
 
 function flyingGeneralMoves(state: GameState, piece: Piece, from: Square) {
@@ -315,23 +341,34 @@ function junglePieceMoves(state: GameState, piece: Piece, from: Square): Move[] 
 }
 
 function jungleJumpMoves(state: GameState, piece: Piece, from: Square): Move[] {
-  return [
+  const moves: Move[] = [];
+  const directions: Array<[number, number]> = [
     [-1, 0],
     [1, 0],
     [0, -1],
     [0, 1]
-  ].flatMap(([dr, dc]) => {
+  ];
+
+  for (const [dr, dc] of directions) {
     const first = { row: from.row + dr, col: from.col + dc };
-    if (!isInside(state, first) || cellAt(state, first)?.terrain !== "river") return [];
+    if (!isInside(state, first) || cellAt(state, first)?.terrain !== "river") continue;
 
     let to = first;
+    let blockedByRat = false;
     while (isInside(state, to) && cellAt(state, to)?.terrain === "river") {
-      if (cellAt(state, to)?.piece?.code === "r") return [];
+      if (cellAt(state, to)?.piece?.code === "r") {
+        blockedByRat = true;
+        break;
+      }
       to = { row: to.row + dr, col: to.col + dc };
     }
 
-    return canJungleMoveTo(state, piece, from, to) ? [{ from, to }] : [];
-  });
+    if (!blockedByRat && canJungleMoveTo(state, piece, from, to)) {
+      moves.push({ from, to });
+    }
+  }
+
+  return moves;
 }
 
 function canJungleMoveTo(state: GameState, piece: Piece, from: Square, to: Square) {
@@ -560,17 +597,21 @@ function castlingMoves(state: GameState, from: Square, king: Piece) {
   if (!variant.supportsCastling || from.col !== 4 || hasMovedFrom(state, from) || isInCheck(state, king.owner)) return [];
 
   const row = from.row;
-  return [
+  const candidates = [
     { rookFrom: { row, col: 7 }, through: [{ row, col: 5 }, { row, col: 6 }], to: { row, col: 6 } },
     { rookFrom: { row, col: 0 }, through: [{ row, col: 3 }, { row, col: 2 }], to: { row, col: 2 }, empty: [{ row, col: 1 }] }
-  ].flatMap(({ rookFrom, through, to, empty = [] }) => {
+  ];
+  const moves: Move[] = [];
+
+  for (const { rookFrom, through, to, empty = [] } of candidates) {
     const rook = cellAt(state, rookFrom)?.piece;
-    if (!rook || rook.owner !== king.owner || rook.code !== "r" || hasMovedFrom(state, rookFrom)) return [];
-    if ([...through, ...empty].some((square) => cellAt(state, square)?.piece)) return [];
-    const enemies = getVariant(state.variantKey).players.filter((player) => player !== king.owner);
-    if (through.some((square) => enemies.some((enemy) => isSquareAttacked(state, square, enemy)))) return [];
-    return [{ from, to }];
-  });
+    if (!rook || rook.owner !== king.owner || rook.code !== "r" || hasMovedFrom(state, rookFrom)) continue;
+    if (through.some((square) => cellAt(state, square)?.piece) || empty.some((square) => cellAt(state, square)?.piece)) continue;
+    if (through.some((square) => variant.players.some((player) => player !== king.owner && isSquareAttacked(state, square, player)))) continue;
+    moves.push({ from, to });
+  }
+
+  return moves;
 }
 
 function hasMovedFrom(state: GameState, square: Square) {
