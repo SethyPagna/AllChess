@@ -15,6 +15,7 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 - Moved global CSS into `src/styles/`.
 - Grouped architecture, data, and deployment documentation under dedicated `docs/` topic folders.
 - Grouped tests by concern under `tests/api/`, `tests/app/`, `tests/domain/`, `tests/platform/`, `tests/scripts/`, and `tests/maintenance/`.
+- Removed the unused flat `src/lib/utils.ts` helper and its unused direct dependencies.
 - Added organization tests for root files, TypeScript scripts, infrastructure folders, and Markdown freshness.
 - Removed the obsolete tracked Python Jungle Chess reference archive from the active application tree.
 

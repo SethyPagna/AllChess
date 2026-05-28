@@ -132,4 +132,13 @@ describe("project organization", () => {
 
     expect(topLevelTestFiles).toEqual([]);
   });
+
+  test("keeps shared library code grouped by domain folders", () => {
+    const topLevelLibFiles = readdirSync(join(repoRoot, "src", "lib"), { withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name)
+      .sort();
+
+    expect(topLevelLibFiles).toEqual([]);
+  });
 });
