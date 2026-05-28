@@ -39,6 +39,7 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 - Added a targeted router override for the patched `path-to-regexp` 8.x line used by the OpenNext/Express toolchain.
 - Added ESLint compatibility shims for the Next.js lint presets under ESLint 10.
 - Added the TypeScript 6 deprecation acknowledgement required by the shared app tsconfig.
+- Extended maintenance tests to guard documented package versions and the no-local-Vercel-CLI policy.
 
 ---
 
