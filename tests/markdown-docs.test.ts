@@ -16,7 +16,9 @@ const stalePatterns = [
   /src\/lib\/game-review\.ts/,
   /src\/lib\/game-outcome\.ts/,
   /src\/lib\/stockfish-engine\.ts/,
-  /archive\/reference\/python-jungle-chess/
+  /archive\/reference\/python-jungle-chess/,
+  /CHESS DATA/,
+  /src\/app\/globals\.css/
 ];
 
 function walkMarkdownFiles(directory: string): string[] {

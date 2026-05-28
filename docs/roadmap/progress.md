@@ -70,7 +70,7 @@ Initial map from repository inspection:
 - `src/lib/bot/*`: bot strength, generated knowledge, Stockfish bridge, and runtime asset behavior.
 - `src/lib/auth/*`: session and identity behavior; changes must be security-reviewed.
 - `infra/cloudflare/d1/migrations/*`: production data integrity; changes require explicit migration verification.
-- `src/app/globals.css`: broad UI impact; changes require responsive and visual review.
+- `src/styles/globals.css`: broad UI impact; changes require responsive and visual review.
 
 ## Verification Log
 

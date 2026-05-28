@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { closeSync, existsSync, openSync, readFileSync, readSync, readdirSync, statSync, writeFileSync } from "node:fs";
-import { dirname, extname, join, relative, sep } from "node:path";
+import { dirname, extname, isAbsolute, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Chess } from "chess.js";
 
@@ -61,7 +61,7 @@ type TextSample = {
 };
 
 const repoRoot = dirname(fileURLToPath(new URL("../../package.json", import.meta.url)));
-const defaultDataRoot = join(repoRoot, "CHESS DATA");
+const defaultDataRoot = join(repoRoot, "data", "local", "chess-data");
 const defaultOutput = join(repoRoot, "src", "data", "bot-knowledge.generated.json");
 
 const options: ScriptOptions = parseArgs(process.argv.slice(2));
@@ -149,7 +149,7 @@ const scannedRecords = manifests.reduce((total, manifest) => total + Number(mani
 const output = {
   version: `allchess-local-knowledge-${runGeneratedAt.slice(0, 10)}`,
   generatedAt: runGeneratedAt,
-  sourceRoot: "CHESS DATA",
+  sourceRoot: describeSourceRoot(dataRoot),
   summary: {
     filesScanned: manifests.length,
     toolsDiscovered: toolManifests.length,
@@ -166,6 +166,7 @@ const output = {
       id: `training-${runGeneratedAt.slice(0, 10)}`,
       mode: "two-track",
       generatedAt: runGeneratedAt,
+      sourceRoot: describeSourceRoot(dataRoot),
       scannedRecords,
       generatedPositions,
       runtimeBudgetMs,
@@ -745,4 +746,13 @@ function stableId(value: string): string {
 
 function normalizePath(path: string): string {
   return path.split(sep).join("/");
+}
+
+function describeSourceRoot(path: string): string {
+  if (!isAbsolute(path)) {
+    return normalizePath(path);
+  }
+
+  const relativePath = normalizePath(relative(repoRoot, path));
+  return relativePath.startsWith("..") ? "external-data-root" : relativePath;
 }

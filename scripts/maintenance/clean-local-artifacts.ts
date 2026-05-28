@@ -13,6 +13,7 @@ const fixedTargets = [
   ".wrangler",
   "test-results",
   "playwright-report",
+  "public/engines",
   "tsconfig.tsbuildinfo",
   "supabase",
 ];
