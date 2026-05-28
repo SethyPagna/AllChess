@@ -22,6 +22,7 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 - Replaced remaining nested bot scoring and variant piece-count reducers with direct board scans.
 - Replaced variant attack, legal-move, and capture-existence nested board scans with direct early-return loops.
 - Removed board-grid render-time `flatMap` allocation while preserving square-level keys.
+- Replaced bot passed-pawn blocker nested board scans with a direct early-return helper.
 - Updated the Cloudflare Workers type package and the transitive `qs` audit patch.
 - Removed unused direct variant-engine packages from the install graph, including the `xiangqiops` chain that pulled old browser tooling into production audit results.
 - Added organization tests for root files, TypeScript scripts, infrastructure folders, and Markdown freshness.

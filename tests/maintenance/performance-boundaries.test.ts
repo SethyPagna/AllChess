@@ -61,6 +61,12 @@ describe("performance boundaries", () => {
     expect(variantEngineSource).not.toMatch(/state\.board\.reduce[\s\S]*?row\.filter/);
   });
 
+  test("bot passed-pawn scoring scans blockers without nested board some allocation", () => {
+    const botRuntimeSource = readFileSync(join(repoRoot, "src", "lib", "bot", "runtime.ts"), "utf8");
+
+    expect(botRuntimeSource).not.toMatch(/function passedPawnScore[\s\S]*?state\.board\.some/);
+  });
+
   test("variant attack and legal-move checks scan the board without nested some allocation", () => {
     const variantEngineSource = readFileSync(join(repoRoot, "src", "lib", "variants", "engine.ts"), "utf8");
 
