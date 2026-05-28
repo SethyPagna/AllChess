@@ -54,7 +54,7 @@ Record decisions that affect architecture, workflow, product behavior, or releas
 
 - Root is smaller without breaking Next.js, npm, TypeScript, Vercel, or PostCSS discovery.
 - ESLint, Vitest, Playwright, Wrangler, Docker, and env examples live in named folders.
-- `tests/project-organization.test.ts` and `tests/markdown-docs.test.ts` guard the structure against drift.
+- `tests/maintenance/project-organization.test.ts` and `tests/maintenance/markdown-docs.test.ts` guard the structure against drift.
 
 ---
 
@@ -71,7 +71,7 @@ Record decisions that affect architecture, workflow, product behavior, or releas
 **Consequences:**
 
 - Production build remains compatible with the current Next toolchain.
-- `tests/project-organization.test.ts` allows only `next.config.mjs` as first-party JavaScript.
+- `tests/maintenance/project-organization.test.ts` allows only `next.config.mjs` as first-party JavaScript.
 - Future Next config changes should be verified with `npm run build`.
 
 ---
@@ -90,7 +90,7 @@ Record decisions that affect architecture, workflow, product behavior, or releas
 
 - Documentation categories are easier to scan and keep current.
 - New long-form Markdown should join the matching topic folder instead of the top-level docs directory.
-- `tests/markdown-docs.test.ts` guards the docs folder shape.
+- `tests/maintenance/markdown-docs.test.ts` guards the docs folder shape.
 
 ---
 

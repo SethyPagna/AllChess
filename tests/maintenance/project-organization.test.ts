@@ -123,4 +123,13 @@ describe("project organization", () => {
     expect(existsSync(join(repoRoot, "infra", "docker", "Dockerfile"))).toBe(true);
     expect(existsSync(join(repoRoot, "infra", "cloudflare", "d1", "migrations"))).toBe(true);
   });
+
+  test("keeps test files grouped by concern instead of flat at the tests root", () => {
+    const topLevelTestFiles = readdirSync(join(repoRoot, "tests"), { withFileTypes: true })
+      .filter((entry) => entry.isFile())
+      .map((entry) => entry.name)
+      .filter((name) => /\.(?:test|spec)\.(?:ts|tsx)$/.test(name));
+
+    expect(topLevelTestFiles).toEqual([]);
+  });
 });
