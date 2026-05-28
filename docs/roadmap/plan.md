@@ -6,7 +6,7 @@
 
 **Architecture Direction:** Keep the active app as a Next.js 16, TypeScript-first, Cloudflare-first system. Preserve Cloudflare D1, R2, Durable Objects, and OpenNext as the deployment spine while tightening domain boundaries around rules, games, rooms, bots, analysis, auth, catalog, and UI workflows.
 
-**Tech Stack:** Next.js 16, React 19, TypeScript, Vitest, Playwright, Cloudflare Workers, D1, R2, Durable Objects, Stockfish, chess.js, chessops, shogiops, xiangqiops, makruk-js, Tailwind CSS.
+**Tech Stack:** Next.js 16, React 19, TypeScript, Vitest, Playwright, Cloudflare Workers, D1, R2, Durable Objects, Stockfish, chess.js for offline training, first-party variant rules, and Tailwind CSS.
 
 **Operating Rule:** Each phase must leave the repository healthier than it found it. Every phase ends with documentation updates, verification, and a focused commit.
 

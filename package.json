@@ -36,16 +36,12 @@
     "db:catalog:sync:remote": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/data/sync-catalog-d1.ps1 -Remote"
   },
   "dependencies": {
-    "@kaisukez/makruk-js": "^4.0.2",
     "chess.js": "^1.4.0",
-    "chessops": "^0.15.0",
     "lucide-react": "^0.561.0",
     "next": "^16.2.6",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "shogiops": "^0.21.0",
     "stockfish": "^18.0.7",
-    "xiangqiops": "^1.0.10",
     "zod": "^4.2.1"
   },
   "devDependencies": {
