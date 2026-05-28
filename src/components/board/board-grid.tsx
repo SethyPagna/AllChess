@@ -22,7 +22,7 @@ type BoardGridProps = {
 export function BoardGrid({ cols, files, legalTargets, onChoose, orientedRows, rows, selected, suggestedMove, variantKey }: BoardGridProps) {
   return (
     <div className="board-grid overflow-hidden rounded-lg border border-[var(--border)] shadow-2xl" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }} aria-label="Game board">
-      {orientedRows.flatMap((row, visualRow) =>
+      {orientedRows.map((row, visualRow) =>
         row.map((cell, visualCol) => {
           const isSelected = selected && sameSquare(selected, cell.square);
           const isLegal = legalTargets.has(serializeSquare(cell.square));

@@ -16,6 +16,12 @@ describe("performance boundaries", () => {
     expect(configSource).not.toContain("bot-knowledge.generated.json");
   });
 
+  test("board grid renders cells without flatMap allocation", () => {
+    const boardGridSource = readFileSync(join(repoRoot, "src", "components", "board", "board-grid.tsx"), "utf8");
+
+    expect(boardGridSource).not.toContain(".flatMap");
+  });
+
   test("compact bot knowledge stays within Cloudflare asset limits", () => {
     const generatedPath = join(repoRoot, "src", "data", "bot-knowledge.generated.json");
     const size = statSync(generatedPath).size;
