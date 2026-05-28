@@ -74,7 +74,13 @@ describe("project organization", () => {
     };
 
     expect(tsconfig.extends).toBe("./config/typescript/tsconfig.app.json");
-    expect(tsconfig.compilerOptions).toBeUndefined();
+    expect(tsconfig.compilerOptions).toEqual({
+      baseUrl: ".",
+      ignoreDeprecations: "6.0",
+      paths: {
+        "@/*": ["src/*"]
+      }
+    });
     expect(tsconfig.include).toBeUndefined();
     expect(tsconfig.exclude).toBeUndefined();
   });
