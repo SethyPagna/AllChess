@@ -18,7 +18,13 @@ const stalePatterns = [
   /src\/lib\/stockfish-engine\.ts/,
   /archive\/reference\/python-jungle-chess/,
   /CHESS DATA/,
-  /src\/app\/globals\.css/
+  /src\/app\/globals\.css/,
+  /docs\/allchess-relational-schema\.md/,
+  /docs\/architecture-organization-plan\.md/,
+  /docs\/bot-runtime-strategy\.md/,
+  /docs\/chess-data-archive-audit\.md/,
+  /docs\/cloudflare-deployment\.md/,
+  /docs\/self-hosting\.md/
 ];
 
 function walkMarkdownFiles(directory: string): string[] {
@@ -36,6 +42,16 @@ function toRepoPath(path: string): string {
 }
 
 describe("markdown documentation", () => {
+  test("keeps docs grouped by topic folders with a single docs index", () => {
+    const allowedTopLevelDocsEntries = new Set(["README.md", "architecture", "data", "deployment", "roadmap"]);
+    const unexpectedEntries = readdirSync(join(repoRoot, "docs"))
+      .map((entry) => entry)
+      .filter((entry) => !allowedTopLevelDocsEntries.has(entry))
+      .sort();
+
+    expect(unexpectedEntries).toEqual([]);
+  });
+
   test("does not reference stale moved files or JavaScript script extensions", () => {
     const staleReferences = markdownRoots
       .flatMap((root) => walkMarkdownFiles(join(repoRoot, root)))

@@ -57,7 +57,7 @@ Use the storage cleanup command when local builds, test runs, or Git objects sta
 npm run clean:storage
 ```
 
-This removes local build/test artifacts such as `.next`, `.open-next`, `.wrangler`, reports, logs, and `tsconfig.tsbuildinfo`, then runs `git gc --prune=now`. It intentionally keeps `data/local/chess-data`, `node_modules`, `.env` files, and generated public runtime assets. For a preview, run:
+This removes local build/test artifacts such as `.next`, `.open-next`, `.wrangler`, reports, logs, `public/engines`, and `tsconfig.tsbuildinfo`, then runs `git gc --prune=now`. It intentionally keeps `data/local/chess-data`, `node_modules`, and `.env` files. Generated Stockfish browser assets are recreated by `npm run dev` and `npm run build`. For a preview, run:
 
 ```bash
 npm run clean:local -- --dry-run
@@ -104,6 +104,13 @@ docker compose -f infra/docker/docker-compose.selfhost.yml up --build
 
 Never commit real API keys or tokens. Store Cloudflare, Vercel, Google OAuth, and AI provider credentials in local ignored `.env` files or hosted secret stores. The AI analysis adapter supports the Business OS style providers Groq, Mistral, Cerebras, Google AI, and OpenAI. Rotate any broad token that was pasted into chat or logs.
 
-See `docs/cloudflare-deployment.md` and `docs/self-hosting.md` for the Cloudflare, domain, database, and object-storage paths.
+## Documentation Map
+
+- Architecture: `docs/architecture/`
+- Data audits: `docs/data/`
+- Deployment: `docs/deployment/`
+- Roadmap: `docs/roadmap/`
+
+See `docs/deployment/cloudflare.md` and `docs/deployment/self-hosting.md` for the Cloudflare, domain, database, and object-storage paths.
 
 Project planning, progress notes, decisions, and change history live in `docs/roadmap/`.
