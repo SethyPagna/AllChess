@@ -697,10 +697,13 @@ function isCaptureMove(state: GameState, move: Move) {
 }
 
 function countPieces(state: GameState, owner: PlayerColor) {
-  return state.board.reduce(
-    (count, row) => count + row.filter((cell) => cell.piece?.owner === owner).length,
-    0
-  );
+  let count = 0;
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (cell.piece?.owner === owner) count += 1;
+    }
+  }
+  return count;
 }
 
 function isRoyal(piece: Piece) {
