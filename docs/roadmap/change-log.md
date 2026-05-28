@@ -34,7 +34,11 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 ### Dependencies
 
 - Updated verified non-major development packages: Cloudflare Workers types, OpenNext Cloudflare, React types, Vitest, and Wrangler.
-- Left major upgrade lanes documented as migration candidates instead of applying them opportunistically.
+- Updated latest package lanes for Lucide React, Node types, ESLint, TypeScript, Playwright, Tailwind CSS, Testing Library React, and Zod.
+- Switched Vercel deploy scripts to invoke `vercel@latest` through `npx`, avoiding the vulnerable local CLI dependency tree.
+- Added a targeted router override for the patched `path-to-regexp` 8.x line used by the OpenNext/Express toolchain.
+- Added ESLint compatibility shims for the Next.js lint presets under ESLint 10.
+- Added the TypeScript 6 deprecation acknowledgement required by the shared app tsconfig.
 
 ---
 
