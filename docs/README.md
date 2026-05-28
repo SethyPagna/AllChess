@@ -23,7 +23,7 @@ The package ranges are current for the verified non-major update lane. Major upg
 - App-owned D1 auth scaffolding: email/password, guest mode, passkeys schema, and Google OAuth configuration hooks.
 - D1 repositories for games, moves, rooms, ratings, profiles, sessions, and analysis reports.
 - R2 object storage with `allchess/` key prefixing.
-- Launch variants declare their rules adapter: `chessops`, `xiangqiops`, `shogiops`, `makruk-js`, or owned AllChess modules.
+- Launch variants declare rules adapter identifiers such as `chessops`, `xiangqiops`, `shogiops`, `makruk-js`, or owned AllChess modules; active rules execution is first-party unless an adapter package is imported by source.
 - Bot difficulty ladder: Easy, Normal, Hard, Very Hard, Grandmaster, Legend, with consistent Elo-style bands and calibration status per variant.
 - Deployment paths for GitHub, local development, Vercel hosting, Cloudflare Workers, and Docker self-deploy.
 
