@@ -1075,27 +1075,32 @@ function materialOnlyScore(state: GameState, perspective: PlayerColor) {
 
 function passedPawnScore(state: GameState, perspective: PlayerColor) {
   let score = 0;
+  const opponents = opponentColors(state, perspective);
   for (const row of state.board) {
     for (const cell of row) {
       const piece = cell.piece;
       if (!piece || piece.owner !== perspective || !["p", "s"].includes(piece.code)) continue;
       const direction = ["white", "red", "sente"].includes(piece.owner) ? -1 : 1;
       const promotionDistance = direction < 0 ? cell.square.row : state.board.length - 1 - cell.square.row;
-      const blockers = opponentColors(state, perspective).some((opponent) =>
-        state.board.some((scanRow) =>
-          scanRow.some((scanCell) => {
-            const occupant = scanCell.piece;
-            if (!occupant || occupant.owner !== opponent || !["p", "s"].includes(occupant.code)) return false;
-            const sameOrAdjacentFile = Math.abs(scanCell.square.col - cell.square.col) <= 1;
-            const inFront = direction < 0 ? scanCell.square.row < cell.square.row : scanCell.square.row > cell.square.row;
-            return sameOrAdjacentFile && inFront;
-          })
-        )
-      );
-      if (!blockers) score += Math.max(0, 7 - promotionDistance) * 22;
+      if (!hasPassedPawnBlocker(state, cell.square, opponents, direction)) {
+        score += Math.max(0, 7 - promotionDistance) * 22;
+      }
     }
   }
   return score;
+}
+
+function hasPassedPawnBlocker(state: GameState, square: { row: number; col: number }, opponents: PlayerColor[], direction: number) {
+  for (const row of state.board) {
+    for (const cell of row) {
+      const occupant = cell.piece;
+      if (!occupant || !opponents.includes(occupant.owner) || !["p", "s"].includes(occupant.code)) continue;
+      const sameOrAdjacentFile = Math.abs(cell.square.col - square.col) <= 1;
+      const inFront = direction < 0 ? cell.square.row < square.row : cell.square.row > square.row;
+      if (sameOrAdjacentFile && inFront) return true;
+    }
+  }
+  return false;
 }
 
 function variantObjectiveScore(state: GameState, move: Move, owner: PlayerColor) {
