@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { buildCatalogNormalizationSql, normalizeAlias } from "../scripts/data/sync-catalog-d1";
+import { buildCatalogNormalizationSql, normalizeAlias } from "../../scripts/data/sync-catalog-d1";
 
 const sampleEntries = [
   {
