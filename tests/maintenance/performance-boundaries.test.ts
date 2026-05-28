@@ -22,6 +22,12 @@ describe("performance boundaries", () => {
     expect(boardGridSource).not.toContain(".flatMap");
   });
 
+  test("D1 catalog rule line parsing avoids flatMap allocation", () => {
+    const d1CatalogSource = readFileSync(join(repoRoot, "src", "lib", "cloudflare", "d1-catalog.ts"), "utf8");
+
+    expect(d1CatalogSource).not.toContain(".flatMap");
+  });
+
   test("compact bot knowledge stays within Cloudflare asset limits", () => {
     const generatedPath = join(repoRoot, "src", "data", "bot-knowledge.generated.json");
     const size = statSync(generatedPath).size;
