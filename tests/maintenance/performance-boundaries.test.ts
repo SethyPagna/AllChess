@@ -46,4 +46,12 @@ describe("performance boundaries", () => {
 
     expect(variantEngineSource).not.toContain(".flatMap");
   });
+
+  test("board scoring and piece counts avoid nested reducer allocation", () => {
+    const botRuntimeSource = readFileSync(join(repoRoot, "src", "lib", "bot", "runtime.ts"), "utf8");
+    const variantEngineSource = readFileSync(join(repoRoot, "src", "lib", "variants", "engine.ts"), "utf8");
+
+    expect(botRuntimeSource).not.toContain("state.board.reduce");
+    expect(variantEngineSource).not.toMatch(/state\.board\.reduce[\s\S]*?row\.filter/);
+  });
 });
