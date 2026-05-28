@@ -662,12 +662,15 @@ function isInCheck(state: GameState, color: PlayerColor) {
 }
 
 function isSquareAttacked(state: GameState, square: Square, byColor: PlayerColor) {
-  return state.board.some((row) =>
-    row.some((cell) => {
-      if (cell.piece?.owner !== byColor) return false;
-      return getPseudoLegalMoves(state, cell.square).some((move) => sameSquare(move.to, square));
-    })
-  );
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (cell.piece?.owner !== byColor) continue;
+      if (getPseudoLegalMoves(state, cell.square).some((move) => sameSquare(move.to, square))) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 function findRoyal(state: GameState, color: PlayerColor) {
@@ -681,13 +684,26 @@ function findRoyal(state: GameState, color: PlayerColor) {
 
 function hasAnyLegalMove(state: GameState, color: PlayerColor) {
   if (state.turn !== color) return false;
-  return state.board.some((row) => row.some((cell) => cell.piece?.owner === color && getLegalMoves(state, cell.square).length > 0));
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (cell.piece?.owner === color && getLegalMoves(state, cell.square).length > 0) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 function hasAnyCaptureMove(state: GameState, color: PlayerColor) {
-  return state.board.some((row) =>
-    row.some((cell) => cell.piece?.owner === color && getPseudoLegalMoves(state, cell.square).some((move) => isCaptureMove(state, move)))
-  );
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (cell.piece?.owner !== color) continue;
+      if (getPseudoLegalMoves(state, cell.square).some((move) => isCaptureMove(state, move))) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 function isCaptureMove(state: GameState, move: Move) {

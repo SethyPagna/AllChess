@@ -54,4 +54,12 @@ describe("performance boundaries", () => {
     expect(botRuntimeSource).not.toContain("state.board.reduce");
     expect(variantEngineSource).not.toMatch(/state\.board\.reduce[\s\S]*?row\.filter/);
   });
+
+  test("variant attack and legal-move checks scan the board without nested some allocation", () => {
+    const variantEngineSource = readFileSync(join(repoRoot, "src", "lib", "variants", "engine.ts"), "utf8");
+
+    expect(variantEngineSource).not.toMatch(/function isSquareAttacked[\s\S]*?state\.board\.some/);
+    expect(variantEngineSource).not.toMatch(/function hasAnyLegalMove[\s\S]*?state\.board\.some/);
+    expect(variantEngineSource).not.toMatch(/function hasAnyCaptureMove[\s\S]*?state\.board\.some/);
+  });
 });
