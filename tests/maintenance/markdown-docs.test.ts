@@ -75,9 +75,13 @@ describe("markdown documentation", () => {
     const expectedVersions = {
       "Next.js": packageJson.dependencies.next,
       React: packageJson.dependencies.react,
+      "Lucide React": packageJson.dependencies["lucide-react"],
+      Zod: packageJson.dependencies.zod,
       TypeScript: packageJson.devDependencies.typescript,
+      ESLint: packageJson.devDependencies.eslint,
       Vitest: packageJson.devDependencies.vitest,
       Playwright: packageJson.devDependencies["@playwright/test"],
+      "Tailwind CSS": packageJson.devDependencies.tailwindcss,
       Wrangler: packageJson.devDependencies.wrangler,
       "OpenNext Cloudflare": packageJson.devDependencies["@opennextjs/cloudflare"]
     };
