@@ -501,9 +501,22 @@ function drawReasonFor(state: GameState): "insufficient-material" | "fifty-move"
   if (variant.family === "western" && state.halfmoveClock >= 100) return "fifty-move";
   if (!["classic", "chess960", "king-of-the-hill", "three-check"].includes(variant.key)) return null;
 
-  const pieces = state.board.flatMap((row) => row.map((cell) => cell.piece).filter(Boolean) as Piece[]);
-  const nonRoyal = pieces.filter((piece) => !isRoyal(piece));
-  if (!nonRoyal.length && variant.players.every((player) => pieces.some((piece) => piece.owner === player && isRoyal(piece)))) {
+  const royalOwners = new Set<PlayerColor>();
+  let hasNonRoyal = false;
+
+  for (const row of state.board) {
+    for (const cell of row) {
+      const piece = cell.piece;
+      if (!piece) continue;
+      if (isRoyal(piece)) {
+        royalOwners.add(piece.owner);
+      } else {
+        hasNonRoyal = true;
+      }
+    }
+  }
+
+  if (!hasNonRoyal && variant.players.every((player) => royalOwners.has(player))) {
     return "insufficient-material";
   }
 

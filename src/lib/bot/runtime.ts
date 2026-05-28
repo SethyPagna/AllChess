@@ -479,9 +479,16 @@ function allLegalMovesCached(state: GameState, budget: SearchBudget) {
 }
 
 function searchStateKey(state: GameState) {
-  const board = state.board
-    .map((row) => row.map((cell) => (cell.piece ? `${cell.piece.owner[0]}${cell.piece.code}${cell.piece.promoted ? "+" : ""}` : "--")).join(""))
-    .join("/");
+  let board = "";
+
+  for (let rowIndex = 0; rowIndex < state.board.length; rowIndex += 1) {
+    if (rowIndex > 0) board += "/";
+
+    for (const cell of state.board[rowIndex]) {
+      board += cell.piece ? `${cell.piece.owner[0]}${cell.piece.code}${cell.piece.promoted ? "+" : ""}` : "--";
+    }
+  }
+
   return `${state.variantKey}|${state.turn}|${state.status}|${state.result ?? ""}|${state.ply}|${board}`;
 }
 

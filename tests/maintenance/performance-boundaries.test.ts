@@ -28,4 +28,16 @@ describe("performance boundaries", () => {
 
     expect(botRuntimeSource).not.toMatch(/flatMap\(\(row\).*getLegalMoves/s);
   });
+
+  test("bot runtime builds search cache keys without nested board maps", () => {
+    const botRuntimeSource = readFileSync(join(repoRoot, "src", "lib", "bot", "runtime.ts"), "utf8");
+
+    expect(botRuntimeSource).not.toMatch(/function searchStateKey[\s\S]*?state\.board\s*\n\s*\.map/);
+  });
+
+  test("variant draw checks scan pieces without flattening the board", () => {
+    const variantEngineSource = readFileSync(join(repoRoot, "src", "lib", "variants", "engine.ts"), "utf8");
+
+    expect(variantEngineSource).not.toContain("state.board.flatMap");
+  });
 });
