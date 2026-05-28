@@ -4,18 +4,19 @@ import { join, relative, sep } from "node:path";
 import { describe, expect, test } from "vitest";
 
 const repoRoot = process.cwd();
-const markdownRoots = ["docs", "archive"];
+const markdownRoots = ["docs"];
 const stalePatterns = [
   /(?<!config\/env\/)\.env\.example/,
   /(?<!infra\/cloudflare\/)wrangler\.jsonc/,
   /(?<!infra\/)cloudflare\/d1\/migrations/,
-  /\.mjs\b/,
+  /(?<!next\.config)\.mjs\b/,
   /scripts\/<domain>/,
   /src\/lib\/bots\.ts/,
   /src\/lib\/bot-training\.ts/,
   /src\/lib\/game-review\.ts/,
   /src\/lib\/game-outcome\.ts/,
-  /src\/lib\/stockfish-engine\.ts/
+  /src\/lib\/stockfish-engine\.ts/,
+  /archive\/reference\/python-jungle-chess/
 ];
 
 function walkMarkdownFiles(directory: string): string[] {

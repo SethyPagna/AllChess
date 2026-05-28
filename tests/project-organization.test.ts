@@ -6,11 +6,12 @@ import { describe, expect, test } from "vitest";
 const repoRoot = process.cwd();
 const ignoredDirectories = new Set([".git", ".next", ".open-next", ".vercel", ".wrangler", "node_modules"]);
 const ignoredFilePrefixes = ["public/engines/"];
+const allowedJavaScriptFiles = new Set(["next.config.mjs"]);
 const allowedRootFiles = new Set([
   ".gitignore",
   ".vercelignore",
   "next-env.d.ts",
-  "next.config.ts",
+  "next.config.mjs",
   "open-next.config.ts",
   "package-lock.json",
   "package.json",
@@ -69,9 +70,14 @@ describe("project organization", () => {
     const javaScriptFiles = walkFiles(repoRoot)
       .map(toRepoPath)
       .filter((file) => !ignoredFilePrefixes.some((prefix) => file.startsWith(prefix)))
+      .filter((file) => !allowedJavaScriptFiles.has(file))
       .filter((file) => /\.(?:mjs|cjs|js|jsx)$/.test(file));
 
     expect(javaScriptFiles).toEqual([]);
+  });
+
+  test("does not keep the obsolete legacy reference archive in the application tree", () => {
+    expect(existsSync(join(repoRoot, "archive"))).toBe(false);
   });
 
   test("keeps local project scripts in TypeScript entry points", () => {

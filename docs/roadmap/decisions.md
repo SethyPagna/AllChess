@@ -58,6 +58,24 @@ Record decisions that affect architecture, workflow, product behavior, or releas
 
 ---
 
+## Decision 0006: Keep Next Config In MJS
+
+**Date:** 2026-05-28
+
+**Status:** Accepted
+
+**Context:** The production Next build rejects `next.config.ts` in this repository with an ES module scope error. The verified working path is `next.config.mjs`.
+
+**Decision:** Keep `next.config.mjs` as the single JavaScript-family exception in the root organization tests. Keep application, scripts, tests, and other config surfaces TypeScript-first.
+
+**Consequences:**
+
+- Production build remains compatible with the current Next toolchain.
+- `tests/project-organization.test.ts` allows only `next.config.mjs` as first-party JavaScript.
+- Future Next config changes should be verified with `npm run build`.
+
+---
+
 ## Decision 0002: Keep AllChess Cloudflare-First
 
 **Date:** 2026-05-16
