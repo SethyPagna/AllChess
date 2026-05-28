@@ -22,4 +22,10 @@ describe("performance boundaries", () => {
 
     expect(size).toBeLessThan(16 * 1024 * 1024);
   });
+
+  test("bot runtime avoids nested flatMap allocation in legal move generation", () => {
+    const botRuntimeSource = readFileSync(join(repoRoot, "src", "lib", "bot", "runtime.ts"), "utf8");
+
+    expect(botRuntimeSource).not.toMatch(/flatMap\(\(row\).*getLegalMoves/s);
+  });
 });
