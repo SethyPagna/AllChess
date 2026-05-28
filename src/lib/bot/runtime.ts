@@ -720,16 +720,14 @@ function evaluateState(state: GameState, perspective: PlayerColor, budget?: Sear
     return state.result === perspective ? 100000 - state.ply : -100000 + state.ply;
   }
 
-  const material = state.board.reduce((total, row) => {
-    return (
-      total +
-      row.reduce((rowTotal, cell) => {
-        if (!cell.piece) return rowTotal;
-        const value = pieceValues[cell.piece.code] ?? 100;
-        return rowTotal + (cell.piece.owner === perspective ? value : -value);
-      }, 0)
-    );
-  }, 0);
+  let material = 0;
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (!cell.piece) continue;
+      const value = pieceValues[cell.piece.code] ?? 100;
+      material += cell.piece.owner === perspective ? value : -value;
+    }
+  }
 
   const activeMobility = (budget ? allLegalMovesCached(state, budget) : allLegalMoves(state)).length * (state.turn === perspective ? 5 : -5);
   const position = positionalScore(state, perspective);
@@ -1064,16 +1062,15 @@ function advancementScore(state: GameState, move: Move, owner: PlayerColor, code
 }
 
 function materialOnlyScore(state: GameState, perspective: PlayerColor) {
-  return state.board.reduce((total, row) => {
-    return (
-      total +
-      row.reduce((rowTotal, cell) => {
-        if (!cell.piece) return rowTotal;
-        const value = pieceValues[cell.piece.code] ?? 100;
-        return rowTotal + (cell.piece.owner === perspective ? value : -value);
-      }, 0)
-    );
-  }, 0);
+  let score = 0;
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (!cell.piece) continue;
+      const value = pieceValues[cell.piece.code] ?? 100;
+      score += cell.piece.owner === perspective ? value : -value;
+    }
+  }
+  return score;
 }
 
 function passedPawnScore(state: GameState, perspective: PlayerColor) {
@@ -1150,16 +1147,15 @@ function royalSafetyScore(state: GameState, perspective: PlayerColor) {
 
 function attackedAround(state: GameState, square: { row: number; col: number }, defender: PlayerColor) {
   const attackers = opponentColors(state, defender);
-  return state.board.reduce((total, row) => {
-    return (
-      total +
-      row.reduce((rowTotal, cell) => {
-        if (!cell.piece || !attackers.includes(cell.piece.owner)) return rowTotal;
-        const distance = Math.abs(cell.square.row - square.row) + Math.abs(cell.square.col - square.col);
-        return rowTotal + (distance <= 2 ? 1 : 0);
-      }, 0)
-    );
-  }, 0);
+  let pressure = 0;
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (!cell.piece || !attackers.includes(cell.piece.owner)) continue;
+      const distance = Math.abs(cell.square.row - square.row) + Math.abs(cell.square.col - square.col);
+      if (distance <= 2) pressure += 1;
+    }
+  }
+  return pressure;
 }
 
 function hangingPenalty(state: GameState, square: { row: number; col: number }, piece: { code: string; owner: PlayerColor }) {
