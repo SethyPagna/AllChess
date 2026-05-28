@@ -20,6 +20,7 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 - Reworked bot cache-key and variant draw scans to avoid flattening board arrays in hot paths.
 - Replaced variant move-generator `flatMap` helpers with direct loops to reduce per-move allocation.
 - Replaced remaining nested bot scoring and variant piece-count reducers with direct board scans.
+- Replaced variant attack, legal-move, and capture-existence nested board scans with direct early-return loops.
 - Updated the Cloudflare Workers type package and the transitive `qs` audit patch.
 - Removed unused direct variant-engine packages from the install graph, including the `xiangqiops` chain that pulled old browser tooling into production audit results.
 - Added organization tests for root files, TypeScript scripts, infrastructure folders, and Markdown freshness.
