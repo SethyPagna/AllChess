@@ -17,6 +17,7 @@ public/engines/stockfish/
 .env.local
 .env.*.local
 !.env.example
+!config/env/.env.example
 *.log
 *.tsbuildinfo
 .vercel
