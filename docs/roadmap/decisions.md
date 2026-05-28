@@ -76,6 +76,24 @@ Record decisions that affect architecture, workflow, product behavior, or releas
 
 ---
 
+## Decision 0007: Group Documentation By Topic
+
+**Date:** 2026-05-28
+
+**Status:** Accepted
+
+**Context:** Root documentation had already moved into `docs/`, but `docs/` itself still had a flat mix of architecture, data, deployment, and roadmap files.
+
+**Decision:** Keep `docs/README.md` as the documentation index and group long-form docs under `docs/architecture/`, `docs/data/`, `docs/deployment/`, and `docs/roadmap/`.
+
+**Consequences:**
+
+- Documentation categories are easier to scan and keep current.
+- New long-form Markdown should join the matching topic folder instead of the top-level docs directory.
+- `tests/markdown-docs.test.ts` guards the docs folder shape.
+
+---
+
 ## Decision 0002: Keep AllChess Cloudflare-First
 
 **Date:** 2026-05-16

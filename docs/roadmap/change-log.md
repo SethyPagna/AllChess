@@ -13,6 +13,7 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 - Converted local utility scripts and config files to TypeScript entry points.
 - Moved local chess training data out of the repository root into ignored `data/local/chess-data/`.
 - Moved global CSS into `src/styles/`.
+- Grouped architecture, data, and deployment documentation under dedicated `docs/` topic folders.
 - Added organization tests for root files, TypeScript scripts, infrastructure folders, and Markdown freshness.
 - Removed the obsolete tracked Python Jungle Chess reference archive from the active application tree.
 
