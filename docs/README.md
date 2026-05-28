@@ -2,7 +2,7 @@
 
 AllChess is a multilingual, Cloudflare-first chess ecosystem for classic chess and global variants.
 
-The archived Python Jungle Chess implementation remains in `archive/reference/python-jungle-chess` for reference. The active app is a Next.js 16 application deployed as `allchess`, with Cloudflare D1 for data and Cloudflare R2 for object storage.
+The active app is a Next.js 16 application deployed as `allchess`, with Cloudflare D1 for data and Cloudflare R2 for object storage.
 
 ## Current Stack
 

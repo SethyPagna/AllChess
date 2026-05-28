@@ -9,8 +9,10 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 ### Repository Organization
 
 - Moved nonessential root configuration into `config/` and `infra/`, leaving root-discovered tool files at the top level.
+- Switched Next configuration to `next.config.mjs`, the verified production-build-compatible format for this repo.
 - Converted local utility scripts and config files to TypeScript entry points.
 - Added organization tests for root files, TypeScript scripts, infrastructure folders, and Markdown freshness.
+- Removed the obsolete tracked Python Jungle Chess reference archive from the active application tree.
 
 ### Documentation
 
