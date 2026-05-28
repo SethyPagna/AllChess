@@ -40,4 +40,10 @@ describe("performance boundaries", () => {
 
     expect(variantEngineSource).not.toContain("state.board.flatMap");
   });
+
+  test("variant engine move generators avoid flatMap allocation", () => {
+    const variantEngineSource = readFileSync(join(repoRoot, "src", "lib", "variants", "engine.ts"), "utf8");
+
+    expect(variantEngineSource).not.toContain(".flatMap");
+  });
 });
