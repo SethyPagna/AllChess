@@ -5,6 +5,7 @@ import { describe, expect, test } from "vitest";
 
 const repoRoot = process.cwd();
 const ignoredDirectories = new Set([".git", ".next", ".open-next", ".vercel", ".wrangler", "node_modules"]);
+const ignoredRootDirectories = new Set([".next", ".open-next", ".vercel", ".wrangler", "public"]);
 const ignoredFilePrefixes = ["public/engines/"];
 const allowedJavaScriptFiles = new Set(["next.config.mjs"]);
 const allowedRootFiles = new Set([
@@ -19,6 +20,7 @@ const allowedRootFiles = new Set([
   "tsconfig.json",
   "vercel.json"
 ]);
+const allowedRootDirectories = new Set([".git", "config", "data", "docs", "infra", "node_modules", "scripts", "src", "tests"]);
 
 function walkFiles(directory: string): string[] {
   const files: string[] = [];
@@ -52,6 +54,17 @@ describe("project organization", () => {
     expect(rootFiles).toEqual([...allowedRootFiles].sort());
   });
 
+  test("keeps root directories limited to source, config, docs, infra, and local dependency folders", () => {
+    const unexpectedRootDirectories = readdirSync(repoRoot, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .filter((name) => !ignoredRootDirectories.has(name))
+      .filter((name) => !allowedRootDirectories.has(name))
+      .sort();
+
+    expect(unexpectedRootDirectories).toEqual([]);
+  });
+
   test("keeps root TypeScript config as a small discovery shim", () => {
     const tsconfig = JSON.parse(readFileSync(join(repoRoot, "tsconfig.json"), "utf8")) as {
       extends?: string;
@@ -78,6 +91,11 @@ describe("project organization", () => {
 
   test("does not keep the obsolete legacy reference archive in the application tree", () => {
     expect(existsSync(join(repoRoot, "archive"))).toBe(false);
+  });
+
+  test("keeps global styles in the styles folder instead of the app router folder", () => {
+    expect(existsSync(join(repoRoot, "src", "styles", "globals.css"))).toBe(true);
+    expect(existsSync(join(repoRoot, "src", "app", "globals.css"))).toBe(false);
   });
 
   test("keeps local project scripts in TypeScript entry points", () => {

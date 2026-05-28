@@ -70,9 +70,11 @@ describe("bot knowledge training script", () => {
       expect(parquet.readStatus).toMatch(/skipped-pyarrow|sampled-parquet/);
       expect(generated.trainingRuns[0]).toMatchObject({
         mode: "two-track",
+        sourceRoot: expect.not.stringContaining("CHESS DATA"),
         scannedRecords: expect.any(Number),
         runtimeBudgetMs: 2800
       });
+      expect(generated.sourceRoot).not.toBe("CHESS DATA");
       expect(generated.variantCoverage).toEqual(
         expect.arrayContaining([
           expect.objectContaining({ variantKey: "classic", claimStatus: "verified" }),
