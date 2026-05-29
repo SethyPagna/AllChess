@@ -2,7 +2,7 @@ export type ValidationRuntimeProfile = {
   browserAutomation: {
     preferred: "in-app-browser-plugin";
     status: "unavailable";
-    missingClient: "scripts/browser-client.mjs";
+    missingClient: "browser-client.mjs";
     fallback: "playwright-plus-live-http-smoke";
     note: string;
   };
@@ -22,7 +22,7 @@ export function getValidationRuntimeProfile(): ValidationRuntimeProfile {
     browserAutomation: {
       preferred: "in-app-browser-plugin",
       status: "unavailable",
-      missingClient: "scripts/browser-client.mjs",
+      missingClient: "browser-client.mjs",
       fallback: "playwright-plus-live-http-smoke",
       note:
         "The in-app browser automation plugin is present in the local tool list, but its browser client file is missing from the plugin cache. AllChess therefore treats Playwright E2E plus live HTTP smoke as the active validation path until that plugin cache is repaired."
