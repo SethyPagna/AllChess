@@ -1,0 +1,128 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "allchess",
+  "main": ".open-next/worker.js",
+  "account_id": "d105a82bc26b6913575355352c2d1bb1",
+  "workers_dev": true,
+  "preview_urls": false,
+  "compatibility_date": "2026-05-13",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "allchess"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "GAME_ROOM_DO",
+        "class_name": "GameRoomDO"
+      },
+      {
+        "name": "MATCHMAKING_DO",
+        "class_name": "MatchmakingDO"
+      },
+      {
+        "name": "PRESENCE_DO",
+        "class_name": "PresenceDO"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["GameRoomDO", "MatchmakingDO", "PresenceDO"]
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "allchess-opennext-cache"
+    },
+    {
+      "binding": "ALLCHESS_OBJECTS",
+      "bucket_name": "allchess-objects",
+      "preview_bucket_name": "allchess-objects-preview"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "ALLCHESS_D1",
+      "database_name": "allchess",
+      "database_id": "b1153fb9-cae6-4e11-a18e-428a394e4210",
+      "migrations_dir": "ops/infra/cloudflare/d1/migrations"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "vars": {
+    "DEPLOYMENT_TARGET": "cloudflare",
+    "OBJECT_STORAGE_DRIVER": "r2",
+    "DATABASE_DRIVER": "d1"
+  },
+  "env": {
+    "production": {
+      "name": "allchess",
+      "workers_dev": true,
+      "preview_urls": false,
+      "services": [
+        {
+          "binding": "WORKER_SELF_REFERENCE",
+          "service": "allchess"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "GAME_ROOM_DO",
+            "class_name": "GameRoomDO"
+          },
+          {
+            "name": "MATCHMAKING_DO",
+            "class_name": "MatchmakingDO"
+          },
+          {
+            "name": "PRESENCE_DO",
+            "class_name": "PresenceDO"
+          }
+        ]
+      },
+      "r2_buckets": [
+        {
+          "binding": "NEXT_INC_CACHE_R2_BUCKET",
+          "bucket_name": "allchess-opennext-cache"
+        },
+        {
+          "binding": "ALLCHESS_OBJECTS",
+          "bucket_name": "allchess-objects",
+          "preview_bucket_name": "allchess-objects-preview"
+        }
+      ],
+      "d1_databases": [
+        {
+          "binding": "ALLCHESS_D1",
+          "database_name": "allchess",
+          "database_id": "b1153fb9-cae6-4e11-a18e-428a394e4210",
+          "migrations_dir": "ops/infra/cloudflare/d1/migrations"
+        }
+      ],
+      "ai": {
+        "binding": "AI"
+      },
+      "vars": {
+        "DEPLOYMENT_TARGET": "cloudflare",
+        "OBJECT_STORAGE_DRIVER": "r2",
+        "DATABASE_DRIVER": "d1"
+      }
+    }
+  }
+}
