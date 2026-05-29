@@ -28,6 +28,7 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 - Removed unused direct variant-engine packages from the install graph, including the `xiangqiops` chain that pulled old browser tooling into production audit results.
 - Added organization tests for root files, TypeScript scripts, infrastructure folders, and Markdown freshness.
 - Removed the obsolete tracked Python Jungle Chess reference archive from the active application tree.
+- Grouped audit, deployment, and maintenance helpers under `scripts/ops/`.
 
 ### Documentation
 

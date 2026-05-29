@@ -1,4 +1,4 @@
-import { auditEnv, type EnvAuditTarget, formatEnvAudit } from "../../src/lib/validation/env-audit";
+import { auditEnv, type EnvAuditTarget, formatEnvAudit } from "../../../src/lib/validation/env-audit.ts";
 
 const allowedTargets = new Set<EnvAuditTarget>(["local", "vercel", "cloudflare", "docker"]);
 const target = process.argv[2] || process.env.DEPLOYMENT_TARGET || "local";

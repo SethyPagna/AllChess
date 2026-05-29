@@ -111,6 +111,18 @@ describe("project organization", () => {
     expect(javaScriptScripts).toEqual([]);
   });
 
+  test("groups operational scripts under scripts/ops", () => {
+    const topLevelScriptDirectories = readdirSync(join(repoRoot, "scripts"), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory())
+      .map((entry) => entry.name)
+      .sort();
+
+    expect(topLevelScriptDirectories).toEqual(["assets", "data", "ops", "training"]);
+    expect(existsSync(join(repoRoot, "scripts", "ops", "audit"))).toBe(true);
+    expect(existsSync(join(repoRoot, "scripts", "ops", "deploy"))).toBe(true);
+    expect(existsSync(join(repoRoot, "scripts", "ops", "maintenance"))).toBe(true);
+  });
+
   test("runs package script helpers through TypeScript entry points", () => {
     const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as {
       scripts: Record<string, string>;
