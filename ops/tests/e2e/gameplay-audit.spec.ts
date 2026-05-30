@@ -23,12 +23,14 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await expect(page.getByText("Review hook")).toHaveCount(0);
   const controls = page.getByLabel("Board controls");
   await expect(controls.getByLabel("Assist controls")).toContainText("Suggest");
-  await expect(controls.getByLabel("Bot automation controls")).toContainText("Auto");
+  await expect(controls.getByRole("button", { name: "Apply move" })).toHaveCount(0);
+  await expect(controls.getByLabel("Assist controls").getByRole("button")).toHaveCount(7);
+  await expect(controls.getByLabel("Match controls")).toContainText("Auto");
   await expect(controls.getByLabel("Match controls")).toContainText("Resign");
-  await expect(controls.getByLabel("Utility controls")).toBeVisible();
+  await expect(controls.getByLabel("Utility controls")).toHaveCount(0);
   await expect(controls.getByRole("button", { name: "Bot Mode" })).toBeDisabled();
   await expect(page.getByLabel("Local play status")).toContainText("assist only");
-  await expect(page.getByLabel("Bot search profile")).toContainText("Budget");
+  await expect(page.locator(".review-position-card")).toContainText("You:");
   const before = await board.boundingBox();
   expect(before).toBeTruthy();
 
@@ -48,7 +50,7 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await page.getByRole("button", { name: "Suggest" }).click();
   await expect(board.locator('[data-suggested="from"]')).toBeVisible();
   await expect(board.locator('[data-suggested="to"]')).toBeVisible();
-  await page.getByRole("button", { name: "Apply move" }).click();
+  await page.getByRole("button", { name: "Suggest" }).click();
   await expect(page.getByText(/^1\./)).toBeVisible();
 
   const afterSuggestion = await board.boundingBox();
@@ -229,7 +231,8 @@ test("online setup disables bot controls and shows opponent search", async ({ pa
   await expect(page.getByLabel("Online matchmaking status")).toContainText("Searching for opponent");
   await expect(page.getByLabel("Online matchmaking status")).toContainText("Bot difficulty and automation are paused");
   await expect(page.getByRole("button", { name: "Bot Mode" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Apply move" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Apply move" })).toHaveCount(0);
+  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Suggest" })).toBeDisabled();
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();
   expect(runtimeErrors).toEqual([]);

@@ -168,6 +168,12 @@ export function GameBoard({
     : isWatchingMode
       ? "Watching rooms"
       : `${colorLabel(state.turn)} to move`;
+  const botSearchDetail = lastBotResult
+    ? `Bot: ${lastBotResult.knowledgeSource ?? lastBotResult.engine} ${lastBotResult.depthReached}/${lastBotResult.nodesSearched}.`
+    : isBotMode
+      ? `Bot budget: ${botResponseBudget}ms.`
+      : "";
+  const reviewStatusDetail = `${statusHeading}. You: ${colorLabel(humanColor)}. View: ${visualOrientation === "second" ? colorLabel(secondColor) : colorLabel(firstColor)}.${botSearchDetail ? ` ${botSearchDetail}` : ""}`;
   const modeSummary = gameStarted ? `${modeDetails.label} - ${getTimeControl(timeControl).label}` : `${modeDetails.label} setup`;
   const trimmedOpponentQuery = opponentQuery.trim();
   const topPlayerColor = isBoardFlipped ? firstColor : secondColor;
@@ -718,13 +724,6 @@ export function GameBoard({
                 suggestedMoveReady={Boolean(suggestedMove)}
               />
               <div className="play-table-card">
-                <div className="compact-status-heading">
-                  <div>
-                    <p>Current position</p>
-                    <strong>{statusHeading}</strong>
-                  </div>
-                  <span>{colorLabel(humanColor)} view</span>
-                </div>
                 {thinking.status === "thinking" ? <p className="mt-1 text-sm font-bold text-[var(--info)]">{thinking.label}</p> : null}
                 {isOnlineMode ? (
                   <div className="online-search-card" role="status" aria-label="Online matchmaking status">
@@ -753,16 +752,13 @@ export function GameBoard({
                   </div>
                 ) : isBotMode ? (
                   <>
-                    <div className="bot-profile-card">
+                    <label className="bot-profile-card bot-profile-card-with-select">
                       <Bot size={18} />
                       <div>
                         <strong>{botLevel.label} bot</strong>
                         <span title={botStrength.basis}>{botStrength.display} - {botCalibrationLabel}</span>
                       </div>
                       <small title={botStrength.basis}>target {botStrength.targetElo}</small>
-                    </div>
-                    <label className="play-setup-field mt-3">
-                      <span>Bot difficulty</span>
                       <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)}>
                         {botDifficultyLevels.map((level) => (
                           <option key={level.key} value={level.key}>
@@ -782,23 +778,6 @@ export function GameBoard({
                     <small>assist only</small>
                   </div>
                 )}
-                <p className="mt-1 text-xs font-bold text-[var(--muted)]">
-                  You: {colorLabel(humanColor)} · View: {visualOrientation === "second" ? colorLabel(secondColor) : colorLabel(firstColor)}
-                </p>
-                <div className="bot-stat-grid compact-bot-stat-grid" aria-label="Bot search profile">
-                  <span>
-                    <small>{lastBotResult ? "Source" : "Depth"}</small>
-                    <strong>{lastBotResult?.knowledgeSource ?? lastBotResult?.engine ?? botLevel.depth}</strong>
-                  </span>
-                  <span>
-                    <small>{lastBotResult ? "Search" : "Budget"}</small>
-                    <strong>{lastBotResult ? `${lastBotResult.depthReached}/${lastBotResult.nodesSearched}` : `${botResponseBudget}ms`}</strong>
-                  </span>
-                  <span>
-                    <small>View</small>
-                    <strong>{visualOrientation === "second" ? colorLabel(secondColor) : colorLabel(firstColor)}</strong>
-                  </span>
-                </div>
                 {suggestedMove ? (
                   <p className="mt-1 text-sm font-bold text-[var(--accent-strong)]">
                     Suggestion: {suggestedMove.notation} - depth {suggestedMove.depthReached}
@@ -820,8 +799,8 @@ export function GameBoard({
               <div className="review-position-card">
                 <p>{displayPly === 0 ? "Starting position" : `After ${activeReviewMove?.notation ?? "latest move"}`}</p>
                 <strong>{activeReviewMove ? `${activeReviewMove.label} - ${activeReviewMove.score}/100` : "Ready"}</strong>
-                <span>{activeReviewMove?.detail ?? "Review opens here without hiding live status."}</span>
-                {activeReviewMove ? <small>Best line: {activeReviewMove.bestLine}</small> : null}
+                <span>{activeReviewMove?.detail ?? reviewStatusDetail}</span>
+                {activeReviewMove ? <small>Best line: {activeReviewMove.bestLine}{botSearchDetail ? ` ${botSearchDetail}` : ""}</small> : null}
               </div>
               <ol className="review-move-list move-list max-h-52 overflow-auto text-sm">
                 <li className={displayPly === 0 ? "is-active" : ""}>
