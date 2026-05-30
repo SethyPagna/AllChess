@@ -5,10 +5,14 @@ type Translate = (key: string) => string;
 export function createAppNavGroups(t: Translate): AppNavGroup[] {
   return [
     {
+      label: t("nav.lobby"),
+      icon: "home",
+      links: [{ href: "lobby", icon: "home", label: t("nav.lobby") }]
+    },
+    {
       label: t("nav.play"),
       icon: "swords",
       links: [
-        { href: "lobby", icon: "home", label: t("nav.lobby") },
         { href: "play", icon: "swords", label: t("nav.play") },
         { href: "variants", icon: "library", label: t("nav.gamesRules") }
       ]

@@ -12,11 +12,21 @@ describe("bot knowledge training script", () => {
 
     expect(existsSync(join(repoRoot, "ops", "scripts", "training", "python", "read_zstd_sample.py"))).toBe(true);
     expect(existsSync(join(repoRoot, "ops", "scripts", "training", "python", "inspect_parquet_readiness.py"))).toBe(true);
+    expect(existsSync(join(repoRoot, "ops", "scripts", "training", "python", "check_local_ai_readiness.py"))).toBe(true);
     expect(trainingScript).toContain("pythonHelpersDir");
     expect(trainingScript).toContain("read_zstd_sample.py");
     expect(trainingScript).toContain("inspect_parquet_readiness.py");
     expect(trainingScript).not.toContain("import io, sys, zstandard");
     expect(trainingScript).not.toContain("import pyarrow.parquet");
+  });
+
+  test("exposes a Python readiness probe for local bot and AI dataset tooling", () => {
+    const repoRoot = process.cwd();
+    const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as {
+      scripts: Record<string, string>;
+    };
+
+    expect(packageJson.scripts["bots:local-ai:check"]).toBe("python ops/scripts/training/python/check_local_ai_readiness.py");
   });
 
   test("records checksums, variant sources, tier coverage, and parquet readiness", () => {

@@ -22,6 +22,8 @@ The package ranges are current for the verified latest-version lane. ESLint 10 u
 
 Project configuration is grouped under `config/` for linting, TypeScript, tests, environment examples, and optional Python bot-training probes. Root-discovered framework files stay at the top level so Next.js, Vercel, PostCSS, and package managers can find them without loaders or indirection.
 
+Bot and local-AI dataset preparation use Python helper scripts for compressed data, Parquet readiness, and optional package checks. The Next.js runtime stays TypeScript-first and consumes compact generated knowledge instead of importing heavy training dependencies.
+
 ## Status
 
 - 19 launch locales with shared chess vocabulary.
@@ -53,6 +55,7 @@ npm run test
 npm run build
 npm run audit:live
 npm run audit:env -- vercel
+npm run bots:local-ai:check
 ```
 
 ## Maintenance
