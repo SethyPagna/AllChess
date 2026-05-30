@@ -1,11 +1,24 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
 describe("bot knowledge training script", () => {
+  test("delegates local AI dataset probes to Python helper scripts", () => {
+    const repoRoot = process.cwd();
+    const trainingScript = readFileSync(join(repoRoot, "ops", "scripts", "training", "train-bot-knowledge.ts"), "utf8");
+
+    expect(existsSync(join(repoRoot, "ops", "scripts", "training", "python", "read_zstd_sample.py"))).toBe(true);
+    expect(existsSync(join(repoRoot, "ops", "scripts", "training", "python", "inspect_parquet_readiness.py"))).toBe(true);
+    expect(trainingScript).toContain("pythonHelpersDir");
+    expect(trainingScript).toContain("read_zstd_sample.py");
+    expect(trainingScript).toContain("inspect_parquet_readiness.py");
+    expect(trainingScript).not.toContain("import io, sys, zstandard");
+    expect(trainingScript).not.toContain("import pyarrow.parquet");
+  });
+
   test("records checksums, variant sources, tier coverage, and parquet readiness", () => {
     const root = mkdtempSync(join(tmpdir(), "allchess-training-"));
     const dataRoot = join(root, "CHESS DATA");
