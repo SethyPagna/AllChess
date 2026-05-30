@@ -61,7 +61,7 @@ Use the storage cleanup command when local builds, test runs, or Git objects sta
 npm run clean:storage
 ```
 
-This removes local build/test artifacts such as `.next`, `.open-next`, `.wrangler`, reports, logs, `public/engines`, and `tsconfig.tsbuildinfo`, then runs `git gc --prune=now`. It intentionally keeps `data/local/chess-data`, `node_modules`, and `.env` files. Generated Stockfish browser assets are recreated by `npm run dev` and `npm run build`. For a preview, run:
+This removes local build/test artifacts such as `.next`, `.open-next`, `.wrangler`, reports, logs, Python cache folders, `public/engines`, and `tsconfig.tsbuildinfo`, then runs `git gc --prune=now`. It intentionally keeps `data/local/chess-data`, `node_modules`, and `.env` files. Generated Stockfish browser assets are recreated by `npm run dev` and `npm run build`. For a preview, run:
 
 ```bash
 npm run clean:local -- --dry-run
