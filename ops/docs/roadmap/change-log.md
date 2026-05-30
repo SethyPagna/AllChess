@@ -8,7 +8,7 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ### Repository Organization
 
-- Moved nonessential root configuration into `ops/config/` and `ops/infra/`, leaving root-discovered tool files at the top level.
+- Moved shared project configuration into top-level `config/` and infrastructure into `ops/infra/`, leaving root-discovered tool files at the top level.
 - Switched Next configuration to `next.config.mjs`, the verified production-build-compatible format for this repo.
 - Converted local utility scripts and config files to TypeScript entry points.
 - Moved local chess training data out of the repository root into ignored `data/local/chess-data/`.
@@ -35,7 +35,7 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 ### Documentation
 
 - Updated documentation paths for env templates, Wrangler config, D1 migrations, Docker Compose, and moved TypeScript config.
-- Added current package stack ranges to `ops/docs/README.md`.
+- Added current package stack ranges to root `README.md`.
 - Updated progress, decisions, and change-log entries to reflect the current repository structure.
 
 ### Dependencies
