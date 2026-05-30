@@ -60,9 +60,10 @@ type TextSample = {
   text: string;
 };
 
-const repoRoot = dirname(fileURLToPath(new URL("../../package.json", import.meta.url)));
+const repoRoot = dirname(fileURLToPath(new URL("../../../package.json", import.meta.url)));
 const defaultDataRoot = join(repoRoot, "data", "local", "chess-data");
 const defaultOutput = join(repoRoot, "src", "data", "bot-knowledge.generated.json");
+const pythonHelpersDir = join(repoRoot, "ops", "scripts", "training", "python");
 
 const options: ScriptOptions = parseArgs(process.argv.slice(2));
 const dataRoot = options.dataRoot ?? defaultDataRoot;
@@ -401,35 +402,16 @@ function readTextSample(file: string, limitBytes: number): TextSample {
 }
 
 function readZstdTextSample(file: string, limitBytes: number): TextSample {
-  const python = spawnSync(pythonExecutable, ["-c", "import zstandard"], { encoding: "utf8" });
-  if (python.status !== 0) {
-    return { status: `skipped: install Python package zstandard for ${pythonExecutable} to stream .zst samples`, text: "" };
-  }
-
-  const code = `
-import io, sys, zstandard
-path = sys.argv[1]
-limit = int(sys.argv[2])
-written = 0
-dctx = zstandard.ZstdDecompressor()
-with open(path, "rb") as source:
-    with dctx.stream_reader(source) as reader:
-        text = io.TextIOWrapper(reader, encoding="utf-8", errors="ignore")
-        while written < limit:
-            chunk = text.read(min(65536, limit - written))
-            if not chunk:
-                break
-            sys.stdout.write(chunk)
-            written += len(chunk.encode("utf-8", errors="ignore"))
-`;
-
-  const result = spawnSync(pythonExecutable, ["-c", code, file, String(limitBytes)], {
+  const result = spawnSync(pythonExecutable, [join(pythonHelpersDir, "read_zstd_sample.py"), file, String(limitBytes)], {
     encoding: "utf8",
     maxBuffer: Math.ceil(limitBytes * 2.5) + 10_000_000
   });
 
   if (result.status !== 0) {
     const error = result.error?.message ?? (result.stderr.trim() || `python exited ${result.status}`);
+    if (/zstandard|ModuleNotFoundError/.test(error)) {
+      return { status: `skipped: install Python package zstandard for ${pythonExecutable} to stream .zst samples`, text: "" };
+    }
     return { status: `zst-read-failed: ${error}`, text: "" };
   }
 
@@ -444,12 +426,21 @@ function parsePgnGames(text: string): string[] {
 }
 
 function inspectParquetReadiness(): { status: string; records: number } {
-  const python = spawnSync(pythonExecutable, ["-c", "import pyarrow.parquet"], { encoding: "utf8" });
-  if (python.status !== 0) {
-    return { status: `skipped-pyarrow: install pyarrow for ${pythonExecutable} to stream parquet training records`, records: 0 };
+  const result = spawnSync(pythonExecutable, [join(pythonHelpersDir, "inspect_parquet_readiness.py")], { encoding: "utf8" });
+  if (result.status !== 0) {
+    const error = result.error?.message ?? (result.stderr.trim() || `python exited ${result.status}`);
+    return { status: `parquet-readiness-failed: ${error}`, records: 0 };
   }
 
-  return { status: "sampled-parquet", records: 0 };
+  try {
+    const readiness = JSON.parse(result.stdout) as { status?: string; records?: number };
+    if (readiness.status === "sampled-parquet") {
+      return { status: "sampled-parquet", records: readiness.records ?? 0 };
+    }
+    return { status: `skipped-pyarrow: install pyarrow for ${pythonExecutable} to stream parquet training records`, records: 0 };
+  } catch (error) {
+    return { status: `parquet-readiness-failed: ${error instanceof Error ? error.message : String(error)}`, records: 0 };
+  }
 }
 
 function addOpeningGame(

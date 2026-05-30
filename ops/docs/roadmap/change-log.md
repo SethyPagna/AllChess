@@ -30,6 +30,7 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 - Removed the obsolete tracked Python Jungle Chess reference archive from the active application tree.
 - Grouped audit, deployment, and maintenance helpers under `ops/scripts/ops/`.
 - Moved config, docs, infrastructure, scripts, and tests under `ops/` to keep the repository root compact.
+- Extracted bot-training compressed-data and Parquet probes into Python helper scripts under `ops/scripts/training/python/`.
 
 ### Documentation
 
