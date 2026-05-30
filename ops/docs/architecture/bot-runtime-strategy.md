@@ -4,10 +4,11 @@ AllChess uses a mixed-language bot stack where it is measurably useful:
 
 - TypeScript: product runtime, rules validation, UI, API routes, Durable Objects, and D1/R2 metadata.
 - WebAssembly/C++: Stockfish-style search for chess-family engine hot paths.
-- Python/native tools: offline dataset ingestion, compressed file streaming, feature extraction, and long-running label generation.
+- Python/native tools: offline dataset ingestion, compressed file streaming, feature extraction, local AI experiments, and long-running label generation.
 - Rust/WASM: candidate only if benchmarks show TypeScript rules or search kernels are still the bottleneck after indexed cache lookup and engine fallback.
 
 The current decision is to keep TypeScript as the orchestration layer and move only proven hot paths to native/WASM engines. A full TypeScript replacement is not justified until benchmark data shows the indexed knowledge layer plus native engines are still too slow.
+Optional Python dependencies for bot/local-AI training probes live in `ops/config/python/bot-training-requirements.txt`; the interactive Next.js runtime does not import them.
 
 Runtime bot move order:
 
