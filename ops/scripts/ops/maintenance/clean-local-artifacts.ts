@@ -22,6 +22,8 @@ const rootLogPatterns = [
   /^\.next-dev-\d+\.(?:err|out)\.log$/,
   /^tmp-[\w.-]+\.(?:err|out)\.log$/,
 ];
+const cacheDirectoryNames = new Set(["__pycache__", ".pytest_cache", ".ruff_cache"]);
+const skippedWalkDirectories = new Set([".git", ".next", ".open-next", ".vercel", ".wrangler", "data", "node_modules"]);
 
 function assertInsideRepo(targetPath: string): void {
   const relative = path.relative(repoRoot, targetPath);
@@ -61,7 +63,32 @@ async function collectTargets(): Promise<string[]> {
     }
   }
 
+  for (const target of await collectCacheDirectories(repoRoot)) {
+    targets.add(target);
+  }
+
   return [...targets].sort((a, b) => a.localeCompare(b));
+}
+
+async function collectCacheDirectories(directory: string): Promise<string[]> {
+  const targets: string[] = [];
+
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+
+    const resolved = path.resolve(directory, entry.name);
+
+    if (cacheDirectoryNames.has(entry.name)) {
+      targets.push(resolved);
+      continue;
+    }
+
+    if (!skippedWalkDirectories.has(entry.name)) {
+      targets.push(...(await collectCacheDirectories(resolved)));
+    }
+  }
+
+  return targets;
 }
 
 async function runCommand(command: string, args: string[]): Promise<void> {
