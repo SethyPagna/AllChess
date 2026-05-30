@@ -5,7 +5,9 @@ import { describe, expect, test } from "vitest";
 
 const repoRoot = process.cwd();
 const markdownRoots = ["ops/docs"];
+const rootMarkdownFiles = ["README.md"];
 const stalePatterns = [
+  /ops\/config\//,
   /(?<!config\/env\/)\.env\.example/,
   /(?<!infra\/cloudflare\/)wrangler\.jsonc/,
   /(?<!infra\/)cloudflare\/d1\/migrations/,
@@ -43,7 +45,7 @@ function toRepoPath(path: string): string {
 
 describe("markdown documentation", () => {
   test("keeps docs grouped by topic folders with a single docs index", () => {
-    const allowedTopLevelDocsEntries = new Set(["README.md", "architecture", "data", "deployment", "roadmap"]);
+    const allowedTopLevelDocsEntries = new Set(["architecture", "data", "deployment", "roadmap"]);
     const unexpectedEntries = readdirSync(join(repoRoot, "ops", "docs"))
       .map((entry) => entry)
       .filter((entry) => !allowedTopLevelDocsEntries.has(entry))
@@ -55,6 +57,7 @@ describe("markdown documentation", () => {
   test("does not reference stale moved files or JavaScript script extensions", () => {
     const staleReferences = markdownRoots
       .flatMap((root) => walkMarkdownFiles(join(repoRoot, root)))
+      .concat(rootMarkdownFiles.map((file) => join(repoRoot, file)))
       .flatMap((file) => {
         const text = readFileSync(file, "utf8");
         return stalePatterns
@@ -70,7 +73,7 @@ describe("markdown documentation", () => {
       dependencies: Record<string, string>;
       devDependencies: Record<string, string>;
     };
-    const readme = readFileSync(join(repoRoot, "ops", "docs", "README.md"), "utf8");
+    const readme = readFileSync(join(repoRoot, "README.md"), "utf8");
 
     const expectedVersions = {
       "Next.js": packageJson.dependencies.next,

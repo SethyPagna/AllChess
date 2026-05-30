@@ -2168,22 +2168,12 @@ select {
 }
 
 .play-control-group-primary {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 1fr);
-}
-
-.play-control-group-bots {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(5.5rem, 1.15fr) minmax(4.75rem, 1fr) repeat(5, minmax(2rem, 2.25rem));
+  align-items: center;
 }
 
 .play-control-group-match {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.play-control-group-utility {
-  grid-template-columns: repeat(5, minmax(2rem, 2.35rem));
-  justify-content: start;
-  border-top: 1px solid rgb(255 255 255 / 8%);
-  padding-top: 0.35rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .play-control-button,
@@ -2220,7 +2210,7 @@ select {
 }
 
 .play-icon-button {
-  width: 2.2rem;
+  width: 2.15rem;
   aspect-ratio: auto;
   padding-inline: 0.45rem;
 }
@@ -2450,6 +2440,22 @@ select {
   white-space: nowrap;
 }
 
+.bot-profile-card-with-select {
+  grid-template-columns: auto minmax(0, 1fr) auto minmax(8.25rem, 0.8fr);
+}
+
+.bot-profile-card-with-select select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgb(255 255 255 / 10%);
+  border-radius: 7px;
+  background: #10100e;
+  color: #fffdf7;
+  padding: 0.42rem 0.55rem;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
 .status-mode-card span {
   white-space: normal;
 }
@@ -2629,6 +2635,12 @@ select {
   overflow: hidden;
 }
 
+.play-review-compact {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  max-height: min(42vh, 24rem);
+}
+
 .play-review-compact .review-engine-row,
 .play-review-compact .review-summary-row {
   padding: 0.55rem 0.7rem;
@@ -2641,11 +2653,14 @@ select {
 
 .play-review-compact .review-position-card span,
 .play-review-compact .review-position-card small {
-  display: none;
+  display: block;
+  font-size: 0.72rem;
 }
 
 .play-review-compact .review-move-list {
   max-height: clamp(7rem, 22vh, 12rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .play-review-compact .review-move-list li button {
@@ -4993,10 +5008,23 @@ select {
   }
 
   .play-control-group-primary,
-  .play-control-group-bots,
   .play-control-group-match,
   .play-control-strip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .play-control-group-primary {
+    grid-template-columns: minmax(5.25rem, 1fr) minmax(4.5rem, 0.85fr) repeat(5, minmax(2rem, 2.2rem));
+    overflow-x: auto;
+    padding-bottom: 0.1rem;
+  }
+
+  .bot-profile-card-with-select {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .bot-profile-card-with-select select {
+    grid-column: 1 / -1;
   }
 
   .board-player-card {
@@ -5093,10 +5121,17 @@ select {
   .play-mode-rail-list,
   .play-control-grid,
   .play-control-group-primary,
-  .play-control-group-bots,
   .play-control-group-match,
   .play-control-strip {
     grid-template-columns: 1fr;
+  }
+
+  .play-control-group-primary {
+    grid-template-columns: minmax(5.25rem, 1fr) minmax(4.5rem, 0.85fr) repeat(5, minmax(2rem, 2.2rem));
+  }
+
+  .play-control-group-match {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .play-quick-card {

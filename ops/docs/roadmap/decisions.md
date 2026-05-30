@@ -48,7 +48,7 @@ Record decisions that affect architecture, workflow, product behavior, or releas
 
 **Context:** The repository root had accumulated documentation and configuration files. Some tools still discover specific files from the root by convention, while others can be pointed at organized folders.
 
-**Decision:** Move nonessential documentation and configuration into `ops/docs/`, `ops/config/`, and `ops/infra/`. Keep only package metadata and root-discovered framework files at the root, with `tsconfig.json` as a tiny shim that extends `ops/config/typescript/tsconfig.app.json`.
+**Decision:** Move nonessential documentation into `ops/docs/`, shared configuration into top-level `config/`, and infrastructure into `ops/infra/`. Keep package metadata and root-discovered framework files at the root, with `tsconfig.json` as a tiny shim that extends `config/typescript/tsconfig.app.json`.
 
 **Consequences:**
 
@@ -84,7 +84,7 @@ Record decisions that affect architecture, workflow, product behavior, or releas
 
 **Context:** Root documentation had already moved into `ops/docs/`, but `ops/docs/` itself still had a flat mix of architecture, data, deployment, and roadmap files.
 
-**Decision:** Keep `ops/docs/README.md` as the documentation index and group long-form docs under `ops/docs/architecture/`, `ops/docs/data/`, `ops/docs/deployment/`, and `ops/docs/roadmap/`.
+**Decision:** Keep root `README.md` as the project index and group long-form docs under `ops/docs/architecture/`, `ops/docs/data/`, `ops/docs/deployment/`, and `ops/docs/roadmap/`.
 
 **Consequences:**
 

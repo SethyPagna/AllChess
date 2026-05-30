@@ -11,6 +11,7 @@ const allowedJavaScriptFiles = new Set(["next.config.mjs"]);
 const allowedRootFiles = new Set([
   ".gitignore",
   ".vercelignore",
+  "README.md",
   "next-env.d.ts",
   "next.config.mjs",
   "open-next.config.ts",
@@ -20,7 +21,7 @@ const allowedRootFiles = new Set([
   "tsconfig.json",
   "vercel.json"
 ]);
-const allowedRootDirectories = new Set([".git", "data", "node_modules", "ops", "src"]);
+const allowedRootDirectories = new Set([".git", "config", "data", "node_modules", "ops", "src"]);
 
 function walkFiles(directory: string): string[] {
   const files: string[] = [];
@@ -73,7 +74,7 @@ describe("project organization", () => {
       exclude?: string[];
     };
 
-    expect(tsconfig.extends).toBe("./ops/config/typescript/tsconfig.app.json");
+    expect(tsconfig.extends).toBe("./config/typescript/tsconfig.app.json");
     expect(tsconfig.compilerOptions).toEqual({
       baseUrl: ".",
       ignoreDeprecations: "6.0",
