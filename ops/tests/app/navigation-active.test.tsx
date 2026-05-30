@@ -11,17 +11,17 @@ vi.mock("next/navigation", () => ({
 
 const groups: AppNavGroup[] = [
   {
+    icon: "home",
+    label: "Lobby",
+    links: [{ href: "lobby", icon: "home", label: "Lobby" }]
+  },
+  {
     icon: "swords",
     label: "Play",
     links: [
-      { href: "lobby", icon: "home", label: "Lobby" },
-      { href: "play", icon: "swords", label: "Play" }
+      { href: "play", icon: "swords", label: "Play" },
+      { href: "variants", icon: "library", label: "Games & rules" }
     ]
-  },
-  {
-    icon: "library",
-    label: "Games & rules",
-    links: [{ href: "variants", icon: "library", label: "Games & rules" }]
   },
   {
     icon: "history",
@@ -48,6 +48,7 @@ describe("app navigation", () => {
     const markup = renderToStaticMarkup(createElement(AppMobileNavigation, { groups, locale: "en" }));
 
     expect(markup).toContain("app-menu-section-label");
+    expect(markup).toContain(">Lobby<");
     expect(markup).toContain(">Play<");
     expect(markup).toContain(">Games &amp; rules<");
     expect(markup).toContain(">History<");
@@ -84,7 +85,8 @@ describe("app navigation", () => {
       "nav.settings": "Settings"
     })[key] ?? key);
 
-    expect(builtGroups.map((group) => group.label)).toEqual(["Play", "Watch", "History", "Settings"]);
+    expect(builtGroups.map((group) => group.label)).toEqual(["Lobby", "Play", "Watch", "History", "Settings"]);
     expect(builtGroups.flatMap((group) => group.links.map((link) => link.href))).toEqual(["lobby", "play", "variants", "watch", "leaderboards", "history", "settings"]);
+    expect(builtGroups.find((group) => group.label === "Play")?.links.map((link) => link.href)).toEqual(["play", "variants"]);
   });
 });

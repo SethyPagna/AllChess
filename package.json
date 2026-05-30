@@ -20,6 +20,7 @@
     "audit:env": "node ops/scripts/ops/audit/env-audit.ts",
     "audit:browser": "node ops/scripts/ops/audit/browser-validation.ts",
     "audit:live": "playwright test --config config/test/playwright.config.ts ops/tests/e2e/gameplay-audit.spec.ts",
+    "bots:local-ai:check": "python ops/scripts/training/python/check_local_ai_readiness.py",
     "bots:train:data": "node ops/scripts/training/train-bot-knowledge.ts",
     "verify": "npm run lint && npm run typecheck && npm run test && npm run build",
     "deploy:preview": "npm run verify && npx --yes vercel@latest deploy --name allchess",
