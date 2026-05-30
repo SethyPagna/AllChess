@@ -9,6 +9,7 @@ AllChess uses a mixed-language bot stack where it is measurably useful:
 
 The current decision is to keep TypeScript as the orchestration layer and move only proven hot paths to native/WASM engines. A full TypeScript replacement is not justified until benchmark data shows the indexed knowledge layer plus native engines are still too slow.
 Optional Python dependencies for bot/local-AI training probes live in `config/python/bot-training-requirements.txt`; the interactive Next.js runtime does not import them.
+Run `npm run bots:local-ai:check` to verify local Python package readiness before long-running dataset or local-AI jobs.
 
 Runtime bot move order:
 
