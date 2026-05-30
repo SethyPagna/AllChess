@@ -1,5 +1,5 @@
 {
-  "extends": "./ops/config/typescript/tsconfig.app.json",
+  "extends": "./config/typescript/tsconfig.app.json",
   "compilerOptions": {
     "baseUrl": ".",
     "ignoreDeprecations": "6.0",

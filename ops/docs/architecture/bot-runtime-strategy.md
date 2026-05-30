@@ -8,7 +8,7 @@ AllChess uses a mixed-language bot stack where it is measurably useful:
 - Rust/WASM: candidate only if benchmarks show TypeScript rules or search kernels are still the bottleneck after indexed cache lookup and engine fallback.
 
 The current decision is to keep TypeScript as the orchestration layer and move only proven hot paths to native/WASM engines. A full TypeScript replacement is not justified until benchmark data shows the indexed knowledge layer plus native engines are still too slow.
-Optional Python dependencies for bot/local-AI training probes live in `ops/config/python/bot-training-requirements.txt`; the interactive Next.js runtime does not import them.
+Optional Python dependencies for bot/local-AI training probes live in `config/python/bot-training-requirements.txt`; the interactive Next.js runtime does not import them.
 
 Runtime bot move order:
 

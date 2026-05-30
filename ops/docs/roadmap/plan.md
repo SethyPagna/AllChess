@@ -528,7 +528,7 @@ If a command cannot run locally, record the reason in `ops/docs/roadmap/progress
 
 **Mini Phase 18A - Secret And Environment Audit**
 
-- Subtarget: Verify `ops/config/env/.env.example`, docs, Wrangler config, Vercel config, and audit scripts list the right variables without exposing secrets.
+- Subtarget: Verify `config/env/.env.example`, docs, Wrangler config, Vercel config, and audit scripts list the right variables without exposing secrets.
 - Subtarget: Confirm broad tokens are not present in source, logs, or committed files.
 - Output: Env audit notes.
 

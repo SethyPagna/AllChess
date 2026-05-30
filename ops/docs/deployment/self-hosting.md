@@ -11,7 +11,7 @@ Cloudflare D1 and R2 remain the source of truth, so no Supabase, Postgres, MinIO
 ## Start Locally
 
 ```bash
-cp ops/config/env/.env.example .env
+cp config/env/.env.example .env
 docker compose -f ops/infra/docker/docker-compose.selfhost.yml up --build
 ```
 

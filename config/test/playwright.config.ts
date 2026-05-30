@@ -1,10 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 import { fileURLToPath } from "node:url";
 
-const repoRoot = fileURLToPath(new URL("../../..", import.meta.url));
+const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
 
 export default defineConfig({
-  testDir: "../../tests/e2e",
+  testDir: "../../ops/tests/e2e",
   fullyParallel: true,
   workers: process.env.CI ? 4 : 2,
   reporter: "list",

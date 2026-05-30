@@ -20,6 +20,8 @@ The active app is a Next.js 16 application deployed as `allchess`, with Cloudfla
 
 The package ranges are current for the verified latest-version lane. ESLint 10 uses `@eslint/compat` so the Next.js lint presets can continue running while their bundled plugins finish their ESLint 10 peer updates. Vercel deploy scripts call `vercel@latest` through `npx` instead of keeping the CLI dependency tree in local installs.
 
+Project configuration is grouped under `config/` for linting, TypeScript, tests, environment examples, and optional Python bot-training probes. Root-discovered framework files stay at the top level so Next.js, Vercel, PostCSS, and package managers can find them without loaders or indirection.
+
 ## Status
 
 - 19 launch locales with shared chess vocabulary.
