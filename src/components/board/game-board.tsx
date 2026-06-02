@@ -712,7 +712,7 @@ export function GameBoard({
                     <Swords size={18} />
                     <div>
                       <strong>{isSearchingOnline ? "Searching for opponent" : "Online opponent required"}</strong>
-                      <span>{isSearchingOnline ? "Bot difficulty and automation are paused while AllChess looks for a human player." : "Choose Online or Room settings, then start searching."}</span>
+                      <span>{isSearchingOnline ? "Bots paused while matching." : "Start search from setup."}</span>
                       <form
                         className="opponent-search-form"
                         onSubmit={(event) => {
@@ -755,17 +755,17 @@ export function GameBoard({
                     <Crown size={18} />
                     <div>
                       <strong>Offline Local</strong>
-                      <span>Use Suggest or Move for one-off help. Switch Setup to Bot Mode for automatic replies.</span>
+                      <span>Assist moves only.</span>
                     </div>
                     <small>assist only</small>
                   </div>
                 )}
                 {suggestedMove ? (
-                  <p className="mt-1 text-sm font-bold text-[var(--accent-strong)]">
+                  <p className="play-status-note text-[var(--accent-strong)]">
                     Suggestion: {suggestedMove.notation} - depth {suggestedMove.depthReached}
                   </p>
                 ) : null}
-                {notice ? <p className="mt-1 text-sm text-[var(--warning)]">{notice}</p> : null}
+                {notice ? <p className="play-status-note text-[var(--warning)]">{notice}</p> : null}
               </div>
             </div>
           ) : null}
@@ -784,7 +784,7 @@ export function GameBoard({
                 <span>{activeReviewMove?.detail ?? reviewStatusDetail}</span>
                 {activeReviewMove ? <small>Best line: {activeReviewMove.bestLine}{botSearchDetail ? ` ${botSearchDetail}` : ""}</small> : null}
               </div>
-              <ol className="review-move-list move-list max-h-52 overflow-auto text-sm">
+              <ol className="review-move-list move-list text-sm">
                 <li className={displayPly === 0 ? "is-active" : ""}>
                   <button type="button" onClick={() => setReviewCursor(0)} className="focus-ring">
                     <span>0.</span>
