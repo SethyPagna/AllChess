@@ -6,16 +6,16 @@ The active app is a Next.js 16 application deployed as `allchess`, with Cloudfla
 
 ## Current Stack
 
-- Next.js: `^16.2.6`
-- React: `^19.2.6`
+- Next.js: `^16.2.7`
+- React: `^19.2.7`
 - TypeScript: `^6.0.3`
 - ESLint: `^10.4.1`
 - Lucide React: `^1.17.0`
-- Vitest: `^4.1.7`
+- Vitest: `^4.1.8`
 - Playwright: `^1.60.0`
 - Tailwind CSS: `^4.3.0`
 - Zod: `^4.4.3`
-- Wrangler: `^4.95.0`
+- Wrangler: `^4.96.0`
 - OpenNext Cloudflare: `^1.19.11`
 
 The package ranges are current for the verified latest-version lane. ESLint 10 uses `@eslint/compat` so the Next.js lint presets can continue running while their bundled plugins finish their ESLint 10 peer updates. Vercel deploy scripts call `vercel@latest` through `npx` instead of keeping the CLI dependency tree in local installs.
