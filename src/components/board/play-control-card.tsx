@@ -66,6 +66,7 @@ export function PlayControlCard({
           <div className="play-control-group play-control-group-primary">
             <button
               type="button"
+              aria-label="Suggest"
               title={suggestedMoveReady ? "Play the highlighted suggestion." : canUseAssist ? "Find and highlight a legal candidate move for the current side." : "Suggestions are disabled for online, room, spectate, review, completed, or not-started states."}
               onClick={suggestedMoveReady ? onApplySuggestion : onSuggest}
               className={`focus-ring ${suggestedMoveReady ? "action-primary is-main" : "action-secondary"} play-control-button`}
@@ -74,7 +75,7 @@ export function PlayControlCard({
               <Lightbulb size={15} />
               <span>Suggest</span>
             </button>
-            <button type="button" title={canUseAssist ? "Ask the bot engine to move for whichever side is currently to move." : "Move for me is disabled for online, room, spectate, review, completed, or not-started states."} onClick={onMoveForCurrentSide} className="focus-ring action-secondary play-control-button" disabled={!canUseAssist}>
+            <button type="button" aria-label="Move" title={canUseAssist ? "Ask the bot engine to move for whichever side is currently to move." : "Move for me is disabled for online, room, spectate, review, completed, or not-started states."} onClick={onMoveForCurrentSide} className="focus-ring action-secondary play-control-button" disabled={!canUseAssist}>
               <PlayCircle size={15} />
               <span>Move</span>
             </button>
@@ -105,15 +106,15 @@ export function PlayControlCard({
               <Bot size={15} />
               <span>Bot</span>
             </button>
-            <button type="button" title={canUseBots ? "Let bots control both sides until you turn this off." : "Auto is only available in Bot Mode during an active local game."} onClick={onToggleAuto} disabled={!canUseBots} className={`focus-ring play-control-button ${botMode === "both" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"}`}>
+            <button type="button" aria-label="Auto" title={canUseBots ? "Let bots control both sides until you turn this off." : "Auto is only available in Bot Mode during an active local game."} onClick={onToggleAuto} disabled={!canUseBots} className={`focus-ring play-control-button ${botMode === "both" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"}`}>
               <Bot size={15} />
               <span>Auto</span>
             </button>
-            <button type="button" onClick={onOfferDraw} disabled={!canEndGame} className="focus-ring action-secondary play-control-button" title={canEndGame ? "End this local game as a draw." : "Draw is unavailable until an active playable game starts."}>
+            <button type="button" aria-label="Draw" onClick={onOfferDraw} disabled={!canEndGame} className="focus-ring action-secondary play-control-button" title={canEndGame ? "End this local game as a draw." : "Draw is unavailable until an active playable game starts."}>
               <Handshake size={15} />
               <span>Draw</span>
             </button>
-            <button type="button" onClick={onResign} disabled={!canEndGame} className="focus-ring play-control-button is-danger" title={canEndGame ? "Resign the active game." : "Resign is unavailable until an active game starts."}>
+            <button type="button" aria-label="Resign" onClick={onResign} disabled={!canEndGame} className="focus-ring play-control-button is-danger" title={canEndGame ? "Resign the active game." : "Resign is unavailable until an active game starts."}>
               <Flag size={15} />
               <span>Resign</span>
             </button>
