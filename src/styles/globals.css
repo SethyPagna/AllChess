@@ -898,6 +898,7 @@ select {
 }
 
 .game-board-layout {
+  display: grid;
   align-items: start;
   --board-fixed-size: clamp(320px, min(58vw, calc(100vh - 8rem)), 760px);
 }
