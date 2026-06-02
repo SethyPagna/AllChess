@@ -328,6 +328,17 @@ select {
   display: none;
 }
 
+.language-menu summary::marker,
+.notification-menu summary::marker {
+  content: "";
+}
+
+.language-menu summary,
+.notification-menu summary {
+  list-style: none;
+  appearance: none;
+}
+
 .language-menu-panel,
 .notification-panel {
   position: absolute;
@@ -1250,8 +1261,8 @@ select {
 }
 
 .play-arena .game-board-layout {
-  --board-fixed-size: clamp(380px, min(52vw, calc(100vh - 14rem)), 780px);
-  grid-template-columns: var(--board-fixed-size) minmax(20rem, 1fr);
+  --board-fixed-size: clamp(360px, min(48vw, calc(100vh - 14rem)), 740px);
+  grid-template-columns: var(--board-fixed-size) minmax(18rem, 1fr);
   min-width: 0;
 }
 
@@ -4811,7 +4822,7 @@ select {
   z-index: 80;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 980px) {
   .play-arena .game-board-layout,
   .game-board-layout {
     grid-template-columns: 1fr;
@@ -5238,8 +5249,8 @@ select {
   }
 }
 
-@media (min-width: 1180px) {
+@media (min-width: 981px) {
   .game-board-layout {
-    grid-template-columns: var(--board-fixed-size) minmax(300px, 1fr);
+    grid-template-columns: var(--board-fixed-size) minmax(18rem, 1fr);
   }
 }
