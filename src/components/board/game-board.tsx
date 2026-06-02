@@ -160,7 +160,7 @@ export function GameBoard({
     : isBotMode
       ? `Bot budget: ${botResponseBudget}ms.`
       : "";
-  const reviewStatusDetail = `${statusHeading}. You: ${colorLabel(humanColor)}. View: ${visualOrientation === "second" ? colorLabel(secondColor) : colorLabel(firstColor)}.${botSearchDetail ? ` ${botSearchDetail}` : ""}`;
+  const moveStatusDetail = botSearchDetail ? `${statusHeading}. ${botSearchDetail}` : statusHeading;
   const trimmedOpponentQuery = opponentQuery.trim();
   const topPlayerColor = isBoardFlipped ? firstColor : secondColor;
   const bottomPlayerColor = isBoardFlipped ? secondColor : firstColor;
@@ -493,7 +493,9 @@ export function GameBoard({
         ? `Searching for opponent in ${modeDetails.label}. You will play ${colorLabel(nextColor)} when paired.`
         : isSpectating
           ? "Spectate mode is read-only. Watch rooms without moving pieces."
-          : `${modeDetails.label} started. You are playing ${colorLabel(nextColor)}.`
+          : isBotMode
+            ? `Bot Mode started. You are ${colorLabel(nextColor)}.`
+            : null
     );
   }
 
@@ -781,7 +783,7 @@ export function GameBoard({
               <div className="review-position-card">
                 <p>{displayPly === 0 ? "Starting position" : `After ${activeReviewMove?.notation ?? "latest move"}`}</p>
                 <strong>{activeReviewMove ? `${activeReviewMove.label} - ${activeReviewMove.score}/100` : "Ready"}</strong>
-                <span>{activeReviewMove?.detail ?? reviewStatusDetail}</span>
+                <span>{activeReviewMove?.detail ?? moveStatusDetail}</span>
                 {activeReviewMove ? <small>Best line: {activeReviewMove.bestLine}{botSearchDetail ? ` ${botSearchDetail}` : ""}</small> : null}
               </div>
               <ol className="review-move-list move-list text-sm">

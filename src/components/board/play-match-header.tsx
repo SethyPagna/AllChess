@@ -85,7 +85,7 @@ export function PlayMatchHeader({
             {showGuide ? (
               <button type="button" title="Open guide, win conditions, and draw notes." onClick={onOpenGuide} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" aria-label="Game guide">
                 <BookOpen size={16} />
-                Guide
+                <span className="button-label">Guide</span>
               </button>
             ) : null}
             <button type="button" onClick={onSelectRoom} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Switch to room setup for a shareable game.">

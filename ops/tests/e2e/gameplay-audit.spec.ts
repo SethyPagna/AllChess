@@ -30,7 +30,7 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await expect(controls.getByLabel("Utility controls")).toHaveCount(0);
   await expect(controls.getByRole("button", { name: "Bot Mode" })).toBeDisabled();
   await expect(page.getByLabel("Local play status")).toContainText("assist only");
-  await expect(page.locator(".review-position-card")).toContainText("You:");
+  await expect(page.locator(".review-position-card")).toContainText("White to move");
   await expect(page.locator(".review-move-list")).toHaveCSS("overflow-y", "auto");
   const before = await board.boundingBox();
   expect(before).toBeTruthy();
@@ -183,8 +183,7 @@ test("setup flow supports Bot Mode as black with an automatic first reply", asyn
   await page.getByLabel("Bot difficulty").first().selectOption("grandmaster");
   await page.getByRole("button", { name: "Start Game" }).click();
 
-  await expect(page.getByText(/You: Black/)).toBeVisible();
-  await expect(page.getByText(/View: Black/)).toBeVisible();
+  await expect(page.getByText("Black side").first()).toBeVisible();
   await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 5000 });
   await expect(page.getByText(/opening-book|internal-search|engine-search/)).toBeVisible();
 
