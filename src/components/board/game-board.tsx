@@ -493,9 +493,7 @@ export function GameBoard({
         ? `Searching for opponent in ${modeDetails.label}. You will play ${colorLabel(nextColor)} when paired.`
         : isSpectating
           ? "Spectate mode is read-only. Watch rooms without moving pieces."
-          : isBotMode
-            ? `Bot Mode started. You are ${colorLabel(nextColor)}.`
-            : null
+          : null
     );
   }
 

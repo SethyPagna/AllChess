@@ -62,7 +62,7 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await page.getByLabel("Side").selectOption("first");
   await page.getByRole("button", { name: /Bot Mode/ }).last().click();
   await page.getByRole("button", { name: "Start Game" }).click();
-  await expect(page.getByText(/Bot Mode started/i)).toBeVisible();
+  await expect(page.getByText(/Normal bot/i).first()).toBeVisible();
   await page.getByRole("button", { name: /e2.*pawn/i }).click();
   await page.getByRole("button", { name: "e4" }).click();
   await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 5000 });
