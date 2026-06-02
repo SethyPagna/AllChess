@@ -206,7 +206,7 @@ test("watch rooms and catalog filters land on honest real-data views", async ({ 
   await expect(page.getByRole("heading", { name: "Leaderboards" })).toBeVisible();
   await expect(page.getByLabel("Leaderboard scope")).toBeEnabled();
   await expect(page.getByLabel("Leaderboard scope")).toHaveValue("family:asian-chess");
-  await expect(page.getByRole("button", { name: "Apply" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Update leaderboard filters" })).toBeEnabled();
   await expectNoHorizontalOverflow(page);
 });
 

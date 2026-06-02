@@ -87,7 +87,9 @@ export function LeaderboardFilterBar({
       <span aria-disabled={hasRatedResults ? undefined : "true"} title={hasRatedResults ? "Showing computed Cloudflare D1 leaderboard rows." : "Leaderboards stay empty until real games are recorded."}>
         {hasRatedResults ? `${populatedCount} computed boards` : "Real results"}
       </span>
-      <button type="submit" className="focus-ring record-filter-chip">Apply</button>
+      <button type="submit" className="focus-ring record-filter-chip" aria-label="Update leaderboard filters" title="Update leaderboard filters">
+        <Filter size={14} />
+      </button>
     </form>
   );
 }
