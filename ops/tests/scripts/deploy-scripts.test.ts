@@ -3,9 +3,26 @@ import { join } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
-const packageJson = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8")) as { scripts: Record<string, string> };
+const repoRoot = process.cwd();
+const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as { scripts: Record<string, string> };
 
 describe("deployment scripts", () => {
+  test("cloudflare build points OpenNext at the organized Wrangler config", () => {
+    expect(packageJson.scripts["cf:build"]).toContain("opennextjs-cloudflare build");
+    expect(packageJson.scripts["cf:build"]).toContain("--config ops/infra/cloudflare/wrangler.jsonc");
+    expect(packageJson.scripts["cf:build"]).toContain("--skipNextBuild");
+  });
+
+  test("organized Wrangler config resolves OpenNext artifacts from the repository root", () => {
+    const wranglerConfig = JSON.parse(readFileSync(join(repoRoot, "ops", "infra", "cloudflare", "wrangler.jsonc"), "utf8")) as {
+      assets: { directory: string };
+      main: string;
+    };
+
+    expect(wranglerConfig.main).toBe("../../../.open-next/worker.js");
+    expect(wranglerConfig.assets.directory).toBe("../../../.open-next/assets");
+  });
+
   test("cloudflare deploy publishes the patched worker directly with Wrangler", () => {
     expect(packageJson.scripts["cf:deploy"]).toContain("wrangler deploy .open-next/worker.js");
     expect(packageJson.scripts["cf:deploy"]).toContain("--config ops/infra/cloudflare/wrangler.jsonc");
