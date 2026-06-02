@@ -1863,27 +1863,21 @@ select {
 
 .pregame-board-overlay {
   position: absolute;
-  inset: auto clamp(0.75rem, 4vw, 2rem) clamp(0.75rem, 4vw, 2rem);
+  inset: auto auto clamp(0.55rem, 3vw, 1rem) clamp(0.55rem, 3vw, 1rem);
   z-index: 3;
-  display: grid;
-  gap: 0.25rem;
+  display: inline-flex;
+  align-items: center;
   border: 1px solid color-mix(in srgb, var(--accent) 42%, var(--border));
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--surface) 94%, transparent);
-  box-shadow: var(--shadow);
-  padding: 0.8rem 0.9rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  box-shadow: 0 10px 24px rgb(0 0 0 / 22%);
+  padding: 0.42rem 0.62rem;
 }
 
 .pregame-board-overlay strong {
   color: var(--foreground);
-  font-size: 1rem;
+  font-size: 0.78rem;
   font-weight: 950;
-}
-
-.pregame-board-overlay span {
-  color: var(--muted);
-  font-size: 0.8rem;
-  font-weight: 800;
 }
 
 .play-section-label {
@@ -5029,6 +5023,10 @@ select {
   .captured-strip {
     grid-column: 1 / -1;
     justify-content: flex-start;
+  }
+
+  .captured-strip.is-empty {
+    display: none;
   }
 
   .play-command-bar {

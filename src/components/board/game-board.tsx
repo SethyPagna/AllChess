@@ -172,7 +172,6 @@ export function GameBoard({
   function playerCard(color: string, placement: "top" | "bottom") {
     return (
       <BoardPlayerCard
-        botCalibrationLabel={botCalibrationLabel}
         botLevelLabel={botLevel.label}
         botModeActive={color === botColor && botMode !== "human"}
         botStrengthDisplay={botStrength.display}
@@ -610,7 +609,6 @@ export function GameBoard({
             {!gameStarted ? (
               <div className="pregame-board-overlay" role="status">
                 <strong>Choose setup first</strong>
-                <span>{modeDetails.label} · {getTimeControl(timeControl).label} · {seatChoice === "random" ? "Random side" : colorLabel(humanColor)}</span>
               </div>
             ) : null}
             {outcome && !isReviewing ? (

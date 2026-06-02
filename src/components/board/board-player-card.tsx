@@ -4,7 +4,6 @@ import { formatClock } from "@/lib/game/clocks";
 import type { Piece, PlayerClock } from "@/lib/variants";
 
 type BoardPlayerCardProps = {
-  botCalibrationLabel: string;
   botLevelLabel: string;
   botModeActive: boolean;
   botStrengthDisplay: string;
@@ -20,7 +19,6 @@ type BoardPlayerCardProps = {
 };
 
 export function BoardPlayerCard({
-  botCalibrationLabel,
   botLevelLabel,
   botModeActive,
   botStrengthDisplay,
@@ -45,9 +43,9 @@ export function BoardPlayerCard({
           <strong>{isHuman ? "Your profile" : isBot ? `${botLevelLabel} bot` : `${colorLabel(color)} player`}</strong>
           <span aria-label={`${colorLabel(color)} clock`}>{clock ? formatClock(clock.remainingMs, { untimed: timeControl === "freestyle" }) : "--:--"}</span>
         </div>
-        <p>{isBot ? `${botStrengthDisplay} - ${botCalibrationLabel} - ${thinking ? "thinking" : "ready"}` : isHuman ? `${colorLabel(color)} side - local profile` : `${colorLabel(color)} side`}</p>
+        <p>{isBot ? `${botStrengthDisplay}${thinking ? " - thinking" : ""}` : `${colorLabel(color)} side`}</p>
       </div>
-      <div className="captured-strip" aria-label={`${colorLabel(color)} captured pieces`}>
+      <div className={`captured-strip ${capturedPieces.length ? "" : "is-empty"}`} aria-label={`${colorLabel(color)} captured pieces`}>
         {capturedPieces.length ? (
           capturedPieces.slice(0, 12).map((piece, index) => (
             <span key={`${piece.id}-${index}`} className="captured-piece">
