@@ -82,7 +82,7 @@ export function PlayControlCard({
             <button type="button" title="Flip the visual board orientation without changing sides." onClick={onFlipBoard} className="focus-ring action-secondary play-icon-button" aria-label="Flip board">
               <FlipHorizontal2 size={15} />
             </button>
-            <button type="button" title={isThinking ? "Stop the current bot search." : "Cancel is available only while the bot is thinking."} onClick={onCancelThinking} className="focus-ring action-secondary play-icon-button" disabled={!isThinking} aria-label="Cancel thinking">
+            <button type="button" title={isThinking ? "Pause the current bot search." : "Pause is available only while the bot is thinking."} onClick={onCancelThinking} className="focus-ring action-secondary play-icon-button" disabled={!isThinking} aria-label="Pause thinking">
               <PauseCircle size={15} />
             </button>
             <button type="button" title={canUndo ? "Undo the last local move." : "Undo is disabled for online, room, spectate, review, thinking, or empty history states."} onClick={onUndo} className="focus-ring action-secondary play-icon-button" aria-label="Undo" disabled={!canUndo}>
