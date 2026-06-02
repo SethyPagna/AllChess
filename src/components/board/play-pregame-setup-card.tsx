@@ -40,11 +40,10 @@ export function PlayPregameSetupCard({
   return (
     <div className="play-options-card">
       <div className="play-mode-grid" aria-label="Play modes">
-        {playModeOptions.map(({ key, label, description, Icon }) => (
-          <button key={key} type="button" onClick={() => onModeChange(key)} className={`focus-ring play-mode-button ${playMode === key ? "is-selected" : ""}`}>
+        {playModeOptions.map(({ key, label, Icon }) => (
+          <button key={key} type="button" onClick={() => onModeChange(key)} className={`focus-ring play-mode-button ${playMode === key ? "is-selected" : ""}`} title={label}>
             <Icon size={17} />
             <span>{label}</span>
-            <small>{description}</small>
           </button>
         ))}
       </div>
@@ -86,7 +85,6 @@ export function PlayPregameSetupCard({
         <PlayCircle size={18} />
         Start Game
       </button>
-      <p className="text-xs font-bold text-[var(--muted)]">Choose mode, side, clock, and bot tier first. During play, Status keeps the live controls compact.</p>
     </div>
   );
 }

@@ -13,7 +13,6 @@ type PlaySetupLocaleProps = {
 
 type PlayModeRailProps = PlaySetupLocaleProps & {
   selectedMode: PlayModeKey;
-  selectedModeLabel: string;
   selectedTimeControl: TimeControlKey;
   selectedTimeLabel: string;
 };
@@ -66,7 +65,6 @@ export function PlayQuickGrid({ locale }: PlaySetupLocaleProps) {
 export function PlayModeRail({
   locale,
   selectedMode,
-  selectedModeLabel,
   selectedTimeControl,
   selectedTimeLabel
 }: PlayModeRailProps) {
@@ -74,14 +72,12 @@ export function PlayModeRail({
     <aside className="panel play-mode-rail" aria-label="Play modes">
       <div className="compact-section-heading">
         <h2 className="section-title">Mode</h2>
-        <InfoHint text={`Selected: ${selectedModeLabel}. Choose a mode first, then each game row starts with that session type.`} />
       </div>
       <div className="play-mode-rail-list">
-        {playModeOptions.map(({ key, label, description, Icon }) => (
+        {playModeOptions.map(({ key, label, Icon }) => (
           <Link key={key} href={playSetupHref(locale, { mode: key, time: selectedTimeControl }) as never} className={`focus-ring play-mode-rail-item ${selectedMode === key ? "is-selected" : ""}`} aria-current={selectedMode === key ? "page" : undefined}>
             <Icon size={18} />
             <span>{label}</span>
-            <InfoHint text={description} />
           </Link>
         ))}
       </div>
