@@ -7,13 +7,17 @@ import { GET as leaderboardsGet } from "@/app/api/leaderboards/route";
 import { GET as rulesGet } from "@/app/api/rules/[variantKey]/route";
 import {
   displayGameName,
+  displayModeReadiness,
   displayReleaseReadiness,
   gameCatalog,
   gameFamilies,
   getCatalogReleaseReadiness,
+  getCatalogModeSupport,
+  getCatalogSupportedModes,
   getCatalogStats,
   getGameCatalogEntry,
   getPlayableGameVerification,
+  filterGameCatalogEntries,
   searchGameCatalog
 } from "@/lib/catalog";
 
@@ -56,6 +60,33 @@ describe("universal game catalog", () => {
       gateComplete: false,
       blockers: expect.arrayContaining([expect.stringContaining("pawn-drop")])
     });
+  });
+
+  test("models play-mode support separately from verified release readiness", () => {
+    const classic = getGameCatalogEntry("classic");
+    const shogi = getGameCatalogEntry("shogi");
+    const go = getGameCatalogEntry("go-19x19");
+    if (!classic || !shogi || !go) throw new Error("Expected catalog fixtures.");
+
+    expect(getCatalogModeSupport(classic, "online")).toMatchObject({ enabled: true, level: "verified" });
+    expect(getCatalogModeSupport(classic, "bot")).toMatchObject({ enabled: true, level: "verified" });
+    expect(getCatalogModeSupport(shogi, "bot")).toMatchObject({ enabled: true, level: "preview" });
+    expect(getCatalogModeSupport(shogi, "offline")).toMatchObject({ enabled: true, level: "preview" });
+    expect(getCatalogModeSupport(shogi, "online")).toMatchObject({ enabled: false, level: "guide-only" });
+    expect(getCatalogModeSupport(go, "bot")).toMatchObject({ enabled: false, level: "guide-only" });
+    expect(getCatalogSupportedModes(shogi).map((support) => support.mode)).toEqual(expect.arrayContaining(["bot", "offline", "spectate"]));
+    expect(displayModeReadiness(shogi, "bot")).toBe("Bot preview");
+    expect(filterGameCatalogEntries(gameCatalog, "", { mode: "bot" }).map((entry) => entry.id)).toEqual(
+      expect.arrayContaining(["classic", "shogi", "janggi", "makruk", "jungle"])
+    );
+    expect(filterGameCatalogEntries(gameCatalog, "", { mode: "online" }).map((entry) => entry.id).sort()).toEqual([
+      "antichess",
+      "chess960",
+      "classic",
+      "king-of-the-hill",
+      "three-check",
+      "xiangqi"
+    ]);
   });
 
   test("covers the wider board-game families without marking unfinished engines playable", () => {
@@ -102,7 +133,12 @@ describe("universal game catalog", () => {
       ])
     });
 
-    const invalidFilteredCatalog = await catalogGet(new Request("http://allchess.test/api/catalog?family=bad&playability=broken"));
+    const botFilteredCatalog = await catalogGet(new Request("http://allchess.test/api/catalog?mode=bot&q=shogi"));
+    await expect(botFilteredCatalog.json()).resolves.toMatchObject({
+      entries: [expect.objectContaining({ id: "shogi" })]
+    });
+
+    const invalidFilteredCatalog = await catalogGet(new Request("http://allchess.test/api/catalog?family=bad&playability=broken&mode=broken"));
     await expect(invalidFilteredCatalog.json()).resolves.toMatchObject({
       stats: { totalGames: gameCatalog.length }
     });

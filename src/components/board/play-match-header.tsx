@@ -4,7 +4,15 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { BookOpen, ChevronDown, Eye, Search, Share2 } from "lucide-react";
 
-import { displayGameName, gameCatalog } from "@/lib/catalog";
+import {
+  displayGameName,
+  displayModeReadiness,
+  gameCatalog,
+  gameFamilies,
+  getCatalogModeSupport,
+  type CatalogPlayMode,
+  type GameFamilyKey
+} from "@/lib/catalog";
 import type { TimeControlKey } from "@/lib/game/time-controls";
 import { playGameHref } from "@/lib/routing/play-links";
 import type { PlayMode } from "@/components/board/game-board-options";
@@ -34,19 +42,29 @@ export function PlayMatchHeader({
 }: PlayMatchHeaderProps) {
   const [gamePickerOpen, setGamePickerOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const playableGames = useMemo(() => gameCatalog.filter((entry) => entry.playability === "playable" && entry.variantKey), []);
+  const [modeFilter, setModeFilter] = useState<"current" | CatalogPlayMode>("current");
+  const [familyFilter, setFamilyFilter] = useState<"all" | GameFamilyKey>("all");
+  const targetMode = modeFilter === "current" ? playMode : modeFilter;
+  const playableGames = useMemo(() => gameCatalog.filter((entry) => entry.variantKey), []);
   const filteredGames = useMemo(() => {
     const normalized = normalize(query);
-    const matches = normalized
-      ? playableGames.filter((entry) =>
-          [entry.id, entry.name.english, entry.name.native, entry.name.romanization, entry.name.short, ...entry.aliases]
-            .filter(Boolean)
-            .some((value) => normalize(value ?? "").includes(normalized))
-        )
-      : playableGames;
+    const matches = playableGames.filter((entry) => {
+      if (familyFilter !== "all" && entry.family !== familyFilter) return false;
+      if (!getCatalogModeSupport(entry, targetMode).enabled) return false;
+      if (!normalized) return true;
+      return [entry.id, entry.name.english, entry.name.native, entry.name.romanization, entry.name.short, ...entry.aliases]
+        .filter(Boolean)
+        .some((value) => normalize(value ?? "").includes(normalized));
+    });
 
-    return matches.slice(0, 8);
-  }, [playableGames, query]);
+    return matches.slice(0, 10);
+  }, [familyFilter, playableGames, query, targetMode]);
+  const modeFilters: Array<{ key: "current" | CatalogPlayMode; label: string }> = [
+    { key: "current", label: "Current" },
+    { key: "bot", label: "Bot" },
+    { key: "offline", label: "Local" },
+    { key: "online", label: "Online" }
+  ];
 
   return (
     <div className="play-panel-match-header">
@@ -64,18 +82,48 @@ export function PlayMatchHeader({
                   <span className="sr-only">Search games</span>
                   <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search games" autoFocus />
                 </label>
+                <div className="play-title-picker-filters" aria-label="Game filters">
+                  <div className="play-title-picker-chips" aria-label="Mode filter">
+                    {modeFilters.map((filter) => (
+                      <button
+                        key={filter.key}
+                        type="button"
+                        className={`focus-ring ${modeFilter === filter.key ? "is-selected" : ""}`}
+                        aria-pressed={modeFilter === filter.key}
+                        onClick={() => setModeFilter(filter.key)}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </div>
+                  <label className="play-title-picker-family">
+                    <span className="sr-only">Game family</span>
+                    <select value={familyFilter} onChange={(event) => setFamilyFilter(event.target.value as "all" | GameFamilyKey)}>
+                      <option value="all">All families</option>
+                      {gameFamilies.map((family) => (
+                        <option key={family.key} value={family.key}>
+                          {family.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
                 <div className="play-title-picker-list">
-                  {filteredGames.map((entry) => (
-                    <Link
-                      key={entry.id}
-                      href={playGameHref(locale, entry.variantKey, { mode: playMode, time: timeControl }) as never}
-                      className={`focus-ring play-title-picker-row ${entry.variantKey === currentVariantKey ? "is-current" : ""}`}
-                      onClick={() => setGamePickerOpen(false)}
-                    >
-                      <span>{displayGameName(entry)}</span>
-                      <small>{entry.board.description}</small>
-                    </Link>
-                  ))}
+                  {filteredGames.map((entry) => {
+                    const support = getCatalogModeSupport(entry, targetMode);
+                    return (
+                      <Link
+                        key={entry.id}
+                        href={playGameHref(locale, entry.variantKey, { mode: targetMode, time: timeControl }) as never}
+                        className={`focus-ring play-title-picker-row ${entry.variantKey === currentVariantKey ? "is-current" : ""}`}
+                        onClick={() => setGamePickerOpen(false)}
+                        title={support.reason}
+                      >
+                        <span>{displayGameName(entry)}</span>
+                        <small>{displayModeReadiness(entry, targetMode)}</small>
+                      </Link>
+                    );
+                  })}
                   {!filteredGames.length ? <p>No playable games found.</p> : null}
                 </div>
               </div>

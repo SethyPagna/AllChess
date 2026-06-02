@@ -752,6 +752,49 @@ select {
   font-weight: 800;
 }
 
+.play-title-picker-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(8rem, auto);
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.play-title-picker-chips {
+  display: flex;
+  min-width: 0;
+  gap: 0.28rem;
+  overflow-x: auto;
+  padding-bottom: 0.05rem;
+  scrollbar-width: thin;
+}
+
+.play-title-picker-chips button,
+.play-title-picker-family select {
+  min-height: 2rem;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface-strong);
+  color: var(--foreground);
+  font-size: 0.72rem;
+  font-weight: 950;
+}
+
+.play-title-picker-chips button {
+  flex: 0 0 auto;
+  padding: 0 0.55rem;
+}
+
+.play-title-picker-chips button.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface-strong));
+}
+
+.play-title-picker-family select {
+  width: 100%;
+  max-width: 11rem;
+  padding: 0 0.45rem;
+}
+
 .play-title-picker-list {
   display: grid;
   max-height: 17rem;
@@ -1896,6 +1939,11 @@ select {
 .play-mode-stack-button {
   width: 100%;
   text-align: left;
+}
+
+.play-mode-stack-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
 }
 
 .play-mode-stack-button span {
@@ -5102,6 +5150,14 @@ select {
     justify-content: flex-end;
     gap: 0.16rem;
     margin-left: auto;
+  }
+
+  .play-title-picker-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .play-title-picker-family select {
+    max-width: none;
   }
 
   .play-panel-match-header .play-title-row {

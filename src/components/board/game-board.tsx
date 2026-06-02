@@ -18,6 +18,7 @@ import {
 import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/lib/bot/config";
 import { getVariantBotStrengthProfile } from "@/lib/bot/strength";
 import type { BotMoveResult } from "@/lib/bot/runtime";
+import { getCatalogModeSupport, getGameCatalogEntry, type CatalogModeSupport } from "@/lib/catalog";
 import { applyBotMoveAfterThinking, settleBotThinkingSnapshot } from "@/lib/game/bot-clock";
 import { tickGameClock } from "@/lib/game/clocks";
 import { redoTimeline, undoTimeline, type TimelineState } from "@/lib/game/history";
@@ -55,6 +56,22 @@ type SuggestedMove = {
   depthReached: number;
 };
 
+function resolveSupportedPlayMode(variantKey: string, requestedMode: PlayMode): PlayMode {
+  const entry = getGameCatalogEntry(variantKey);
+  if (!entry) return requestedMode;
+  if (getCatalogModeSupport(entry, requestedMode).enabled) return requestedMode;
+  return getCatalogModeSupport(entry, "offline").enabled ? "offline" : "spectate";
+}
+
+function unavailableModeSupport(mode: PlayMode): CatalogModeSupport {
+  return {
+    enabled: false,
+    level: "guide-only",
+    mode,
+    reason: "This game needs a catalog entry before the mode can be started."
+  };
+}
+
 async function requestRuntimeBotMove(...args: Parameters<typeof import("@/lib/bot/runtime").requestBotMove>) {
   const { requestBotMove } = await import("@/lib/bot/runtime");
   return requestBotMove(...args);
@@ -91,7 +108,7 @@ export function GameBoard({
   const [future, setFuture] = useState<GameState[]>([]);
   const [selected, setSelected] = useState<Square | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
-  const [playMode, setPlayMode] = useState<PlayMode>(initialPlayMode ?? (initialBotMode === "opponent" ? "bot" : "offline"));
+  const [playMode, setPlayMode] = useState<PlayMode>(() => resolveSupportedPlayMode(variantKey, initialPlayMode ?? (initialBotMode === "opponent" ? "bot" : "offline")));
   const [botDifficulty, setBotDifficulty] = useState<BotDifficultyKey>(initialBotDifficulty);
   const [botMode, setBotMode] = useState<BotMode>(initialBotMode);
   const [seatChoice, setSeatChoice] = useState<SeatChoice>("random");
@@ -132,6 +149,17 @@ export function GameBoard({
   const outcomeKey = state.status === "completed" ? `${state.moves.length}:${state.result ?? ""}:${state.outcomeReason ?? ""}` : null;
   const firstColor = state.clocks[0]?.color ?? "white";
   const secondColor = state.clocks[1]?.color ?? "black";
+  const catalogEntry = useMemo(() => getGameCatalogEntry(variantKey), [variantKey]);
+  const modeSupport = useMemo(
+    () => ({
+      online: catalogEntry ? getCatalogModeSupport(catalogEntry, "online") : unavailableModeSupport("online"),
+      bot: catalogEntry ? getCatalogModeSupport(catalogEntry, "bot") : unavailableModeSupport("bot"),
+      offline: catalogEntry ? getCatalogModeSupport(catalogEntry, "offline") : unavailableModeSupport("offline"),
+      room: catalogEntry ? getCatalogModeSupport(catalogEntry, "room") : unavailableModeSupport("room"),
+      spectate: catalogEntry ? getCatalogModeSupport(catalogEntry, "spectate") : unavailableModeSupport("spectate")
+    }),
+    [catalogEntry]
+  );
   const isThinking = thinking.status === "thinking";
   const isOnlineMode = playMode === "online" || playMode === "room";
   const isBotMode = playMode === "bot";
@@ -495,6 +523,10 @@ export function GameBoard({
   }
 
   function startGame() {
+    if (!modeSupport[playMode].enabled) {
+      setNotice(modeSupport[playMode].reason);
+      return;
+    }
     const nextColor = pickHumanColor(state, seatChoice);
     resolvedRandomSeatRef.current = true;
     setHumanColor(nextColor);
@@ -514,6 +546,10 @@ export function GameBoard({
   }
 
   function selectPlayMode(nextMode: PlayMode) {
+    if (!modeSupport[nextMode].enabled) {
+      setNotice(modeSupport[nextMode].reason);
+      return;
+    }
     setPlayMode(nextMode);
     setOpponentQuery("");
     if (nextMode !== "bot") {
@@ -684,6 +720,7 @@ export function GameBoard({
                 onStartGame={startGame}
                 onTimeControlChange={changeTimeControl}
                 playMode={playMode}
+                modeSupport={modeSupport}
                 seatChoice={seatChoice}
                 secondColorLabel={colorLabel(secondColor)}
                 timeControl={timeControl}

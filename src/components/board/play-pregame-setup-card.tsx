@@ -1,6 +1,7 @@
 import { Bot, Eye, Flag, Medal, PlayCircle, Timer, Users } from "lucide-react";
 
 import { botDifficultyLevels, type BotDifficultyKey } from "@/lib/bot/config";
+import type { CatalogModeSupport } from "@/lib/catalog";
 import { getTimeControl, timeControls, type TimeControlKey } from "@/lib/game/time-controls";
 import type { PlayMode } from "@/components/board/game-board-options";
 
@@ -20,6 +21,7 @@ type PlayPregameSetupCardProps = {
   onStartGame: () => void;
   onTimeControlChange: (timeControl: TimeControlKey) => void;
   playMode: PlayMode;
+  modeSupport: Record<PlayMode, CatalogModeSupport>;
   seatChoice: SeatChoice;
   secondColorLabel: string;
   timeControl: TimeControlKey;
@@ -39,6 +41,7 @@ export function PlayPregameSetupCard({
   onStartGame,
   onTimeControlChange,
   playMode,
+  modeSupport,
   seatChoice,
   secondColorLabel,
   timeControl
@@ -75,12 +78,26 @@ export function PlayPregameSetupCard({
         <span className="is-selected">{timeControlLabel}</span>
       </div>
       <div className="play-mode-stack" aria-label="Play modes">
-        <button type="button" onClick={() => onModeChange("bot")} className={`focus-ring play-mode-stack-button ${playMode === "bot" ? "is-selected" : ""}`} title="Bot Mode">
+        <button
+          type="button"
+          onClick={() => onModeChange("bot")}
+          className={`focus-ring play-mode-stack-button ${playMode === "bot" ? "is-selected" : ""}`}
+          disabled={!modeSupport.bot.enabled}
+          title={modeSupport.bot.reason}
+        >
           <Bot size={18} />
           <span>Bot Mode</span>
         </button>
         {secondaryModes.map(({ key, label, Icon }) => (
-          <button key={key} type="button" aria-label={modeAccessibleNames[key] ?? label} onClick={() => onModeChange(key)} className={`focus-ring play-mode-stack-button ${playMode === key ? "is-selected" : ""}`} title={label}>
+          <button
+            key={key}
+            type="button"
+            aria-label={modeAccessibleNames[key] ?? label}
+            onClick={() => onModeChange(key)}
+            className={`focus-ring play-mode-stack-button ${playMode === key ? "is-selected" : ""}`}
+            disabled={!modeSupport[key].enabled}
+            title={modeSupport[key].reason}
+          >
             <Icon size={18} />
             <span>{label}</span>
           </button>

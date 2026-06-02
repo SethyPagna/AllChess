@@ -5,7 +5,7 @@ import { useMemo, useState } from "react";
 import { BookOpen, Play, Radio, Search } from "lucide-react";
 
 import { CatalogInfoOverlay } from "@/components/catalog/catalog-browser";
-import { displayGameName, displayRulesReadiness, type GameCatalogEntry } from "@/lib/catalog";
+import { displayGameName, displayModeReadiness, displayRulesReadiness, getCatalogModeSupport, type GameCatalogEntry } from "@/lib/catalog";
 import type { TimeControlKey } from "@/lib/game/time-controls";
 import type { LocaleCode } from "@/lib/i18n/locales";
 import { playGameHref } from "@/lib/routing/play-links";
@@ -35,8 +35,8 @@ export function PlayGamePicker({
             .some((value) => normalize(value ?? "").includes(normalized))
         )
       : entries;
-    return matches.slice(0, 12);
-  }, [entries, query]);
+    return matches.filter((entry) => getCatalogModeSupport(entry, selectedMode).enabled).slice(0, 12);
+  }, [entries, query, selectedMode]);
 
   return (
     <>
@@ -49,25 +49,29 @@ export function PlayGamePicker({
         <span>{filtered.length} shown</span>
       </div>
       <div className="play-game-list">
-        {filtered.map((entry) => (
-          <article key={entry.id} className="play-game-row">
-            <div className="play-game-row-main">
-              <Radio size={16} />
-              <strong>{displayGameName(entry)}</strong>
-              <span>{displayRulesReadiness(entry)}</span>
-              <button type="button" className="catalog-guide-button focus-ring" aria-label={`Open guide for ${displayGameName(entry)}`} title="Guide, rules, and setup actions" onClick={() => setSelectedEntry(entry)}>
-                <BookOpen size={15} />
-                <span>Guide</span>
-              </button>
-            </div>
-            <div className="play-game-row-actions">
-              <Link href={playGameHref(locale, entry.variantKey, { mode: selectedMode, time: selectedTimeControl }) as never} className="focus-ring action-primary">
-                <Play size={14} />
-                {modeActionLabel(selectedMode)}
-              </Link>
-            </div>
-          </article>
-        ))}
+        {filtered.map((entry) => {
+          const support = getCatalogModeSupport(entry, selectedMode);
+          return (
+            <article key={entry.id} className="play-game-row" title={support.reason}>
+              <div className="play-game-row-main">
+                <Radio size={16} />
+                <strong>{displayGameName(entry)}</strong>
+                <span>{displayModeReadiness(entry, selectedMode)}</span>
+                <span>{displayRulesReadiness(entry)}</span>
+                <button type="button" className="catalog-guide-button focus-ring" aria-label={`Open guide for ${displayGameName(entry)}`} title="Guide, rules, and setup actions" onClick={() => setSelectedEntry(entry)}>
+                  <BookOpen size={15} />
+                  <span>Guide</span>
+                </button>
+              </div>
+              <div className="play-game-row-actions">
+                <Link href={playGameHref(locale, entry.variantKey, { mode: selectedMode, time: selectedTimeControl }) as never} className="focus-ring action-primary">
+                  <Play size={14} />
+                  {modeActionLabel(selectedMode)}
+                </Link>
+              </div>
+            </article>
+          );
+        })}
         {!filtered.length ? <p className="play-game-empty">No playable games match that search.</p> : null}
       </div>
       {selectedEntry ? <CatalogInfoOverlay entry={selectedEntry} locale={locale} onClose={() => setSelectedEntry(null)} /> : null}

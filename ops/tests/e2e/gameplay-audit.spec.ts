@@ -123,6 +123,30 @@ test("play setup carries selected clock into game links", async ({ page }) => {
   expect(runtimeErrors).toEqual([]);
 });
 
+test("game picker exposes bot-capable preview variants without enabling live modes", async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
+  });
+
+  await page.goto("/en/play/classic?mode=bot&time=rapid");
+  await page.getByRole("button", { name: "Choose game" }).click();
+  await expect(page.getByLabel("Game filters")).toBeVisible();
+  await page.getByLabel("Mode filter").getByRole("button", { name: "Bot", exact: true }).click();
+  await page.getByPlaceholder("Search games").fill("shogi");
+  const shogiLink = page.getByRole("link", { name: /Shogi.*Bot preview/i }).first();
+  await expect(shogiLink).toHaveAttribute("href", "/en/play/shogi?bot=normal&mode=bot&time=rapid");
+  await shogiLink.click();
+
+  await expect(page).toHaveURL(/\/en\/play\/shogi\?bot=normal&mode=bot&time=rapid$/);
+  await expect(page.getByRole("heading", { name: "Shogi" })).toBeVisible();
+  await expect(page.getByLabel("Bot difficulty")).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Play Online" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Play Online" })).toHaveAttribute("title", /Live rooms stay locked until rules/i);
+  expect(runtimeErrors).toEqual([]);
+});
+
 test("checkmate shows match-over feedback without resizing the board", async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));

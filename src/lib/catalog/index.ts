@@ -1,12 +1,25 @@
 import { getVariantRuleSummary } from "@/lib/variants/rules-atlas";
 import { variantCatalog, type VariantDefinition } from "@/lib/variants";
 
-import type { BoardGeometry, CatalogStats, GameCatalogEntry, GameFamilyKey, LeaderboardScope, PiecePresentationPack, PlayabilityStatus, PlayableGameVerification } from "./types";
+import type {
+  BoardGeometry,
+  CatalogModeSupport,
+  CatalogPlayMode,
+  CatalogStats,
+  GameCatalogEntry,
+  GameFamilyKey,
+  LeaderboardScope,
+  PiecePresentationPack,
+  PlayabilityStatus,
+  PlayableGameVerification
+} from "./types";
 
 export type {
   BoardGeometry,
   BotBenchmarkRun,
   BotEngineAdapter,
+  CatalogModeSupport,
+  CatalogPlayMode,
   CatalogStats,
   GameCatalogEntry,
   GameFamilyKey,
@@ -700,20 +713,102 @@ export function getVerifiedPlayableVariants() {
   return variantCatalog.filter((variant) => isVerificationComplete(getPlayableGameVerification(variant.key))).map((variant) => variant.key);
 }
 
-export function searchGameCatalog(query: string, filters: { family?: GameFamilyKey; playability?: PlayabilityStatus } = {}) {
+export function searchGameCatalog(query: string, filters: { family?: GameFamilyKey; mode?: CatalogPlayMode; playability?: PlayabilityStatus } = {}) {
   return filterGameCatalogEntries(gameCatalog, query, filters);
 }
 
-export function filterGameCatalogEntries(entries: GameCatalogEntry[], query: string, filters: { family?: GameFamilyKey; playability?: PlayabilityStatus } = {}) {
+export function filterGameCatalogEntries(entries: GameCatalogEntry[], query: string, filters: { family?: GameFamilyKey; mode?: CatalogPlayMode; playability?: PlayabilityStatus } = {}) {
   const normalized = normalizeCatalogSearch(query);
   return entries.filter((entry) => {
     if (filters.family && entry.family !== filters.family) return false;
     if (filters.playability && entry.playability !== filters.playability) return false;
+    if (filters.mode && !getCatalogModeSupport(entry, filters.mode).enabled) return false;
     if (!normalized) return true;
     return [entry.id, entry.name.english, entry.name.native, entry.name.romanization, entry.name.short, ...entry.aliases]
       .filter(Boolean)
       .some((candidate) => normalizeCatalogSearch(candidate ?? "").includes(normalized));
   });
+}
+
+export function getCatalogModeSupport(entry: GameCatalogEntry, mode: CatalogPlayMode): CatalogModeSupport {
+  const hasBoardRoute = Boolean(entry.variantKey);
+  const hasBotEngine = entry.botAdapter !== "none";
+  const verified = entry.playability === "playable";
+
+  if (mode === "spectate") {
+    return {
+      enabled: true,
+      level: "watch",
+      mode,
+      reason: verified ? "Watch public rooms for this verified game." : "Watch mode opens the public rooms list while this game remains guide-first."
+    };
+  }
+
+  if (!hasBoardRoute) {
+    return {
+      enabled: false,
+      level: "guide-only",
+      mode,
+      reason: "Guide only until a board route and rules adapter are available."
+    };
+  }
+
+  if (mode === "offline") {
+    return {
+      enabled: true,
+      level: verified ? "verified" : "preview",
+      mode,
+      reason: verified ? "Rules and local play are fully verified." : "Local preview uses the current rules adapter while verification finishes."
+    };
+  }
+
+  if (mode === "bot") {
+    if (!hasBotEngine) {
+      return {
+        enabled: false,
+        level: "guide-only",
+        mode,
+        reason: "No bot engine is attached to this ruleset yet."
+      };
+    }
+
+    return {
+      enabled: true,
+      level: verified ? "verified" : "preview",
+      mode,
+      reason: verified ? "Bot play is verified for this game." : "Bot preview validates legal moves while full training gates finish."
+    };
+  }
+
+  if (mode === "online" || mode === "room") {
+    return {
+      enabled: verified,
+      level: verified ? "verified" : "guide-only",
+      mode,
+      reason: verified ? "Available for live and room setup." : "Live rooms stay locked until rules, bot, persistence, and E2E gates are complete."
+    };
+  }
+
+  return {
+    enabled: false,
+    level: "guide-only",
+    mode,
+    reason: "Unsupported play mode."
+  };
+}
+
+export function getCatalogSupportedModes(entry: GameCatalogEntry) {
+  return (["online", "bot", "offline", "room", "spectate"] as const)
+    .map((mode) => getCatalogModeSupport(entry, mode))
+    .filter((support) => support.enabled);
+}
+
+export function displayModeReadiness(entry: GameCatalogEntry, mode: CatalogPlayMode) {
+  const support = getCatalogModeSupport(entry, mode);
+  if (!support.enabled) return "Guide only";
+  if (support.level === "verified") return mode === "bot" ? "Bot ready" : "Verified";
+  if (support.level === "preview") return mode === "bot" ? "Bot preview" : "Playable preview";
+  return "Watch";
 }
 
 export function displayGameName(entry: GameCatalogEntry) {

@@ -13,6 +13,14 @@ export type GameFamilyKey =
   | "regional";
 
 export type PlayabilityStatus = "playable" | "learn" | "coming-soon";
+export type CatalogPlayMode = "online" | "bot" | "offline" | "room" | "spectate";
+
+export type CatalogModeSupport = {
+  enabled: boolean;
+  level: "verified" | "preview" | "watch" | "guide-only";
+  mode: CatalogPlayMode;
+  reason: string;
+};
 
 export type BoardGeometry =
   | { kind: "square-grid"; rows: number; cols: number; description: string }
