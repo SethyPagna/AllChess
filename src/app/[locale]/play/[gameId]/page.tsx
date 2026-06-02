@@ -5,7 +5,7 @@ import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { parseBotDifficulty, parsePlayMode, parseQueryFlag, parseTimeControl, safeDecodeRouteSegment } from "@/lib/routing/params";
 import { getVariantRuleSummary } from "@/lib/variants/rules-atlas";
-import { formatVariantPlayMeta, getVariant } from "@/lib/variants";
+import { getVariant } from "@/lib/variants";
 
 export default async function PlayPage({
   params,
@@ -44,8 +44,6 @@ export default async function PlayPage({
           initialTimeControl={initialTimeControl}
           locale={locale}
           title={t(variant.nameKey)}
-          meta={formatVariantPlayMeta(variant)}
-          objective={variant.objective}
         />
       </div>
     </section>

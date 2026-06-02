@@ -2,7 +2,7 @@ import { GameBoard } from "@/components/board/game-board";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { parseBotDifficulty, parsePlayMode, parseQueryFlag, parseTimeControl } from "@/lib/routing/params";
-import { formatVariantPlayMeta, getVariant } from "@/lib/variants";
+import { getVariant } from "@/lib/variants";
 import { getVariantRuleSummary } from "@/lib/variants/rules-atlas";
 
 export const dynamic = "force-dynamic";
@@ -36,8 +36,6 @@ export default async function PlaySetupPage({
           initialTimeControl={initialTimeControl}
           locale={locale}
           title={t(variant.nameKey)}
-          meta={formatVariantPlayMeta(variant)}
-          objective={variant.objective}
         />
       </div>
     </section>

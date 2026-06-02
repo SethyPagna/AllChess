@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { BookOpen, ChevronDown, Eye, Search, Share2, Swords } from "lucide-react";
+import { BookOpen, ChevronDown, Eye, Search, Share2 } from "lucide-react";
 
 import { displayGameName, gameCatalog } from "@/lib/catalog";
 import type { TimeControlKey } from "@/lib/game/time-controls";
@@ -12,13 +12,9 @@ import type { PlayMode } from "@/components/board/game-board-options";
 type PlayMatchHeaderProps = {
   currentVariantKey: string;
   locale: string;
-  meta: string;
-  modeSummary: string;
-  objective: string;
   onOpenGuide: () => void;
   onSelectRoom: () => void;
   onSelectWatch: () => void;
-  phaseLabel: string;
   playMode: PlayMode;
   showGuide: boolean;
   timeControl: TimeControlKey;
@@ -28,13 +24,9 @@ type PlayMatchHeaderProps = {
 export function PlayMatchHeader({
   currentVariantKey,
   locale,
-  meta,
-  modeSummary,
-  objective,
   onOpenGuide,
   onSelectRoom,
   onSelectWatch,
-  phaseLabel,
   playMode,
   showGuide,
   timeControl,
@@ -105,14 +97,6 @@ export function PlayMatchHeader({
               <span className="button-label">Watch</span>
             </button>
           </div>
-        </div>
-        <div className="play-title-meta" aria-label="Match summary">
-          <span className="inline-flex items-center gap-2">
-            <Swords size={14} />
-            {meta}
-          </span>
-          <strong title={objective}>{modeSummary}</strong>
-          <em>{phaseLabel}</em>
         </div>
       </div>
     </div>
