@@ -29,7 +29,7 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await expect(controls.getByLabel("Match controls")).toContainText("Resign");
   await expect(controls.getByLabel("Utility controls")).toHaveCount(0);
   await expect(controls.getByRole("button", { name: "Bot Mode" })).toBeDisabled();
-  await expect(page.getByLabel("Local play status")).toContainText("assist only");
+  await expect(page.getByLabel("Local play status")).toContainText("Offline Local");
   await expect(page.locator(".review-position-card")).toContainText("White to move");
   await expect(page.locator(".review-move-list")).toHaveCSS("overflow-y", "auto");
   const before = await board.boundingBox();

@@ -650,7 +650,7 @@ export function GameBoard({
         <div className="play-tab-panel">
           {panelTab === "setup" ? (
             gameStarted ? (
-              <PlayActiveSetupCard humanColorLabel={colorLabel(humanColor)} modeLabel={modeDetails.label} onReset={reset} onShowStatus={() => setPanelTab("status")} timeControlLabel={getTimeControl(timeControl).label} />
+              <PlayActiveSetupCard modeLabel={modeDetails.label} onReset={reset} onShowStatus={() => setPanelTab("status")} timeControlLabel={getTimeControl(timeControl).label} />
             ) : (
               <PlayPregameSetupCard
                 botDifficulty={botDifficulty}
@@ -755,9 +755,7 @@ export function GameBoard({
                     <Crown size={18} />
                     <div>
                       <strong>Offline Local</strong>
-                      <span>Assist moves only.</span>
                     </div>
-                    <small>assist only</small>
                   </div>
                 )}
                 {suggestedMove ? (
