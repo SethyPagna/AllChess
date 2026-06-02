@@ -2190,6 +2190,8 @@ select {
   cursor: not-allowed;
   opacity: 0.42;
   filter: grayscale(0.35);
+  background: color-mix(in srgb, var(--surface) 70%, black);
+  color: var(--muted);
 }
 
 .play-control-button:disabled:hover,
@@ -4978,9 +4980,20 @@ select {
   }
 
   .play-title-actions button {
+    width: 2rem;
     min-height: 1.95rem;
-    padding: 0.32rem 0.42rem;
+    justify-content: center;
+    padding: 0.32rem;
     font-size: 0.68rem;
+  }
+
+  .play-title-actions .button-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
   }
 
   .play-control-grid {
@@ -5103,11 +5116,40 @@ select {
   }
 
   .play-control-group-primary {
-    grid-template-columns: minmax(4.7rem, 1fr) minmax(4rem, 0.84fr) repeat(5, minmax(1.78rem, 1.92rem));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    overflow-x: visible;
+  }
+
+  .play-control-group-primary .play-control-button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .play-control-group-primary .play-control-button,
+  .play-control-group-primary .play-icon-button {
+    width: 100%;
+    min-height: 1.95rem;
+    padding-inline: 0.2rem;
   }
 
   .play-control-group-match {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .play-control-group-match .play-control-button {
+    gap: 0.22rem;
+    min-height: 1.95rem;
+    padding-inline: 0.22rem;
+    font-size: 0.58rem;
+  }
+
+  .play-control-group-match .play-control-button svg {
+    width: 0.82rem;
+    height: 0.82rem;
   }
 
   .bot-profile-card {
