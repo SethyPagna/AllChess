@@ -1,8 +1,8 @@
-import { Bot, PlayCircle, Timer } from "lucide-react";
+import { Bot, Eye, Flag, Medal, PlayCircle, Timer, Users } from "lucide-react";
 
 import { botDifficultyLevels, type BotDifficultyKey } from "@/lib/bot/config";
 import { getTimeControl, timeControls, type TimeControlKey } from "@/lib/game/time-controls";
-import { playModeOptions, type PlayMode } from "@/components/board/game-board-options";
+import type { PlayMode } from "@/components/board/game-board-options";
 
 type SeatChoice = "random" | "first" | "second";
 
@@ -43,19 +43,48 @@ export function PlayPregameSetupCard({
   secondColorLabel,
   timeControl
 }: PlayPregameSetupCardProps) {
+  const timeControlLabel = getTimeControl(timeControl).label;
+  const secondaryModes = [
+    { key: "online" as const, label: "Play Online", Icon: Flag },
+    { key: "room" as const, label: "Play a Friend", Icon: Users },
+    { key: "spectate" as const, label: "Watch Games", Icon: Eye },
+    { key: "offline" as const, label: "Offline Local", Icon: Medal }
+  ];
+  const modeAccessibleNames: Partial<Record<PlayMode, string>> = {
+    room: "Create Room",
+    spectate: "Spectate"
+  };
+
   return (
-    <div className="play-options-card">
-      <div className="play-mode-grid" aria-label="Play modes">
-        {playModeOptions.map(({ key, label, Icon }) => (
-          <button key={key} type="button" onClick={() => onModeChange(key)} className={`focus-ring play-mode-button ${playMode === key ? "is-selected" : ""}`} title={label}>
-            <Icon size={17} />
+    <div className="play-options-card play-setup-stack">
+      <label className="play-setup-select-card">
+        <Timer size={18} />
+        <select aria-label="Time control" value={timeControl} onChange={(event) => onTimeControlChange(event.target.value as TimeControlKey)}>
+          {timeControls.slice(0, 6).map((control) => (
+            <option key={control.key} value={control.key}>
+              {control.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <button type="button" onClick={onStartGame} className="focus-ring action-primary play-start-button">
+        <PlayCircle size={18} />
+        Start Game
+      </button>
+      <div className="play-time-grid play-time-grid-compact" aria-hidden="true">
+        <span className="is-selected">{timeControlLabel}</span>
+      </div>
+      <div className="play-mode-stack" aria-label="Play modes">
+        <button type="button" onClick={() => onModeChange("bot")} className={`focus-ring play-mode-stack-button ${playMode === "bot" ? "is-selected" : ""}`} title="Bot Mode">
+          <Bot size={18} />
+          <span>Bot Mode</span>
+        </button>
+        {secondaryModes.map(({ key, label, Icon }) => (
+          <button key={key} type="button" aria-label={modeAccessibleNames[key] ?? label} onClick={() => onModeChange(key)} className={`focus-ring play-mode-stack-button ${playMode === key ? "is-selected" : ""}`} title={label}>
+            <Icon size={18} />
             <span>{label}</span>
           </button>
         ))}
-      </div>
-      <div className="play-options-heading">
-        <Timer size={18} />
-        <span>{getTimeControl(timeControl).label}</span>
       </div>
       <label className={`bot-profile-card bot-profile-card-with-select play-setup-bot-card ${!isBotMode ? "is-disabled" : ""}`} title={isBotMode ? "Choose how strong the bot should be." : "Bot difficulty is only used in Bot Mode."}>
         <Bot size={18} />
@@ -80,17 +109,6 @@ export function PlayPregameSetupCard({
           <option value="second">{secondColorLabel}</option>
         </select>
       </label>
-      <div className="play-time-grid" aria-label="Quick time controls">
-        {timeControls.slice(0, 6).map((control) => (
-          <button key={control.key} type="button" title={`Start a new ${control.label} game`} onClick={() => onTimeControlChange(control.key)} className={`focus-ring ${timeControl === control.key ? "is-selected" : ""}`}>
-            {control.label}
-          </button>
-        ))}
-      </div>
-      <button type="button" onClick={onStartGame} className="focus-ring action-primary inline-flex items-center justify-center gap-2 px-4 py-3 text-sm">
-        <PlayCircle size={18} />
-        Start Game
-      </button>
     </div>
   );
 }
