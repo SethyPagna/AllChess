@@ -160,7 +160,6 @@ export function GameBoard({
     : isBotMode
       ? `Bot budget: ${botResponseBudget}ms.`
       : "";
-  const moveStatusDetail = botSearchDetail ? `${statusHeading}. ${botSearchDetail}` : statusHeading;
   const trimmedOpponentQuery = opponentQuery.trim();
   const topPlayerColor = isBoardFlipped ? firstColor : secondColor;
   const bottomPlayerColor = isBoardFlipped ? secondColor : firstColor;
@@ -779,11 +778,20 @@ export function GameBoard({
                 </span>
                 <span>{isReviewing ? "Reviewing" : "Live"}</span>
               </div>
-              <div className="review-position-card">
-                <p>{displayPly === 0 ? "Starting position" : `After ${activeReviewMove?.notation ?? "latest move"}`}</p>
-                <strong>{activeReviewMove ? `${activeReviewMove.label} - ${activeReviewMove.score}/100` : "Ready"}</strong>
-                <span>{activeReviewMove?.detail ?? moveStatusDetail}</span>
-                {activeReviewMove ? <small>Best line: {activeReviewMove.bestLine}{botSearchDetail ? ` ${botSearchDetail}` : ""}</small> : null}
+              <div className={`review-position-card ${activeReviewMove ? "" : "is-live"}`}>
+                {activeReviewMove ? (
+                  <>
+                    <p>{`After ${activeReviewMove.notation}`}</p>
+                    <strong>{`${activeReviewMove.label} - ${activeReviewMove.score}/100`}</strong>
+                    <span>{activeReviewMove.detail}</span>
+                    <small>Best line: {activeReviewMove.bestLine}{botSearchDetail ? ` ${botSearchDetail}` : ""}</small>
+                  </>
+                ) : (
+                  <>
+                    <strong>{statusHeading}</strong>
+                    {botSearchDetail ? <span>{botSearchDetail}</span> : null}
+                  </>
+                )}
               </div>
               <ol className="review-move-list move-list text-sm">
                 <li className={displayPly === 0 ? "is-active" : ""}>
