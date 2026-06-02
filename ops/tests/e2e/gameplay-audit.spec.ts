@@ -248,7 +248,6 @@ test("spectate mode is read-only after start", async ({ page }) => {
   await page.goto("/en/play/classic");
   await page.locator(".play-title-actions").getByRole("button", { name: "Watch" }).click();
   await page.getByRole("button", { name: "Start Game" }).click();
-  await expect(page.getByLabel("Match summary")).toContainText("Watching rooms");
   await expect(page.getByText("Watching rooms").first()).toBeVisible();
   await expect(page.getByText("Spectate mode is read-only. Watch rooms without moving pieces.")).toBeVisible();
 
@@ -281,8 +280,8 @@ test("resign result can be dismissed and reset to setup cleanly", async ({ page 
   await expect(dialog).toHaveCount(0);
 
   await page.getByLabel("Board controls").getByRole("button", { name: "Reset" }).click();
-  await expect(page.getByLabel("Match summary")).toContainText("Offline Local setup");
   await expect(page.getByText("Choose setup first")).toBeVisible();
+  await expect(page.getByLabel("Play modes").getByRole("button", { name: "Offline Local" })).toHaveClass(/is-selected/);
   await page.getByRole("button", { name: "Status" }).click();
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();

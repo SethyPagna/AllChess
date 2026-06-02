@@ -73,9 +73,7 @@ export function GameBoard({
   initialPlayMode,
   initialTimeControl = "rapid",
   locale = "en",
-  title = "Game",
-  meta = "AllChess",
-  objective = "Play a legal game."
+  title = "Game"
 }: {
   variantKey: string;
   initialState?: GameState;
@@ -86,8 +84,6 @@ export function GameBoard({
   initialTimeControl?: TimeControlKey;
   locale?: string;
   title?: string;
-  meta?: string;
-  objective?: string;
 }) {
   const [timeControl, setTimeControl] = useState<TimeControlKey>(initialTimeControl);
   const [state, setState] = useState(() => withTimeControl(initialState ?? createInitialState(variantKey), initialTimeControl));
@@ -154,15 +150,6 @@ export function GameBoard({
     return isBoardFlipped ? rowsToRender.reverse().map((row) => row.reverse()) : rowsToRender;
   }, [displayState.board, isBoardFlipped]);
   const modeDetails = playModeOptions.find((option) => option.key === playMode) ?? playModeOptions[2];
-  const phaseLabel = isSearchingOnline
-    ? "Searching for opponent..."
-    : isWatchingMode
-      ? "Watching rooms..."
-      : thinking.status === "thinking"
-        ? thinking.label
-        : gameStarted
-          ? `${colorLabel(state.turn)} to move`
-          : "Choose setup";
   const statusHeading = isSearchingOnline
     ? "Searching for opponent"
     : isWatchingMode
@@ -174,7 +161,6 @@ export function GameBoard({
       ? `Bot budget: ${botResponseBudget}ms.`
       : "";
   const reviewStatusDetail = `${statusHeading}. You: ${colorLabel(humanColor)}. View: ${visualOrientation === "second" ? colorLabel(secondColor) : colorLabel(firstColor)}.${botSearchDetail ? ` ${botSearchDetail}` : ""}`;
-  const modeSummary = gameStarted ? `${modeDetails.label} - ${getTimeControl(timeControl).label}` : `${modeDetails.label} setup`;
   const trimmedOpponentQuery = opponentQuery.trim();
   const topPlayerColor = isBoardFlipped ? firstColor : secondColor;
   const bottomPlayerColor = isBoardFlipped ? secondColor : firstColor;
@@ -648,9 +634,6 @@ export function GameBoard({
         <PlayMatchHeader
           currentVariantKey={variantKey}
           locale={locale}
-          meta={meta}
-          modeSummary={modeSummary}
-          objective={objective}
           onOpenGuide={() => setShowRules(true)}
           onSelectRoom={() => {
             selectPlayMode("room");
@@ -661,7 +644,6 @@ export function GameBoard({
             selectPlayMode("spectate");
             setPanelTab("setup");
           }}
-          phaseLabel={phaseLabel}
           playMode={playMode}
           showGuide={Boolean(rulesSummary)}
           timeControl={timeControl}
