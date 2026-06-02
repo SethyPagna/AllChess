@@ -2618,10 +2618,27 @@ select {
   padding: 0.5rem 0.65rem;
 }
 
+.play-review-compact .review-position-card.is-live {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.45rem;
+  padding-block: 0.42rem;
+}
+
 .play-review-compact .review-position-card span,
 .play-review-compact .review-position-card small {
   display: block;
   font-size: 0.72rem;
+}
+
+.play-review-compact .review-position-card.is-live span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .play-review-compact .review-move-list {
@@ -2722,6 +2739,13 @@ select {
   color: #fffdf7;
   font-size: 1rem;
   font-weight: 950;
+}
+
+.review-position-card.is-live strong {
+  overflow: hidden;
+  font-size: 0.86rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .review-position-card span,
