@@ -62,12 +62,11 @@ export function PlayControlCard({
         <section className="play-control-section" aria-label="Assist controls">
           <div className="play-control-group-label">
             <span>Assist</span>
-            <small>{suggestedMoveReady ? "Tap Suggest to play" : "Suggest, move, view"}</small>
           </div>
           <div className="play-control-group play-control-group-primary">
             <button
               type="button"
-              title={suggestedMoveReady ? "Apply the highlighted suggestion to the board." : canUseAssist ? "Find and highlight a legal candidate move for the current side." : "Suggestions are disabled for online, room, spectate, review, completed, or not-started states."}
+              title={suggestedMoveReady ? "Play the highlighted suggestion." : canUseAssist ? "Find and highlight a legal candidate move for the current side." : "Suggestions are disabled for online, room, spectate, review, completed, or not-started states."}
               onClick={suggestedMoveReady ? onApplySuggestion : onSuggest}
               className={`focus-ring ${suggestedMoveReady ? "action-primary is-main" : "action-secondary"} play-control-button`}
               disabled={!canUseAssist}
@@ -99,7 +98,7 @@ export function PlayControlCard({
         <section className="play-control-section" aria-label="Match controls">
           <div className="play-control-group-label">
             <span>Match</span>
-            <small>{canUseBots ? botLevelLabel : canEndGame ? "Active game" : "Start first"}</small>
+            <small>{canUseBots ? botLevelLabel : canEndGame ? "Live" : "Start"}</small>
           </div>
           <div className="play-control-group play-control-group-match">
             <button type="button" aria-label="Bot Mode" title={canUseBots ? "Toggle bot opponent. You move your selected side; the bot replies for the other side." : "Bot opponent is only available in Bot Mode during an active local game."} onClick={onToggleBot} disabled={!canUseBots} className={`focus-ring play-control-button ${botMode === "opponent" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"}`}>

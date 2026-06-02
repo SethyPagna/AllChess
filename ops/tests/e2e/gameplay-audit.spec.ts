@@ -31,6 +31,7 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await expect(controls.getByRole("button", { name: "Bot Mode" })).toBeDisabled();
   await expect(page.getByLabel("Local play status")).toContainText("assist only");
   await expect(page.locator(".review-position-card")).toContainText("You:");
+  await expect(page.locator(".review-move-list")).toHaveCSS("overflow-y", "auto");
   const before = await board.boundingBox();
   expect(before).toBeTruthy();
 
@@ -229,7 +230,7 @@ test("online setup disables bot controls and shows opponent search", async ({ pa
 
   await expect(page.getByText("Searching for opponent").first()).toBeVisible();
   await expect(page.getByLabel("Online matchmaking status")).toContainText("Searching for opponent");
-  await expect(page.getByLabel("Online matchmaking status")).toContainText("Bot difficulty and automation are paused");
+  await expect(page.getByLabel("Online matchmaking status")).toContainText("Bots paused while matching");
   await expect(page.getByRole("button", { name: "Bot Mode" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Apply move" })).toHaveCount(0);
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Suggest" })).toBeDisabled();
