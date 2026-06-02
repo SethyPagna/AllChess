@@ -659,8 +659,11 @@ export function GameBoard({
             ) : (
               <PlayPregameSetupCard
                 botDifficulty={botDifficulty}
+                botLevelLabel={botLevel.label}
+                botStrengthDisplay={botStrength.display}
+                botStrengthLabel={botCalibrationLabel}
+                botTargetElo={botStrength.targetElo}
                 firstColorLabel={colorLabel(firstColor)}
-                humanColorLabel={colorLabel(humanColor)}
                 isBotMode={isBotMode}
                 onBotDifficultyChange={setBotDifficulty}
                 onModeChange={selectPlayMode}
