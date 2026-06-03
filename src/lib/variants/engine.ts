@@ -550,6 +550,10 @@ export function applyMove(state: GameState, move: Move): GameState {
     return withJungleOutcome(next, movingPiece.owner, move.to);
   }
 
+  if (variant.key === "janggi") {
+    return withJanggiOutcome(next, movingPiece.owner, move.to);
+  }
+
   if (!variant.supportsCheck && captured && isRoyal(captured)) {
     next.status = "completed";
     next.result = movingPiece.owner;
@@ -596,6 +600,27 @@ function withJungleOutcome(state: GameState, mover: PlayerColor, destination: Sq
   }
 
   return state;
+}
+
+function withJanggiOutcome(state: GameState, mover: PlayerColor, destination: Square): GameState {
+  const facedBeforeMove = state.variantState?.bikjangPlayer === mover;
+  const generalsFacing = areJanggiGeneralsFacing(state);
+
+  if (facedBeforeMove && generalsFacing) {
+    state.status = "completed";
+    state.result = "draw";
+    state.outcomeReason = "draw";
+    state.variantState = { ...(state.variantState ?? {}), bikjangPlayer: null };
+    return state;
+  }
+
+  if (generalsFacing) {
+    state.variantState = { ...(state.variantState ?? {}), bikjangPlayer: state.turn };
+  } else if (state.variantState?.bikjangPlayer) {
+    state.variantState = { ...(state.variantState ?? {}), bikjangPlayer: null };
+  }
+
+  return withOutcome(state, mover, destination);
 }
 
 function withOutcome(state: GameState, mover: PlayerColor, destination: Square): GameState {
@@ -855,6 +880,18 @@ function findRoyal(state: GameState, color: PlayerColor) {
     }
   }
   return null;
+}
+
+function areJanggiGeneralsFacing(state: GameState) {
+  const redGeneral = findRoyal(state, "red");
+  const blueGeneral = findRoyal(state, "blue");
+  if (!redGeneral || !blueGeneral || redGeneral.square.col !== blueGeneral.square.col) return false;
+
+  const [start, end] = [redGeneral.square.row, blueGeneral.square.row].sort((a, b) => a - b);
+  for (let row = start + 1; row < end; row += 1) {
+    if (state.board[row]?.[redGeneral.square.col]?.piece) return false;
+  }
+  return true;
 }
 
 function hasAnyLegalMove(state: GameState, color: PlayerColor) {

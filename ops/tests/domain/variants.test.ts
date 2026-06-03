@@ -547,6 +547,44 @@ describe("variant engine", () => {
     expect(getLegalMoves(state, { row: 2, col: 3 })).toContainEqual({ from: { row: 2, col: 3 }, to: { row: 1, col: 4 } });
   });
 
+  test("janggi bikjang asks the next player to resolve facing generals", () => {
+    let state = createInitialState("janggi", "janggi-bikjang-pending");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "red"
+    };
+    state.board[9][4].piece = { id: "red-general", code: "g", owner: "red", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "blue-general", code: "g", owner: "blue", labelKey: "chess.king" };
+    state.board[5][4].piece = { id: "file-blocker", code: "p", owner: "red", labelKey: "chess.pawn" };
+    state.board[3][3].piece = { id: "blue-resolver", code: "p", owner: "blue", labelKey: "chess.pawn" };
+
+    const pending = applyMove(state, { from: { row: 5, col: 4 }, to: { row: 5, col: 3 } });
+    expect(pending).toMatchObject({ status: "active", turn: "blue", variantState: { bikjangPlayer: "blue" } });
+
+    const resolved = applyMove(pending, { from: { row: 3, col: 3 }, to: { row: 3, col: 4 } });
+    expect(resolved).toMatchObject({ status: "active" });
+    expect(resolved.variantState?.bikjangPlayer).toBeNull();
+  });
+
+  test("janggi bikjang draws when the next player does not resolve facing generals", () => {
+    let state = createInitialState("janggi", "janggi-bikjang-draw");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "red"
+    };
+    state.board[9][4].piece = { id: "red-general", code: "g", owner: "red", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "blue-general", code: "g", owner: "blue", labelKey: "chess.king" };
+    state.board[5][4].piece = { id: "file-blocker", code: "p", owner: "red", labelKey: "chess.pawn" };
+    state.board[3][0].piece = { id: "blue-irrelevant", code: "p", owner: "blue", labelKey: "chess.pawn" };
+
+    const pending = applyMove(state, { from: { row: 5, col: 4 }, to: { row: 5, col: 3 } });
+    const drawn = applyMove(pending, { from: { row: 3, col: 0 }, to: { row: 3, col: 1 } });
+
+    expect(drawn).toMatchObject({ status: "completed", result: "draw", outcomeReason: "draw" });
+  });
+
   test("sets up Jungle Chess with opposing sides and blocks non-rats from rivers", () => {
     let state = createInitialState("jungle", "jungle-test");
     expect(state.board[0][0].piece).toMatchObject({ code: "l", owner: "black" });
