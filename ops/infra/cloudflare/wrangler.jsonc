@@ -40,6 +40,10 @@
     {
       "tag": "v2_realtime_main_worker_classes",
       "new_sqlite_classes": ["GameRoomDO", "MatchmakingDO", "PresenceDO"]
+    },
+    {
+      "tag": "v3_delete_study_room_durable_object",
+      "deleted_classes": ["StudyRoomDurableObject"]
     }
   ],
   "r2_buckets": [
