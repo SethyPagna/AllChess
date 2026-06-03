@@ -5,6 +5,7 @@ import { Crown, Menu } from "lucide-react";
 
 import { AppMobileNavigation, AppSidebarNavigation } from "@/components/shell/app-navigation";
 import { LocaleSwitcher } from "@/components/shell/locale-switcher";
+import { MobileAutoHideHeader } from "@/components/shell/mobile-auto-hide-header";
 import { createAppNavGroups } from "@/components/shell/navigation-config";
 import { NotificationCenter } from "@/components/shell/notification-center";
 import { ThemeProvider } from "@/components/shell/theme-provider";
@@ -15,6 +16,21 @@ import { locales, normalizeLocale, rtlLocales, type LocaleCode } from "@/lib/i18
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
+
+const themeInitScript = `
+(() => {
+  try {
+    const key = "allchess-theme";
+    const stored = window.localStorage.getItem(key);
+    const choice = stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
+    const resolved = choice === "system" ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : choice;
+    document.documentElement.classList.toggle("dark", resolved === "dark");
+    document.documentElement.style.colorScheme = resolved;
+  } catch {
+    document.documentElement.style.colorScheme = "light";
+  }
+})();
+`;
 
 export async function generateMetadata({
   params
@@ -46,6 +62,9 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} dir={rtlLocales.has(locale) ? "rtl" : "ltr"} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body>
         <ThemeProvider>
           <div className="app-shell">
@@ -74,7 +93,7 @@ export default async function LocaleLayout({
               </div>
             </aside>
             <div className="app-main">
-              <header className="app-mobile-header">
+              <MobileAutoHideHeader>
                 <Link href={`/${locale}`} className="app-mobile-brand focus-ring">
                   <span className="app-brand-mark">
                     <Crown size={20} strokeWidth={2.7} />
@@ -102,7 +121,7 @@ export default async function LocaleLayout({
                     <AppMobileNavigation account={{ href: profileHref, icon: "user", label: t("nav.profileHistory") }} auth={{ href: loginHref, icon: "login", label: t("nav.login") }} groups={navGroups} locale={locale} />
                   </div>
                 </details>
-              </header>
+              </MobileAutoHideHeader>
               <main className="app-content">{children}</main>
             </div>
           </div>

@@ -59,10 +59,10 @@ test("localized game hub can open variants and a playable board", async ({ page 
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();
   await page.locator(".play-title-actions").getByRole("button", { name: "Room" }).click();
   await expect(page.getByLabel("Play modes").getByRole("button", { name: "Create Room" })).toHaveClass(/is-selected/);
-  await expect(page.getByLabel("Bot difficulty")).toBeDisabled();
+  await expect(page.getByLabel("Bot difficulty")).toHaveCount(0);
   await page.locator(".play-title-actions").getByRole("button", { name: "Watch" }).click();
   await expect(page.getByLabel("Play modes").getByRole("button", { name: "Spectate" })).toHaveClass(/is-selected/);
-  await expect(page.getByLabel("Bot difficulty")).toBeDisabled();
+  await expect(page.getByLabel("Bot difficulty")).toHaveCount(0);
   await expect(page.locator(".play-title-actions").getByRole("button", { name: "Game guide" })).toBeVisible();
   await expect(page.locator(".play-title-actions").getByRole("button", { name: "Room" })).toBeVisible();
   await expect(page.locator(".play-title-actions").getByRole("button", { name: "Watch" })).toBeVisible();

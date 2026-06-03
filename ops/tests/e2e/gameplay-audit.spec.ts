@@ -248,7 +248,7 @@ test("online setup disables bot controls and shows opponent search", async ({ pa
 
   await page.goto("/en/play/classic");
   await page.getByRole("button", { name: "Play Online" }).click();
-  await expect(page.getByLabel("Bot difficulty")).toBeDisabled();
+  await expect(page.getByLabel("Bot difficulty")).toHaveCount(0);
   await page.getByRole("button", { name: "Start Game" }).click();
 
   await expect(page.getByText("Searching for opponent").first()).toBeVisible();

@@ -1,4 +1,4 @@
-import { Bot, Eye, Flag, Medal, PlayCircle, Timer, Users } from "lucide-react";
+import { Bot, Eye, Flag, MonitorSmartphone, PlayCircle, Timer, Users } from "lucide-react";
 
 import { botDifficultyLevels, type BotDifficultyKey } from "@/lib/bot/config";
 import type { CatalogModeSupport } from "@/lib/catalog";
@@ -51,7 +51,7 @@ export function PlayPregameSetupCard({
     { key: "online" as const, label: "Play Online", Icon: Flag },
     { key: "room" as const, label: "Play a Friend", Icon: Users },
     { key: "spectate" as const, label: "Watch Games", Icon: Eye },
-    { key: "offline" as const, label: "Offline Local", Icon: Medal }
+    { key: "offline" as const, label: "Offline Local", Icon: MonitorSmartphone }
   ];
   const modeAccessibleNames: Partial<Record<PlayMode, string>> = {
     room: "Create Room",
@@ -70,10 +70,6 @@ export function PlayPregameSetupCard({
           ))}
         </select>
       </label>
-      <button type="button" onClick={onStartGame} className="focus-ring action-primary play-start-button">
-        <PlayCircle size={18} />
-        Start Game
-      </button>
       <div className="play-time-grid play-time-grid-compact" aria-hidden="true">
         <span className="is-selected">{timeControlLabel}</span>
       </div>
@@ -103,21 +99,23 @@ export function PlayPregameSetupCard({
           </button>
         ))}
       </div>
-      <label className={`bot-profile-card bot-profile-card-with-select play-setup-bot-card ${!isBotMode ? "is-disabled" : ""}`} title={isBotMode ? "Choose how strong the bot should be." : "Bot difficulty is only used in Bot Mode."}>
-        <Bot size={18} />
-        <div>
-          <strong>{isBotMode ? `${botLevelLabel} bot` : "Bot setup"}</strong>
-          <span title={botStrengthLabel}>{isBotMode ? `${botStrengthDisplay} - ${botStrengthLabel}` : "Switch to Bot Mode to choose tier."}</span>
-        </div>
-        <small title={botStrengthLabel}>target {botTargetElo}</small>
-        <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => onBotDifficultyChange(event.target.value as BotDifficultyKey)} disabled={!isBotMode}>
-          {botDifficultyLevels.map((level) => (
-            <option key={level.key} value={level.key}>
-              {level.label}
-            </option>
-          ))}
-        </select>
-      </label>
+      {isBotMode ? (
+        <label className="bot-profile-card bot-profile-card-with-select play-setup-bot-card" title="Choose how strong the bot should be.">
+          <Bot size={18} />
+          <div>
+            <strong>{botLevelLabel} bot</strong>
+            <span title={botStrengthLabel}>{botStrengthDisplay} - {botStrengthLabel}</span>
+          </div>
+          <small title={botStrengthLabel}>target {botTargetElo}</small>
+          <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => onBotDifficultyChange(event.target.value as BotDifficultyKey)}>
+            {botDifficultyLevels.map((level) => (
+              <option key={level.key} value={level.key}>
+                {level.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
       <label className="play-setup-field">
         <span>Side</span>
         <select aria-label="Side" value={seatChoice} onChange={(event) => onSeatChoiceChange(event.target.value as SeatChoice)}>
@@ -126,6 +124,10 @@ export function PlayPregameSetupCard({
           <option value="second">{secondColorLabel}</option>
         </select>
       </label>
+      <button type="button" onClick={onStartGame} className="focus-ring action-primary play-start-button">
+        <PlayCircle size={18} />
+        Start Game
+      </button>
     </div>
   );
 }

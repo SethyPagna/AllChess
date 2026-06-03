@@ -654,7 +654,7 @@ export function GameBoard({
 
   return (
     <div className="game-board-layout grid gap-4">
-      <div className="grid gap-3">
+      <div className="board-column grid gap-3">
         {playerCard(topPlayerColor, "top")}
         <div className="board-shell" data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
