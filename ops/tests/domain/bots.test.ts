@@ -460,6 +460,30 @@ describe("bot difficulty ladder", () => {
     }
   });
 
+  test("janggi preview has a legal cache-first seed while release gates remain closed", async () => {
+    const state = createInitialState("janggi", "janggi-seed");
+    const hit = lookupBotKnowledge(state, "easy");
+
+    expect(hit?.entry).toEqual(expect.objectContaining({ variantKey: "janggi", minTier: "easy", source: "opening-book" }));
+    expect(hit?.move).toMatchObject({ from: { row: 6, col: 4 }, to: { row: 5, col: 4 } });
+    expect(() => applyMove(state, hit!.move)).not.toThrow();
+
+    const result = await requestBotMove(state, "easy", { engine: "auto", maxSearchTimeMs: MAX_BOT_REPLY_MS });
+    expect(result).toMatchObject({
+      status: "ok",
+      knowledgeSource: "opening-book",
+      nodesSearched: 1,
+      legalValidated: true
+    });
+
+    const checklist = listBotTrainingChecklists().find((item) => item.variantKey === "janggi");
+    expect(checklist).toMatchObject({
+      coverageStatus: "rules-gated",
+      knowledgeEntries: expect.any(Number)
+    });
+    expect(checklist?.knowledgeEntries).toBeGreaterThan(0);
+  });
+
   test("knowledge cache uses indexed runtime lookups instead of linear scans", () => {
     const stats = getBotKnowledgeIndexStats();
 

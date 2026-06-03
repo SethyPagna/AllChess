@@ -223,9 +223,10 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
     verifiedEdgeCases: [
       "Palace board shape, native palace diagonals, soldier sideways movement, long elephant paths, and Janggi cannon screen restrictions have fixtures.",
       "Cannons require a non-cannon screen, cannot capture cannons, and can use palace diagonal lines.",
-      "Facing generals use bikjang handling: the next player must resolve the open file or the game is drawn."
+      "Facing generals use bikjang handling: the next player must resolve the open file or the game is drawn.",
+      "A legal cache-first Janggi bot seed is indexed for preview play while final release gates remain closed."
     ],
-    remainingGates: ["Pass/scoring tournament profile", "Bot/review/persistence/E2E completion"]
+    remainingGates: ["Pass/scoring tournament profile", "Full bot gauntlet/review/persistence/E2E completion"]
   },
   makruk: {
     status: "rules-gated",

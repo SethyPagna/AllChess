@@ -415,6 +415,23 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
     }
   },
   {
+    id: "janggi-start-central-soldier",
+    variantKey: "janggi",
+    positionKey: "janggi|turn:red|moves:",
+    moveUci: "e4e5",
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.8,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "janggi", "soldier", "palace-pressure"],
+    explanation: {
+      plan: "Advance the central soldier to claim space while keeping palace lanes and cannon screens flexible.",
+      threat: "Red starts asking Blue to defend central files before the chariots and cannons are fully active.",
+      risk: "The soldier cannot retreat, so the bot should avoid overextending without nearby cannon or chariot support.",
+      fallbackGoal: "If Blue blocks the center, shift to palace-line pressure and preserve the general's escape squares."
+    }
+  },
+  {
     id: "antichess-start-trade-lanes",
     variantKey: "antichess",
     positionKey: "antichess|turn:white|moves:",
