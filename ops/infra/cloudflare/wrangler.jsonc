@@ -44,6 +44,10 @@
     {
       "tag": "v3_delete_study_room_durable_object",
       "deleted_classes": ["StudyRoomDurableObject"]
+    },
+    {
+      "tag": "v4_delete_study_battle_durable_object",
+      "deleted_classes": ["StudyBattleDurableObject"]
     }
   ],
   "r2_buckets": [
