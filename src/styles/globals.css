@@ -1763,6 +1763,20 @@ option {
   white-space: nowrap;
 }
 
+.play-panel-match-header .play-title-actions button {
+  width: 2.35rem;
+  padding: 0.36rem;
+}
+
+.play-panel-match-header .play-title-actions .button-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .play-panel-match-header .play-header-command-actions {
   display: flex;
   flex-wrap: wrap;
