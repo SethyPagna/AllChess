@@ -50,8 +50,8 @@
       "deleted_classes": ["StudyBattleDurableObject"]
     },
     {
-      "tag": "v5_delete_legacy_presence_durable_object",
-      "deleted_classes": ["PresenceDurableObject"]
+      "tag": "v5_rename_legacy_presence_durable_object",
+      "renamed_classes": [{ "from": "PresenceDurableObject", "to": "PresenceDO" }]
     }
   ],
   "r2_buckets": [
