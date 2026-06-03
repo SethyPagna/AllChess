@@ -649,14 +649,14 @@ option {
 
 .play-header-compact h1 {
   margin: 0 0 0.35rem;
-  color: #fffdf7;
+  color: var(--foreground);
   font-size: clamp(1.35rem, 2.5vw, 2rem);
   font-weight: 950;
   line-height: 1;
 }
 
 .play-objective {
-  color: #d8d1c4;
+  color: var(--muted);
   font-size: 0.92rem;
   font-weight: 750;
   line-height: 1.35;
@@ -677,9 +677,9 @@ option {
   width: var(--board-fixed-size);
   max-width: calc(100vw - 1.5rem);
   margin-inline: auto;
-  border: 1px solid rgb(255 255 255 / 8%);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #272623;
+  background: var(--surface-strong);
   box-shadow: 0 16px 34px rgb(0 0 0 / 18%);
   padding: 0.65rem 0.7rem;
   min-width: 0;
@@ -700,7 +700,7 @@ option {
 
 .play-title-block h1 {
   margin: 0;
-  color: #fffdf7;
+  color: var(--foreground);
   font-size: clamp(1.18rem, 2vw, 1.68rem);
   font-weight: 950;
   line-height: 1;
@@ -1812,7 +1812,7 @@ option {
 }
 
 .play-command-status {
-  color: #f8f6ef;
+  color: var(--foreground);
   font-size: 0.9rem;
   min-width: 0;
   min-height: 2.55rem;
@@ -1820,9 +1820,9 @@ option {
 
 .play-command-status span:last-of-type {
   border-radius: 999px;
-  background: rgb(255 255 255 / 8%);
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
   padding: 0.22rem 0.55rem;
-  color: #d7d0c3;
+  color: var(--muted);
   font-size: 0.76rem;
   font-weight: 900;
 }
@@ -1978,7 +1978,7 @@ option {
 
 .play-mode-stack-button.is-selected {
   border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 18%, #2d2b28);
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
 }
 
 .play-mode-button {
@@ -1986,10 +1986,10 @@ option {
   grid-template-columns: auto minmax(0, 1fr);
   gap: 0.28rem;
   align-items: center;
-  border: 1px solid rgb(255 255 255 / 9%);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #2d2b28;
-  color: #f8f6ef;
+  background: var(--surface);
+  color: var(--foreground);
   min-height: 2.45rem;
   padding: 0.45rem 0.5rem;
   text-align: center;
@@ -2009,23 +2009,23 @@ option {
 
 .play-mode-button.is-selected {
   border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 18%, #2d2b28);
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface));
 }
 
 .play-setup-field {
   display: grid;
   gap: 0.35rem;
-  color: #d7d0c3;
+  color: var(--muted);
   font-size: 0.78rem;
   font-weight: 950;
 }
 
 .play-setup-field select {
   min-height: 2.45rem;
-  border: 1px solid rgb(255 255 255 / 11%);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #171614;
-  color: #fffdf7;
+  background: var(--surface);
+  color: var(--foreground);
   padding: 0 0.65rem;
   font-size: 0.86rem;
   font-weight: 850;
@@ -2061,7 +2061,7 @@ option {
 
 .play-section-label {
   margin: 0 0 -0.55rem;
-  color: #c7c1b5;
+  color: var(--muted);
   font-size: 0.72rem;
   font-weight: 950;
   letter-spacing: 0.08em;
@@ -2074,9 +2074,9 @@ option {
 }
 
 .play-disclosure {
-  border: 1px solid rgb(255 255 255 / 8%);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #211f1d;
+  background: var(--surface);
   overflow: hidden;
 }
 
@@ -2084,7 +2084,7 @@ option {
   cursor: pointer;
   list-style: none;
   padding: 0.8rem 0.9rem;
-  color: #fffdf7;
+  color: var(--foreground);
   font-size: 0.86rem;
   font-weight: 950;
 }
@@ -2103,6 +2103,11 @@ option {
   transform: rotate(180deg);
 }
 
+.play-disclosure > summary::after {
+  content: "v";
+  color: var(--muted);
+}
+
 .play-disclosure .play-options-card,
 .play-disclosure .play-table-card,
 .play-disclosure .play-review-card {
@@ -2117,22 +2122,22 @@ option {
   align-items: center;
   gap: 0.85rem;
   min-height: 5.7rem;
-  border: 1px solid rgb(255 255 255 / 8%);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #34322f;
-  color: #f8f6ef;
+  background: var(--surface-strong);
+  color: var(--foreground);
   padding: 0.8rem 0.95rem;
   text-align: left;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 5%, transparent);
 }
 
 .play-action-card:hover {
-  background: #3b3935;
-  border-color: rgb(255 255 255 / 14%);
+  background: color-mix(in srgb, var(--surface-strong) 86%, var(--accent));
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
 }
 
 .play-action-card svg {
-  color: #79bd42;
+  color: var(--accent);
   stroke-width: 2.6;
 }
 
@@ -2149,7 +2154,7 @@ option {
 
 .play-action-card small {
   margin-top: 0.2rem;
-  color: #e1ded4;
+  color: var(--muted);
   font-size: 0.84rem;
   font-weight: 700;
   line-height: 1.25;
@@ -2197,7 +2202,7 @@ option {
 
 .compact-status-heading > span {
   border-radius: 999px;
-  background: rgb(255 255 255 / 7%);
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
   color: var(--muted);
   padding: 0.18rem 0.5rem;
   font-size: 0.68rem;
@@ -2500,7 +2505,7 @@ option {
 
 .play-clock-card p {
   margin: 0;
-  color: #b7b2a8;
+  color: var(--muted);
   font-size: 0.72rem;
   font-weight: 900;
   text-transform: uppercase;
@@ -2509,7 +2514,7 @@ option {
 .play-clock-card strong {
   display: block;
   margin-top: 0.15rem;
-  color: #fffdf7;
+  color: var(--foreground);
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 1.35rem;
 }
@@ -2518,8 +2523,8 @@ option {
   display: inline-flex;
   margin-top: 0.28rem;
   border-radius: 999px;
-  background: rgb(255 255 255 / 7%);
-  color: #bdb6aa;
+  background: color-mix(in srgb, var(--foreground) 7%, transparent);
+  color: var(--muted);
   padding: 0.16rem 0.42rem;
   font-size: 0.65rem;
   font-weight: 950;
@@ -2527,14 +2532,14 @@ option {
 }
 
 .play-clock-card.is-active {
-  border-color: color-mix(in srgb, var(--accent) 54%, rgb(255 255 255 / 8%));
-  background: color-mix(in srgb, var(--accent) 12%, #292b28);
+  border-color: color-mix(in srgb, var(--accent) 54%, var(--border));
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 26%, transparent);
 }
 
 .play-clock-card.is-active span {
   background: var(--accent);
-  color: #081207;
+  color: var(--accent-foreground);
 }
 
 .bot-profile-card {
@@ -2543,9 +2548,9 @@ option {
   align-items: center;
   gap: 0.5rem;
   margin-top: 0.55rem;
-  border: 1px solid rgb(255 255 255 / 9%);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #191816;
+  background: var(--surface);
   padding: 0.55rem;
 }
 
@@ -2562,13 +2567,13 @@ option {
 }
 
 .bot-profile-card strong {
-  color: #fffdf7;
+  color: var(--foreground);
   font-size: 0.82rem;
   font-weight: 950;
 }
 
 .bot-profile-card span {
-  color: #bdb6aa;
+  color: var(--muted);
   font-size: 0.68rem;
   font-weight: 800;
 }
@@ -2576,7 +2581,7 @@ option {
 .bot-profile-card small {
   border-radius: 999px;
   background: rgb(82 194 139 / 14%);
-  color: #bff0d0;
+  color: var(--accent);
   padding: 0.18rem 0.38rem;
   font-size: 0.62rem;
   font-weight: 950;
@@ -2590,10 +2595,10 @@ option {
 .bot-profile-card-with-select select {
   width: 100%;
   min-width: 0;
-  border: 1px solid rgb(255 255 255 / 10%);
+  border: 1px solid var(--border);
   border-radius: 7px;
-  background: #10100e;
-  color: #fffdf7;
+  background: var(--background);
+  color: var(--foreground);
   padding: 0.35rem 0.45rem;
   font-size: 0.74rem;
   font-weight: 900;
@@ -2615,8 +2620,8 @@ option {
 }
 
 .status-mode-card small {
-  background: rgb(255 255 255 / 8%);
-  color: #d2ccbf;
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  color: var(--muted);
 }
 
 .online-search-card {
@@ -2693,7 +2698,7 @@ option {
 
 .bot-tier-note {
   margin: 0.55rem 0 0;
-  color: #c9c3b6;
+  color: var(--muted);
   font-size: 0.78rem;
   font-weight: 760;
   line-height: 1.35;
@@ -2707,10 +2712,10 @@ option {
 }
 
 .bot-readiness-row span {
-  border: 1px solid rgb(255 255 255 / 8%);
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: #171614;
-  color: #d7d0c3;
+  background: var(--surface);
+  color: var(--muted);
   padding: 0.22rem 0.5rem;
   font-size: 0.68rem;
   font-weight: 950;
@@ -2729,9 +2734,9 @@ option {
 }
 
 .bot-stat-grid span {
-  border: 1px solid rgb(255 255 255 / 8%);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #191816;
+  background: var(--surface);
   padding: 0.5rem;
 }
 
@@ -2741,7 +2746,7 @@ option {
 }
 
 .bot-stat-grid small {
-  color: #9d968a;
+  color: var(--muted);
   font-size: 0.64rem;
   font-weight: 950;
   letter-spacing: 0.03em;
@@ -2750,7 +2755,7 @@ option {
 
 .bot-stat-grid strong {
   overflow: hidden;
-  color: #fffdf7;
+  color: var(--foreground);
   font-size: 0.82rem;
   font-weight: 950;
   text-overflow: ellipsis;
@@ -2783,9 +2788,9 @@ option {
 }
 
 .play-review-card {
-  border: 1px solid rgb(255 255 255 / 8%);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #211f1d;
+  background: var(--surface);
   overflow: hidden;
 }
 
@@ -2873,7 +2878,7 @@ option {
 .review-tabs {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  border-bottom: 1px solid rgb(255 255 255 / 10%);
+  border-bottom: 1px solid var(--border);
 }
 
 .review-tabs button {
@@ -2881,13 +2886,13 @@ option {
   border: 0;
   border-bottom: 3px solid transparent;
   background: transparent;
-  color: #eee9df;
+  color: var(--muted);
   font-weight: 800;
 }
 
 .review-tabs button.is-active {
-  border-color: #d9d8cf;
-  color: #fffdf7;
+  border-color: var(--foreground);
+  color: var(--foreground);
 }
 
 .review-engine-row,
@@ -2897,7 +2902,7 @@ option {
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.75rem 0.9rem;
-  color: #d9d4c8;
+  color: var(--muted);
   font-size: 0.84rem;
   font-weight: 800;
 }
@@ -2905,8 +2910,8 @@ option {
 .review-position-card {
   display: grid;
   gap: 0.35rem;
-  border-block: 1px solid rgb(255 255 255 / 8%);
-  background: #292724;
+  border-block: 1px solid var(--border);
+  background: var(--surface-strong);
   padding: 0.85rem 0.9rem;
 }
 
@@ -2918,14 +2923,14 @@ option {
 }
 
 .review-position-card p {
-  color: #d5d1c6;
+  color: var(--muted);
   font-size: 0.8rem;
   font-weight: 900;
   text-transform: uppercase;
 }
 
 .review-position-card strong {
-  color: #fffdf7;
+  color: var(--foreground);
   font-size: 1rem;
   font-weight: 950;
 }
@@ -2939,7 +2944,7 @@ option {
 
 .review-position-card span,
 .review-position-card small {
-  color: #c9c3b6;
+  color: var(--muted);
   font-size: 0.82rem;
   font-weight: 700;
   line-height: 1.35;
@@ -2960,22 +2965,22 @@ option {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: #e9e4d9;
+  color: var(--foreground);
   padding: 0.5rem 0.9rem;
   text-align: left;
 }
 
 .review-move-list li:nth-child(even) button {
-  background: rgb(255 255 255 / 2.5%);
+  background: color-mix(in srgb, var(--foreground) 3%, transparent);
 }
 
 .review-move-list li.is-active button {
-  background: color-mix(in srgb, var(--accent) 24%, #292724);
+  background: color-mix(in srgb, var(--accent) 24%, var(--surface-strong));
   box-shadow: inset 3px 0 0 var(--accent);
 }
 
 .review-move-list span {
-  color: #9fb098;
+  color: var(--accent);
   font-weight: 900;
 }
 
@@ -2989,9 +2994,9 @@ option {
 .review-move-list em,
 .review-summary-row span {
   border-radius: 999px;
-  background: rgb(255 255 255 / 8%);
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
   padding: 0.15rem 0.45rem;
-  color: #dcd6ca;
+  color: var(--muted);
   font-size: 0.72rem;
   font-style: normal;
   font-weight: 950;
@@ -3036,17 +3041,17 @@ option {
   margin: 0.75rem;
   border: 0;
   border-radius: 8px;
-  background: #72b446;
-  color: #081207;
+  background: var(--accent);
+  color: var(--accent-foreground);
   font-size: 1.2rem;
   font-weight: 950;
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 18%), 0 12px 22px rgb(0 0 0 / 20%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--foreground) 18%, transparent), 0 12px 22px rgb(0 0 0 / 20%);
 }
 
 .review-live-button {
   min-height: 2.8rem;
-  background: #353a36;
-  color: #fffdf7;
+  background: var(--surface-strong);
+  color: var(--foreground);
   font-size: 0.9rem;
 }
 
@@ -3061,15 +3066,15 @@ option {
   display: grid;
   min-height: 3rem;
   place-items: center;
-  border: 1px solid rgb(255 255 255 / 8%);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #302e2b;
-  color: #d9d4c8;
+  background: var(--surface);
+  color: var(--muted);
 }
 
 .review-controls button.is-main {
-  background: #3a3733;
-  color: #fffdf7;
+  background: var(--surface-strong);
+  color: var(--foreground);
 }
 
 .review-controls button:disabled,
