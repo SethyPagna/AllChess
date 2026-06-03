@@ -87,6 +87,9 @@ function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
 
   const piece = cell.piece;
   const variant = getVariant(state.variantKey);
+  if (variant.key === "janggi") {
+    return janggiPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
+  }
   if (variant.key === "xiangqi" || variant.key === "janggi") {
     return eastAsianPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
   }
@@ -208,6 +211,110 @@ function eastAsianPieceMoves(state: GameState, piece: Piece, from: Square): Move
     default:
       return steppingMoves(state, piece, from, movementDirections(piece.code));
   }
+}
+
+function janggiPieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
+  switch (piece.code) {
+    case "g":
+    case "a":
+      return steppingMoves(
+        state,
+        piece,
+        from,
+        [
+          [-1, 0],
+          [1, 0],
+          [0, -1],
+          [0, 1],
+          [-1, -1],
+          [-1, 1],
+          [1, -1],
+          [1, 1]
+        ]
+      ).filter((move) => inPalace(state, piece.owner, move.to) && isJanggiPalaceLineStep(state, from, move.to));
+    case "e":
+      return janggiElephantMoves(state, piece, from);
+    case "h":
+    case "n":
+      return horseMoves(state, piece, from);
+    case "c":
+      return janggiCannonMoves(state, piece, from);
+    case "r":
+      return [...rayMoves(state, piece, from, [[-1, 0], [1, 0], [0, -1], [0, 1]]), ...janggiPalaceRayMoves(state, piece, from)];
+    case "p":
+      return janggiSoldierMoves(state, piece, from);
+    default:
+      return steppingMoves(state, piece, from, movementDirections(piece.code));
+  }
+}
+
+function janggiSoldierMoves(state: GameState, piece: Piece, from: Square) {
+  const forward = orient(piece.owner, -1);
+  const moves = steppingMoves(state, piece, from, [
+    [forward, 0],
+    [0, -1],
+    [0, 1],
+    [forward, -1],
+    [forward, 1]
+  ]);
+  return moves.filter((move) => {
+    if (move.to.row === from.row || move.to.col === from.col) return true;
+    return inPalace(state, opponentOf(piece.owner), move.to) && isJanggiPalaceLineStep(state, from, move.to);
+  });
+}
+
+function janggiElephantMoves(state: GameState, piece: Piece, from: Square): Move[] {
+  const candidates = [
+    { to: { row: from.row - 3, col: from.col - 2 }, blocks: [{ row: from.row - 1, col: from.col }, { row: from.row - 2, col: from.col - 1 }] },
+    { to: { row: from.row - 3, col: from.col + 2 }, blocks: [{ row: from.row - 1, col: from.col }, { row: from.row - 2, col: from.col + 1 }] },
+    { to: { row: from.row + 3, col: from.col - 2 }, blocks: [{ row: from.row + 1, col: from.col }, { row: from.row + 2, col: from.col - 1 }] },
+    { to: { row: from.row + 3, col: from.col + 2 }, blocks: [{ row: from.row + 1, col: from.col }, { row: from.row + 2, col: from.col + 1 }] },
+    { to: { row: from.row - 2, col: from.col - 3 }, blocks: [{ row: from.row, col: from.col - 1 }, { row: from.row - 1, col: from.col - 2 }] },
+    { to: { row: from.row + 2, col: from.col - 3 }, blocks: [{ row: from.row, col: from.col - 1 }, { row: from.row + 1, col: from.col - 2 }] },
+    { to: { row: from.row - 2, col: from.col + 3 }, blocks: [{ row: from.row, col: from.col + 1 }, { row: from.row - 1, col: from.col + 2 }] },
+    { to: { row: from.row + 2, col: from.col + 3 }, blocks: [{ row: from.row, col: from.col + 1 }, { row: from.row + 1, col: from.col + 2 }] }
+  ];
+  const moves: Move[] = [];
+
+  for (const { to, blocks } of candidates) {
+    if (blocks.every((block) => !cellAt(state, block)?.piece) && canOccupy(state, piece, to)) {
+      moves.push({ from, to });
+    }
+  }
+
+  return moves;
+}
+
+function janggiCannonMoves(state: GameState, piece: Piece, from: Square): Move[] {
+  const directions: Array<[number, number]> = [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+    ...janggiPalaceRayDirections(state, from)
+  ];
+  const moves: Move[] = [];
+
+  for (const [dr, dc] of directions) {
+    let to = { row: from.row + dr, col: from.col + dc };
+    let screens = 0;
+    while (isInside(state, to) && (dr === 0 || dc === 0 || inAnyJanggiPalace(state, to))) {
+      const target = cellAt(state, to)?.piece;
+      if (!target) {
+        if (screens === 1) moves.push({ from, to: { ...to } });
+      } else {
+        if (target.code === "c") break;
+        screens += 1;
+        if (screens > 1) {
+          if (target.owner !== piece.owner) moves.push({ from, to: { ...to } });
+          break;
+        }
+      }
+      to = { row: to.row + dr, col: to.col + dc };
+    }
+  }
+
+  return moves;
 }
 
 function steppingMoves(state: GameState, piece: Piece, from: Square, directions: Array<[number, number]>) {
@@ -585,6 +692,74 @@ function inPalace(state: GameState, owner: PlayerColor, square: Square) {
   if (!isInside(state, square) || square.col < 3 || square.col > 5) return false;
   const topSide = ["black", "blue", "gote"].includes(owner);
   return topSide ? square.row >= 0 && square.row <= 2 : square.row >= state.board.length - 3 && square.row < state.board.length;
+}
+
+function opponentOf(owner: PlayerColor): PlayerColor {
+  if (owner === "white") return "black";
+  if (owner === "black") return "white";
+  if (owner === "red") return "blue";
+  if (owner === "blue") return "red";
+  if (owner === "sente") return "gote";
+  return "sente";
+}
+
+function inAnyJanggiPalace(state: GameState, square: Square) {
+  return square.col >= 3 && square.col <= 5 && ((square.row >= 0 && square.row <= 2) || (square.row >= state.board.length - 3 && square.row < state.board.length));
+}
+
+function janggiPalaceCenterRow(state: GameState, square: Square) {
+  if (square.row <= 2) return 1;
+  if (square.row >= state.board.length - 3) return state.board.length - 2;
+  return null;
+}
+
+function isJanggiPalaceCenter(state: GameState, square: Square) {
+  return square.col === 4 && square.row === janggiPalaceCenterRow(state, square);
+}
+
+function isJanggiPalaceLineStep(state: GameState, from: Square, to: Square) {
+  if (!inAnyJanggiPalace(state, from) || !inAnyJanggiPalace(state, to)) return false;
+  if (janggiPalaceCenterRow(state, from) !== janggiPalaceCenterRow(state, to)) return false;
+  const dr = Math.abs(from.row - to.row);
+  const dc = Math.abs(from.col - to.col);
+  if (dr + dc === 1) return true;
+  return dr === 1 && dc === 1 && (isJanggiPalaceCenter(state, from) || isJanggiPalaceCenter(state, to));
+}
+
+function janggiPalaceRayDirections(state: GameState, from: Square): Array<[number, number]> {
+  if (!inAnyJanggiPalace(state, from)) return [];
+  const centerRow = janggiPalaceCenterRow(state, from);
+  if (centerRow === null) return [];
+  if (isJanggiPalaceCenter(state, from)) {
+    return [
+      [-1, -1],
+      [-1, 1],
+      [1, -1],
+      [1, 1]
+    ];
+  }
+  if (from.col === 4) return [];
+  const rowDirection = from.row < centerRow ? 1 : -1;
+  const colDirection = from.col < 4 ? 1 : -1;
+  return [[rowDirection, colDirection]];
+}
+
+function janggiPalaceRayMoves(state: GameState, piece: Piece, from: Square) {
+  const moves: Move[] = [];
+  for (const [dr, dc] of janggiPalaceRayDirections(state, from)) {
+    let to = { row: from.row + dr, col: from.col + dc };
+    while (isInside(state, to) && inAnyJanggiPalace(state, to)) {
+      const target = cellAt(state, to)?.piece;
+      if (!target) {
+        moves.push({ from, to: { ...to } });
+      } else {
+        if (target.owner !== piece.owner) moves.push({ from, to: { ...to } });
+        break;
+      }
+      to = { row: to.row + dr, col: to.col + dc };
+    }
+  }
+  return moves;
 }
 
 function crossesXiangqiRiver(piece: Piece, to: Square) {

@@ -220,8 +220,11 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
   },
   janggi: {
     status: "rules-gated",
-    verifiedEdgeCases: ["Palace board shape and xiangqi-family movement scaffold are present."],
-    remainingGates: ["Native palace diagonals", "Janggi cannon screens", "Facing-general policy", "Pass/scoring tournament profile"]
+    verifiedEdgeCases: [
+      "Palace board shape, native palace diagonals, soldier sideways movement, long elephant paths, and Janggi cannon screen restrictions have fixtures.",
+      "Cannons require a non-cannon screen, cannot capture cannons, and can use palace diagonal lines."
+    ],
+    remainingGates: ["Facing-general policy", "Pass/scoring tournament profile", "Bot/review/persistence/E2E completion"]
   },
   makruk: {
     status: "rules-gated",

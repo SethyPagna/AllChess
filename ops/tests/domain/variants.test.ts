@@ -457,6 +457,96 @@ describe("variant engine", () => {
     expect(next.result).toBe("red");
   });
 
+  test("janggi generals and guards follow palace lines including diagonals", () => {
+    let state = createInitialState("janggi", "janggi-palace");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "red"
+    };
+    state.board[8][4].piece = { id: "red-general", code: "g", owner: "red", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "blue-general", code: "g", owner: "blue", labelKey: "chess.king" };
+
+    expect(getLegalMoves(state, { row: 8, col: 4 })).toEqual(
+      expect.arrayContaining([
+        { from: { row: 8, col: 4 }, to: { row: 7, col: 3 } },
+        { from: { row: 8, col: 4 }, to: { row: 7, col: 5 } },
+        { from: { row: 8, col: 4 }, to: { row: 9, col: 3 } },
+        { from: { row: 8, col: 4 }, to: { row: 9, col: 5 } }
+      ])
+    );
+
+    state.board[8][3].piece = { id: "red-guard", code: "a", owner: "red", labelKey: "chess.bishop" };
+    expect(getLegalMoves({ ...state, turn: "red" }, { row: 8, col: 3 })).not.toContainEqual({ from: { row: 8, col: 3 }, to: { row: 7, col: 4 } });
+  });
+
+  test("janggi cannons require a non-cannon screen and cannot capture cannons", () => {
+    let state = createInitialState("janggi", "janggi-cannon");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "red"
+    };
+    state.board[9][4].piece = { id: "red-general", code: "g", owner: "red", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "blue-general", code: "g", owner: "blue", labelKey: "chess.king" };
+    state.board[5][0].piece = { id: "red-cannon", code: "c", owner: "red", labelKey: "chess.rook" };
+    state.board[4][0].piece = { id: "screen", code: "p", owner: "red", labelKey: "chess.pawn" };
+    state.board[2][0].piece = { id: "blue-horse", code: "h", owner: "blue", labelKey: "chess.knight" };
+    state.board[1][0].piece = { id: "blue-cannon", code: "c", owner: "blue", labelKey: "chess.rook" };
+
+    expect(getLegalMoves(state, { row: 5, col: 0 })).toContainEqual({ from: { row: 5, col: 0 }, to: { row: 3, col: 0 } });
+    expect(getLegalMoves(state, { row: 5, col: 0 })).toContainEqual({ from: { row: 5, col: 0 }, to: { row: 2, col: 0 } });
+    expect(getLegalMoves(state, { row: 5, col: 0 })).not.toContainEqual({ from: { row: 5, col: 0 }, to: { row: 1, col: 0 } });
+
+    state.board[5][2].piece = { id: "screenless-cannon", code: "c", owner: "red", labelKey: "chess.rook" };
+    expect(getLegalMoves(state, { row: 5, col: 2 })).not.toContainEqual({ from: { row: 5, col: 2 }, to: { row: 4, col: 2 } });
+
+    state.board[9][3].piece = { id: "palace-cannon", code: "c", owner: "red", labelKey: "chess.rook" };
+    state.board[8][4].piece = { id: "palace-screen", code: "p", owner: "red", labelKey: "chess.pawn" };
+    state.board[7][5].piece = { id: "palace-target", code: "h", owner: "blue", labelKey: "chess.knight" };
+    expect(getLegalMoves(state, { row: 9, col: 3 })).toContainEqual({ from: { row: 9, col: 3 }, to: { row: 7, col: 5 } });
+  });
+
+  test("janggi elephants use native long elephant paths without xiangqi river limits", () => {
+    let state = createInitialState("janggi", "janggi-elephant");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "red"
+    };
+    state.board[9][4].piece = { id: "red-general", code: "g", owner: "red", labelKey: "chess.king" };
+    state.board[1][4].piece = { id: "blue-general", code: "g", owner: "blue", labelKey: "chess.king" };
+    state.board[6][4].piece = { id: "red-elephant", code: "e", owner: "red", labelKey: "chess.elephant" };
+
+    expect(getLegalMoves(state, { row: 6, col: 4 })).toContainEqual({ from: { row: 6, col: 4 }, to: { row: 3, col: 2 } });
+    state.board[5][4].piece = { id: "elephant-blocker", code: "p", owner: "red", labelKey: "chess.pawn" };
+    expect(getLegalMoves(state, { row: 6, col: 4 })).not.toContainEqual({ from: { row: 6, col: 4 }, to: { row: 3, col: 2 } });
+  });
+
+  test("janggi soldiers can move sideways immediately and diagonally along enemy palace lines", () => {
+    let state = createInitialState("janggi", "janggi-soldier");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "red"
+    };
+    state.board[9][4].piece = { id: "red-general", code: "g", owner: "red", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "blue-general", code: "g", owner: "blue", labelKey: "chess.king" };
+    state.board[6][4].piece = { id: "red-soldier", code: "p", owner: "red", labelKey: "chess.pawn" };
+
+    expect(getLegalMoves(state, { row: 6, col: 4 })).toEqual(
+      expect.arrayContaining([
+        { from: { row: 6, col: 4 }, to: { row: 5, col: 4 } },
+        { from: { row: 6, col: 4 }, to: { row: 6, col: 3 } },
+        { from: { row: 6, col: 4 }, to: { row: 6, col: 5 } }
+      ])
+    );
+
+    state.board[6][4].piece = null;
+    state.board[2][3].piece = { id: "palace-soldier", code: "p", owner: "red", labelKey: "chess.pawn" };
+    expect(getLegalMoves(state, { row: 2, col: 3 })).toContainEqual({ from: { row: 2, col: 3 }, to: { row: 1, col: 4 } });
+  });
+
   test("sets up Jungle Chess with opposing sides and blocks non-rats from rivers", () => {
     let state = createInitialState("jungle", "jungle-test");
     expect(state.board[0][0].piece).toMatchObject({ code: "l", owner: "black" });
