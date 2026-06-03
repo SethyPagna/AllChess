@@ -116,6 +116,10 @@ export class PresenceDO extends DurableObject {
     return allchessDoJson({ error: "Unsupported presence operation." }, { status: 404 });
   }
 }
+
+export class GameRoomDurableObject extends GameRoomDO {}
+export class MatchmakingDurableObject extends MatchmakingDO {}
+export class PresenceDurableObject extends PresenceDO {}
 `;
 
 const worker = await readFile(workerPath, "utf8");
