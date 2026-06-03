@@ -246,9 +246,12 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
     remainingGates: []
   },
   horde: {
-    status: "rules-gated",
-    verifiedEdgeCases: ["Asymmetric horde setup, standard black-king safety intent, and horde-elimination win fixtures are present."],
-    remainingGates: ["Asymmetric check/draw fixtures", "Promotion, timeout, and en-passant policy", "Bot/review/persistence/E2E completion"]
+    status: "verified-playable",
+    verifiedEdgeCases: [
+      "Asymmetric horde setup keeps the white pawn army against black's standard royal army.",
+      "White checkmate, black horde-elimination, promotion, no-insufficient-material shortcut, and legal bot validation are tested."
+    ],
+    remainingGates: []
   },
   "king-of-the-hill": {
     status: "verified-playable",

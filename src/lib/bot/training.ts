@@ -432,6 +432,23 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
     }
   },
   {
+    id: "horde-start-front-pawn",
+    variantKey: "horde",
+    positionKey: "horde|turn:white|moves:",
+    moveUci: "e5e6",
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.84,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "horde", "space", "asymmetric-army"],
+    explanation: {
+      plan: "Advance a front horde pawn to claim space while keeping the pawn wall connected.",
+      threat: "White starts squeezing Black's normal army before the pieces can freely untangle.",
+      risk: "A single pawn rush can be picked off, so the bot should keep neighboring pawns coordinated.",
+      fallbackGoal: "If Black attacks the advanced pawn, preserve the horde mass and keep promotion lanes alive."
+    }
+  },
+  {
     id: "king-of-the-hill-start-center",
     variantKey: "king-of-the-hill",
     positionKey: "king-of-the-hill|turn:white|moves:",

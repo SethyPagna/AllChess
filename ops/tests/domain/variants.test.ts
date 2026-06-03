@@ -296,7 +296,20 @@ describe("variant engine", () => {
     });
   });
 
-  test("horde lets black win by eliminating the pawn army without marking the variant complete", () => {
+  test("horde starts with an asymmetric army and no white royal", () => {
+    const state = createInitialState("horde", "horde-setup");
+    const pieces = state.board.flatMap((row) => row.map((cell) => cell.piece).filter((piece) => piece !== null));
+    const whitePieces = pieces.filter((piece) => piece.owner === "white");
+    const blackPieces = pieces.filter((piece) => piece.owner === "black");
+
+    expect(whitePieces).toHaveLength(32);
+    expect(whitePieces.every((piece) => piece.code === "p")).toBe(true);
+    expect(blackPieces).toHaveLength(16);
+    expect(blackPieces.some((piece) => piece.code === "k")).toBe(true);
+    expect(whitePieces.some((piece) => piece.code === "k")).toBe(false);
+  });
+
+  test("horde lets black win by eliminating the pawn army", () => {
     let state = createInitialState("horde", "horde-elimination");
     state = {
       ...state,
@@ -312,6 +325,40 @@ describe("variant engine", () => {
       result: "black",
       outcomeReason: "objective"
     });
+  });
+
+  test("horde lets white checkmate black without a white king", () => {
+    let state = createInitialState("horde", "horde-checkmate");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[0][0].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[2][1].piece = { id: "white-queen", code: "q", owner: "white", labelKey: "chess.queen" };
+    state.board[2][2].piece = { id: "white-pawn-cover", code: "p", owner: "white", labelKey: "chess.pawn" };
+
+    expect(applyMove(state, { from: { row: 2, col: 1 }, to: { row: 1, col: 1 } })).toMatchObject({
+      status: "completed",
+      result: "white",
+      outcomeReason: "checkmate"
+    });
+  });
+
+  test("horde pawns still promote instead of triggering bare-material draws", () => {
+    let state = createInitialState("horde", "horde-promotion");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[0][7].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[1][0].piece = { id: "horde-pawn", code: "p", owner: "white", labelKey: "chess.pawn" };
+
+    const promoted = applyMove(state, { from: { row: 1, col: 0 }, to: { row: 0, col: 0 } });
+
+    expect(promoted).toMatchObject({ status: "active" });
+    expect(promoted.board[0][0].piece).toMatchObject({ owner: "white", code: "q", promoted: true });
   });
 
   test("xiangqi general and advisors stay inside the palace", () => {

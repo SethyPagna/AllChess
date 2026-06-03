@@ -29,8 +29,9 @@ describe("rules atlas", () => {
     expect(getVariantRuleSummary("jungle").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Rat river")]));
     expect(getVariantRuleSummary("jungle").completion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("E2E")]));
     expect(getVariantRuleSummary("antichess").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Mandatory captures")]));
+    expect(getVariantRuleSummary("horde").completion.status).toBe("verified-playable");
     expect(getVariantRuleSummary("horde").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("horde-elimination")]));
-    expect(getVariantRuleSummary("horde").completion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("E2E")]));
+    expect(getVariantRuleSummary("horde").completion.remainingGates).toEqual([]);
   });
 
   test("returns nullable completion for optional detail page lookups", () => {
