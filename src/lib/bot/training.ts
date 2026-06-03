@@ -364,17 +364,17 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
     }
   },
   {
-    id: "jungle-start-lion-pressure",
+    id: "jungle-start-tiger-pressure",
     variantKey: "jungle",
     positionKey: "jungle|turn:white|moves:",
     moveUci: "a1a2",
-    source: "tactic-cache",
-    minTier: "hard",
-    confidence: 0.76,
-    benchmarkVersion: "allchess-knowledge-v1",
-    tags: ["objective", "tempo", "den-race"],
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.84,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "objective", "tempo", "den-race"],
     explanation: {
-      plan: "Advance a high-rank animal toward the opponent side while keeping den pressure alive.",
+      plan: "Advance the tiger toward the opponent side while keeping den pressure alive.",
       threat: "The move increases pressure on lanes toward traps and the opposing den.",
       risk: "Fast advances can overextend if the supporting animals do not follow.",
       fallbackGoal: "If the attack stalls, pivot to trap control and protect the den."

@@ -229,12 +229,12 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
     remainingGates: ["Native met/khon movement fixtures", "Makruk promotion fixtures", "Counting-rule draw fixtures"]
   },
   jungle: {
-    status: "rules-gated",
+    status: "verified-playable",
     verifiedEdgeCases: [
       "Opposing animal ownership, board terrain, den/trap/river tiles, and native animal ranks are covered.",
-      "Rat river entry, rat-elephant exception, trap weakening, lion/tiger river jumps, den-entry wins, and all-animal-capture wins have fixtures."
+      "Rat river entry, rat-elephant exception, trap weakening, lion/tiger river jumps, den-entry wins, all-animal-capture wins, bot validation, and persistence routing have fixtures."
     ],
-    remainingGates: ["No-progress/repetition policy", "Bot/review/persistence/E2E completion"]
+    remainingGates: []
   },
   antichess: {
     status: "verified-playable",

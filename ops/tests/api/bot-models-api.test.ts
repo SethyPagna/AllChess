@@ -45,15 +45,7 @@ describe("bot models API", () => {
       requiredCompletionGates: expect.arrayContaining(["native rules", "legal bot moves", "review", "persistence", "E2E fixtures"]),
       notice: expect.stringContaining("guide-first previews")
     });
-    expect(body.trainingGate.gatedVariants).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          variantKey: "jungle",
-          claim: "not-fully-trained",
-          remainingGates: expect.arrayContaining([expect.stringContaining("E2E")])
-        })
-      ])
-    );
+    expect(body.trainingGate.playableVariants).toEqual(expect.arrayContaining(["jungle"]));
     expect(body.knowledgeIndex.entries).toBeGreaterThan(0);
     expect(body.knowledgeIndex.maxBucketSize).toBeLessThan(body.knowledgeIndex.entries);
     expect(body.trainingSummary).toEqual(
@@ -75,9 +67,9 @@ describe("bot models API", () => {
         }),
         expect.objectContaining({
           variantKey: "jungle",
-          coverageStatus: "rules-gated",
-          runtimePath: "rules-gated",
-          badgeLabel: "Rules gated"
+          coverageStatus: "active",
+          runtimePath: "knowledge-cache",
+          badgeLabel: "Cache ready"
         })
       ])
     );
@@ -106,7 +98,7 @@ describe("bot models API", () => {
         }),
         expect.objectContaining({
           variantKey: "jungle",
-          coverageStatus: "rules-gated"
+          coverageStatus: "active"
         })
       ])
     );
@@ -137,8 +129,8 @@ describe("bot models API", () => {
         }),
         expect.objectContaining({
           variantKey: "jungle",
-          claimStatus: "preview-only",
-          readiness: "rules-gated"
+          claimStatus: "verified",
+          readiness: "active"
         })
       ])
     );

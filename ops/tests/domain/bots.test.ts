@@ -436,7 +436,7 @@ describe("bot difficulty ladder", () => {
   });
 
   test("verified playable variants have legal cache-first seed moves", async () => {
-    const variants = ["classic", "chess960", "xiangqi", "antichess", "horde", "king-of-the-hill", "three-check"];
+    const variants = ["classic", "chess960", "xiangqi", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"];
 
     for (const variantKey of variants) {
       const state = createInitialState(variantKey, `${variantKey}-seed`);
@@ -561,7 +561,7 @@ describe("bot difficulty ladder", () => {
     const checklists = listBotTrainingChecklists();
     const classic = checklists.find((checklist) => checklist.variantKey === "classic");
     const jungle = checklists.find((checklist) => checklist.variantKey === "jungle");
-    const verifiedPlayable = ["classic", "chess960", "xiangqi", "antichess", "horde", "king-of-the-hill", "three-check"];
+    const verifiedPlayable = ["classic", "chess960", "xiangqi", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"];
 
     expect(checklists.map((checklist) => checklist.variantKey)).toEqual(
       expect.arrayContaining(["classic", "chess960", "xiangqi", "shogi", "janggi", "makruk", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"])
@@ -585,12 +585,12 @@ describe("bot difficulty ladder", () => {
       expect(checklist?.engineLabels).toBeGreaterThan(0);
       expect(checklist?.difficultyTiers.map((tier) => tier.search.maxMoveTimeMs)).toEqual([220, 420, 780, 1400, 2100, 2600]);
     }
-    expect(jungle?.coverageStatus).toBe("rules-gated");
+    expect(jungle?.coverageStatus).toBe("active");
     expect(jungle?.rulesCompletion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Rat river")]));
-    expect(jungle?.rulesCompletion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("E2E")]));
-    expect(jungle?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "rule-completion", status: "rules-gated" })]));
-    expect(jungle?.difficultyTiers[0].strength.calibrationStatus).toBe("rules-gated");
-    expect(jungle?.nextTrainingJobs[0]).toContain("Complete native jungle rules fixtures");
+    expect(jungle?.rulesCompletion.remainingGates).toEqual([]);
+    expect(jungle?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "rule-completion", status: "ready" })]));
+    expect(jungle?.difficultyTiers[0].strength.calibrationStatus).toBe("variant-provisional");
+    expect(jungle?.nextTrainingJobs[0]).toContain("Generate jungle tactical fixtures");
   });
 
   test("training gate summary does not claim unfinished variants are fully trained", () => {
@@ -598,13 +598,13 @@ describe("bot difficulty ladder", () => {
 
     expect(summary.claimPolicy).toBe("verified-playable-only");
     expect(summary.requiredCompletionGates).toEqual(expect.arrayContaining(["native rules", "legal bot moves", "review", "persistence", "E2E fixtures"]));
-    expect(summary.playableVariants).toEqual(expect.arrayContaining(["classic", "chess960", "xiangqi", "antichess", "horde", "king-of-the-hill", "three-check"]));
+    expect(summary.playableVariants).toEqual(expect.arrayContaining(["classic", "chess960", "xiangqi", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"]));
     expect(summary.gatedVariants).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          variantKey: "jungle",
+          variantKey: "shogi",
           claim: "not-fully-trained",
-          remainingGates: expect.arrayContaining([expect.stringContaining("E2E")])
+          remainingGates: expect.arrayContaining([expect.stringContaining("Nifu")])
         })
       ])
     );

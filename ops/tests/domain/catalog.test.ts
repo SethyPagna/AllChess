@@ -25,7 +25,7 @@ describe("universal game catalog", () => {
   test("keeps every current playable variant in the broader catalog", () => {
     const playableIds = gameCatalog.filter((entry) => entry.playability === "playable").map((entry) => entry.id).sort();
 
-    expect(playableIds).toEqual(["antichess", "chess960", "classic", "horde", "king-of-the-hill", "three-check", "xiangqi"]);
+    expect(playableIds).toEqual(["antichess", "chess960", "classic", "horde", "jungle", "king-of-the-hill", "three-check", "xiangqi"]);
     expect(gameCatalog.find((entry) => entry.id === "classic")).toMatchObject({
       piecePresentation: "staunton-svg",
       botAdapter: "fairy-stockfish"
@@ -51,7 +51,7 @@ describe("universal game catalog", () => {
       knownGaps: expect.arrayContaining([expect.stringContaining("pawn-drop")])
     });
     expect(getGameCatalogEntry("shogi")).toMatchObject({ playability: "learn" });
-    expect(getGameCatalogEntry("jungle")).toMatchObject({ playability: "learn" });
+    expect(getGameCatalogEntry("jungle")).toMatchObject({ playability: "playable" });
     expect(displayReleaseReadiness(getGameCatalogEntry("classic")!)).toBe("Verified ready");
     expect(displayReleaseReadiness(getGameCatalogEntry("shogi")!)).toBe("Guide gated");
     expect(getCatalogReleaseReadiness(getGameCatalogEntry("classic")!)).toMatchObject({ status: "verified-ready", gateComplete: true, blockers: [] });
@@ -84,6 +84,7 @@ describe("universal game catalog", () => {
       "chess960",
       "classic",
       "horde",
+      "jungle",
       "king-of-the-hill",
       "three-check",
       "xiangqi"
@@ -121,7 +122,7 @@ describe("universal game catalog", () => {
   test("stats and API payloads are real catalog counts, not fake live-player estimates", async () => {
     const stats = getCatalogStats();
     expect(stats.totalGames).toBe(gameCatalog.length);
-    expect(stats.playableGames).toBe(7);
+    expect(stats.playableGames).toBe(8);
     expect(stats.familyCounts.mancala).toBeGreaterThan(0);
 
     const catalog = await catalogGet(new Request("http://allchess.test/api/catalog?q=go"));
