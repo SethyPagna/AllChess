@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "allchess",
+  "name": "learn",
   "main": "../../../.open-next/worker.js",
   "account_id": "d105a82bc26b6913575355352c2d1bb1",
   "workers_dev": true,
@@ -17,7 +17,7 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "allchess"
+      "service": "learn"
     }
   ],
   "durable_objects": {
@@ -71,13 +71,13 @@
   },
   "env": {
     "production": {
-      "name": "allchess",
+      "name": "learn",
       "workers_dev": true,
       "preview_urls": false,
       "services": [
         {
           "binding": "WORKER_SELF_REFERENCE",
-          "service": "allchess"
+          "service": "learn"
         }
       ],
       "durable_objects": {

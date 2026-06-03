@@ -2,7 +2,7 @@
 
 AllChess is a multilingual, Cloudflare-first chess ecosystem for classic chess and global variants.
 
-The active app is a Next.js 16 application deployed as `allchess`, with Cloudflare D1 for data and Cloudflare R2 for object storage.
+The active app is a Next.js 16 application deployed as the Cloudflare Worker `learn`, with Cloudflare D1 for data and Cloudflare R2 for object storage.
 
 ## Current Stack
 
@@ -15,7 +15,7 @@ The active app is a Next.js 16 application deployed as `allchess`, with Cloudfla
 - Playwright: `^1.60.0`
 - Tailwind CSS: `^4.3.0`
 - Zod: `^4.4.3`
-- Wrangler: `^4.96.0`
+- Wrangler: `^4.97.0`
 - OpenNext Cloudflare: `^1.19.11`
 
 The package ranges are current for the verified latest-version lane. ESLint 10 uses `@eslint/compat` so the Next.js lint presets can continue running while their bundled plugins finish their ESLint 10 peer updates. Vercel deploy scripts call `vercel@latest` through `npx` instead of keeping the CLI dependency tree in local installs.
@@ -92,7 +92,7 @@ npm run db:migrate:remote
 npm run cf:deploy
 ```
 
-The current workers.dev deployment URL for this Cloudflare account is `https://allchess.learn-app.workers.dev`.
+The current workers.dev deployment URL for this Cloudflare account is `https://learn.learn-app.workers.dev`.
 
 Vercel:
 
