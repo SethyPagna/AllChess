@@ -381,6 +381,23 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
     }
   },
   {
+    id: "shatranj-start-king-pawn",
+    variantKey: "shatranj",
+    positionKey: "shatranj|turn:white|moves:",
+    moveUci: "e2e3",
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.83,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "shatranj", "historical", "ferz", "one-step-pawn"],
+    explanation: {
+      plan: "Advance the king pawn one step to open central space under Shatranj movement limits.",
+      threat: "White prepares ferz and knight development without assuming modern double-pawn pushes.",
+      risk: "The slower pawn structure means the bot should value mobility and avoid exposing the king too early.",
+      fallbackGoal: "If the center locks, improve piece activity and look for bare-king conversion chances."
+    }
+  },
+  {
     id: "jungle-start-tiger-pressure",
     variantKey: "jungle",
     positionKey: "jungle|turn:white|moves:",

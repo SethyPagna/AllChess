@@ -69,6 +69,20 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     drawConditions: ["Stalemate", "Repetition/no-progress according to selected room rules", "Mutual agreement"],
     illegalMoveNotes: ["Drops must be on empty squares.", "Pawns may not be dropped on the first or last rank.", "A player may not leave their king in check."]
   },
+  shatranj: {
+    variantKey: "shatranj",
+    sourceLinks: [{ name: "Chess Variant Pages Shatranj", url: "https://www.chessvariants.com/historic.dir/shatranj.html" }],
+    numberedBasics: [
+      "The ferz moves one square diagonally and the alfil jumps exactly two squares diagonally.",
+      "Pawns move one square forward, capture diagonally, and promote to ferz.",
+      "There is no castling, double pawn push, or en passant.",
+      "Win by checkmate or by baring the opposing king."
+    ],
+    specialRules: ["Ferz", "Alfil jump", "One-step pawns", "No castling", "Bare-king objective"],
+    winConditions: ["Checkmate", "Bare the opposing king", "Timeout"],
+    drawConditions: ["Mutual bare kings", "Repetition/no-progress according to selected room rules"],
+    illegalMoveNotes: ["The alfil must land exactly two diagonal squares away.", "Pawns may not double-push.", "A player may not leave their king in check."]
+  },
   xiangqi: {
     variantKey: "xiangqi",
     sourceLinks: [{ name: "World Xiangqi Federation World Xiangqi Rules 2018", url: "https://www.wxf-xiangqi.org/images/wxf-rules/2018_World_XiangQi_Rules_English2018.pdf" }],
@@ -253,6 +267,16 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
       "Pawn drops reject the first and last rank while allowing middle-rank empty squares.",
       "Drop moves are checked against king safety and bot legal validation before application.",
       "Promoted captured pawns demote back to pawns in hand."
+    ],
+    remainingGates: []
+  },
+  shatranj: {
+    status: "verified-playable",
+    verifiedEdgeCases: [
+      "Ferz one-step diagonal movement and alfil two-square jump movement are covered.",
+      "Pawns move one step, cannot double-push, and promote to ferz on the back rank.",
+      "The bare-king objective ends the game when the opponent has only a royal piece left.",
+      "No castling is exposed for the historical ruleset and bot legal validation uses the native moves."
     ],
     remainingGates: []
   },

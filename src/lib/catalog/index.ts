@@ -54,6 +54,7 @@ const playableFamilyByVariant: Record<VariantDefinition["family"], GameFamilyKey
 const presentationByVariant: Record<string, PiecePresentationPack> = {
   classic: "staunton-svg",
   crazyhouse: "staunton-svg",
+  shatranj: "makruk-carved",
   chess960: "staunton-svg",
   antichess: "staunton-svg",
   horde: "staunton-svg",
@@ -70,6 +71,7 @@ const presentationByVariant: Record<string, PiecePresentationPack> = {
 const localizedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
   classic: { english: "Classic Chess", short: "Chess" },
   crazyhouse: { english: "Crazyhouse" },
+  shatranj: { english: "Shatranj", native: "شطرنج", romanization: "Shatranj" },
   chess960: { english: "Chess960", romanization: "Fischer Random" },
   xiangqi: { english: "Xiangqi", native: "象棋", romanization: "Xiàngqí" },
   shogi: { english: "Shogi", native: "将棋", romanization: "Shōgi" },
@@ -156,6 +158,7 @@ function relatedFor(key: string) {
   const related: Record<string, string[]> = {
     classic: ["chess960", "three-check", "king-of-the-hill"],
     crazyhouse: ["classic", "shogi", "bughouse"],
+    shatranj: ["classic", "chaturanga", "makruk"],
     chess960: ["classic", "horde", "antichess"],
     xiangqi: ["janggi", "jungle", "minixiangqi"],
     shogi: ["mini-shogi", "chu-shogi", "crazyhouse"],
@@ -193,21 +196,6 @@ const learningCatalogEntries: GameCatalogEntry[] = [
     ruleSourceLinks: [{ name: "Encyclopaedia Britannica overview", url: "https://www.britannica.com/topic/chess" }],
     shortRules: ["Historic four-division army game.", "Rules varied by source and period.", "AllChess will keep it learning-only until one rules profile is locked."],
     winConditions: ["Rules profile pending"]
-  }),
-  catalogEntry({
-    id: "shatranj",
-    name: { english: "Shatranj", native: "شطرنج", romanization: "Shatranj" },
-    aliases: ["persian-chess"],
-    family: "chess-family",
-    region: ["Persia", "Middle East"],
-    board: { kind: "square-grid", rows: 8, cols: 8, description: "8x8 board with ferz and alfil movement." },
-    piecePresentation: "makruk-carved",
-    playability: "learn",
-    rulesAdapter: "planned-rules-engine",
-    botAdapter: "heuristic",
-    ruleSourceLinks: [{ name: "Chess Variant Pages Shatranj", url: "https://www.chessvariants.com/historic.dir/shatranj.html" }],
-    shortRules: ["The ferz moves one square diagonally.", "The alfil jumps two squares diagonally.", "Mate, bare king, and stalemate policies depend on the selected profile."],
-    winConditions: ["Checkmate", "Bare king in selected rules profiles"]
   }),
   catalogEntry({
     id: "atomic",

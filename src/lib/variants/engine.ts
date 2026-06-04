@@ -13,6 +13,7 @@ const pieceLabels: Record<string, string> = {
   e: "chess.elephant",
   h: "chess.knight",
   c: "chess.rook",
+  f: "chess.queen",
   s: "chess.pawn",
   m: "chess.queen",
   l: "chess.rook",
@@ -150,6 +151,9 @@ function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
   }
   if (variant.key === "makruk") {
     return makrukPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
+  }
+  if (variant.key === "shatranj") {
+    return shatranjPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
   }
   if (variant.key === "xiangqi" || variant.key === "janggi") {
     return eastAsianPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
@@ -290,6 +294,28 @@ function makrukPieceMoves(state: GameState, piece: Piece, from: Square): Move[] 
     default:
       return genericPieceMoves(state, piece, from);
   }
+}
+
+function shatranjPieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
+  switch (piece.code) {
+    case "f":
+      return steppingMoves(state, piece, from, [[-1, -1], [-1, 1], [1, -1], [1, 1]]);
+    case "a":
+      return shatranjAlfilMoves(state, piece, from);
+    case "p":
+      return westernPawnMoves(state, piece, from, false);
+    default:
+      return genericPieceMoves(state, piece, from);
+  }
+}
+
+function shatranjAlfilMoves(state: GameState, piece: Piece, from: Square): Move[] {
+  const moves: Move[] = [];
+  for (const [dr, dc] of [[-2, -2], [-2, 2], [2, -2], [2, 2]] satisfies Array<[number, number]>) {
+    const to = { row: from.row + dr, col: from.col + dc };
+    if (canOccupy(state, piece, to)) moves.push({ from, to });
+  }
+  return moves;
 }
 
 function genericPieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
@@ -776,6 +802,10 @@ export function applyMove(state: GameState, move: Move): GameState {
     updateMakrukCounting(next);
   }
 
+  if (variant.key === "shatranj") {
+    return withShatranjOutcome(next, movingPiece.owner, move.to);
+  }
+
   if (!variant.supportsCheck && captured && isRoyal(captured)) {
     next.status = "completed";
     next.result = movingPiece.owner;
@@ -786,6 +816,24 @@ export function applyMove(state: GameState, move: Move): GameState {
     return withShogiOutcome(next, movingPiece.owner, move.to);
   }
   return withOutcome(next, movingPiece.owner, move.to);
+}
+
+function withShatranjOutcome(state: GameState, mover: PlayerColor, destination?: Square): GameState {
+  const variant = getVariant(state.variantKey);
+  const barePlayers = variant.players.filter((player) => isBareRoyalSide(state, player));
+  if (barePlayers.length === variant.players.length) {
+    state.status = "completed";
+    state.result = "draw";
+    state.outcomeReason = "objective";
+    return state;
+  }
+  if (barePlayers.some((player) => player !== mover)) {
+    state.status = "completed";
+    state.result = mover;
+    state.outcomeReason = "objective";
+    return state;
+  }
+  return withOutcome(state, mover, destination);
 }
 
 function withAntichessOutcome(state: GameState): GameState {
@@ -1362,6 +1410,7 @@ function isShogiFamily(variantKey: string) {
 }
 
 function promotionCodeFor(variant: VariantDefinition, piece: Piece) {
+  if (variant.key === "shatranj" && piece.code === "p") return "f";
   if (variant.family === "western" && piece.code === "p") return "q";
   if (variant.key === "makruk" && piece.code === "p") return "m";
   return piece.code;

@@ -101,6 +101,7 @@ const en = {
   "chess.pawn": "Pawn",
   "variant.classic": "Classic Chess",
   "variant.crazyhouse": "Crazyhouse",
+  "variant.shatranj": "Shatranj",
   "variant.chess960": "Chess960",
   "variant.xiangqi": "Xiangqi",
   "variant.shogi": "Shogi",

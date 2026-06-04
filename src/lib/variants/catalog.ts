@@ -35,6 +35,22 @@ export const variantCatalog: VariantDefinition[] = [
     aliases: ["drop-chess"]
   },
   {
+    key: "shatranj",
+    nameKey: "variant.shatranj",
+    rulesAdapter: "chessops",
+    engineProtocol: "internal",
+    family: "western",
+    board: { rows: 8, cols: 8, coordinates: "orthodox" },
+    players: ["white", "black"],
+    supportsDrops: false,
+    supportsPromotion: true,
+    supportsCastling: false,
+    supportsCheck: true,
+    objective: "Checkmate or bare the opposing king using ferz and alfil movement.",
+    setup: ["rnakfanr", "pppppppp", "........", "........", "........", "........", "PPPPPPPP", "RNAFKANR"],
+    aliases: ["persian-chess"]
+  },
+  {
     key: "chess960",
     nameKey: "variant.chess960",
     rulesAdapter: "chessops",
