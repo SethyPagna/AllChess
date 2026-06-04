@@ -48,6 +48,9 @@
     {
       "tag": "v4_delete_study_battle_durable_object",
       "deleted_classes": ["StudyBattleDurableObject"]
+    },
+    {
+      "tag": "v5_restore_learn_realtime_classes"
     }
   ],
   "r2_buckets": [
