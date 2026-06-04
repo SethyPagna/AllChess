@@ -515,6 +515,23 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
       risk: "Fishing for checks too early can waste tempi and fall behind in development.",
       fallbackGoal: "If Black parries the first threats, keep building pressure rather than forcing bad checks."
     }
+  },
+  {
+    id: "racing-kings-start-king-race",
+    variantKey: "racing-kings",
+    positionKey: "racing-kings|turn:white|moves:",
+    moveUci: "h2h3",
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.86,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "racing-kings", "king-race", "no-check"],
+    explanation: {
+      plan: "Move the king up the h-file race lane without giving check or blocking the supporting pieces.",
+      threat: "White starts the objective race immediately while keeping the back-rank pieces available for escorts.",
+      risk: "Racing too far without support can let Black equalize the finish-line tempo.",
+      fallbackGoal: "If the h-file is blocked, switch to piece escorts that preserve the no-check rule."
+    }
   }
 ];
 

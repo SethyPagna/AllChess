@@ -76,7 +76,8 @@ const localizedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
   antichess: { english: "Antichess" },
   horde: { english: "Horde" },
   "king-of-the-hill": { english: "King of the Hill" },
-  "three-check": { english: "Three-check" }
+  "three-check": { english: "Three-check" },
+  "racing-kings": { english: "Racing Kings" }
 };
 
 const completeVerification: PlayableGameVerification = {
@@ -155,7 +156,8 @@ function relatedFor(key: string) {
     shogi: ["mini-shogi", "chu-shogi", "crazyhouse"],
     janggi: ["xiangqi", "shogi", "jungle"],
     makruk: ["sittuyin", "ouk-chaktrang", "asean-chess"],
-    jungle: ["xiangqi", "janggi", "bagha-chal"]
+    jungle: ["xiangqi", "janggi", "bagha-chal"],
+    "racing-kings": ["king-of-the-hill", "three-check", "classic"]
   };
   return related[key] ?? ["classic", "chess960", "go-19x19"];
 }
@@ -245,20 +247,6 @@ const learningCatalogEntries: GameCatalogEntry[] = [
     ruleSourceLinks: [{ name: "US Chess bughouse overview", url: "https://new.uschess.org/news/bughouse-chess" }],
     shortRules: ["Two players form a team.", "Captured pieces pass to the teammate.", "Team result follows the first decisive board."],
     winConditions: ["Team checkmate", "Timeout policy by room profile"]
-  }),
-  catalogEntry({
-    id: "racing-kings",
-    name: { english: "Racing Kings" },
-    family: "chess-family",
-    region: ["Global"],
-    board: { kind: "square-grid", rows: 8, cols: 8, description: "Race-oriented chess setup on an 8x8 board." },
-    piecePresentation: "staunton-svg",
-    playability: "coming-soon",
-    rulesAdapter: "planned-rules-engine",
-    botAdapter: "fairy-stockfish",
-    ruleSourceLinks: [{ name: "Lichess Racing Kings rules", url: "https://lichess.org/variant/racingKings" }],
-    shortRules: ["Both kings race to the eighth rank.", "Giving check is illegal.", "The first legal king arrival wins."],
-    winConditions: ["King reaches the target rank first"]
   }),
   catalogEntry({
     id: "four-player-chess",

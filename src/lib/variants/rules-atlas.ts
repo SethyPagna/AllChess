@@ -183,6 +183,20 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     winConditions: ["Deliver three checks", "Checkmate", "Timeout with mating material"],
     drawConditions: ["Standard chess draw rules unless three-check objective is reached first"],
     illegalMoveNotes: ["A player must still answer check.", "Royal captures are never legal."]
+  },
+  "racing-kings": {
+    variantKey: "racing-kings",
+    sourceLinks: [{ name: "Lichess Racing Kings rules", url: "https://lichess.org/variant/racingKings" }],
+    numberedBasics: [
+      "Each player has a standard set of pieces with no pawns.",
+      "Pieces move as in chess, but giving check is illegal.",
+      "The first king to reach the eighth rank wins.",
+      "If White reaches first, Black may immediately reach the eighth rank to draw."
+    ],
+    specialRules: ["No pawns", "Checks are forbidden", "Race-to-eighth objective", "Black reply draw after White reaches"],
+    winConditions: ["King reaches the eighth rank first", "White reaches and Black fails to answer on the next move"],
+    drawConditions: ["Black reaches the eighth rank immediately after White reaches first", "Repetition/no-progress according to room rules"],
+    illegalMoveNotes: ["A move may not give check.", "A king may not move into check.", "Royal captures are never legal."]
   }
 };
 
@@ -277,6 +291,15 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
   "three-check": {
     status: "verified-playable",
     verifiedEdgeCases: [...verifiedChessEdgeCases, "The third delivered check ends the game before ordinary continuation."],
+    remainingGates: []
+  },
+  "racing-kings": {
+    status: "verified-playable",
+    verifiedEdgeCases: [
+      "The no-pawn shared-side setup is registered.",
+      "Checks are forbidden, including discovered line checks.",
+      "White's eighth-rank arrival gives Black one reply to draw; Black reaching first wins immediately."
+    ],
     remainingGates: []
   }
 };

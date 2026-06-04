@@ -109,7 +109,8 @@ const en = {
   "variant.antichess": "Antichess",
   "variant.horde": "Horde",
   "variant.king-of-the-hill": "King of the Hill",
-  "variant.three-check": "Three-check"
+  "variant.three-check": "Three-check",
+  "variant.racing-kings": "Racing Kings"
 } satisfies FlatDictionary;
 
 const packs: Record<LocaleCode, Partial<FlatDictionary>> = {

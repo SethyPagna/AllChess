@@ -50,7 +50,7 @@ describe("bot difficulty ladder", () => {
   });
 
   test("always chooses a legal move for every launch variant", () => {
-    const variants = ["classic", "chess960", "xiangqi", "shogi", "janggi", "makruk", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"];
+    const variants = ["classic", "chess960", "xiangqi", "shogi", "janggi", "makruk", "jungle", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"];
 
     for (const variantKey of variants) {
       const state = createInitialState(variantKey, `${variantKey}-bot`);
@@ -436,7 +436,7 @@ describe("bot difficulty ladder", () => {
   });
 
   test("verified playable variants have legal cache-first seed moves", async () => {
-    const variants = ["classic", "chess960", "xiangqi", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"];
+    const variants = ["classic", "chess960", "xiangqi", "jungle", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"];
 
     for (const variantKey of variants) {
       const state = createInitialState(variantKey, `${variantKey}-seed`);
@@ -458,6 +458,23 @@ describe("bot difficulty ladder", () => {
       });
       expect(result.elapsedMs).toBeLessThan(MAX_BOT_REPLY_MS);
     }
+  });
+
+  test("racing kings has a legal cache-first race seed", async () => {
+    const state = createInitialState("racing-kings", "racing-kings-seed");
+    const hit = lookupBotKnowledge(state, "easy");
+
+    expect(hit?.entry).toEqual(expect.objectContaining({ variantKey: "racing-kings", minTier: "easy", source: "opening-book" }));
+    expect(hit?.move).toMatchObject({ from: { row: 6, col: 7 }, to: { row: 5, col: 7 } });
+    expect(() => applyMove(state, hit!.move)).not.toThrow();
+
+    const result = await requestBotMove(state, "easy", { engine: "auto", maxSearchTimeMs: MAX_BOT_REPLY_MS });
+    expect(result).toMatchObject({
+      status: "ok",
+      knowledgeSource: "opening-book",
+      nodesSearched: 1,
+      legalValidated: true
+    });
   });
 
   test("janggi has a legal cache-first seed across the verified training gate", async () => {
@@ -587,10 +604,10 @@ describe("bot difficulty ladder", () => {
     const checklists = listBotTrainingChecklists();
     const classic = checklists.find((checklist) => checklist.variantKey === "classic");
     const jungle = checklists.find((checklist) => checklist.variantKey === "jungle");
-    const verifiedPlayable = ["classic", "chess960", "xiangqi", "shogi", "janggi", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"];
+    const verifiedPlayable = ["classic", "chess960", "xiangqi", "shogi", "janggi", "jungle", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"];
 
     expect(checklists.map((checklist) => checklist.variantKey)).toEqual(
-      expect.arrayContaining(["classic", "chess960", "xiangqi", "shogi", "janggi", "makruk", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"])
+      expect.arrayContaining(["classic", "chess960", "xiangqi", "shogi", "janggi", "makruk", "jungle", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"])
     );
     expect(classic?.coverageStatus).toBe("active");
     expect(classic?.rulesCompletion.status).toBe("verified-playable");
@@ -624,7 +641,7 @@ describe("bot difficulty ladder", () => {
 
     expect(summary.claimPolicy).toBe("verified-playable-only");
     expect(summary.requiredCompletionGates).toEqual(expect.arrayContaining(["native rules", "legal bot moves", "review", "persistence", "E2E fixtures"]));
-    expect(summary.playableVariants).toEqual(expect.arrayContaining(["classic", "chess960", "xiangqi", "shogi", "janggi", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"]));
+    expect(summary.playableVariants).toEqual(expect.arrayContaining(["classic", "chess960", "xiangqi", "shogi", "janggi", "jungle", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"]));
     expect(summary.gatedVariants).not.toEqual(expect.arrayContaining([expect.objectContaining({ variantKey: "janggi" })]));
     expect(summary.notice).toContain("guide-first previews");
   });

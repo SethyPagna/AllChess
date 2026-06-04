@@ -125,6 +125,7 @@ export function getLegalMoves(state: GameState, fromOrHand: Square | { drop: Pie
     const target = cellAt(state, move.to)?.piece;
     if (variant.supportsCheck && target && isRoyal(target)) return false;
     if (!variant.supportsCheck) return true;
+    if (variant.key === "racing-kings" && wouldGiveRoyalCheck(state, move, cell.piece!.owner)) return false;
     return !wouldLeaveRoyalInCheck(state, move, cell.piece!.owner);
   });
 
@@ -761,6 +762,10 @@ export function applyMove(state: GameState, move: Move): GameState {
     return withJanggiOutcome(next, movingPiece.owner, move.to);
   }
 
+  if (variant.key === "racing-kings") {
+    return withRacingKingsOutcome(next, movingPiece.owner, move.to);
+  }
+
   if (variant.key === "makruk") {
     updateMakrukCounting(next);
   }
@@ -808,6 +813,33 @@ function withJungleOutcome(state: GameState, mover: PlayerColor, destination: Sq
 
   const opponent = getVariant(state.variantKey).players.find((player) => player !== mover);
   if (opponent && countPieces(state, opponent) === 0) {
+    state.status = "completed";
+    state.result = mover;
+    state.outcomeReason = "objective";
+  }
+
+  return state;
+}
+
+function withRacingKingsOutcome(state: GameState, mover: PlayerColor, destination: Square): GameState {
+  const movedPiece = cellAt(state, destination)?.piece;
+  const blackCanAnswerWhiteReach = state.variantState?.racingKingsWhiteReached === true && mover === "black";
+  const moverReachedTarget = movedPiece?.code === "k" && destination.row === 0;
+
+  if (blackCanAnswerWhiteReach) {
+    state.status = "completed";
+    state.result = moverReachedTarget ? "draw" : "white";
+    state.outcomeReason = "objective";
+    state.variantState = { ...(state.variantState ?? {}), racingKingsWhiteReached: false };
+    return state;
+  }
+
+  if (moverReachedTarget && mover === "white") {
+    state.variantState = { ...(state.variantState ?? {}), racingKingsWhiteReached: true };
+    return state;
+  }
+
+  if (moverReachedTarget) {
     state.status = "completed";
     state.result = mover;
     state.outcomeReason = "objective";
@@ -1345,6 +1377,16 @@ function wouldLeaveRoyalInCheck(state: GameState, move: Move, owner: PlayerColor
   toCell.piece = { ...fromCell.piece, promoted: move.promotion || fromCell.piece.promoted };
   fromCell.piece = null;
   return isInCheck(next, owner);
+}
+
+function wouldGiveRoyalCheck(state: GameState, move: Move, owner: PlayerColor) {
+  const next: GameState = structuredClone(state);
+  const fromCell = cellAt(next, move.from);
+  const toCell = cellAt(next, move.to);
+  if (!fromCell?.piece || !toCell) return true;
+  toCell.piece = { ...fromCell.piece, promoted: move.promotion || fromCell.piece.promoted };
+  fromCell.piece = null;
+  return isInCheck(next, opponentOf(owner));
 }
 
 function wouldDropLeaveRoyalInCheck(state: GameState, move: Move, owner: PlayerColor) {

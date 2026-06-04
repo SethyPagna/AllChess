@@ -16,7 +16,8 @@ describe("variant catalog", () => {
       "antichess",
       "horde",
       "king-of-the-hill",
-      "three-check"
+      "three-check",
+      "racing-kings"
     ]);
   });
 
@@ -32,7 +33,8 @@ describe("variant catalog", () => {
       antichess: "chessops",
       horde: "chessops",
       "king-of-the-hill": "chessops",
-      "three-check": "chessops"
+      "three-check": "chessops",
+      "racing-kings": "chessops"
     });
   });
 
@@ -229,6 +231,69 @@ describe("variant engine", () => {
     expect(next.checks.black).toBe(3);
     expect(next.status).toBe("completed");
     expect(next.result).toBe("white");
+  });
+
+  test("racing kings starts without pawns on the shared race side", () => {
+    const state = createInitialState("racing-kings", "racing-start");
+    const pieces = state.board.flatMap((row) => row.map((cell) => cell.piece).filter(Boolean));
+
+    expect(pieces).toHaveLength(16);
+    expect(pieces.some((piece) => piece?.code === "p")).toBe(false);
+    expect(state.board[7].map((cell) => cell.piece?.code ?? ".").join("")).toBe("qrbnnbrq");
+    expect(state.board[7].slice(4, 7).map((cell) => cell.piece?.owner)).toEqual(["white", "white", "white"]);
+    expect(state.board[6].map((cell) => cell.piece?.code ?? ".").join("")).toBe("krbnnbrk");
+    expect(state.board[6].slice(4, 8).map((cell) => cell.piece?.owner)).toEqual(["white", "white", "white", "white"]);
+  });
+
+  test("racing kings forbids moves that give check", () => {
+    let state = createInitialState("racing-kings", "racing-no-check");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[7][7].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[1][0].piece = { id: "white-rook", code: "r", owner: "white", labelKey: "chess.rook" };
+    state.board[0][7].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+
+    expect(getLegalMoves(state, { row: 1, col: 0 })).not.toContainEqual({ from: { row: 1, col: 0 }, to: { row: 0, col: 0 } });
+    expect(() => applyMove(state, { from: { row: 1, col: 0 }, to: { row: 0, col: 0 } })).toThrow("errors.invalidMove");
+  });
+
+  test("racing kings lets black draw immediately after white reaches the eighth rank", () => {
+    let state = createInitialState("racing-kings", "racing-draw");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[1][4].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[1][7].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+
+    const whiteReached = applyMove(state, { from: { row: 1, col: 4 }, to: { row: 0, col: 4 } });
+
+    expect(whiteReached.status).toBe("active");
+    expect(whiteReached.result).toBeUndefined();
+    expect(whiteReached.variantState).toMatchObject({ racingKingsWhiteReached: true });
+
+    const drawn = applyMove(whiteReached, { from: { row: 1, col: 7 }, to: { row: 0, col: 7 } });
+
+    expect(drawn).toMatchObject({ status: "completed", result: "draw", outcomeReason: "objective" });
+  });
+
+  test("racing kings awards black when black reaches the eighth rank first", () => {
+    let state = createInitialState("racing-kings", "racing-black-win");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "black"
+    };
+    state.board[7][7].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[1][7].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+
+    const next = applyMove(state, { from: { row: 1, col: 7 }, to: { row: 0, col: 7 } });
+
+    expect(next).toMatchObject({ status: "completed", result: "black", outcomeReason: "objective" });
   });
 
   test("antichess enforces mandatory captures across the whole side", () => {

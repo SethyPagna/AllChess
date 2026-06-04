@@ -50,6 +50,9 @@ describe("rules atlas", () => {
     expect(getVariantRuleSummary("horde").completion.status).toBe("verified-playable");
     expect(getVariantRuleSummary("horde").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("horde-elimination")]));
     expect(getVariantRuleSummary("horde").completion.remainingGates).toEqual([]);
+    expect(getVariantRuleSummary("racing-kings").numberedBasics[0]).toContain("no pawns");
+    expect(getVariantRuleSummary("racing-kings").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Checks are forbidden")]));
+    expect(getVariantRuleSummary("racing-kings").completion.remainingGates).toEqual([]);
   });
 
   test("returns nullable completion for optional detail page lookups", () => {

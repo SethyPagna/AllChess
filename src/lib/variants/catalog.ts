@@ -177,6 +177,22 @@ export const variantCatalog: VariantDefinition[] = [
     objective: "Checkmate or deliver three checks.",
     setup: ["rnbqkbnr", "pppppppp", "........", "........", "........", "........", "PPPPPPPP", "RNBQKBNR"],
     aliases: ["3-check"]
+  },
+  {
+    key: "racing-kings",
+    nameKey: "variant.racing-kings",
+    rulesAdapter: "chessops",
+    engineProtocol: "internal",
+    family: "western",
+    board: { rows: 8, cols: 8, coordinates: "orthodox" },
+    players: ["white", "black"],
+    supportsDrops: false,
+    supportsPromotion: false,
+    supportsCastling: false,
+    supportsCheck: true,
+    objective: "Race the king to the eighth rank without giving check.",
+    setup: ["........", "........", "........", "........", "........", "........", "krbnNBRK", "qrbnNBRQ"],
+    aliases: ["racing"]
   }
 ] satisfies VariantDefinition[];
 

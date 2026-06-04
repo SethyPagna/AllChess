@@ -46,7 +46,7 @@ export function PieceIcon({ code, owner, variantKey, promoted = false }: PieceIc
 }
 
 function usesWesternPresentation(variantKey: string) {
-  return ["classic", "chess960", "antichess", "horde", "king-of-the-hill", "three-check", "makruk"].includes(variantKey);
+  return ["classic", "chess960", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings", "makruk"].includes(variantKey);
 }
 
 function WesternPieceIcon({ code, owner, variantKey, promoted }: { code: string; owner: PlayerColor; variantKey: string; promoted: boolean }) {
