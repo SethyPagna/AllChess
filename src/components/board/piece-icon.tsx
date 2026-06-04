@@ -22,6 +22,9 @@ const nativeGlyphs: Record<string, string> = {
 
 export function PieceIcon({ code, owner, variantKey, promoted = false }: PieceIconProps) {
   const normalized = code.toLowerCase();
+  if (variantKey === "english-draughts") {
+    return <DraughtsPieceIcon code={normalized} owner={owner} promoted={promoted} />;
+  }
   if (usesWesternPresentation(variantKey)) {
     return <WesternPieceIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} />;
   }
@@ -42,6 +45,30 @@ export function PieceIcon({ code, owner, variantKey, promoted = false }: PieceIc
     >
       {glyph}
     </span>
+  );
+}
+
+function DraughtsPieceIcon({ code, owner, promoted }: { code: string; owner: PlayerColor; promoted: boolean }) {
+  const isKing = code === "x" || promoted;
+  const piece = isKing ? "checker-king" : "checker-man";
+  return (
+    <svg
+      aria-label={isKing ? "Checker king" : "Checker man"}
+      className="piece-symbol piece-icon piece-svg"
+      data-owner={owner}
+      data-piece={piece}
+      data-promoted={isKing || undefined}
+      data-variant="english-draughts"
+      role="img"
+      viewBox="0 0 100 100"
+    >
+      <title>{isKing ? "Checker king" : "Checker man"}</title>
+      <ellipse cx="50" cy="67" rx="33" ry="16" data-detail="checker-shadow" />
+      <ellipse cx="50" cy="56" rx="35" ry="20" data-detail="checker-rim" />
+      <ellipse cx="50" cy="45" rx="34" ry="20" data-detail="checker-top" />
+      <path d="M22 53c6 12 18 19 28 19s22-7 28-19v14c-5 13-18 22-28 22S27 80 22 67z" data-detail="checker-side" />
+      {isKing ? <path d="M34 46 42 32l8 13 8-13 8 14-7 10H41z" data-detail="checker-crown" /> : null}
+    </svg>
   );
 }
 

@@ -184,6 +184,20 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     drawConditions: ["Repetition or no-progress policy in AllChess rules mode"],
     illegalMoveNotes: ["Most animals may not enter river squares.", "Pieces may not enter their own den.", "Trap and rank rules control captures."]
   },
+  "english-draughts": {
+    variantKey: "english-draughts",
+    sourceLinks: [{ name: "English Draughts Association rules", url: "https://www.english-draughts.org/rules" }],
+    numberedBasics: [
+      "Men move one square diagonally forward on the dark squares.",
+      "Captures are compulsory, and a jumping piece must continue while more jumps are available.",
+      "Men become kings on the far row; kings move and jump one square diagonally in any direction.",
+      "Win by capturing all opposing checkers or leaving the opponent with no legal move."
+    ],
+    specialRules: ["Dark-square movement", "Compulsory captures", "Multi-jump continuation", "Kinging"],
+    winConditions: ["Capture all opposing checkers", "Block every opposing legal move"],
+    drawConditions: ["Repetition or no-progress policy in selected room rules", "Mutual agreement"],
+    illegalMoveNotes: ["A quiet move is illegal when any friendly checker can jump.", "A jump must land on the empty square beyond the captured checker.", "Only the same checker may move during a forced multi-jump continuation."]
+  },
   antichess: {
     variantKey: "antichess",
     sourceLinks: [{ name: "Lichess antichess rules", url: "https://lichess.org/variant/antichess" }],
@@ -358,6 +372,16 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
     verifiedEdgeCases: [
       "Opposing animal ownership, board terrain, den/trap/river tiles, and native animal ranks are covered.",
       "Rat river entry, rat-elephant exception, trap weakening, lion/tiger river jumps, den-entry wins, all-animal-capture wins, bot validation, and persistence routing have fixtures."
+    ],
+    remainingGates: []
+  },
+  "english-draughts": {
+    status: "verified-playable",
+    verifiedEdgeCases: [
+      "Dark-square 8x8 setup and forward man movement are covered.",
+      "Compulsory captures suppress quiet moves across the whole side.",
+      "Jump captures remove the midpoint checker and Multi-jump continuation locks the turn to the same checker.",
+      "Kinging and no-piece/no-legal-move wins are covered by runtime fixtures."
     ],
     remainingGates: []
   },

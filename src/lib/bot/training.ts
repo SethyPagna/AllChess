@@ -432,6 +432,23 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
     }
   },
   {
+    id: "english-draughts-start-left-man",
+    variantKey: "english-draughts",
+    positionKey: "english-draughts|turn:white|moves:",
+    moveUci: "a3b4",
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.82,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "draughts", "checkers", "compulsory-capture"],
+    explanation: {
+      plan: "Develop the left checker to a central dark square while preserving jump coverage.",
+      threat: "White gains a tempo toward the fourth rank and keeps diagonal lanes ready for forced captures.",
+      risk: "Draughts tactics can swing on mandatory jumps, so the bot must validate all captures before choosing a quiet move.",
+      fallbackGoal: "If Black creates a jump sequence, prefer the legal continuation that wins material or avoids a forced loss."
+    }
+  },
+  {
     id: "chess960-start-center-pawn",
     variantKey: "chess960",
     positionKey: "chess960|turn:white|moves:",

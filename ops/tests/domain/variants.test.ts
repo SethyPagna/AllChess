@@ -17,6 +17,7 @@ describe("variant catalog", () => {
       "janggi",
       "makruk",
       "jungle",
+      "english-draughts",
       "antichess",
       "horde",
       "king-of-the-hill",
@@ -38,6 +39,7 @@ describe("variant catalog", () => {
       janggi: "allchess-janggi",
       makruk: "makruk-js",
       jungle: "allchess-jungle",
+      "english-draughts": "draughts-engine",
       antichess: "chessops",
       horde: "chessops",
       "king-of-the-hill": "chessops",
@@ -152,6 +154,68 @@ describe("variant engine", () => {
     expect(drops).not.toContainEqual(expect.objectContaining({ to: { row: 0, col: 0 } }));
     expect(drops).not.toContainEqual(expect.objectContaining({ to: { row: 7, col: 0 } }));
     expect(drops).toContainEqual(expect.objectContaining({ to: { row: 3, col: 3 } }));
+  });
+
+  test("english draughts uses dark-square setup, mandatory jumps, kinging, and jump continuations", () => {
+    let state = createInitialState("english-draughts", "draughts-rules");
+
+    expect(state.board).toHaveLength(8);
+    expect(state.board.flat().filter((cell) => cell.piece?.owner === "black")).toHaveLength(12);
+    expect(state.board.flat().filter((cell) => cell.piece?.owner === "white")).toHaveLength(12);
+    expect(state.board[0].map((cell) => cell.piece?.code ?? ".").join("")).toBe(".p.p.p.p");
+    expect(state.board[7].map((cell) => cell.piece?.code ?? ".").join("")).toBe("p.p.p.p.");
+    expect(getLegalMoves(state, { row: 5, col: 0 })).toContainEqual({ from: { row: 5, col: 0 }, to: { row: 4, col: 1 } });
+
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[5][0].piece = { id: "white-man", code: "p", owner: "white", labelKey: "chess.pawn" };
+    state.board[4][1].piece = { id: "black-man", code: "p", owner: "black", labelKey: "chess.pawn" };
+    state.board[2][3].piece = { id: "black-second-man", code: "p", owner: "black", labelKey: "chess.pawn" };
+    state.board[5][4].piece = { id: "white-quiet-man", code: "p", owner: "white", labelKey: "chess.pawn" };
+
+    expect(getLegalMoves(state, { row: 5, col: 4 })).toEqual([]);
+    const firstJump = getLegalMoves(state, { row: 5, col: 0 });
+    expect(firstJump).toEqual([{ from: { row: 5, col: 0 }, to: { row: 3, col: 2 } }]);
+
+    const afterFirstJump = applyMove(state, firstJump[0]);
+    expect(afterFirstJump.board[4][1].piece).toBeNull();
+    expect(afterFirstJump.board[3][2].piece).toMatchObject({ owner: "white", code: "p" });
+    expect(afterFirstJump.captured).toHaveLength(1);
+    expect(afterFirstJump.turn).toBe("white");
+    expect(getLegalMoves(afterFirstJump, { row: 5, col: 4 })).toEqual([]);
+    expect(getLegalMoves(afterFirstJump, { row: 3, col: 2 })).toEqual([{ from: { row: 3, col: 2 }, to: { row: 1, col: 4 } }]);
+
+    const afterSecondJump = applyMove(afterFirstJump, { from: { row: 3, col: 2 }, to: { row: 1, col: 4 } });
+    expect(afterSecondJump.board[2][3].piece).toBeNull();
+    expect(afterSecondJump.turn).toBe("black");
+
+    const promotion: typeof state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white" as const
+    };
+    promotion.board[1][2].piece = { id: "white-crown", code: "p", owner: "white", labelKey: "chess.pawn" };
+
+    const crowned = applyMove(promotion, { from: { row: 1, col: 2 }, to: { row: 0, col: 3 } });
+    expect(crowned.board[0][3].piece).toMatchObject({ code: "x", owner: "white", promoted: true });
+
+    const kingState: typeof state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white" as const
+    };
+    kingState.board[3][2].piece = { id: "white-king-checker", code: "x", owner: "white", promoted: true, labelKey: "chess.king" };
+    kingState.board[4][3].piece = { id: "black-target", code: "p", owner: "black", labelKey: "chess.pawn" };
+
+    expect(getLegalMoves(kingState, { row: 3, col: 2 })).toEqual([{ from: { row: 3, col: 2 }, to: { row: 5, col: 4 } }]);
+    expect(applyMove(kingState, { from: { row: 3, col: 2 }, to: { row: 5, col: 4 } })).toMatchObject({
+      status: "completed",
+      result: "white",
+      outcomeReason: "objective"
+    });
   });
 
   test("chaturanga uses minister, elephant jump, and one-step pawn movement", () => {

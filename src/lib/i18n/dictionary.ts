@@ -110,6 +110,7 @@ const en = {
   "variant.janggi": "Janggi",
   "variant.makruk": "Makruk",
   "variant.jungle": "Jungle Chess",
+  "variant.english-draughts": "English Draughts",
   "variant.antichess": "Antichess",
   "variant.horde": "Horde",
   "variant.king-of-the-hill": "King of the Hill",

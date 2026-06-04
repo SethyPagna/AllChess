@@ -24,6 +24,17 @@ describe("PieceIcon", () => {
     expect(met).toContain('data-detail="queen-jewel"');
   });
 
+  test("renders English Draughts men and kings as checker discs", () => {
+    const man = renderToStaticMarkup(<PieceIcon code="p" owner="white" variantKey="english-draughts" />);
+    const king = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="english-draughts" promoted />);
+
+    expect(man).toContain('data-piece="checker-man"');
+    expect(king).toContain('data-piece="checker-king"');
+    expect(king).toContain('data-detail="checker-crown"');
+    expect(man).not.toContain(">P<");
+    expect(king).not.toContain(">X<");
+  });
+
   test("keeps non-western pieces as strong native symbols", () => {
     const redGeneral = renderToStaticMarkup(<PieceIcon code="g" owner="red" variantKey="xiangqi" />);
     const blackGeneral = renderToStaticMarkup(<PieceIcon code="g" owner="black" variantKey="xiangqi" />);

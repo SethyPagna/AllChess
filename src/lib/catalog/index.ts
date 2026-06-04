@@ -48,7 +48,8 @@ const playableFamilyByVariant: Record<VariantDefinition["family"], GameFamilyKey
   western: "chess-family",
   "east-asian": "asian-chess",
   "southeast-asian": "asian-chess",
-  abstract: "asian-chess"
+  abstract: "asian-chess",
+  draughts: "draughts"
 };
 
 const presentationByVariant: Record<string, PiecePresentationPack> = {
@@ -66,7 +67,8 @@ const presentationByVariant: Record<string, PiecePresentationPack> = {
   "mini-shogi": "shogi-koma",
   janggi: "xiangqi-disk",
   makruk: "makruk-carved",
-  jungle: "jungle-animals"
+  jungle: "jungle-animals",
+  "english-draughts": "draughts-stacks"
 };
 
 const localizedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
@@ -81,6 +83,7 @@ const localizedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
   janggi: { english: "Janggi", native: "장기", romanization: "Janggi" },
   makruk: { english: "Makruk", native: "หมากรุก", romanization: "Makruk" },
   jungle: { english: "Jungle", native: "鬥獸棋", romanization: "Dòu Shòu Qí", short: "Jungle / Dou Shou Qi" },
+  "english-draughts": { english: "English Draughts", short: "Checkers" },
   antichess: { english: "Antichess" },
   horde: { english: "Horde" },
   "king-of-the-hill": { english: "King of the Hill" },
@@ -153,6 +156,7 @@ function playableEntryFromVariant(variant: VariantDefinition): GameCatalogEntry 
 function playableRegion(key: string) {
   if (["xiangqi", "shogi", "mini-shogi", "janggi", "jungle"].includes(key)) return ["East Asia"];
   if (key === "makruk") return ["Southeast Asia", "Thailand"];
+  if (key === "english-draughts") return ["United Kingdom", "United States"];
   return ["Global"];
 }
 
@@ -169,6 +173,7 @@ function relatedFor(key: string) {
     janggi: ["xiangqi", "shogi", "jungle"],
     makruk: ["sittuyin", "ouk-chaktrang", "asean-chess"],
     jungle: ["xiangqi", "janggi", "bagha-chal"],
+    "english-draughts": ["international-draughts", "turkish-draughts", "konane"],
     "racing-kings": ["king-of-the-hill", "three-check", "classic"]
   };
   return related[key] ?? ["classic", "chess960", "go-19x19"];
@@ -317,21 +322,6 @@ const learningCatalogEntries: GameCatalogEntry[] = [
     ruleSourceLinks: [{ name: "FMJD rules", url: "https://www.fmjd.org/downloads/Annexes/Annex%201%20Rules%20of%20the%20Game.pdf" }],
     shortRules: ["Men move forward diagonally.", "Captures are compulsory.", "Kings fly along diagonals and maximum capture rules apply."],
     winConditions: ["Capture or immobilize all opposing pieces"]
-  }),
-  catalogEntry({
-    id: "english-draughts",
-    name: { english: "English Draughts", short: "Checkers" },
-    aliases: ["american-checkers"],
-    family: "draughts",
-    region: ["United Kingdom", "United States"],
-    board: { kind: "square-grid", rows: 8, cols: 8, description: "8x8 dark-square draughts board." },
-    piecePresentation: "draughts-stacks",
-    playability: "coming-soon",
-    rulesAdapter: "draughts-engine",
-    botAdapter: "internal-search",
-    ruleSourceLinks: [{ name: "English Draughts Association rules", url: "https://www.english-draughts.org/rules" }],
-    shortRules: ["Men move forward diagonally.", "Captures are mandatory.", "Kings move one square diagonally."],
-    winConditions: ["Capture all pieces", "Block all legal moves"]
   }),
   catalogEntry({
     id: "turkish-draughts",

@@ -58,6 +58,10 @@ describe("rules atlas", () => {
     expect(getVariantRuleSummary("jungle").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Rat river")]));
     expect(getVariantRuleSummary("jungle").completion.status).toBe("verified-playable");
     expect(getVariantRuleSummary("jungle").completion.remainingGates).toEqual([]);
+    expect(getVariantRuleSummary("english-draughts").numberedBasics[1]).toContain("Captures are compulsory");
+    expect(getVariantRuleSummary("english-draughts").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Multi-jump continuation")]));
+    expect(getVariantRuleSummary("english-draughts").completion.status).toBe("verified-playable");
+    expect(getVariantRuleSummary("english-draughts").completion.remainingGates).toEqual([]);
     expect(getVariantRuleSummary("antichess").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Mandatory captures")]));
     expect(getVariantRuleSummary("horde").completion.status).toBe("verified-playable");
     expect(getVariantRuleSummary("horde").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("horde-elimination")]));

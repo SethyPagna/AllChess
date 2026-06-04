@@ -179,6 +179,22 @@ export const variantCatalog: VariantDefinition[] = [
     aliases: ["dou-shou-qi"]
   },
   {
+    key: "english-draughts",
+    nameKey: "variant.english-draughts",
+    rulesAdapter: "draughts-engine",
+    engineProtocol: "internal",
+    family: "draughts",
+    board: { rows: 8, cols: 8, coordinates: "orthodox" },
+    players: ["white", "black"],
+    supportsDrops: false,
+    supportsPromotion: true,
+    supportsCastling: false,
+    supportsCheck: false,
+    objective: "Capture or block every opposing checker with compulsory diagonal jumps.",
+    setup: [".p.p.p.p", "p.p.p.p.", ".p.p.p.p", "........", "........", "P.P.P.P.", ".P.P.P.P", "P.P.P.P."],
+    aliases: ["checkers", "american-checkers", "english-checkers"]
+  },
+  {
     key: "antichess",
     nameKey: "variant.antichess",
     rulesAdapter: "chessops",

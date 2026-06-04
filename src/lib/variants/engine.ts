@@ -19,7 +19,8 @@ const pieceLabels: Record<string, string> = {
   l: "chess.rook",
   d: "chess.pawn",
   w: "chess.pawn",
-  t: "chess.rook"
+  t: "chess.rook",
+  x: "chess.king"
 };
 
 const janggiPiecePoints: Record<string, number> = {
@@ -133,6 +134,12 @@ export function getLegalMoves(state: GameState, fromOrHand: Square | { drop: Pie
   if (variant.key === "antichess" && hasAnyCaptureMove(state, state.turn)) {
     return legalMoves.filter((move) => isCaptureMove(state, move));
   }
+  if (variant.key === "english-draughts") {
+    const continuation = draughtsContinuationFor(state);
+    if (continuation && (!sameSquare(from, continuation.square) || continuation.owner !== state.turn)) return [];
+    if (continuation) return legalMoves.filter((move) => isDraughtsJump(move));
+    if (hasAnyDraughtsJump(state, state.turn)) return legalMoves.filter((move) => isDraughtsJump(move));
+  }
 
   return legalMoves;
 }
@@ -163,6 +170,9 @@ function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
   }
   if (variant.key === "jungle") {
     return junglePieceMoves(state, piece, from);
+  }
+  if (variant.key === "english-draughts") {
+    return draughtsPieceMoves(state, piece, from);
   }
   if (piece.code === "p" && ["western", "southeast-asian"].includes(variant.family)) {
     return westernPawnMoves(state, piece, from, variant.family === "western").filter((move) => terrainAllows(state, piece, move.to));
@@ -384,6 +394,77 @@ function westernPawnMoves(state: GameState, piece: Piece, from: Square, allowDou
   }
 
   return moves;
+}
+
+function draughtsPieceMoves(state: GameState, piece: Piece, from: Square) {
+  return [...draughtsQuietMoves(state, piece, from), ...draughtsJumpMoves(state, piece, from)];
+}
+
+function draughtsQuietMoves(state: GameState, piece: Piece, from: Square) {
+  const directions = draughtsDirections(piece);
+  const moves: Move[] = [];
+
+  for (const [dr, dc] of directions) {
+    const to = { row: from.row + dr, col: from.col + dc };
+    if (isInside(state, to) && !cellAt(state, to)?.piece) {
+      moves.push({ from, to });
+    }
+  }
+
+  return moves;
+}
+
+function draughtsJumpMoves(state: GameState, piece: Piece, from: Square) {
+  const directions = draughtsDirections(piece);
+  const moves: Move[] = [];
+
+  for (const [dr, dc] of directions) {
+    const middle = { row: from.row + dr, col: from.col + dc };
+    const to = { row: from.row + dr * 2, col: from.col + dc * 2 };
+    const jumped = cellAt(state, middle)?.piece;
+    if (!isInside(state, to) || cellAt(state, to)?.piece || !jumped || jumped.owner === piece.owner) continue;
+    moves.push({ from, to });
+  }
+
+  return moves;
+}
+
+function draughtsDirections(piece: Piece): Array<[number, number]> {
+  if (piece.code === "x") return [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+  const forward = orient(piece.owner, -1);
+  return [[forward, -1], [forward, 1]];
+}
+
+function isDraughtsJump(move: Move) {
+  return Math.abs(move.to.row - move.from.row) === 2 && Math.abs(move.to.col - move.from.col) === 2;
+}
+
+function draughtsJumpedSquare(move: Move): Square | null {
+  if (!isDraughtsJump(move)) return null;
+  return {
+    row: (move.from.row + move.to.row) / 2,
+    col: (move.from.col + move.to.col) / 2
+  };
+}
+
+function hasAnyDraughtsJump(state: GameState, owner: PlayerColor) {
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (cell.piece?.owner === owner && draughtsJumpMoves(state, cell.piece, cell.square).length > 0) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function draughtsContinuationFor(state: GameState): { square: Square; owner: PlayerColor } | null {
+  const value = state.variantState?.draughtsContinuation;
+  if (!value || typeof value !== "object") return null;
+  const candidate = value as { row?: unknown; col?: unknown; owner?: unknown };
+  if (typeof candidate.row !== "number" || typeof candidate.col !== "number") return null;
+  if (candidate.owner !== "white" && candidate.owner !== "black") return null;
+  return { square: { row: candidate.row, col: candidate.col }, owner: candidate.owner };
 }
 
 function xiangqiSoldierMoves(state: GameState, piece: Piece, from: Square) {
@@ -765,10 +846,16 @@ export function applyMove(state: GameState, move: Move): GameState {
     if (!fromCell?.piece) throw new Error("errors.invalidMove");
 
     movingPiece = fromCell.piece;
-    captured = toCell!.piece;
+    const jumpedSquare = variant.key === "english-draughts" ? draughtsJumpedSquare(move) : null;
+    const jumpedCell = jumpedSquare ? cellAt(next, jumpedSquare) : null;
+    captured = jumpedCell?.piece ?? toCell!.piece;
     if (captured) {
       next.captured.push(captured);
-      addCapturedPieceToHand(next, movingPiece.owner, captured);
+      if (jumpedCell?.piece) {
+        jumpedCell.piece = null;
+      } else {
+        addCapturedPieceToHand(next, movingPiece.owner, captured);
+      }
     }
     const promoted = shouldPromote(variant, movingPiece, move.to, move.promotion);
     toCell!.piece = {
@@ -804,6 +891,10 @@ export function applyMove(state: GameState, move: Move): GameState {
 
   if (variant.key === "jungle") {
     return withJungleOutcome(next, movingPiece.owner, move.to);
+  }
+
+  if (variant.key === "english-draughts") {
+    return withDraughtsOutcome(next, movingPiece.owner, movingPiece, move, Boolean(captured));
   }
 
   if (variant.key === "janggi") {
@@ -886,6 +977,39 @@ function withJungleOutcome(state: GameState, mover: PlayerColor, destination: Sq
     state.status = "completed";
     state.result = mover;
     state.outcomeReason = "objective";
+  }
+
+  return state;
+}
+
+function withDraughtsOutcome(state: GameState, mover: PlayerColor, movedPieceBeforePromotion: Piece, move: Move, captured: boolean): GameState {
+  const opponent = getVariant(state.variantKey).players.find((player) => player !== mover);
+  if (!opponent) return state;
+
+  if (countPieces(state, opponent) === 0) {
+    state.status = "completed";
+    state.result = mover;
+    state.outcomeReason = "objective";
+    state.variantState = { ...(state.variantState ?? {}), draughtsContinuation: null };
+    return state;
+  }
+
+  const movedPiece = cellAt(state, move.to)?.piece;
+  const becameKing = movedPieceBeforePromotion.code === "p" && movedPiece?.code === "x";
+  if (captured && isDraughtsJump(move) && movedPiece && !becameKing && draughtsJumpMoves(state, movedPiece, move.to).length > 0) {
+    state.turn = mover;
+    state.variantState = {
+      ...(state.variantState ?? {}),
+      draughtsContinuation: { row: move.to.row, col: move.to.col, owner: mover }
+    };
+    return state;
+  }
+
+  state.variantState = { ...(state.variantState ?? {}), draughtsContinuation: null };
+  if (!hasAnyLegalMove(state, state.turn)) {
+    state.status = "completed";
+    state.result = mover;
+    state.outcomeReason = "no-legal-moves";
   }
 
   return state;
@@ -1412,6 +1536,9 @@ function hasMovedFrom(state: GameState, square: Square) {
 
 function shouldPromote(variant: VariantDefinition, piece: Piece, to: Square, requested?: boolean) {
   if (!variant.supportsPromotion || piece.code !== "p") return false;
+  if (variant.key === "english-draughts") {
+    return piece.owner === "white" ? to.row === 0 : to.row === variant.board.rows - 1;
+  }
   if (variant.key === "makruk") {
     return piece.owner === "white" ? to.row <= 2 : to.row >= variant.board.rows - 3;
   }
@@ -1426,6 +1553,7 @@ function isShogiFamily(variantKey: string) {
 }
 
 function promotionCodeFor(variant: VariantDefinition, piece: Piece) {
+  if (variant.key === "english-draughts" && piece.code === "p") return "x";
   if (variant.key === "chaturanga" && piece.code === "p") return "m";
   if (variant.key === "shatranj" && piece.code === "p") return "f";
   if (variant.family === "western" && piece.code === "p") return "q";
