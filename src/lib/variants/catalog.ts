@@ -19,6 +19,22 @@ export const variantCatalog: VariantDefinition[] = [
     aliases: ["standard", "fide"]
   },
   {
+    key: "crazyhouse",
+    nameKey: "variant.crazyhouse",
+    rulesAdapter: "chessops",
+    engineProtocol: "internal",
+    family: "western",
+    board: { rows: 8, cols: 8, coordinates: "orthodox" },
+    players: ["white", "black"],
+    supportsDrops: true,
+    supportsPromotion: true,
+    supportsCastling: true,
+    supportsCheck: true,
+    objective: "Checkmate with captured pieces dropped back from each player's pocket.",
+    setup: ["rnbqkbnr", "pppppppp", "........", "........", "........", "........", "PPPPPPPP", "RNBQKBNR"],
+    aliases: ["drop-chess"]
+  },
+  {
     key: "chess960",
     nameKey: "variant.chess960",
     rulesAdapter: "chessops",

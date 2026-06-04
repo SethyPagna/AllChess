@@ -187,10 +187,16 @@ function getLegalDropMoves(state: GameState, drop: Piece, options: DropMoveOptio
 }
 
 function canDropPieceOn(state: GameState, drop: Piece, to: Square) {
+  if (state.variantKey === "crazyhouse") return canDropCrazyhousePieceOn(state, drop, to);
   if (!isShogiFamily(state.variantKey)) return true;
   if (isShogiDeadDrop(drop, to, state.board.length)) return false;
   if (drop.code === "p" && hasUnpromotedShogiPawnOnFile(state, drop.owner, to.col)) return false;
   return true;
+}
+
+function canDropCrazyhousePieceOn(state: GameState, drop: Piece, to: Square) {
+  if (drop.code !== "p") return true;
+  return to.row > 0 && to.row < state.board.length - 1;
 }
 
 function isShogiPawnDropMate(state: GameState, move: Move) {
@@ -1544,7 +1550,7 @@ function addCapturedPieceToHand(state: GameState, owner: PlayerColor, captured: 
   if (!variant.supportsDrops) return;
   state.hands ??= {};
   state.hands[owner] ??= {};
-  const code = captured.code.toLowerCase();
+  const code = variant.key === "crazyhouse" && captured.promoted ? "p" : captured.code.toLowerCase();
   state.hands[owner][code] = (state.hands[owner][code] ?? 0) + 1;
 }
 

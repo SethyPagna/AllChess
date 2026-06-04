@@ -7,6 +7,7 @@ describe("variant catalog", () => {
   test("contains the planned global launch variants", () => {
     expect(variantCatalog.map((variant) => variant.key)).toEqual([
       "classic",
+      "crazyhouse",
       "chess960",
       "xiangqi",
       "shogi",
@@ -25,6 +26,7 @@ describe("variant catalog", () => {
   test("declares a rules adapter for every launch variant", () => {
     expect(Object.fromEntries(variantCatalog.map((variant) => [variant.key, variant.rulesAdapter]))).toEqual({
       classic: "chessops",
+      crazyhouse: "chessops",
       chess960: "chessops",
       xiangqi: "xiangqiops",
       shogi: "shogiops",
@@ -101,6 +103,51 @@ describe("variant engine", () => {
     const next = applyMove(state, { from: { row: 1, col: 0 }, to: { row: 0, col: 0 }, promotion: true });
 
     expect(next.board[0][0].piece).toMatchObject({ code: "q", owner: "white", promoted: true });
+  });
+
+  test("crazyhouse captures become pocket pieces and can be dropped back legally", () => {
+    let state = createInitialState("crazyhouse", "crazyhouse-pocket");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[7][4].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[4][3].piece = { id: "white-pawn", code: "p", owner: "white", labelKey: "chess.pawn" };
+    state.board[3][4].piece = { id: "black-knight", code: "n", owner: "black", labelKey: "chess.knight" };
+
+    const afterCapture = applyMove(state, { from: { row: 4, col: 3 }, to: { row: 3, col: 4 } });
+    expect(afterCapture.hands?.white).toMatchObject({ n: 1 });
+
+    const drop = { id: "white-knight-hand", code: "n", owner: "white" as const, labelKey: "chess.knight" };
+    const legalDrops = getLegalMoves({ ...afterCapture, turn: "white" }, { drop });
+
+    expect(legalDrops).toContainEqual(expect.objectContaining({ kind: "drop", to: { row: 4, col: 4 }, drop }));
+    expect(applyMove({ ...afterCapture, turn: "white" }, { kind: "drop", from: { row: -1, col: -1 }, to: { row: 4, col: 4 }, drop }).board[4][4].piece).toMatchObject({
+      code: "n",
+      owner: "white",
+      promoted: false
+    });
+  });
+
+  test("crazyhouse pawns cannot be dropped on the first or last rank", () => {
+    let state = createInitialState("crazyhouse", "crazyhouse-pawn-drop");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      hands: { white: { p: 1 }, black: {} },
+      turn: "white"
+    };
+    state.board[7][4].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+
+    const drop = { id: "white-pawn-hand", code: "p", owner: "white" as const, labelKey: "chess.pawn" };
+    const drops = getLegalMoves(state, { drop });
+
+    expect(drops).not.toContainEqual(expect.objectContaining({ to: { row: 0, col: 0 } }));
+    expect(drops).not.toContainEqual(expect.objectContaining({ to: { row: 7, col: 0 } }));
+    expect(drops).toContainEqual(expect.objectContaining({ to: { row: 3, col: 3 } }));
   });
 
   test("allows legal kingside castling and moves the rook", () => {

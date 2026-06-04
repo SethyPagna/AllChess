@@ -55,6 +55,20 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     drawConditions: ["Stalemate", "Insufficient material", "Repetition", "Fifty-move rule", "Mutual agreement"],
     illegalMoveNotes: ["Castling must obey check-through-check restrictions.", "Royal captures are never legal."]
   },
+  crazyhouse: {
+    variantKey: "crazyhouse",
+    sourceLinks: [{ name: "Lichess Crazyhouse rules", url: "https://lichess.org/variant/crazyhouse" }],
+    numberedBasics: [
+      "Normal chess movement, check, checkmate, promotion, and castling rules apply.",
+      "Captured pieces enter the capturer's pocket and may be dropped back as that player's pieces.",
+      "Pawn drops are not legal on the first or last rank.",
+      "Promoted pawns return to the pocket as pawns when captured."
+    ],
+    specialRules: ["Piece pockets", "Drops", "Pawn drop rank limits", "Promoted-pawn demotion"],
+    winConditions: ["Checkmate", "Timeout when the opponent has mating material", "Resignation"],
+    drawConditions: ["Stalemate", "Repetition/no-progress according to selected room rules", "Mutual agreement"],
+    illegalMoveNotes: ["Drops must be on empty squares.", "Pawns may not be dropped on the first or last rank.", "A player may not leave their king in check."]
+  },
   xiangqi: {
     variantKey: "xiangqi",
     sourceLinks: [{ name: "World Xiangqi Federation World Xiangqi Rules 2018", url: "https://www.wxf-xiangqi.org/images/wxf-rules/2018_World_XiangQi_Rules_English2018.pdf" }],
@@ -230,6 +244,16 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
   chess960: {
     status: "verified-playable",
     verifiedEdgeCases: [...verifiedChessEdgeCases, "Chess960 uses verified standard castling destinations after randomized setup."],
+    remainingGates: []
+  },
+  crazyhouse: {
+    status: "verified-playable",
+    verifiedEdgeCases: [
+      "Captured pieces enter the mover pocket and can be dropped back as friendly unpromoted pieces.",
+      "Pawn drops reject the first and last rank while allowing middle-rank empty squares.",
+      "Drop moves are checked against king safety and bot legal validation before application.",
+      "Promoted captured pawns demote back to pawns in hand."
+    ],
     remainingGates: []
   },
   xiangqi: {

@@ -53,6 +53,7 @@ const playableFamilyByVariant: Record<VariantDefinition["family"], GameFamilyKey
 
 const presentationByVariant: Record<string, PiecePresentationPack> = {
   classic: "staunton-svg",
+  crazyhouse: "staunton-svg",
   chess960: "staunton-svg",
   antichess: "staunton-svg",
   horde: "staunton-svg",
@@ -68,6 +69,7 @@ const presentationByVariant: Record<string, PiecePresentationPack> = {
 
 const localizedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
   classic: { english: "Classic Chess", short: "Chess" },
+  crazyhouse: { english: "Crazyhouse" },
   chess960: { english: "Chess960", romanization: "Fischer Random" },
   xiangqi: { english: "Xiangqi", native: "象棋", romanization: "Xiàngqí" },
   shogi: { english: "Shogi", native: "将棋", romanization: "Shōgi" },
@@ -153,6 +155,7 @@ function playableRegion(key: string) {
 function relatedFor(key: string) {
   const related: Record<string, string[]> = {
     classic: ["chess960", "three-check", "king-of-the-hill"],
+    crazyhouse: ["classic", "shogi", "bughouse"],
     chess960: ["classic", "horde", "antichess"],
     xiangqi: ["janggi", "jungle", "minixiangqi"],
     shogi: ["mini-shogi", "chu-shogi", "crazyhouse"],
@@ -220,21 +223,6 @@ const learningCatalogEntries: GameCatalogEntry[] = [
     ruleSourceLinks: [{ name: "Lichess Atomic rules", url: "https://lichess.org/variant/atomic" }],
     shortRules: ["Captures explode adjacent non-pawn pieces.", "Kings may be affected by explosions.", "Checkmate and explosion objectives need variant-specific validation."],
     winConditions: ["Explode the opponent king", "Checkmate in supported rules profile"]
-  }),
-  catalogEntry({
-    id: "crazyhouse",
-    name: { english: "Crazyhouse" },
-    aliases: ["drop-chess"],
-    family: "chess-family",
-    region: ["Global"],
-    board: { kind: "square-grid", rows: 8, cols: 8, description: "Standard chess board with captured pieces dropped back as your own." },
-    piecePresentation: "staunton-svg",
-    playability: "coming-soon",
-    rulesAdapter: "planned-rules-engine",
-    botAdapter: "fairy-stockfish",
-    ruleSourceLinks: [{ name: "Lichess Crazyhouse rules", url: "https://lichess.org/variant/crazyhouse" }],
-    shortRules: ["Captured pieces enter your pocket.", "Pocket pieces may be dropped on legal empty squares.", "Checkmate remains the main objective."],
-    winConditions: ["Checkmate", "Timeout with mating material"]
   }),
   catalogEntry({
     id: "bughouse",

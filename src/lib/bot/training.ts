@@ -364,6 +364,23 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
     }
   },
   {
+    id: "crazyhouse-start-central-pawn",
+    variantKey: "crazyhouse",
+    positionKey: "crazyhouse|turn:white|moves:",
+    moveUci: "e2e4",
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.86,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "crazyhouse", "drops", "pockets", "king-safety"],
+    explanation: {
+      plan: "Claim the center before pocket tactics begin so future drops have useful targets.",
+      threat: "White opens normal development while preparing to convert any capture into a reusable pocket piece.",
+      risk: "Crazyhouse can become tactical quickly after captures, so the bot must validate drop checks and king safety before forcing exchanges.",
+      fallbackGoal: "If the center is challenged, develop pieces and keep future drops legal instead of chasing unsupported tactics."
+    }
+  },
+  {
     id: "jungle-start-tiger-pressure",
     variantKey: "jungle",
     positionKey: "jungle|turn:white|moves:",

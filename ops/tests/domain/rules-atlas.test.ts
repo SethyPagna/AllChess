@@ -32,6 +32,9 @@ describe("rules atlas", () => {
     expect(getVariantRuleSummary("mini-shogi").numberedBasics[0]).toContain("5x5");
     expect(getVariantRuleSummary("mini-shogi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("one-rank promotion")]));
     expect(getVariantRuleSummary("mini-shogi").completion.remainingGates).toEqual([]);
+    expect(getVariantRuleSummary("crazyhouse").numberedBasics[1]).toContain("pocket");
+    expect(getVariantRuleSummary("crazyhouse").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Captured pieces enter the mover pocket")]));
+    expect(getVariantRuleSummary("crazyhouse").completion.remainingGates).toEqual([]);
     expect(getVariantRuleSummary("janggi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("palace diagonals")]));
     expect(getVariantRuleSummary("janggi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("bikjang")]));
     expect(getVariantRuleSummary("janggi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("consecutive passes")]));
