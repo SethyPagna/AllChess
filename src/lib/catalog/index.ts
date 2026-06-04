@@ -49,7 +49,8 @@ const playableFamilyByVariant: Record<VariantDefinition["family"], GameFamilyKey
   "east-asian": "asian-chess",
   "southeast-asian": "asian-chess",
   abstract: "asian-chess",
-  draughts: "draughts"
+  draughts: "draughts",
+  regional: "regional"
 };
 
 const presentationByVariant: Record<string, PiecePresentationPack> = {
@@ -70,7 +71,8 @@ const presentationByVariant: Record<string, PiecePresentationPack> = {
   jungle: "jungle-animals",
   "english-draughts": "draughts-stacks",
   "international-draughts": "draughts-stacks",
-  "turkish-draughts": "draughts-stacks"
+  "turkish-draughts": "draughts-stacks",
+  konane: "go-stones"
 };
 
 const localizedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
@@ -88,6 +90,7 @@ const localizedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
   "english-draughts": { english: "English Draughts", short: "Checkers" },
   "international-draughts": { english: "International Draughts", short: "10x10 Draughts" },
   "turkish-draughts": { english: "Turkish Draughts", native: "Dama", romanization: "Dama" },
+  konane: { english: "Konane", native: "Kōnane", romanization: "Konane" },
   antichess: { english: "Antichess" },
   horde: { english: "Horde" },
   "king-of-the-hill": { english: "King of the Hill" },
@@ -163,6 +166,7 @@ function playableRegion(key: string) {
   if (key === "english-draughts") return ["United Kingdom", "United States"];
   if (key === "international-draughts") return ["Global", "Europe"];
   if (key === "turkish-draughts") return ["Turkey"];
+  if (key === "konane") return ["Hawaii"];
   return ["Global"];
 }
 
@@ -182,6 +186,7 @@ function relatedFor(key: string) {
     "english-draughts": ["international-draughts", "turkish-draughts", "konane"],
     "international-draughts": ["english-draughts", "turkish-draughts", "konane"],
     "turkish-draughts": ["international-draughts", "english-draughts", "konane"],
+    konane: ["english-draughts", "international-draughts", "go-19x19"],
     "racing-kings": ["king-of-the-hill", "three-check", "classic"]
   };
   return related[key] ?? ["classic", "chess960", "go-19x19"];
@@ -576,21 +581,6 @@ const learningCatalogEntries: GameCatalogEntry[] = [
     ruleSourceLinks: [{ name: "Korea.net Yut Nori overview", url: "https://www.korea.net/AboutKorea/Culture-and-the-Arts/Traditional-Games" }],
     shortRules: ["Throw four sticks to determine movement.", "Teams race horses around shortcuts.", "Captures and stacking create tactical swings."],
     winConditions: ["Bring all team pieces home first"]
-  }),
-  catalogEntry({
-    id: "konane",
-    name: { english: "Konane", native: "Kōnane", romanization: "Konane" },
-    aliases: ["hawaiian-checkers"],
-    family: "regional",
-    region: ["Hawaii"],
-    board: { kind: "square-grid", rows: 8, cols: 8, description: "Alternating stones on a rectangular grid." },
-    piecePresentation: "go-stones",
-    playability: "coming-soon",
-    rulesAdapter: "planned-rules-engine",
-    botAdapter: "internal-search",
-    ruleSourceLinks: [{ name: "Cyningstan Konane rules", url: "https://www.cyningstan.com/game/97/konane" }],
-    shortRules: ["Start with a full checkerboard of stones.", "Players jump orthogonally to capture.", "A player with no legal move loses."],
-    winConditions: ["Leave the opponent with no legal move"]
   })
 ];
 

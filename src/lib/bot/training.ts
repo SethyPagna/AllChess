@@ -483,6 +483,23 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
     }
   },
   {
+    id: "konane-start-near-corner-removal",
+    variantKey: "konane",
+    positionKey: "konane|turn:white|moves:",
+    moveUci: "b8b8",
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.82,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "konane", "hawaiian-checkers", "orthogonal", "removal"],
+    explanation: {
+      plan: "Remove a near-corner white stone to create an immediate orthogonal jump lane after Black answers.",
+      threat: "White prepares the classic capture rhythm where empty landing points force local jump tactics.",
+      risk: "Kōnane has no quiet moves after the removals, so the bot must validate jump availability before evaluating material.",
+      fallbackGoal: "If the adjacent reply changes the lane, prioritize legal multi-jumps that keep the same stone active."
+    }
+  },
+  {
     id: "chess960-start-center-pawn",
     variantKey: "chess960",
     positionKey: "chess960|turn:white|moves:",

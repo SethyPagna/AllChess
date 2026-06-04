@@ -37,6 +37,7 @@ describe("universal game catalog", () => {
       "janggi",
       "jungle",
       "king-of-the-hill",
+      "konane",
       "makruk",
       "mini-shogi",
       "racing-kings",
@@ -95,6 +96,12 @@ describe("universal game catalog", () => {
       family: "draughts",
       piecePresentation: "draughts-stacks"
     });
+    expect(getGameCatalogEntry("konane")).toMatchObject({
+      playability: "playable",
+      botAdapter: "internal-search",
+      family: "regional",
+      piecePresentation: "go-stones"
+    });
     expect(getGameCatalogEntry("racing-kings")).toMatchObject({ playability: "playable", botAdapter: "internal-search" });
     expect(displayReleaseReadiness(getGameCatalogEntry("classic")!)).toBe("Verified ready");
     expect(displayReleaseReadiness(getGameCatalogEntry("shogi")!)).toBe("Verified ready");
@@ -121,7 +128,7 @@ describe("universal game catalog", () => {
     expect(getCatalogSupportedModes(shogi).map((support) => support.mode)).toEqual(expect.arrayContaining(["bot", "offline", "spectate"]));
     expect(displayModeReadiness(shogi, "bot")).toBe("Bot ready");
     expect(filterGameCatalogEntries(gameCatalog, "", { mode: "bot" }).map((entry) => entry.id)).toEqual(
-      expect.arrayContaining(["classic", "chaturanga", "crazyhouse", "shatranj", "shogi", "mini-shogi", "janggi", "makruk", "jungle", "english-draughts", "international-draughts", "turkish-draughts"])
+      expect.arrayContaining(["classic", "chaturanga", "crazyhouse", "shatranj", "shogi", "mini-shogi", "janggi", "makruk", "jungle", "english-draughts", "international-draughts", "turkish-draughts", "konane"])
     );
     expect(filterGameCatalogEntries(gameCatalog, "", { mode: "online" }).map((entry) => entry.id).sort()).toEqual([
       "antichess",
@@ -135,6 +142,7 @@ describe("universal game catalog", () => {
       "janggi",
       "jungle",
       "king-of-the-hill",
+      "konane",
       "makruk",
       "mini-shogi",
       "racing-kings",
@@ -177,7 +185,7 @@ describe("universal game catalog", () => {
   test("stats and API payloads are real catalog counts, not fake live-player estimates", async () => {
     const stats = getCatalogStats();
     expect(stats.totalGames).toBe(gameCatalog.length);
-    expect(stats.playableGames).toBe(19);
+    expect(stats.playableGames).toBe(20);
     expect(stats.familyCounts.mancala).toBeGreaterThan(0);
 
     const catalog = await catalogGet(new Request("http://allchess.test/api/catalog?q=go"));

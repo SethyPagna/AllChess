@@ -20,6 +20,7 @@ describe("variant catalog", () => {
       "english-draughts",
       "international-draughts",
       "turkish-draughts",
+      "konane",
       "antichess",
       "horde",
       "king-of-the-hill",
@@ -44,6 +45,7 @@ describe("variant catalog", () => {
       "english-draughts": "draughts-engine",
       "international-draughts": "draughts-engine",
       "turkish-draughts": "draughts-engine",
+      konane: "konane-engine",
       antichess: "chessops",
       horde: "chessops",
       "king-of-the-hill": "chessops",
@@ -362,6 +364,73 @@ describe("variant engine", () => {
       code: "x",
       owner: "white",
       promoted: true
+    });
+  });
+
+  test("konane uses opening removals, orthogonal jumps, continuations, and no-move wins", () => {
+    let state = createInitialState("konane", "konane-rules");
+
+    expect(state.board).toHaveLength(8);
+    expect(state.board[0].map((cell) => cell.piece?.owner[0] ?? ".").join("")).toBe("bwbwbwbw");
+    expect(state.board[1].map((cell) => cell.piece?.owner[0] ?? ".").join("")).toBe("wbwbwbwb");
+    expect(state.board.flat().filter((cell) => cell.piece?.owner === "white")).toHaveLength(32);
+    expect(state.board.flat().filter((cell) => cell.piece?.owner === "black")).toHaveLength(32);
+
+    expect(getLegalMoves(state, { row: 0, col: 1 })).toEqual([{ kind: "remove", from: { row: 0, col: 1 }, to: { row: 0, col: 1 } }]);
+    expect(getLegalMoves(state, { row: 0, col: 0 })).toEqual([]);
+
+    const afterFirstRemoval = applyMove(state, { kind: "remove", from: { row: 0, col: 1 }, to: { row: 0, col: 1 } });
+    expect(afterFirstRemoval.board[0][1].piece).toBeNull();
+    expect(afterFirstRemoval.turn).toBe("black");
+    expect(afterFirstRemoval.moves[0].notation).toBe("Px0,1");
+    expect(afterFirstRemoval.variantState?.konaneOpening).toMatchObject({ removals: 1, firstRemoved: { row: 0, col: 1 } });
+    expect(getLegalMoves(afterFirstRemoval, { row: 0, col: 0 })).toEqual([{ kind: "remove", from: { row: 0, col: 0 }, to: { row: 0, col: 0 } }]);
+    expect(getLegalMoves(afterFirstRemoval, { row: 2, col: 0 })).toEqual([]);
+
+    const afterSecondRemoval = applyMove(afterFirstRemoval, { kind: "remove", from: { row: 0, col: 0 }, to: { row: 0, col: 0 } });
+    expect(afterSecondRemoval.turn).toBe("white");
+    expect(afterSecondRemoval.variantState?.konaneOpening).toMatchObject({ removals: 2 });
+
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white",
+      ply: 2,
+      variantState: { konaneOpening: { removals: 2 } }
+    };
+    state.board[4][1].piece = { id: "white-stone", code: "p", owner: "white", labelKey: "chess.pawn" };
+    state.board[4][2].piece = { id: "black-first", code: "p", owner: "black", labelKey: "chess.pawn" };
+    state.board[4][4].piece = { id: "black-second", code: "p", owner: "black", labelKey: "chess.pawn" };
+    state.board[3][1].piece = { id: "black-vertical", code: "p", owner: "black", labelKey: "chess.pawn" };
+    state.board[2][1].piece = { id: "white-blocker", code: "p", owner: "white", labelKey: "chess.pawn" };
+
+    expect(getLegalMoves(state, { row: 4, col: 1 })).toEqual([{ from: { row: 4, col: 1 }, to: { row: 4, col: 3 } }]);
+
+    const afterJump = applyMove(state, { from: { row: 4, col: 1 }, to: { row: 4, col: 3 } });
+    expect(afterJump.board[4][2].piece).toBeNull();
+    expect(afterJump.turn).toBe("white");
+    expect(afterJump.variantState?.konaneContinuation).toMatchObject({ row: 4, col: 3, owner: "white" });
+    expect(getLegalMoves(afterJump, { row: 4, col: 3 })).toEqual([{ from: { row: 4, col: 3 }, to: { row: 4, col: 5 } }]);
+
+    const finishedJump = applyMove(afterJump, { from: { row: 4, col: 3 }, to: { row: 4, col: 5 } });
+    expect(finishedJump.board[4][4].piece).toBeNull();
+    expect(finishedJump.turn).toBe("black");
+    expect(finishedJump.variantState?.konaneContinuation).toBeNull();
+
+    const terminal: typeof state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white",
+      ply: 2,
+      variantState: { konaneOpening: { removals: 2 } }
+    };
+    terminal.board[4][1].piece = { id: "white-finisher", code: "p", owner: "white", labelKey: "chess.pawn" };
+    terminal.board[4][2].piece = { id: "black-target", code: "p", owner: "black", labelKey: "chess.pawn" };
+
+    expect(applyMove(terminal, { from: { row: 4, col: 1 }, to: { row: 4, col: 3 } })).toMatchObject({
+      status: "completed",
+      result: "white",
+      outcomeReason: "no-legal-moves"
     });
   });
 

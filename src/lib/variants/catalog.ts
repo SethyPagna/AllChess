@@ -227,6 +227,22 @@ export const variantCatalog: VariantDefinition[] = [
     aliases: ["dama", "turkish-checkers"]
   },
   {
+    key: "konane",
+    nameKey: "variant.konane",
+    rulesAdapter: "konane-engine",
+    engineProtocol: "internal",
+    family: "regional",
+    board: { rows: 8, cols: 8, coordinates: "orthodox" },
+    players: ["white", "black"],
+    supportsDrops: false,
+    supportsPromotion: false,
+    supportsCastling: false,
+    supportsCheck: false,
+    objective: "Remove opening stones, then win by leaving the opponent without an orthogonal jump capture.",
+    setup: ["pPpPpPpP", "PpPpPpPp", "pPpPpPpP", "PpPpPpPp", "pPpPpPpP", "PpPpPpPp", "pPpPpPpP", "PpPpPpPp"],
+    aliases: ["hawaiian-checkers", "hawaiian-draughts"]
+  },
+  {
     key: "antichess",
     nameKey: "variant.antichess",
     rulesAdapter: "chessops",

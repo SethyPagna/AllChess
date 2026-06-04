@@ -20,7 +20,7 @@ export type BoardCell = {
 };
 
 export type Move = {
-  kind?: "move" | "drop" | "pass";
+  kind?: "move" | "drop" | "pass" | "remove";
   from: Square;
   to: Square;
   promotion?: boolean;
@@ -89,9 +89,9 @@ export type RulesAdapter = {
 export type VariantDefinition = {
   key: string;
   nameKey: string;
-  rulesAdapter: "chessops" | "xiangqiops" | "shogiops" | "makruk-js" | "allchess-janggi" | "allchess-jungle" | "draughts-engine";
+  rulesAdapter: "chessops" | "xiangqiops" | "shogiops" | "makruk-js" | "allchess-janggi" | "allchess-jungle" | "draughts-engine" | "konane-engine";
   engineProtocol: "uci" | "usi" | "internal";
-  family: "western" | "east-asian" | "southeast-asian" | "abstract" | "draughts";
+  family: "western" | "east-asian" | "southeast-asian" | "abstract" | "draughts" | "regional";
   board: {
     rows: number;
     cols: number;

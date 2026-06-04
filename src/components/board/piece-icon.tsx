@@ -25,6 +25,9 @@ export function PieceIcon({ code, owner, variantKey, promoted = false }: PieceIc
   if (isDraughtsPresentation(variantKey)) {
     return <DraughtsPieceIcon code={normalized} owner={owner} promoted={promoted} variantKey={variantKey} />;
   }
+  if (isStonePresentation(variantKey)) {
+    return <StonePieceIcon owner={owner} variantKey={variantKey} />;
+  }
   if (usesWesternPresentation(variantKey)) {
     return <WesternPieceIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} />;
   }
@@ -74,6 +77,29 @@ function DraughtsPieceIcon({ code, owner, promoted, variantKey }: { code: string
 
 function isDraughtsPresentation(variantKey: string) {
   return variantKey === "english-draughts" || variantKey === "international-draughts" || variantKey === "turkish-draughts";
+}
+
+function isStonePresentation(variantKey: string) {
+  return variantKey === "konane";
+}
+
+function StonePieceIcon({ owner, variantKey }: { owner: PlayerColor; variantKey: string }) {
+  return (
+    <svg
+      aria-label="Kōnane stone"
+      className="piece-symbol piece-icon piece-svg"
+      data-owner={owner}
+      data-piece="stone"
+      data-variant={variantKey}
+      role="img"
+      viewBox="0 0 100 100"
+    >
+      <title>Kōnane stone</title>
+      <circle cx="50" cy="55" r="34" data-detail="stone-shadow" />
+      <circle cx="50" cy="48" r="34" data-detail="stone-face" />
+      <path d="M30 36c10-10 29-13 43-1" fill="none" data-detail="stone-highlight" />
+    </svg>
+  );
 }
 
 function usesWesternPresentation(variantKey: string) {

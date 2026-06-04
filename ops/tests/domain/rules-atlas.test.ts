@@ -70,6 +70,10 @@ describe("rules atlas", () => {
     expect(getVariantRuleSummary("turkish-draughts").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Orthogonal maximum-capture")]));
     expect(getVariantRuleSummary("turkish-draughts").completion.status).toBe("verified-playable");
     expect(getVariantRuleSummary("turkish-draughts").completion.remainingGates).toEqual([]);
+    expect(getVariantRuleSummary("konane").numberedBasics[1]).toContain("remove");
+    expect(getVariantRuleSummary("konane").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Opening removals")]));
+    expect(getVariantRuleSummary("konane").completion.status).toBe("verified-playable");
+    expect(getVariantRuleSummary("konane").completion.remainingGates).toEqual([]);
     expect(getVariantRuleSummary("antichess").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Mandatory captures")]));
     expect(getVariantRuleSummary("horde").completion.status).toBe("verified-playable");
     expect(getVariantRuleSummary("horde").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("horde-elimination")]));

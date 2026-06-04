@@ -140,6 +140,10 @@ export function getLegalMoves(state: GameState, fromOrHand: Square | { drop: Pie
     const requiredCaptures = draughtsRequiredCaptureLength(state, state.turn, continuation?.square);
     if (requiredCaptures > 0) return legalMoves.filter((move) => draughtsCaptureLengthForMove(state, move) === requiredCaptures);
   }
+  if (variant.key === "konane") {
+    const continuation = konaneContinuationFor(state);
+    if (continuation && (!sameSquare(from, continuation.square) || continuation.owner !== state.turn)) return [];
+  }
 
   return legalMoves;
 }
@@ -173,6 +177,9 @@ function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
   }
   if (isDraughtsVariant(variant.key)) {
     return draughtsPieceMoves(state, piece, from);
+  }
+  if (variant.key === "konane") {
+    return konanePieceMoves(state, piece, from);
   }
   if (piece.code === "p" && ["western", "southeast-asian"].includes(variant.family)) {
     return westernPawnMoves(state, piece, from, variant.family === "western").filter((move) => terrainAllows(state, piece, move.to));
@@ -588,6 +595,70 @@ function isDraughtsVariant(variantKey: string) {
   return variantKey === "english-draughts" || variantKey === "international-draughts" || variantKey === "turkish-draughts";
 }
 
+function konanePieceMoves(state: GameState, piece: Piece, from: Square) {
+  const openingMoves = konaneOpeningRemovalMoves(state, piece, from);
+  if (openingMoves.length > 0 || isKonaneOpeningRemovalPhase(state)) return openingMoves;
+  return konaneJumpMoves(state, piece, from);
+}
+
+function konaneOpeningRemovalMoves(state: GameState, piece: Piece, from: Square) {
+  const opening = readKonaneOpening(state);
+  if (opening.removals >= 2) return [];
+  if (piece.owner !== state.turn) return [];
+  if (opening.removals === 0) return [{ kind: "remove" as const, from, to: from }];
+  if (opening.firstRemoved && isOrthogonallyAdjacent(from, opening.firstRemoved)) {
+    return [{ kind: "remove" as const, from, to: from }];
+  }
+  return [];
+}
+
+function konaneJumpMoves(state: GameState, piece: Piece, from: Square) {
+  const moves: Move[] = [];
+  for (const [dr, dc] of draughtsAllOrthogonalDirections) {
+    const middle = { row: from.row + dr, col: from.col + dc };
+    const to = { row: from.row + dr * 2, col: from.col + dc * 2 };
+    const jumped = cellAt(state, middle)?.piece;
+    if (!isInside(state, to) || cellAt(state, to)?.piece || !jumped || jumped.owner === piece.owner) continue;
+    moves.push({ from, to });
+  }
+  return moves;
+}
+
+function konaneCapturedSquare(state: GameState, move: Move, piece: Piece) {
+  const rowDelta = move.to.row - move.from.row;
+  const colDelta = move.to.col - move.from.col;
+  const orthogonalJump = ((rowDelta === 0) !== (colDelta === 0)) && Math.max(Math.abs(rowDelta), Math.abs(colDelta)) === 2;
+  if (!orthogonalJump) return null;
+  const middle = { row: (move.from.row + move.to.row) / 2, col: (move.from.col + move.to.col) / 2 };
+  const jumped = cellAt(state, middle)?.piece;
+  return jumped && jumped.owner !== piece.owner ? middle : null;
+}
+
+function isKonaneOpeningRemovalPhase(state: GameState) {
+  return readKonaneOpening(state).removals < 2;
+}
+
+function readKonaneOpening(state: GameState) {
+  const stored = state.variantState?.konaneOpening as { removals?: unknown; firstRemoved?: Square } | undefined;
+  const moveRemovals = state.moves.filter((move) => move.kind === "remove").length;
+  const removals = Math.min(2, Number(stored?.removals ?? moveRemovals));
+  return {
+    removals: Number.isFinite(removals) ? removals : 0,
+    firstRemoved: stored?.firstRemoved
+  };
+}
+
+function konaneContinuationFor(state: GameState) {
+  const candidate = state.variantState?.konaneContinuation as { row?: unknown; col?: unknown; owner?: unknown } | null | undefined;
+  if (!candidate || typeof candidate.row !== "number" || typeof candidate.col !== "number") return null;
+  if (candidate.owner !== "white" && candidate.owner !== "black") return null;
+  return { square: { row: candidate.row, col: candidate.col }, owner: candidate.owner };
+}
+
+function isOrthogonallyAdjacent(a: Square, b: Square) {
+  return Math.abs(a.row - b.row) + Math.abs(a.col - b.col) === 1;
+}
+
 function shouldCrownDraughtsMan(variant: VariantDefinition, piece: Piece, to: Square) {
   return piece.owner === "white" ? to.row === 0 : to.row === variant.board.rows - 1;
 }
@@ -966,12 +1037,17 @@ export function applyMove(state: GameState, move: Move): GameState {
     hand[movingPiece.code] -= 1;
     if (hand[movingPiece.code] <= 0) delete hand[movingPiece.code];
     toCell!.piece = movingPiece;
+  } else if (move.kind === "remove") {
+    const fromCell = cellAt(next, move.from);
+    if (!fromCell?.piece) throw new Error("errors.invalidMove");
+    movingPiece = fromCell.piece;
+    fromCell.piece = null;
   } else {
     const fromCell = cellAt(next, move.from);
     if (!fromCell?.piece) throw new Error("errors.invalidMove");
 
     movingPiece = fromCell.piece;
-    const jumpedSquare = isDraughtsVariant(variant.key) ? draughtsCapturedSquare(next, move, movingPiece) : null;
+    const jumpedSquare = isDraughtsVariant(variant.key) ? draughtsCapturedSquare(next, move, movingPiece) : variant.key === "konane" ? konaneCapturedSquare(next, move, movingPiece) : null;
     const jumpedCell = jumpedSquare ? cellAt(next, jumpedSquare) : null;
     captured = jumpedCell?.piece ?? toCell!.piece;
     if (captured) {
@@ -1020,6 +1096,10 @@ export function applyMove(state: GameState, move: Move): GameState {
 
   if (isDraughtsVariant(variant.key)) {
     return withDraughtsOutcome(next, movingPiece.owner, movingPiece, move, Boolean(captured));
+  }
+
+  if (variant.key === "konane") {
+    return withKonaneOutcome(next, movingPiece.owner, move, Boolean(captured));
   }
 
   if (variant.key === "janggi") {
@@ -1137,6 +1217,40 @@ function withDraughtsOutcome(state: GameState, mover: PlayerColor, movedPieceBef
     state.outcomeReason = "no-legal-moves";
   }
 
+  return state;
+}
+
+function withKonaneOutcome(state: GameState, mover: PlayerColor, move: Move, captured: boolean): GameState {
+  if (move.kind === "remove") {
+    const stored = state.variantState?.konaneOpening as { removals?: unknown; firstRemoved?: Square } | undefined;
+    const previousRemovals = Math.min(2, Number(stored?.removals ?? Math.max(0, state.moves.filter((playedMove) => playedMove.kind === "remove").length - 1)));
+    state.variantState = {
+      ...(state.variantState ?? {}),
+      konaneOpening: {
+        removals: Math.min(2, (Number.isFinite(previousRemovals) ? previousRemovals : 0) + 1),
+        firstRemoved: stored?.firstRemoved ?? move.from
+      },
+      konaneContinuation: null
+    };
+    return state;
+  }
+
+  const movedPiece = cellAt(state, move.to)?.piece;
+  if (captured && movedPiece && konaneJumpMoves(state, movedPiece, move.to).length > 0) {
+    state.turn = mover;
+    state.variantState = {
+      ...(state.variantState ?? {}),
+      konaneContinuation: { row: move.to.row, col: move.to.col, owner: mover }
+    };
+    return state;
+  }
+
+  state.variantState = { ...(state.variantState ?? {}), konaneContinuation: null };
+  if (!hasAnyLegalMove(state, state.turn)) {
+    state.status = "completed";
+    state.result = mover;
+    state.outcomeReason = "no-legal-moves";
+  }
   return state;
 }
 
@@ -1986,5 +2100,6 @@ function notationFor(piece: Piece | null, move: Move) {
   if (move.kind === "pass") return "pass";
   const label = piece?.code.toUpperCase() ?? "?";
   if (move.kind === "drop") return `${label}*${move.to.row},${move.to.col}`;
+  if (move.kind === "remove") return `${label}x${move.from.row},${move.from.col}`;
   return `${label}${move.from.row},${move.from.col}-${move.to.row},${move.to.col}`;
 }

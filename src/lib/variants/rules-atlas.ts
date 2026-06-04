@@ -226,6 +226,20 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     drawConditions: ["Repetition or no-progress policy in selected room rules", "Mutual agreement"],
     illegalMoveNotes: ["A backward quiet move by a man is illegal.", "A shorter capture line is illegal when a longer one exists.", "Flying kings must jump exactly one opposing checker before landing."]
   },
+  konane: {
+    variantKey: "konane",
+    sourceLinks: [{ name: "Cyningstan Konane rules", url: "https://www.cyningstan.com/game/97/konane" }],
+    numberedBasics: [
+      "Play on an 8x8 board filled with alternating black and white stones.",
+      "The first player removes one own stone; the second player removes an orthogonally adjacent own stone.",
+      "After the opening, every move is an orthogonal jump over one opposing stone to an empty square.",
+      "Win by leaving the opponent with no legal jump capture."
+    ],
+    specialRules: ["Opening removals", "Orthogonal jumps", "Captured midpoint stones", "Multi-jump continuation", "No legal jump loses"],
+    winConditions: ["Leave the opponent with no legal jump", "Capture until the opponent is immobilized"],
+    drawConditions: ["Mutual agreement or selected room no-progress policy"],
+    illegalMoveNotes: ["Diagonal jumps are illegal.", "A stone may not slide without jumping after the opening.", "During a multi-jump continuation only the jumping stone may move."]
+  },
   antichess: {
     variantKey: "antichess",
     sourceLinks: [{ name: "Lichess antichess rules", url: "https://lichess.org/variant/antichess" }],
@@ -430,6 +444,16 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
       "Backward quiet moves are rejected while orthogonal captures remain available.",
       "Orthogonal maximum-capture filtering rejects shorter capture lines when longer lines exist.",
       "Flying kings, multi-jump continuation, kinging, and no-piece/no-legal-move wins reuse the verified draughts runtime path."
+    ],
+    remainingGates: []
+  },
+  konane: {
+    status: "verified-playable",
+    verifiedEdgeCases: [
+      "Opening removals are legal only for own stones, and the second removal must be orthogonally adjacent to the first.",
+      "Orthogonal jump captures remove the midpoint stone and reject diagonal or quiet movement.",
+      "Multi-jump continuation locks the turn to the same stone until no further capture exists.",
+      "No-legal-jump terminal states resolve as wins for the mover."
     ],
     remainingGates: []
   },

@@ -39,6 +39,16 @@ describe("PieceIcon", () => {
     expect(king).not.toContain(">X<");
   });
 
+  test("renders konane pieces as stone discs", () => {
+    const whiteStone = renderToStaticMarkup(<PieceIcon code="p" owner="white" variantKey="konane" />);
+    const blackStone = renderToStaticMarkup(<PieceIcon code="p" owner="black" variantKey="konane" />);
+
+    expect(whiteStone).toContain('data-piece="stone"');
+    expect(blackStone).toContain('data-piece="stone"');
+    expect(whiteStone).toContain('aria-label="Kōnane stone"');
+    expect(blackStone).toContain('data-owner="black"');
+  });
+
   test("keeps non-western pieces as strong native symbols", () => {
     const redGeneral = renderToStaticMarkup(<PieceIcon code="g" owner="red" variantKey="xiangqi" />);
     const blackGeneral = renderToStaticMarkup(<PieceIcon code="g" owner="black" variantKey="xiangqi" />);
