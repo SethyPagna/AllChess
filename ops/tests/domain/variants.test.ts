@@ -846,6 +846,64 @@ describe("variant engine", () => {
     expect(drawn).toMatchObject({ status: "completed", result: "draw", outcomeReason: "draw" });
   });
 
+  test("janggi pass is illegal while in check", () => {
+    let state = createInitialState("janggi", "janggi-pass-check");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "blue"
+    };
+    state.board[9][4].piece = { id: "red-general", code: "g", owner: "red", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "blue-general", code: "g", owner: "blue", labelKey: "chess.king" };
+    state.board[3][4].piece = { id: "red-chariot-check", code: "r", owner: "red", labelKey: "chess.rook" };
+
+    expect(() => applyMove(state, { kind: "pass", from: { row: -1, col: -1 }, to: { row: -1, col: -1 } })).toThrow("errors.invalidMove");
+  });
+
+  test("janggi consecutive passes adjudicate material scoring", () => {
+    let state = createInitialState("janggi", "janggi-pass-scoring");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "red"
+    };
+    state.board[9][3].piece = { id: "red-general", code: "g", owner: "red", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "blue-general", code: "g", owner: "blue", labelKey: "chess.king" };
+    state.board[8][0].piece = { id: "red-chariot", code: "r", owner: "red", labelKey: "chess.rook" };
+    state.board[1][0].piece = { id: "blue-horse", code: "h", owner: "blue", labelKey: "chess.knight" };
+
+    const redPassed = applyMove(state, { kind: "pass", from: { row: -1, col: -1 }, to: { row: -1, col: -1 } });
+    expect(redPassed).toMatchObject({ status: "active", turn: "blue" });
+    expect(redPassed.moves[0].notation).toBe("pass");
+
+    const scored = applyMove(redPassed, { kind: "pass", from: { row: -1, col: -1 }, to: { row: -1, col: -1 } });
+    expect(scored).toMatchObject({ status: "completed", result: "red", outcomeReason: "scoring" });
+    expect(scored.variantState?.janggiScoring).toMatchObject({
+      redPoints: 13,
+      bluePoints: 5,
+      redPieceCounts: { g: 1, r: 1 },
+      bluePieceCounts: { g: 1, h: 1 }
+    });
+  });
+
+  test("janggi pass preserves bikjang draw policy", () => {
+    let state = createInitialState("janggi", "janggi-bikjang-pass");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "red"
+    };
+    state.board[9][4].piece = { id: "red-general", code: "g", owner: "red", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "blue-general", code: "g", owner: "blue", labelKey: "chess.king" };
+    state.board[5][4].piece = { id: "file-blocker", code: "p", owner: "red", labelKey: "chess.pawn" };
+
+    const pending = applyMove(state, { from: { row: 5, col: 4 }, to: { row: 5, col: 3 } });
+    const drawn = applyMove(pending, { kind: "pass", from: { row: -1, col: -1 }, to: { row: -1, col: -1 } });
+
+    expect(drawn).toMatchObject({ status: "completed", result: "draw", outcomeReason: "draw" });
+    expect(drawn.variantState?.janggiScoring).toMatchObject({ redPoints: 2, bluePoints: 0 });
+  });
+
   test("sets up Jungle Chess with opposing sides and blocks non-rats from rivers", () => {
     let state = createInitialState("jungle", "jungle-test");
     expect(state.board[0][0].piece).toMatchObject({ code: "l", owner: "black" });

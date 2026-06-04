@@ -628,7 +628,7 @@ describe("bot difficulty ladder", () => {
         expect.objectContaining({
           variantKey: "janggi",
           claim: "not-fully-trained",
-          remainingGates: expect.arrayContaining([expect.stringContaining("Pass/scoring")])
+          remainingGates: expect.arrayContaining([expect.stringContaining("Full bot gauntlet")])
         })
       ])
     );

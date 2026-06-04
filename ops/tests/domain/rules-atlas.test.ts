@@ -31,9 +31,10 @@ describe("rules atlas", () => {
     expect(getVariantRuleSummary("shogi").completion.remainingGates).toEqual([]);
     expect(getVariantRuleSummary("janggi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("palace diagonals")]));
     expect(getVariantRuleSummary("janggi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("bikjang")]));
+    expect(getVariantRuleSummary("janggi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("consecutive passes")]));
     expect(getVariantRuleSummary("janggi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("bot seed")]));
-    expect(getVariantRuleSummary("janggi").completion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("Pass/scoring")]));
     expect(getVariantRuleSummary("janggi").completion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("Full bot gauntlet")]));
+    expect(getVariantRuleSummary("janggi").completion.remainingGates).not.toEqual(expect.arrayContaining([expect.stringContaining("Pass/scoring")]));
     expect(getVariantRuleSummary("janggi").completion.remainingGates).not.toEqual(expect.arrayContaining([expect.stringContaining("Facing-general")]));
     expect(getVariantRuleSummary("janggi").completion.remainingGates).not.toEqual(expect.arrayContaining([expect.stringContaining("cannon screens")]));
     expect(getVariantRuleSummary("makruk").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Native Met")]));

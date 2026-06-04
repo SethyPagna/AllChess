@@ -21,6 +21,16 @@ const pieceLabels: Record<string, string> = {
   t: "chess.rook"
 };
 
+const janggiPiecePoints: Record<string, number> = {
+  g: 0,
+  r: 13,
+  c: 7,
+  h: 5,
+  e: 3,
+  a: 3,
+  p: 2
+};
+
 type MakrukCountingState = {
   phase: "board" | "bare-king";
   startedAtPly: number;
@@ -42,6 +52,13 @@ type ShogiImpasseState = {
   gotePoints: number;
   senteKingEntered: boolean;
   goteKingEntered: boolean;
+};
+
+type JanggiScoringState = {
+  redPoints: number;
+  bluePoints: number;
+  redPieceCounts: Record<string, number>;
+  bluePieceCounts: Record<string, number>;
 };
 
 type DropMoveOptions = {
@@ -668,40 +685,44 @@ export function applyMove(state: GameState, move: Move): GameState {
     throw new Error("errors.gameCompleted");
   }
 
-  const legal = move.kind === "drop" && move.drop
-    ? getLegalMoves(state, { drop: move.drop }).some((candidate) => sameSquare(candidate.to, move.to))
-    : getLegalMoves(state, move.from).some((candidate) => sameSquare(candidate.to, move.to));
+  const legal = move.kind === "pass"
+    ? isLegalPassMove(state)
+    : move.kind === "drop" && move.drop
+      ? getLegalMoves(state, { drop: move.drop }).some((candidate) => sameSquare(candidate.to, move.to))
+      : getLegalMoves(state, move.from).some((candidate) => sameSquare(candidate.to, move.to));
   if (!legal) {
     throw new Error("errors.invalidMove");
   }
 
   const next: GameState = structuredClone(state);
-  const toCell = cellAt(next, move.to);
+  const toCell = move.kind === "pass" ? null : cellAt(next, move.to);
   const variant = getVariant(state.variantKey);
-  if (!toCell) throw new Error("errors.invalidMove");
+  if (move.kind !== "pass" && !toCell) throw new Error("errors.invalidMove");
 
   let movingPiece: Piece;
   let captured: Piece | null = null;
 
-  if (move.kind === "drop" && move.drop) {
+  if (move.kind === "pass") {
+    movingPiece = { id: `${state.turn}-pass-${state.ply}`, code: "pass", owner: state.turn, labelKey: "chess.pawn" };
+  } else if (move.kind === "drop" && move.drop) {
     movingPiece = { ...move.drop, id: `${move.drop.owner}-${move.drop.code}-drop-${state.ply}-${move.to.row}-${move.to.col}`, promoted: false };
     const hand = next.hands?.[movingPiece.owner];
     if (!hand || (hand[movingPiece.code] ?? 0) <= 0) throw new Error("errors.invalidMove");
     hand[movingPiece.code] -= 1;
     if (hand[movingPiece.code] <= 0) delete hand[movingPiece.code];
-    toCell.piece = movingPiece;
+    toCell!.piece = movingPiece;
   } else {
     const fromCell = cellAt(next, move.from);
     if (!fromCell?.piece) throw new Error("errors.invalidMove");
 
     movingPiece = fromCell.piece;
-    captured = toCell.piece;
+    captured = toCell!.piece;
     if (captured) {
       next.captured.push(captured);
       addCapturedPieceToHand(next, movingPiece.owner, captured);
     }
     const promoted = shouldPromote(variant, movingPiece, move.to, move.promotion);
-    toCell.piece = {
+    toCell!.piece = {
       ...movingPiece,
       code: promoted ? promotionCodeFor(variant, movingPiece) : movingPiece.code,
       promoted: promoted || movingPiece.promoted
@@ -719,7 +740,7 @@ export function applyMove(state: GameState, move: Move): GameState {
   if (moverClock) {
     moverClock.remainingMs += moverClock.incrementMs;
   }
-  next.halfmoveClock = captured || movingPiece.code === "p" ? 0 : (state.halfmoveClock ?? 0) + 1;
+  next.halfmoveClock = move.kind !== "pass" && (captured || movingPiece.code === "p") ? 0 : (state.halfmoveClock ?? 0) + 1;
 
   if (variant.key === "horde" && countPieces(next, "white") === 0) {
     next.status = "completed";
@@ -799,6 +820,8 @@ function withJanggiOutcome(state: GameState, mover: PlayerColor, destination: Sq
   const facedBeforeMove = state.variantState?.bikjangPlayer === mover;
   const generalsFacing = areJanggiGeneralsFacing(state);
 
+  updateJanggiScoring(state);
+
   if (facedBeforeMove && generalsFacing) {
     state.status = "completed";
     state.result = "draw";
@@ -813,7 +836,70 @@ function withJanggiOutcome(state: GameState, mover: PlayerColor, destination: Sq
     state.variantState = { ...(state.variantState ?? {}), bikjangPlayer: null };
   }
 
+  if (hasConsecutivePasses(state)) {
+    const scoring = readJanggiScoring(state);
+    if (scoring) {
+      state.status = "completed";
+      state.result = scoring.redPoints === scoring.bluePoints ? "draw" : scoring.redPoints > scoring.bluePoints ? "red" : "blue";
+      state.outcomeReason = "scoring";
+      return state;
+    }
+  }
+
   return withOutcome(state, mover, destination);
+}
+
+function isLegalPassMove(state: GameState) {
+  return state.variantKey === "janggi" && !isInCheck(state, state.turn);
+}
+
+function updateJanggiScoring(state: GameState) {
+  if (state.variantKey !== "janggi") return;
+  state.variantState = { ...(state.variantState ?? {}) };
+  state.variantState.janggiScoring = calculateJanggiScoring(state);
+}
+
+function calculateJanggiScoring(state: GameState): JanggiScoringState {
+  const redPieceCounts: Record<string, number> = {};
+  const bluePieceCounts: Record<string, number> = {};
+  let redPoints = 0;
+  let bluePoints = 0;
+
+  for (const row of state.board) {
+    for (const cell of row) {
+      const piece = cell.piece;
+      if (!piece) continue;
+      const points = janggiPiecePoint(piece.code);
+      if (piece.owner === "red") {
+        redPoints += points;
+        redPieceCounts[piece.code] = (redPieceCounts[piece.code] ?? 0) + 1;
+      } else if (piece.owner === "blue") {
+        bluePoints += points;
+        bluePieceCounts[piece.code] = (bluePieceCounts[piece.code] ?? 0) + 1;
+      }
+    }
+  }
+
+  return { redPoints, bluePoints, redPieceCounts, bluePieceCounts };
+}
+
+function readJanggiScoring(state: GameState): JanggiScoringState | undefined {
+  const value = state.variantState?.janggiScoring;
+  if (!value || typeof value !== "object") return undefined;
+  const candidate = value as Partial<JanggiScoringState>;
+  if (typeof candidate.redPoints !== "number" || typeof candidate.bluePoints !== "number") return undefined;
+  if (!candidate.redPieceCounts || !candidate.bluePieceCounts) return undefined;
+  return candidate as JanggiScoringState;
+}
+
+function hasConsecutivePasses(state: GameState) {
+  const last = state.moves.at(-1);
+  const previous = state.moves.at(-2);
+  return last?.kind === "pass" && previous?.kind === "pass";
+}
+
+function janggiPiecePoint(code: string) {
+  return janggiPiecePoints[code] ?? 0;
 }
 
 function updateMakrukCounting(state: GameState) {
@@ -1523,6 +1609,7 @@ function terrainAllows(state: GameState, piece: Piece, to: Square) {
 }
 
 function notationFor(piece: Piece | null, move: Move) {
+  if (move.kind === "pass") return "pass";
   const label = piece?.code.toUpperCase() ?? "?";
   if (move.kind === "drop") return `${label}*${move.to.row},${move.to.col}`;
   return `${label}${move.from.row},${move.from.col}-${move.to.row},${move.to.col}`;

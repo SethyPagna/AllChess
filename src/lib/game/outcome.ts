@@ -26,6 +26,7 @@ const reasonLabels: Record<NonNullable<GameState["outcomeReason"]>, string> = {
   repetition: "repetition",
   "perpetual-check": "perpetual check",
   impasse: "impasse",
+  scoring: "scoring",
   resignation: "resignation",
   draw: "draw"
 };
@@ -90,6 +91,7 @@ function outcomeContext(state: GameState, reason: NonNullable<GameState["outcome
     repetition: "The same position occurred four times with the same side to move, so the Shogi repetition rule ended the game.",
     "perpetual-check": "The repeated position was sustained by continuous checking, so the checking side loses under Shogi rules.",
     impasse: "Both Shogi kings entered the promotion zones, and the material-point profile adjudicated the position.",
+    scoring: "Both players passed in a scoring ruleset, so the remaining material points decided the result.",
     resignation: "A player resigned, so the opponent receives the win without more moves being played.",
     draw: "The selected ruleset reached a drawn result with no winner."
   };

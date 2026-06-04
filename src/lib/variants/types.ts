@@ -20,7 +20,7 @@ export type BoardCell = {
 };
 
 export type Move = {
-  kind?: "move" | "drop";
+  kind?: "move" | "drop" | "pass";
   from: Square;
   to: Square;
   promotion?: boolean;
@@ -56,6 +56,7 @@ export type GameState = {
     | "repetition"
     | "perpetual-check"
     | "impasse"
+    | "scoring"
     | "resignation"
     | "draw";
   moves: Array<Move & { notation: string }>;
