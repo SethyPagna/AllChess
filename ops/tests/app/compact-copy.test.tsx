@@ -89,7 +89,7 @@ describe("compact page copy", () => {
     const markup = renderToStaticMarkup(element);
 
     expect(markup).toContain("Jungle");
-    expect(markup).toContain("Guide gated for play");
+    expect(markup).toContain("Ready to play");
     await expect(GameDetailPage({ params: Promise.resolve({ locale: "en", gameId: "%E0%A4%A" }) })).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
   });
 

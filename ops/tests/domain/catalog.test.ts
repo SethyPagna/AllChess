@@ -48,7 +48,7 @@ describe("universal game catalog", () => {
 
     expect(getPlayableGameVerification("shogi")).toMatchObject({
       rulesComplete: false,
-      knownGaps: expect.arrayContaining([expect.stringContaining("pawn-drop")])
+      knownGaps: expect.arrayContaining([expect.stringContaining("Pawn-drop mate")])
     });
     expect(getGameCatalogEntry("shogi")).toMatchObject({ playability: "learn" });
     expect(getGameCatalogEntry("jungle")).toMatchObject({ playability: "playable" });
@@ -58,7 +58,7 @@ describe("universal game catalog", () => {
     expect(getCatalogReleaseReadiness(getGameCatalogEntry("shogi")!)).toMatchObject({
       status: "not-fully-trained",
       gateComplete: false,
-      blockers: expect.arrayContaining([expect.stringContaining("pawn-drop")])
+      blockers: expect.arrayContaining([expect.stringContaining("Pawn-drop mate")])
     });
   });
 

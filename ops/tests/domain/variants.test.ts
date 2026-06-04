@@ -457,6 +457,66 @@ describe("variant engine", () => {
     expect(next.result).toBe("red");
   });
 
+  test("shogi generates native movement and enforces drop restrictions", () => {
+    let state = createInitialState("shogi", "shogi-drops");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      hands: { sente: { p: 1, n: 1, l: 1, g: 1 }, gote: {} },
+      turn: "sente"
+    };
+    state.board[8][4].piece = { id: "sente-king", code: "k", owner: "sente", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "gote-king", code: "k", owner: "gote", labelKey: "chess.king" };
+    state.board[6][4].piece = { id: "sente-file-pawn", code: "p", owner: "sente", labelKey: "chess.pawn" };
+    state.board[4][4].piece = { id: "sente-silver", code: "s", owner: "sente", labelKey: "chess.pawn" };
+
+    expect(getLegalMoves(state, { row: 4, col: 4 })).toEqual(
+      expect.arrayContaining([
+        { from: { row: 4, col: 4 }, to: { row: 3, col: 3 } },
+        { from: { row: 4, col: 4 }, to: { row: 3, col: 4 } },
+        { from: { row: 4, col: 4 }, to: { row: 3, col: 5 } },
+        { from: { row: 4, col: 4 }, to: { row: 5, col: 3 } },
+        { from: { row: 4, col: 4 }, to: { row: 5, col: 5 } }
+      ])
+    );
+    expect(getLegalMoves(state, { row: 4, col: 4 })).not.toContainEqual({ from: { row: 4, col: 4 }, to: { row: 4, col: 3 } });
+
+    const pawnDrop = { id: "sente-hand-pawn", code: "p", owner: "sente" as const, labelKey: "chess.pawn" };
+    const knightDrop = { id: "sente-hand-knight", code: "n", owner: "sente" as const, labelKey: "chess.knight" };
+    const lanceDrop = { id: "sente-hand-lance", code: "l", owner: "sente" as const, labelKey: "chess.rook" };
+    expect(getLegalMoves(state, { drop: pawnDrop })).not.toContainEqual(expect.objectContaining({ to: { row: 5, col: 4 } }));
+    expect(getLegalMoves(state, { drop: knightDrop })).not.toContainEqual(expect.objectContaining({ to: { row: 1, col: 0 } }));
+    expect(getLegalMoves(state, { drop: lanceDrop })).not.toContainEqual(expect.objectContaining({ to: { row: 0, col: 0 } }));
+
+    const goldDrop = { id: "sente-hand-gold", code: "g", owner: "sente" as const, labelKey: "chess.king" };
+    const legalGoldDrop = getLegalMoves(state, { drop: goldDrop }).find((move) => move.to.row === 4 && move.to.col === 3);
+    expect(legalGoldDrop).toEqual(expect.objectContaining({ kind: "drop", drop: goldDrop }));
+
+    const dropped = applyMove(state, legalGoldDrop!);
+    expect(dropped.board[4][3].piece).toMatchObject({ code: "g", owner: "sente", promoted: false });
+    expect(dropped.hands?.sente?.g).toBeUndefined();
+    expect(dropped.moves[0].notation).toBe("G*4,3");
+  });
+
+  test("shogi captures add demoted pieces to the capturer hand", () => {
+    let state = createInitialState("shogi", "shogi-capture-hand");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      hands: { sente: {}, gote: {} },
+      turn: "sente"
+    };
+    state.board[8][4].piece = { id: "sente-king", code: "k", owner: "sente", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "gote-king", code: "k", owner: "gote", labelKey: "chess.king" };
+    state.board[4][0].piece = { id: "sente-rook", code: "r", owner: "sente", labelKey: "chess.rook" };
+    state.board[4][4].piece = { id: "gote-promoted-pawn", code: "p", owner: "gote", labelKey: "chess.pawn", promoted: true };
+
+    const next = applyMove(state, { from: { row: 4, col: 0 }, to: { row: 4, col: 4 } });
+
+    expect(next.hands?.sente?.p).toBe(1);
+    expect(next.captured[0]).toMatchObject({ code: "p", owner: "gote", promoted: true });
+  });
+
   test("janggi generals and guards follow palace lines including diagonals", () => {
     let state = createInitialState("janggi", "janggi-palace");
     state = {

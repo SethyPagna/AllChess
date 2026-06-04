@@ -24,7 +24,8 @@ describe("rules atlas", () => {
     expect(getVariantRuleSummary("xiangqi").numberedBasics[2]).toContain("Flying generals");
     expect(getVariantRuleSummary("xiangqi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("stalemate-loss")]));
     expect(getVariantRuleSummary("shogi").numberedBasics[1]).toContain("Drops");
-    expect(getVariantRuleSummary("shogi").completion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("Nifu")]));
+    expect(getVariantRuleSummary("shogi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Nifu")]));
+    expect(getVariantRuleSummary("shogi").completion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("Pawn-drop mate")]));
     expect(getVariantRuleSummary("janggi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("palace diagonals")]));
     expect(getVariantRuleSummary("janggi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("bikjang")]));
     expect(getVariantRuleSummary("janggi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("bot seed")]));

@@ -21,7 +21,7 @@ const allowedRootFiles = new Set([
   "tsconfig.json",
   "vercel.json"
 ]);
-const allowedRootDirectories = new Set([".git", "config", "data", "node_modules", "ops", "src"]);
+const allowedRootDirectories = new Set([".git", ".github", "config", "data", "node_modules", "ops", "src"]);
 
 function walkFiles(directory: string): string[] {
   const files: string[] = [];

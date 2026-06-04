@@ -23,7 +23,7 @@ const pieceLabels: Record<string, string> = {
 export function createInitialState(variantKey: string, id = crypto.randomUUID()): GameState {
   const variant = getVariant(variantKey);
   const board = buildBoard(variant);
-  return {
+  const state: GameState = {
     id,
     variantKey: variant.key,
     board,
@@ -40,6 +40,10 @@ export function createInitialState(variantKey: string, id = crypto.randomUUID())
       incrementMs: 5000
     }))
   };
+  if (variant.supportsDrops) {
+    state.hands = Object.fromEntries(variant.players.map((player) => [player, {}])) as GameState["hands"];
+  }
+  return state;
 }
 
 export function buildBoard(variant: VariantDefinition): BoardCell[][] {
@@ -55,9 +59,14 @@ export function buildBoard(variant: VariantDefinition): BoardCell[][] {
   );
 }
 
-export function getLegalMoves(state: GameState, from: Square): Move[] {
+export function getLegalMoves(state: GameState, fromOrHand: Square | { drop: Piece }): Move[] {
   if (state.status !== "active") return [];
 
+  if ("drop" in fromOrHand) {
+    return getLegalDropMoves(state, fromOrHand.drop);
+  }
+
+  const from = fromOrHand;
   const cell = cellAt(state, from);
   if (!cell?.piece || cell.piece.owner !== state.turn) return [];
 
@@ -89,6 +98,9 @@ function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
   const variant = getVariant(state.variantKey);
   if (variant.key === "janggi") {
     return janggiPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
+  }
+  if (variant.key === "shogi") {
+    return shogiPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
   }
   if (variant.key === "xiangqi" || variant.key === "janggi") {
     return eastAsianPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
@@ -128,6 +140,95 @@ function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
   }
 
   return moves.filter((move) => terrainAllows(state, piece, move.to));
+}
+
+function getLegalDropMoves(state: GameState, drop: Piece): Move[] {
+  const variant = getVariant(state.variantKey);
+  if (!variant.supportsDrops || drop.owner !== state.turn) return [];
+  const handCount = state.hands?.[drop.owner]?.[drop.code] ?? 0;
+  if (handCount <= 0) return [];
+
+  const moves: Move[] = [];
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (cell.piece || !canDropPieceOn(state, drop, cell.square)) continue;
+      const move = { kind: "drop" as const, from: { row: -1, col: -1 }, to: cell.square, drop };
+      if (variant.supportsCheck && wouldDropLeaveRoyalInCheck(state, move, drop.owner)) continue;
+      moves.push(move);
+    }
+  }
+  return moves;
+}
+
+function canDropPieceOn(state: GameState, drop: Piece, to: Square) {
+  if (state.variantKey !== "shogi") return true;
+  if (isShogiDeadDrop(drop, to, state.board.length)) return false;
+  if (drop.code === "p" && hasUnpromotedShogiPawnOnFile(state, drop.owner, to.col)) return false;
+  return true;
+}
+
+function isShogiDeadDrop(piece: Piece, to: Square, boardRows: number) {
+  const lastRank = piece.owner === "sente" ? 0 : boardRows - 1;
+  const penultimateRank = piece.owner === "sente" ? 1 : boardRows - 2;
+  if (["p", "l"].includes(piece.code)) return to.row === lastRank;
+  if (piece.code === "n") return piece.owner === "sente" ? to.row <= penultimateRank : to.row >= penultimateRank;
+  return false;
+}
+
+function hasUnpromotedShogiPawnOnFile(state: GameState, owner: PlayerColor, col: number) {
+  return state.board.some((row) => row[col]?.piece?.owner === owner && row[col]?.piece?.code === "p" && !row[col]?.piece?.promoted);
+}
+
+function shogiPieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
+  if (piece.promoted && ["p", "l", "n", "s"].includes(piece.code)) {
+    return steppingMoves(state, piece, from, shogiGoldDirections(piece.owner));
+  }
+
+  switch (piece.code) {
+    case "k":
+      return steppingMoves(state, piece, from, movementDirections("k"));
+    case "g":
+      return steppingMoves(state, piece, from, shogiGoldDirections(piece.owner));
+    case "s":
+      return steppingMoves(state, piece, from, shogiSilverDirections(piece.owner));
+    case "n":
+      return steppingMoves(state, piece, from, shogiKnightDirections(piece.owner));
+    case "l":
+      return rayMoves(state, piece, from, [[shogiForward(piece.owner), 0]]);
+    case "p":
+      return steppingMoves(state, piece, from, [[shogiForward(piece.owner), 0]]);
+    case "b":
+      return [
+        ...rayMoves(state, piece, from, [[-1, -1], [-1, 1], [1, -1], [1, 1]]),
+        ...(piece.promoted ? steppingMoves(state, piece, from, [[-1, 0], [1, 0], [0, -1], [0, 1]]) : [])
+      ];
+    case "r":
+      return [
+        ...rayMoves(state, piece, from, [[-1, 0], [1, 0], [0, -1], [0, 1]]),
+        ...(piece.promoted ? steppingMoves(state, piece, from, [[-1, -1], [-1, 1], [1, -1], [1, 1]]) : [])
+      ];
+    default:
+      return steppingMoves(state, piece, from, movementDirections(piece.code));
+  }
+}
+
+function shogiForward(owner: PlayerColor) {
+  return owner === "gote" ? 1 : -1;
+}
+
+function shogiGoldDirections(owner: PlayerColor): Array<[number, number]> {
+  const forward = shogiForward(owner);
+  return [[forward, -1], [forward, 0], [forward, 1], [0, -1], [0, 1], [-forward, 0]];
+}
+
+function shogiSilverDirections(owner: PlayerColor): Array<[number, number]> {
+  const forward = shogiForward(owner);
+  return [[forward, -1], [forward, 0], [forward, 1], [-forward, -1], [-forward, 1]];
+}
+
+function shogiKnightDirections(owner: PlayerColor): Array<[number, number]> {
+  const forward = shogiForward(owner);
+  return [[forward * 2, -1], [forward * 2, 1]];
 }
 
 function westernPawnMoves(state: GameState, piece: Piece, from: Square, allowDouble: boolean) {
@@ -502,30 +603,50 @@ export function applyMove(state: GameState, move: Move): GameState {
     throw new Error("errors.gameCompleted");
   }
 
-  const legal = getLegalMoves(state, move.from).some((candidate) => sameSquare(candidate.to, move.to));
+  const legal = move.kind === "drop" && move.drop
+    ? getLegalMoves(state, { drop: move.drop }).some((candidate) => sameSquare(candidate.to, move.to))
+    : getLegalMoves(state, move.from).some((candidate) => sameSquare(candidate.to, move.to));
   if (!legal) {
     throw new Error("errors.invalidMove");
   }
 
   const next: GameState = structuredClone(state);
-  const fromCell = cellAt(next, move.from);
   const toCell = cellAt(next, move.to);
-  if (!fromCell?.piece || !toCell) throw new Error("errors.invalidMove");
-
   const variant = getVariant(state.variantKey);
-  const movingPiece = fromCell.piece;
-  const captured = toCell.piece;
-  if (captured) next.captured.push(captured);
-  const promoted = shouldPromote(variant, movingPiece, move.to, move.promotion);
-  toCell.piece = {
-    ...movingPiece,
-    code: promoted ? promotionCodeFor(variant, movingPiece) : movingPiece.code,
-    promoted: promoted || movingPiece.promoted
-  };
-  fromCell.piece = null;
-  if (variant.supportsCastling && movingPiece.code === "k" && Math.abs(move.to.col - move.from.col) === 2) {
-    moveCastlingRook(next, move);
+  if (!toCell) throw new Error("errors.invalidMove");
+
+  let movingPiece: Piece;
+  let captured: Piece | null = null;
+
+  if (move.kind === "drop" && move.drop) {
+    movingPiece = { ...move.drop, id: `${move.drop.owner}-${move.drop.code}-drop-${state.ply}-${move.to.row}-${move.to.col}`, promoted: false };
+    const hand = next.hands?.[movingPiece.owner];
+    if (!hand || (hand[movingPiece.code] ?? 0) <= 0) throw new Error("errors.invalidMove");
+    hand[movingPiece.code] -= 1;
+    if (hand[movingPiece.code] <= 0) delete hand[movingPiece.code];
+    toCell.piece = movingPiece;
+  } else {
+    const fromCell = cellAt(next, move.from);
+    if (!fromCell?.piece) throw new Error("errors.invalidMove");
+
+    movingPiece = fromCell.piece;
+    captured = toCell.piece;
+    if (captured) {
+      next.captured.push(captured);
+      addCapturedPieceToHand(next, movingPiece.owner, captured);
+    }
+    const promoted = shouldPromote(variant, movingPiece, move.to, move.promotion);
+    toCell.piece = {
+      ...movingPiece,
+      code: promoted ? promotionCodeFor(variant, movingPiece) : movingPiece.code,
+      promoted: promoted || movingPiece.promoted
+    };
+    fromCell.piece = null;
+    if (variant.supportsCastling && movingPiece.code === "k" && Math.abs(move.to.col - move.from.col) === 2) {
+      moveCastlingRook(next, move);
+    }
   }
+
   next.ply += 1;
   next.turn = next.turn === next.clocks[0]?.color ? next.clocks[1]?.color ?? "black" : next.clocks[0]?.color ?? "white";
   next.moves.push({ ...move, notation: notationFor(movingPiece, move) });
@@ -854,6 +975,15 @@ function wouldLeaveRoyalInCheck(state: GameState, move: Move, owner: PlayerColor
   return isInCheck(next, owner);
 }
 
+function wouldDropLeaveRoyalInCheck(state: GameState, move: Move, owner: PlayerColor) {
+  if (!move.drop) return true;
+  const next: GameState = structuredClone(state);
+  const toCell = cellAt(next, move.to);
+  if (!toCell || toCell.piece) return true;
+  toCell.piece = { ...move.drop, promoted: false };
+  return isInCheck(next, owner);
+}
+
 function isInCheck(state: GameState, color: PlayerColor) {
   const royal = findRoyal(state, color);
   if (!royal) return false;
@@ -932,6 +1062,15 @@ function countPieces(state: GameState, owner: PlayerColor) {
     }
   }
   return count;
+}
+
+function addCapturedPieceToHand(state: GameState, owner: PlayerColor, captured: Piece) {
+  const variant = getVariant(state.variantKey);
+  if (!variant.supportsDrops) return;
+  state.hands ??= {};
+  state.hands[owner] ??= {};
+  const code = captured.code.toLowerCase();
+  state.hands[owner][code] = (state.hands[owner][code] ?? 0) + 1;
 }
 
 function isRoyal(piece: Piece) {
@@ -1042,5 +1181,6 @@ function terrainAllows(state: GameState, piece: Piece, to: Square) {
 
 function notationFor(piece: Piece | null, move: Move) {
   const label = piece?.code.toUpperCase() ?? "?";
+  if (move.kind === "drop") return `${label}*${move.to.row},${move.to.col}`;
   return `${label}${move.from.row},${move.from.col}-${move.to.row},${move.to.col}`;
 }
