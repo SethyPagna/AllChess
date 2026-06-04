@@ -580,6 +580,59 @@ describe("variant engine", () => {
     expect(promoted.board[2][0].piece).toMatchObject({ code: "m", owner: "white", promoted: true });
   });
 
+  test("makruk starts board counting when no unpromoted pawns remain", () => {
+    let state = createInitialState("makruk", "makruk-board-count");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[7][4].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[7][0].piece = { id: "white-rook", code: "r", owner: "white", labelKey: "chess.rook" };
+    state.board[0][0].piece = { id: "black-rook", code: "r", owner: "black", labelKey: "chess.rook" };
+
+    const started = applyMove(state, { from: { row: 7, col: 0 }, to: { row: 6, col: 0 } });
+    expect(started.variantState?.makrukCounting).toMatchObject({ phase: "board", limit: 64, remainingMoves: 64, pieceCount: 4 });
+
+    const continued = applyMove(started, { from: { row: 0, col: 0 }, to: { row: 1, col: 0 } });
+    expect(continued.variantState?.makrukCounting).toMatchObject({ phase: "board", limit: 64, remainingMoves: 63, pieceCount: 4 });
+  });
+
+  test("makruk bare-king counting expires as a draw", () => {
+    let state = createInitialState("makruk", "makruk-bare-king-count");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[7][4].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[7][0].piece = { id: "white-rook-left", code: "r", owner: "white", labelKey: "chess.rook" };
+    state.board[7][7].piece = { id: "white-rook-right", code: "r", owner: "white", labelKey: "chess.rook" };
+
+    const started = applyMove(state, { from: { row: 7, col: 0 }, to: { row: 6, col: 0 } });
+    expect(started.variantState?.makrukCounting).toMatchObject({
+      phase: "bare-king",
+      strongerSide: "white",
+      limit: 4,
+      remainingMoves: 4,
+      pieceCount: 4
+    });
+
+    const almostExpired = {
+      ...started,
+      variantState: {
+        ...started.variantState,
+        makrukCounting: { phase: "bare-king", startedAtPly: started.ply, remainingMoves: 1, limit: 4, strongerSide: "white", pieceCount: 4 }
+      }
+    };
+    const drawn = applyMove(almostExpired, { from: { row: 0, col: 4 }, to: { row: 0, col: 3 } });
+
+    expect(drawn).toMatchObject({ status: "completed", result: "draw", outcomeReason: "counting-rule" });
+    expect(drawn.variantState?.makrukCounting).toMatchObject({ phase: "bare-king", remainingMoves: 0 });
+  });
+
   test("janggi generals and guards follow palace lines including diagonals", () => {
     let state = createInitialState("janggi", "janggi-palace");
     state = {

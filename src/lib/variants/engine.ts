@@ -21,6 +21,15 @@ const pieceLabels: Record<string, string> = {
   t: "chess.rook"
 };
 
+type MakrukCountingState = {
+  phase: "board" | "bare-king";
+  startedAtPly: number;
+  remainingMoves: number;
+  limit: number;
+  strongerSide?: PlayerColor;
+  pieceCount: number;
+};
+
 export function createInitialState(variantKey: string, id = crypto.randomUUID()): GameState {
   const variant = getVariant(variantKey);
   const board = buildBoard(variant);
@@ -702,6 +711,10 @@ export function applyMove(state: GameState, move: Move): GameState {
     return withJanggiOutcome(next, movingPiece.owner, move.to);
   }
 
+  if (variant.key === "makruk") {
+    updateMakrukCounting(next);
+  }
+
   if (!variant.supportsCheck && captured && isRoyal(captured)) {
     next.status = "completed";
     next.result = movingPiece.owner;
@@ -771,6 +784,80 @@ function withJanggiOutcome(state: GameState, mover: PlayerColor, destination: Sq
   return withOutcome(state, mover, destination);
 }
 
+function updateMakrukCounting(state: GameState) {
+  const nextCounting = calculateMakrukCounting(state, readMakrukCounting(state));
+  state.variantState = { ...(state.variantState ?? {}) };
+  if (nextCounting) {
+    state.variantState.makrukCounting = nextCounting;
+  } else {
+    delete state.variantState.makrukCounting;
+  }
+}
+
+function calculateMakrukCounting(state: GameState, previous?: MakrukCountingState): MakrukCountingState | null {
+  const bareKingCounting = calculateMakrukBareKingCounting(state, previous);
+  if (bareKingCounting) return bareKingCounting;
+
+  if (countUnpromotedPawns(state) > 0) return null;
+  return continueOrStartMakrukCounting(state, previous?.phase === "board" ? previous : undefined, {
+    phase: "board",
+    limit: 64,
+    pieceCount: countAllPieces(state)
+  });
+}
+
+function calculateMakrukBareKingCounting(state: GameState, previous?: MakrukCountingState): MakrukCountingState | null {
+  const variant = getVariant(state.variantKey);
+  const bareKingOwners = variant.players.filter((player) => isBareRoyalSide(state, player));
+  if (bareKingOwners.length === variant.players.length) {
+    return { phase: "bare-king", startedAtPly: state.ply, remainingMoves: 0, limit: 0, pieceCount: countAllPieces(state) };
+  }
+  if (bareKingOwners.length !== 1) return null;
+
+  const strongerSide = variant.players.find((player) => player !== bareKingOwners[0]);
+  if (!strongerSide) return null;
+  const pieceCount = countAllPieces(state);
+  const limit = Math.max(makrukBareKingLimit(state, strongerSide) - pieceCount, 1);
+  const previousBare = previous?.phase === "bare-king" && previous.strongerSide === strongerSide && previous.limit === limit ? previous : undefined;
+  return continueOrStartMakrukCounting(state, previousBare, { phase: "bare-king", limit, strongerSide, pieceCount });
+}
+
+function continueOrStartMakrukCounting(
+  state: GameState,
+  previous: MakrukCountingState | undefined,
+  next: Omit<MakrukCountingState, "remainingMoves" | "startedAtPly">
+): MakrukCountingState {
+  if (!previous) {
+    return { ...next, startedAtPly: state.ply, remainingMoves: next.limit };
+  }
+  return {
+    ...next,
+    startedAtPly: previous.startedAtPly,
+    remainingMoves: Math.max(previous.remainingMoves - 1, 0)
+  };
+}
+
+function makrukBareKingLimit(state: GameState, strongerSide: PlayerColor) {
+  const counts = countMakrukMaterial(state, strongerSide);
+  if ((counts.r ?? 0) >= 2) return 8;
+  if ((counts.r ?? 0) >= 1) return 16;
+  if ((counts.s ?? 0) >= 2) return 22;
+  if ((counts.n ?? 0) >= 2) return 32;
+  if ((counts.s ?? 0) >= 1) return 44;
+  if ((counts.n ?? 0) >= 1) return 64;
+  return 64;
+}
+
+function readMakrukCounting(state: GameState): MakrukCountingState | undefined {
+  const value = state.variantState?.makrukCounting;
+  if (!value || typeof value !== "object") return undefined;
+  const candidate = value as Partial<MakrukCountingState>;
+  if (candidate.phase !== "board" && candidate.phase !== "bare-king") return undefined;
+  if (typeof candidate.startedAtPly !== "number" || typeof candidate.remainingMoves !== "number" || typeof candidate.limit !== "number") return undefined;
+  if (typeof candidate.pieceCount !== "number") return undefined;
+  return candidate as MakrukCountingState;
+}
+
 function withOutcome(state: GameState, mover: PlayerColor, destination: Square): GameState {
   const variant = getVariant(state.variantKey);
   const movedPiece = cellAt(state, destination)?.piece;
@@ -813,8 +900,10 @@ function withOutcome(state: GameState, mover: PlayerColor, destination: Square):
   return state;
 }
 
-function drawReasonFor(state: GameState): "insufficient-material" | "fifty-move" | null {
+function drawReasonFor(state: GameState): "insufficient-material" | "fifty-move" | "counting-rule" | null {
   const variant = getVariant(state.variantKey);
+  const makrukCounting = variant.key === "makruk" ? readMakrukCounting(state) : undefined;
+  if (makrukCounting && makrukCounting.remainingMoves <= 0) return "counting-rule";
   if (variant.family === "western" && state.halfmoveClock >= 100) return "fifty-move";
   if (!["classic", "chess960", "king-of-the-hill", "three-check"].includes(variant.key)) return null;
 
@@ -1092,6 +1181,55 @@ function countPieces(state: GameState, owner: PlayerColor) {
     }
   }
   return count;
+}
+
+function countAllPieces(state: GameState) {
+  let count = 0;
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (cell.piece) count += 1;
+    }
+  }
+  return count;
+}
+
+function countUnpromotedPawns(state: GameState) {
+  let count = 0;
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (cell.piece?.code === "p" && !cell.piece.promoted) count += 1;
+    }
+  }
+  return count;
+}
+
+function countMakrukMaterial(state: GameState, owner: PlayerColor) {
+  const counts: Record<string, number> = {};
+  for (const row of state.board) {
+    for (const cell of row) {
+      const piece = cell.piece;
+      if (!piece || piece.owner !== owner || piece.code === "k") continue;
+      counts[piece.code] = (counts[piece.code] ?? 0) + 1;
+    }
+  }
+  return counts;
+}
+
+function isBareRoyalSide(state: GameState, owner: PlayerColor) {
+  let royalCount = 0;
+  let nonRoyalCount = 0;
+  for (const row of state.board) {
+    for (const cell of row) {
+      const piece = cell.piece;
+      if (piece?.owner !== owner) continue;
+      if (isRoyal(piece)) {
+        royalCount += 1;
+      } else {
+        nonRoyalCount += 1;
+      }
+    }
+  }
+  return royalCount === 1 && nonRoyalCount === 0;
 }
 
 function addCapturedPieceToHand(state: GameState, owner: PlayerColor, captured: Piece) {

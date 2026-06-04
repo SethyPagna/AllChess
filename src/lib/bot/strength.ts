@@ -90,7 +90,7 @@ const baseStrengthBands: Record<BotTierKey, BotStrengthBand> = {
 };
 
 const stockfishCalibratedVariants = new Set(["classic", "chess960"]);
-const rulesGatedVariants = new Set(["shogi", "janggi", "makruk"]);
+const rulesGatedVariants = new Set(["shogi", "janggi"]);
 
 export function getBotStrengthBand(tier: BotTierKey) {
   return baseStrengthBands[tier];

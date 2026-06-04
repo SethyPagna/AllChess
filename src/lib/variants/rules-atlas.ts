@@ -233,13 +233,13 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
     remainingGates: ["Pass/scoring tournament profile", "Full bot gauntlet/review/persistence/E2E completion"]
   },
   makruk: {
-    status: "rules-gated",
+    status: "verified-playable",
     verifiedEdgeCases: [
       "Makruk setup uses one royal king and one Met per side with no castling.",
       "Native Met, Khon, knight, rook, king, and pawn movement have fixtures.",
-      "Pawns do not double-push or en-passant, and promote to Met on the sixth rank."
+      "Pawns do not double-push or en-passant, promote to Met on the sixth rank, and Makruk counting-rule draws are covered."
     ],
-    remainingGates: ["Counting-rule draw fixtures"]
+    remainingGates: []
   },
   jungle: {
     status: "verified-playable",
