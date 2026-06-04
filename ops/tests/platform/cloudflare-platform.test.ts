@@ -5,7 +5,7 @@ import { createD1RestDatabase } from "@/lib/cloudflare/d1-rest";
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { cloudflareResourceNames, normalizeCloudflareEnv } from "@/lib/cloudflare/env";
 import { createR2Storage } from "@/lib/storage/r2";
-import { createInitialState } from "@/lib/variants";
+import { applyMove, createInitialState } from "@/lib/variants";
 import { readFileSync } from "node:fs";
 
 function createMockD1() {
@@ -96,6 +96,22 @@ describe("Cloudflare platform configuration", () => {
     expect(mock.calls[0]?.bindings).toContain("game-d1");
     expect(mock.calls[0]?.bindings).toContain("classic");
     expect(mock.calls[0]?.bindings.some((value) => typeof value === "string" && value.includes("\"variantKey\":\"classic\""))).toBe(true);
+  });
+
+  test("serializes verified Janggi scoring states into D1-native rows", async () => {
+    const mock = createMockD1();
+    const repo = createD1GameRepository(mock.db as never);
+    const state = applyMove(
+      applyMove(createInitialState("janggi", "janggi-d1"), { kind: "pass", from: { row: 9, col: 4 }, to: { row: 9, col: 4 } }),
+      { kind: "pass", from: { row: 0, col: 4 }, to: { row: 0, col: 4 } }
+    );
+
+    await repo.createGame({ state, privateRoom: false });
+
+    expect(mock.calls[0]?.sql).toContain("insert into games");
+    expect(mock.calls[0]?.bindings).toContain("janggi-d1");
+    expect(mock.calls[0]?.bindings).toContain("janggi");
+    expect(mock.calls[0]?.bindings.some((value) => typeof value === "string" && value.includes("\"outcomeReason\":\"scoring\""))).toBe(true);
   });
 
   test("persists realtime rooms and reads live stats from D1", async () => {

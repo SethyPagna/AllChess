@@ -33,4 +33,18 @@ describe("game review", () => {
     expect(moves[0].detail).toContain("animal rank");
     expect(moves[0].bestLine).toContain("den-race");
   });
+
+  test("adds Janggi tactical context to review details", () => {
+    const moves = analyzeMoveList(
+      [
+        { from: { row: 6, col: 4 }, to: { row: 5, col: 4 }, notation: "P6,4-5,4" },
+        { kind: "pass", from: { row: 9, col: 4 }, to: { row: 9, col: 4 }, notation: "pass" }
+      ],
+      { variantKey: "janggi" }
+    );
+
+    expect(moves[0].detail).toContain("palace pressure");
+    expect(moves[0].detail).toContain("facing-general tactics");
+    expect(moves[0].bestLine).toContain("variant-specific tactical replies");
+  });
 });

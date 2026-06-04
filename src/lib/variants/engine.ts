@@ -816,7 +816,7 @@ function withJungleOutcome(state: GameState, mover: PlayerColor, destination: Sq
   return state;
 }
 
-function withJanggiOutcome(state: GameState, mover: PlayerColor, destination: Square): GameState {
+function withJanggiOutcome(state: GameState, mover: PlayerColor, destination?: Square): GameState {
   const facedBeforeMove = state.variantState?.bikjangPlayer === mover;
   const generalsFacing = areJanggiGeneralsFacing(state);
 
@@ -1111,11 +1111,11 @@ function shogiPiecePoint(code: string) {
   return 1;
 }
 
-function withOutcome(state: GameState, mover: PlayerColor, destination: Square): GameState {
+function withOutcome(state: GameState, mover: PlayerColor, destination?: Square): GameState {
   const variant = getVariant(state.variantKey);
-  const movedPiece = cellAt(state, destination)?.piece;
+  const movedPiece = destination ? cellAt(state, destination)?.piece : null;
 
-  if (variant.key === "king-of-the-hill" && movedPiece && isRoyal(movedPiece) && isCenterSquare(state, destination)) {
+  if (variant.key === "king-of-the-hill" && destination && movedPiece && isRoyal(movedPiece) && isCenterSquare(state, destination)) {
     state.status = "completed";
     state.result = mover;
     state.outcomeReason = "objective";
