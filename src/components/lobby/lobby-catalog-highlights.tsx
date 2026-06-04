@@ -50,12 +50,12 @@ export function LobbyFeaturedGames({ entries, locale }: FeaturedGamesProps) {
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         {entries.map((entry) => (
-          <Link key={entry.id} href={playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) as never} className="panel focus-ring grid gap-2 p-4 transition hover:border-[var(--accent)]">
-            <span className="flex items-center justify-between gap-3 text-lg font-black">
-              {displayGameName(entry)}
-              <span className="rounded-md bg-[var(--surface-soft)] px-2 py-1 text-xs font-bold text-[var(--muted)]">{displayRulesReadiness(entry)}</span>
+          <Link key={entry.id} href={playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) as never} className="panel lobby-featured-card focus-ring">
+            <span className="lobby-featured-head">
+              <strong>{displayGameName(entry)}</strong>
+              <span>{displayRulesReadiness(entry)}</span>
             </span>
-            <span className="text-sm text-[var(--muted)]">{entry.winConditions[0]}</span>
+            <span className="lobby-featured-body">{entry.winConditions[0]}</span>
           </Link>
         ))}
       </div>

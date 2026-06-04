@@ -73,23 +73,21 @@ export function LeaderboardFilterBar({
 }: LeaderboardFilterBarProps) {
   return (
     <form className={`panel leaderboard-filter-bar ${hasComputedBoards ? "" : "is-empty"}`} aria-label="Leaderboard filters">
-      <label className="leaderboard-scope-select" title="Choose a leaderboard scope. Empty scopes stay visible until rated games create rows.">
+      <div className="leaderboard-scope-select" role="group" aria-label="Leaderboard scope" title="Choose a leaderboard scope. Empty scopes stay visible until rated games create rows.">
         <Filter size={16} />
-        <span className="sr-only">Scope</span>
-        <select name="scope" aria-label="Leaderboard scope" defaultValue={filters.scope}>
-          <option value="all">All scopes</option>
-          {scopes.map((scope) => (
-            <option key={scope.id} value={scope.id}>{scope.label}</option>
-          ))}
-        </select>
-      </label>
+        <button type="submit" name="scope" value="all" className={`focus-ring leaderboard-scope-chip${filters.scope === "all" ? " is-active" : ""}`}>
+          All
+        </button>
+        {scopes.map((scope) => (
+          <button key={scope.id} type="submit" name="scope" value={scope.id} className={`focus-ring leaderboard-scope-chip${filters.scope === scope.id ? " is-active" : ""}`}>
+            {scope.label}
+          </button>
+        ))}
+      </div>
       <span aria-disabled="true" title="Only real rated games appear here.">Rated only</span>
       <span aria-disabled={hasRatedResults ? undefined : "true"} title={hasRatedResults ? "Showing computed Cloudflare D1 leaderboard rows." : "Leaderboards stay empty until real games are recorded."}>
         {hasRatedResults ? `${populatedCount} computed boards` : "Real results"}
       </span>
-      <button type="submit" className="focus-ring record-filter-chip" aria-label="Update leaderboard filters" title="Update leaderboard filters">
-        <Filter size={14} />
-      </button>
     </form>
   );
 }
@@ -113,11 +111,11 @@ export function LeaderboardFamilyList({ scopes }: LeaderboardFamilyListProps) {
 export function LeaderboardActions({ locale }: LeaderboardActionsProps) {
   return (
     <div className="watch-actions">
-      <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
+      <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="action-primary focus-ring watch-action-button">
         <Play size={16} />
         Play rated
       </Link>
-      <Link href={`/${locale}/lobby`} className="action-secondary focus-ring inline-flex w-fit items-center gap-2 px-4 py-2">
+      <Link href={`/${locale}/lobby`} className="action-secondary focus-ring watch-action-button">
         Back to lobby
       </Link>
     </div>

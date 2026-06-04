@@ -51,34 +51,35 @@ export function WatchRoomPanel({ hasRooms, locale, roomList }: WatchRoomPanelPro
           <Search size={15} />
           <input name="q" defaultValue={searchQuery} placeholder="Room, game, rated" aria-label="Search rooms" />
         </label>
-        <select name="status" defaultValue={statusFilter} aria-label="Room status">
-          <option value="all">All rooms</option>
-          <option value="active">Live only</option>
-          <option value="waiting">Waiting</option>
-        </select>
         <button type="submit" className="focus-ring">
           <Search size={15} />
           Search
         </button>
-        <Link href={watchHref(locale, { q: searchQuery, status: "all", sort: roomSort }) as never} className={`focus-ring watch-filter-chip${statusFilter === "all" ? " is-active" : ""}`} aria-current={statusFilter === "all" ? true : undefined}>
-          <Radio size={15} />
-          All
-        </Link>
-        <Link href={watchHref(locale, { q: searchQuery, status: "active", sort: roomSort }) as never} className={`focus-ring watch-filter-chip${statusFilter === "active" ? " is-active" : ""}`} aria-current={statusFilter === "active" ? true : undefined}>
-          <Radio size={15} />
-          Live
-        </Link>
-        <Link href={watchHref(locale, { q: searchQuery, status: statusFilter, sort: "spectators" }) as never} className={`focus-ring watch-filter-chip${roomSort === "spectators" ? " is-active" : ""}`} aria-current={roomSort === "spectators" ? true : undefined}>
-          <Users size={15} />
-          Spectators
-        </Link>
+        <div className="watch-filter-list" role="group" aria-label="Room filters">
+          <Link href={watchHref(locale, { q: searchQuery, status: "all", sort: roomSort }) as never} className={`focus-ring watch-filter-chip${statusFilter === "all" ? " is-active" : ""}`} aria-current={statusFilter === "all" ? true : undefined}>
+            <Radio size={15} />
+            All
+          </Link>
+          <Link href={watchHref(locale, { q: searchQuery, status: "active", sort: roomSort }) as never} className={`focus-ring watch-filter-chip${statusFilter === "active" ? " is-active" : ""}`} aria-current={statusFilter === "active" ? true : undefined}>
+            <Radio size={15} />
+            Live
+          </Link>
+          <Link href={watchHref(locale, { q: searchQuery, status: "waiting", sort: roomSort }) as never} className={`focus-ring watch-filter-chip${statusFilter === "waiting" ? " is-active" : ""}`} aria-current={statusFilter === "waiting" ? true : undefined}>
+            <Radio size={15} />
+            Waiting
+          </Link>
+          <Link href={watchHref(locale, { q: searchQuery, status: statusFilter, sort: "spectators" }) as never} className={`focus-ring watch-filter-chip${roomSort === "spectators" ? " is-active" : ""}`} aria-current={roomSort === "spectators" ? true : undefined}>
+            <Users size={15} />
+            Spectators
+          </Link>
+        </div>
       </form>
       <div className="watch-actions">
-        <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
+        <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="action-primary focus-ring watch-action-button">
           <Swords size={16} />
           Start playing
         </Link>
-        <Link href={`/${locale}/leaderboards`} className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-2">
+        <Link href={`/${locale}/leaderboards`} className="action-secondary focus-ring watch-action-button">
           <Trophy size={16} />
           Leaderboards
         </Link>

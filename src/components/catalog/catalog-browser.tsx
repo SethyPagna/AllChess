@@ -33,6 +33,20 @@ const playabilityLabels: Record<PlayabilityStatus | "all", string> = {
   "coming-soon": "In progress"
 };
 
+const familyShortLabels: Record<GameFamilyKey | "all", string> = {
+  all: "All",
+  "chess-family": "Chess",
+  "asian-chess": "Asian",
+  draughts: "Draughts",
+  mancala: "Mancala",
+  "go-family": "Go",
+  tables: "Tables",
+  tafl: "Tafl",
+  race: "Race",
+  mill: "Mill",
+  regional: "Regional"
+};
+
 export function CatalogBrowser({ entries, initialFamily = "all", initialStatus = "all", locale }: CatalogBrowserProps) {
   const [query, setQuery] = useState("");
   const [family, setFamily] = useState<GameFamilyKey | "all">(initialFamily);
@@ -60,29 +74,44 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
           <span className="sr-only">Search games</span>
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search names, aliases, native names" />
         </label>
-        <label className="catalog-select">
-          <Filter size={16} />
-          <span className="sr-only">Family</span>
-          <select value={family} onChange={(event) => setFamily(event.target.value as GameFamilyKey | "all")}>
-            <option value="all">All families</option>
+        <div className="catalog-filter-group" role="group" aria-label="Family filter">
+          <span className="catalog-filter-icon" aria-hidden="true">
+            <Filter size={15} />
+          </span>
+          <div className="catalog-chip-list">
+            <button type="button" className={`catalog-filter-chip focus-ring${family === "all" ? " is-active" : ""}`} onClick={() => setFamily("all")}>
+              {familyShortLabels.all}
+            </button>
             {gameFamilies.map((item) => (
-              <option key={item.key} value={item.key}>
-                {item.label}
-              </option>
+              <button
+                key={item.key}
+                type="button"
+                className={`catalog-filter-chip focus-ring${family === item.key ? " is-active" : ""}`}
+                onClick={() => setFamily(item.key)}
+                title={item.label}
+              >
+                {familyShortLabels[item.key]}
+              </button>
             ))}
-          </select>
-        </label>
-        <label className="catalog-select">
-          <Play size={16} />
-          <span className="sr-only">Playability</span>
-          <select value={status} onChange={(event) => setStatus(event.target.value as PlayabilityStatus | "all")}>
+          </div>
+        </div>
+        <div className="catalog-filter-group catalog-filter-group-compact" role="group" aria-label="Playability filter">
+          <span className="catalog-filter-icon" aria-hidden="true">
+            <Play size={15} />
+          </span>
+          <div className="catalog-chip-list">
             {Object.entries(playabilityLabels).map(([value, label]) => (
-              <option key={value} value={value}>
+              <button
+                key={value}
+                type="button"
+                className={`catalog-filter-chip focus-ring${status === value ? " is-active" : ""}`}
+                onClick={() => setStatus(value as PlayabilityStatus | "all")}
+              >
                 {label}
-              </option>
+              </button>
             ))}
-          </select>
-        </label>
+          </div>
+        </div>
         {hasFilters ? (
           <button
             type="button"
