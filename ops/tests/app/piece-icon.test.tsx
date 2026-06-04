@@ -28,10 +28,12 @@ describe("PieceIcon", () => {
     const man = renderToStaticMarkup(<PieceIcon code="p" owner="white" variantKey="english-draughts" />);
     const king = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="english-draughts" promoted />);
     const internationalKing = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="international-draughts" promoted />);
+    const turkishKing = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="turkish-draughts" promoted />);
 
     expect(man).toContain('data-piece="checker-man"');
     expect(king).toContain('data-piece="checker-king"');
     expect(internationalKing).toContain('data-piece="checker-king"');
+    expect(turkishKing).toContain('data-piece="checker-king"');
     expect(king).toContain('data-detail="checker-crown"');
     expect(man).not.toContain(">P<");
     expect(king).not.toContain(">X<");

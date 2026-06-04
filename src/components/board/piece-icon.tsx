@@ -73,7 +73,7 @@ function DraughtsPieceIcon({ code, owner, promoted, variantKey }: { code: string
 }
 
 function isDraughtsPresentation(variantKey: string) {
-  return variantKey === "english-draughts" || variantKey === "international-draughts";
+  return variantKey === "english-draughts" || variantKey === "international-draughts" || variantKey === "turkish-draughts";
 }
 
 function usesWesternPresentation(variantKey: string) {

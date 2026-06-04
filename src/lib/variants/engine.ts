@@ -401,11 +401,14 @@ function draughtsPieceMoves(state: GameState, piece: Piece, from: Square) {
 }
 
 function draughtsQuietMoves(state: GameState, piece: Piece, from: Square) {
+  if (state.variantKey === "turkish-draughts" && piece.code === "x") {
+    return rayMoves(state, piece, from, draughtsAllOrthogonalDirections);
+  }
   if (state.variantKey === "international-draughts" && piece.code === "x") {
     return rayMoves(state, piece, from, draughtsAllDiagonalDirections);
   }
 
-  const directions = draughtsQuietDirections(piece);
+  const directions = draughtsQuietDirections(piece, state.variantKey);
   const moves: Move[] = [];
 
   for (const [dr, dc] of directions) {
@@ -419,6 +422,9 @@ function draughtsQuietMoves(state: GameState, piece: Piece, from: Square) {
 }
 
 function draughtsCaptureMoves(state: GameState, piece: Piece, from: Square) {
+  if (state.variantKey === "turkish-draughts" && piece.code === "x") {
+    return turkishDraughtsKingCaptures(state, piece, from);
+  }
   if (state.variantKey === "international-draughts" && piece.code === "x") {
     return internationalDraughtsKingCaptures(state, piece, from);
   }
@@ -438,22 +444,36 @@ function draughtsCaptureMoves(state: GameState, piece: Piece, from: Square) {
 }
 
 const draughtsAllDiagonalDirections: Array<[number, number]> = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+const draughtsAllOrthogonalDirections: Array<[number, number]> = [[-1, 0], [1, 0], [0, -1], [0, 1]];
 
-function draughtsQuietDirections(piece: Piece): Array<[number, number]> {
+function draughtsQuietDirections(piece: Piece, variantKey?: string): Array<[number, number]> {
+  if (variantKey === "turkish-draughts") {
+    const forward = orient(piece.owner, -1);
+    return [[forward, 0], [0, -1], [0, 1]];
+  }
   if (piece.code === "x") return [[-1, -1], [-1, 1], [1, -1], [1, 1]];
   const forward = orient(piece.owner, -1);
   return [[forward, -1], [forward, 1]];
 }
 
 function draughtsCaptureDirections(variantKey: string, piece: Piece): Array<[number, number]> {
+  if (variantKey === "turkish-draughts") return draughtsAllOrthogonalDirections;
   if (variantKey === "international-draughts" || piece.code === "x") return draughtsAllDiagonalDirections;
-  return draughtsQuietDirections(piece);
+  return draughtsQuietDirections(piece, variantKey);
 }
 
 function internationalDraughtsKingCaptures(state: GameState, piece: Piece, from: Square) {
+  return flyingDraughtsKingCaptures(state, piece, from, draughtsAllDiagonalDirections);
+}
+
+function turkishDraughtsKingCaptures(state: GameState, piece: Piece, from: Square) {
+  return flyingDraughtsKingCaptures(state, piece, from, draughtsAllOrthogonalDirections);
+}
+
+function flyingDraughtsKingCaptures(state: GameState, piece: Piece, from: Square, directions: Array<[number, number]>) {
   const moves: Move[] = [];
 
-  for (const [dr, dc] of draughtsAllDiagonalDirections) {
+  for (const [dr, dc] of directions) {
     let square = { row: from.row + dr, col: from.col + dc };
     let jumpedEnemy: Piece | null = null;
     while (isInside(state, square)) {
@@ -474,10 +494,10 @@ function internationalDraughtsKingCaptures(state: GameState, piece: Piece, from:
 function draughtsCapturedSquare(state: GameState, move: Move, piece: Piece): Square | null {
   const rowDelta = move.to.row - move.from.row;
   const colDelta = move.to.col - move.from.col;
-  if (Math.abs(rowDelta) !== Math.abs(colDelta) || Math.abs(rowDelta) < 2) return null;
+  if (!isValidDraughtsCaptureLine(state.variantKey, rowDelta, colDelta)) return null;
 
-  if (state.variantKey !== "international-draughts" || piece.code !== "x") {
-    if (Math.abs(rowDelta) !== 2) return null;
+  if (!isFlyingDraughtsKing(state.variantKey, piece)) {
+    if (Math.max(Math.abs(rowDelta), Math.abs(colDelta)) !== 2) return null;
     const middle = { row: (move.from.row + move.to.row) / 2, col: (move.from.col + move.to.col) / 2 };
     const jumped = cellAt(state, middle)?.piece;
     return jumped && jumped.owner !== piece.owner ? middle : null;
@@ -495,6 +515,17 @@ function draughtsCapturedSquare(state: GameState, move: Move, piece: Piece): Squ
     square = { row: square.row + step.row, col: square.col + step.col };
   }
   return captured;
+}
+
+function isValidDraughtsCaptureLine(variantKey: string, rowDelta: number, colDelta: number) {
+  if (variantKey === "turkish-draughts") {
+    return ((rowDelta === 0) !== (colDelta === 0)) && Math.max(Math.abs(rowDelta), Math.abs(colDelta)) >= 2;
+  }
+  return Math.abs(rowDelta) === Math.abs(colDelta) && Math.abs(rowDelta) >= 2;
+}
+
+function isFlyingDraughtsKing(variantKey: string, piece: Piece) {
+  return piece.code === "x" && (variantKey === "international-draughts" || variantKey === "turkish-draughts");
 }
 
 function draughtsRequiredCaptureLength(state: GameState, owner: PlayerColor, onlyFrom?: Square) {
@@ -554,7 +585,7 @@ function draughtsContinuationFor(state: GameState): { square: Square; owner: Pla
 }
 
 function isDraughtsVariant(variantKey: string) {
-  return variantKey === "english-draughts" || variantKey === "international-draughts";
+  return variantKey === "english-draughts" || variantKey === "international-draughts" || variantKey === "turkish-draughts";
 }
 
 function shouldCrownDraughtsMan(variant: VariantDefinition, piece: Piece, to: Square) {

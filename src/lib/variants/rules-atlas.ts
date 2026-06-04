@@ -212,6 +212,20 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     drawConditions: ["Repetition or no-progress policy in selected room rules", "Mutual agreement"],
     illegalMoveNotes: ["A shorter capture line is illegal when a longer one exists.", "Flying kings must jump exactly one opposing checker before landing.", "A quiet move is illegal when any capture exists."]
   },
+  "turkish-draughts": {
+    variantKey: "turkish-draughts",
+    sourceLinks: [{ name: "MindSports Turkish Draughts rules", url: "https://mindsports.nl/index.php/dagaz/521-turkish-draughts" }],
+    numberedBasics: [
+      "Play on an 8x8 board with two full rows of men per side.",
+      "Men move orthogonally forward or sideways and never move backward without capturing.",
+      "Captures are compulsory, maximum-capture lines are required, and kings fly orthogonally.",
+      "Win by capturing all opposing checkers or leaving the opponent with no legal move."
+    ],
+    specialRules: ["Orthogonal movement", "Sideways men", "Orthogonal maximum-capture rule", "Flying kings", "Kinging"],
+    winConditions: ["Capture all opposing checkers", "Block every opposing legal move"],
+    drawConditions: ["Repetition or no-progress policy in selected room rules", "Mutual agreement"],
+    illegalMoveNotes: ["A backward quiet move by a man is illegal.", "A shorter capture line is illegal when a longer one exists.", "Flying kings must jump exactly one opposing checker before landing."]
+  },
   antichess: {
     variantKey: "antichess",
     sourceLinks: [{ name: "Lichess antichess rules", url: "https://lichess.org/variant/antichess" }],
@@ -406,6 +420,16 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
       "Backward man captures and flying-king captures are covered.",
       "Maximum-capture filtering rejects shorter capture lines when longer lines exist.",
       "Multi-jump continuation, kinging, and no-piece/no-legal-move wins reuse the verified draughts runtime path."
+    ],
+    remainingGates: []
+  },
+  "turkish-draughts": {
+    status: "verified-playable",
+    verifiedEdgeCases: [
+      "Two-row 8x8 setup and orthogonal forward/sideways man movement are covered.",
+      "Backward quiet moves are rejected while orthogonal captures remain available.",
+      "Orthogonal maximum-capture filtering rejects shorter capture lines when longer lines exist.",
+      "Flying kings, multi-jump continuation, kinging, and no-piece/no-legal-move wins reuse the verified draughts runtime path."
     ],
     remainingGates: []
   },

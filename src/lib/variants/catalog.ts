@@ -211,6 +211,22 @@ export const variantCatalog: VariantDefinition[] = [
     aliases: ["polish-draughts", "international-checkers", "10x10-draughts"]
   },
   {
+    key: "turkish-draughts",
+    nameKey: "variant.turkish-draughts",
+    rulesAdapter: "draughts-engine",
+    engineProtocol: "internal",
+    family: "draughts",
+    board: { rows: 8, cols: 8, coordinates: "orthodox" },
+    players: ["white", "black"],
+    supportsDrops: false,
+    supportsPromotion: true,
+    supportsCastling: false,
+    supportsCheck: false,
+    objective: "Capture or block every opposing checker using Turkish orthogonal draughts rules.",
+    setup: ["........", "pppppppp", "pppppppp", "........", "........", "PPPPPPPP", "PPPPPPPP", "........"],
+    aliases: ["dama", "turkish-checkers"]
+  },
+  {
     key: "antichess",
     nameKey: "variant.antichess",
     rulesAdapter: "chessops",

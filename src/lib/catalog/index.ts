@@ -69,7 +69,8 @@ const presentationByVariant: Record<string, PiecePresentationPack> = {
   makruk: "makruk-carved",
   jungle: "jungle-animals",
   "english-draughts": "draughts-stacks",
-  "international-draughts": "draughts-stacks"
+  "international-draughts": "draughts-stacks",
+  "turkish-draughts": "draughts-stacks"
 };
 
 const localizedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
@@ -86,6 +87,7 @@ const localizedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
   jungle: { english: "Jungle", native: "鬥獸棋", romanization: "Dòu Shòu Qí", short: "Jungle / Dou Shou Qi" },
   "english-draughts": { english: "English Draughts", short: "Checkers" },
   "international-draughts": { english: "International Draughts", short: "10x10 Draughts" },
+  "turkish-draughts": { english: "Turkish Draughts", native: "Dama", romanization: "Dama" },
   antichess: { english: "Antichess" },
   horde: { english: "Horde" },
   "king-of-the-hill": { english: "King of the Hill" },
@@ -160,6 +162,7 @@ function playableRegion(key: string) {
   if (key === "makruk") return ["Southeast Asia", "Thailand"];
   if (key === "english-draughts") return ["United Kingdom", "United States"];
   if (key === "international-draughts") return ["Global", "Europe"];
+  if (key === "turkish-draughts") return ["Turkey"];
   return ["Global"];
 }
 
@@ -178,6 +181,7 @@ function relatedFor(key: string) {
     jungle: ["xiangqi", "janggi", "bagha-chal"],
     "english-draughts": ["international-draughts", "turkish-draughts", "konane"],
     "international-draughts": ["english-draughts", "turkish-draughts", "konane"],
+    "turkish-draughts": ["international-draughts", "english-draughts", "konane"],
     "racing-kings": ["king-of-the-hill", "three-check", "classic"]
   };
   return related[key] ?? ["classic", "chess960", "go-19x19"];
@@ -311,20 +315,6 @@ const learningCatalogEntries: GameCatalogEntry[] = [
     ruleSourceLinks: [{ name: "Cambodian Chess Federation", url: "https://www.cambodianchess.com/" }],
     shortRules: ["Makruk-related movement with Cambodian opening rules.", "Named pieces need Khmer and romanized presentation.", "Counting and tournament profile must be explicit."],
     winConditions: ["Checkmate", "Counting decision in selected profile"]
-  }),
-  catalogEntry({
-    id: "turkish-draughts",
-    name: { english: "Turkish Draughts", native: "Dama", romanization: "Dama" },
-    family: "draughts",
-    region: ["Turkey"],
-    board: { kind: "square-grid", rows: 8, cols: 8, description: "8x8 orthogonal draughts board." },
-    piecePresentation: "draughts-stacks",
-    playability: "coming-soon",
-    rulesAdapter: "draughts-engine",
-    botAdapter: "internal-search",
-    ruleSourceLinks: [{ name: "MindSports Turkish Draughts rules", url: "https://mindsports.nl/index.php/dagaz/521-turkish-draughts" }],
-    shortRules: ["Pieces move orthogonally instead of diagonally.", "Captures are compulsory.", "Kings move like rooks along ranks/files."],
-    winConditions: ["Capture or immobilize all opposing pieces"]
   }),
   catalogEntry({
     id: "oware",

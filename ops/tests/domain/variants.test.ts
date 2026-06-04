@@ -19,6 +19,7 @@ describe("variant catalog", () => {
       "jungle",
       "english-draughts",
       "international-draughts",
+      "turkish-draughts",
       "antichess",
       "horde",
       "king-of-the-hill",
@@ -42,6 +43,7 @@ describe("variant catalog", () => {
       jungle: "allchess-jungle",
       "english-draughts": "draughts-engine",
       "international-draughts": "draughts-engine",
+      "turkish-draughts": "draughts-engine",
       antichess: "chessops",
       horde: "chessops",
       "king-of-the-hill": "chessops",
@@ -287,6 +289,76 @@ describe("variant engine", () => {
     };
     promotion.board[1][2].piece = { id: "white-international-crown", code: "p", owner: "white", labelKey: "chess.pawn" };
     expect(applyMove(promotion, { from: { row: 1, col: 2 }, to: { row: 0, col: 1 } }).board[0][1].piece).toMatchObject({
+      code: "x",
+      owner: "white",
+      promoted: true
+    });
+  });
+
+  test("turkish draughts uses orthogonal men, flying kings, and maximum captures", () => {
+    let state = createInitialState("turkish-draughts", "turkish-draughts-rules");
+
+    expect(state.board).toHaveLength(8);
+    expect(state.board[0].map((cell) => cell.piece?.code ?? ".").join("")).toBe("........");
+    expect(state.board[1].map((cell) => cell.piece?.code ?? ".").join("")).toBe("pppppppp");
+    expect(state.board[2].map((cell) => cell.piece?.code ?? ".").join("")).toBe("pppppppp");
+    expect(state.board[5].map((cell) => cell.piece?.code ?? ".").join("")).toBe("pppppppp");
+    expect(state.board[6].map((cell) => cell.piece?.code ?? ".").join("")).toBe("pppppppp");
+    expect(state.board.flat().filter((cell) => cell.piece?.owner === "black")).toHaveLength(16);
+    expect(state.board.flat().filter((cell) => cell.piece?.owner === "white")).toHaveLength(16);
+    expect(getLegalMoves(state, { row: 5, col: 0 })).toContainEqual({ from: { row: 5, col: 0 }, to: { row: 4, col: 0 } });
+
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[5][0].piece = { id: "white-sideways-man", code: "p", owner: "white", labelKey: "chess.pawn" };
+    expect(getLegalMoves(state, { row: 5, col: 0 })).toEqual(
+      expect.arrayContaining([
+        { from: { row: 5, col: 0 }, to: { row: 4, col: 0 } },
+        { from: { row: 5, col: 0 }, to: { row: 5, col: 1 } }
+      ])
+    );
+    expect(getLegalMoves(state, { row: 5, col: 0 })).not.toContainEqual({ from: { row: 5, col: 0 }, to: { row: 6, col: 0 } });
+
+    state.board = state.board.map((row) => row.map((cell) => ({ ...cell, piece: null })));
+    state.board[5][0].piece = { id: "white-short-man", code: "p", owner: "white", labelKey: "chess.pawn" };
+    state.board[4][0].piece = { id: "black-short-target", code: "p", owner: "black", labelKey: "chess.pawn" };
+    state.board[5][4].piece = { id: "white-long-man", code: "p", owner: "white", labelKey: "chess.pawn" };
+    state.board[4][4].piece = { id: "black-first-target", code: "p", owner: "black", labelKey: "chess.pawn" };
+    state.board[2][4].piece = { id: "black-second-target", code: "p", owner: "black", labelKey: "chess.pawn" };
+
+    expect(getLegalMoves(state, { row: 5, col: 0 })).toEqual([]);
+    expect(getLegalMoves(state, { row: 5, col: 4 })).toEqual([{ from: { row: 5, col: 4 }, to: { row: 3, col: 4 } }]);
+
+    const afterFirstJump = applyMove(state, { from: { row: 5, col: 4 }, to: { row: 3, col: 4 } });
+    expect(afterFirstJump.turn).toBe("white");
+    expect(afterFirstJump.board[4][4].piece).toBeNull();
+    expect(getLegalMoves(afterFirstJump, { row: 3, col: 4 })).toEqual([{ from: { row: 3, col: 4 }, to: { row: 1, col: 4 } }]);
+
+    const kingState: typeof state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    kingState.board[6][1].piece = { id: "white-turkish-king", code: "x", owner: "white", promoted: true, labelKey: "chess.king" };
+    kingState.board[3][1].piece = { id: "black-file-target", code: "p", owner: "black", labelKey: "chess.pawn" };
+    expect(getLegalMoves(kingState, { row: 6, col: 1 })).toEqual(
+      expect.arrayContaining([
+        { from: { row: 6, col: 1 }, to: { row: 2, col: 1 } },
+        { from: { row: 6, col: 1 }, to: { row: 1, col: 1 } },
+        { from: { row: 6, col: 1 }, to: { row: 0, col: 1 } }
+      ])
+    );
+
+    const promotion: typeof state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    promotion.board[1][2].piece = { id: "white-turkish-crown", code: "p", owner: "white", labelKey: "chess.pawn" };
+    expect(applyMove(promotion, { from: { row: 1, col: 2 }, to: { row: 0, col: 2 } }).board[0][2].piece).toMatchObject({
       code: "x",
       owner: "white",
       promoted: true

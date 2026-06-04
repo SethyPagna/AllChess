@@ -466,6 +466,23 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
     }
   },
   {
+    id: "turkish-draughts-start-left-man",
+    variantKey: "turkish-draughts",
+    positionKey: "turkish-draughts|turn:white|moves:",
+    moveUci: "a3a4",
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.82,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "draughts", "turkish", "orthogonal", "maximum-capture"],
+    explanation: {
+      plan: "Advance the left man forward while preserving sideways mobility.",
+      threat: "White opens an orthogonal lane without giving up maximum-capture control.",
+      risk: "Turkish Draughts tactics depend on rank/file jump chains, so the bot must compare full capture lengths before choosing material.",
+      fallbackGoal: "If a capture chain appears, take the longest legal line and land away from immediate recapture lanes."
+    }
+  },
+  {
     id: "chess960-start-center-pawn",
     variantKey: "chess960",
     positionKey: "chess960|turn:white|moves:",
