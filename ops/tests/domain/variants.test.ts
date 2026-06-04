@@ -517,6 +517,37 @@ describe("variant engine", () => {
     expect(next.captured[0]).toMatchObject({ code: "p", owner: "gote", promoted: true });
   });
 
+  test("shogi forbids pawn-drop mate but allows answerable pawn drops", () => {
+    let answerable = createInitialState("shogi", "shogi-answerable-pawn-drop");
+    answerable = {
+      ...answerable,
+      board: answerable.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      hands: { sente: { p: 1 }, gote: {} },
+      turn: "sente"
+    };
+    answerable.board[8][4].piece = { id: "sente-king", code: "k", owner: "sente", labelKey: "chess.king" };
+    answerable.board[0][4].piece = { id: "gote-king", code: "k", owner: "gote", labelKey: "chess.king" };
+    const pawnDrop = { id: "sente-hand-pawn", code: "p", owner: "sente" as const, labelKey: "chess.pawn" };
+
+    expect(getLegalMoves(answerable, { drop: pawnDrop })).toContainEqual(expect.objectContaining({ kind: "drop", to: { row: 1, col: 4 } }));
+
+    let mate = createInitialState("shogi", "shogi-pawn-drop-mate");
+    mate = {
+      ...mate,
+      board: mate.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      hands: { sente: { p: 1 }, gote: {} },
+      turn: "sente"
+    };
+    mate.board[8][4].piece = { id: "sente-king", code: "k", owner: "sente", labelKey: "chess.king" };
+    mate.board[0][4].piece = { id: "gote-king", code: "k", owner: "gote", labelKey: "chess.king" };
+    mate.board[2][3].piece = { id: "sente-left-rook", code: "r", owner: "sente", labelKey: "chess.rook" };
+    mate.board[2][4].piece = { id: "sente-gold-cover", code: "g", owner: "sente", labelKey: "chess.king" };
+    mate.board[2][5].piece = { id: "sente-right-rook", code: "r", owner: "sente", labelKey: "chess.rook" };
+
+    expect(getLegalMoves(mate, { drop: pawnDrop })).not.toContainEqual(expect.objectContaining({ to: { row: 1, col: 4 } }));
+    expect(() => applyMove(mate, { kind: "drop", from: { row: -1, col: -1 }, to: { row: 1, col: 4 }, drop: pawnDrop })).toThrow("errors.invalidMove");
+  });
+
   test("makruk setup uses one king and one met per side", () => {
     const state = createInitialState("makruk", "makruk-setup");
     const whitePieces = state.board.flatMap((row) => row.map((cell) => cell.piece).filter((piece) => piece?.owner === "white"));

@@ -30,6 +30,10 @@ type MakrukCountingState = {
   pieceCount: number;
 };
 
+type DropMoveOptions = {
+  validatePawnDropMate?: boolean;
+};
+
 export function createInitialState(variantKey: string, id = crypto.randomUUID()): GameState {
   const variant = getVariant(variantKey);
   const board = buildBoard(variant);
@@ -131,7 +135,7 @@ function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
   return genericPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
 }
 
-function getLegalDropMoves(state: GameState, drop: Piece): Move[] {
+function getLegalDropMoves(state: GameState, drop: Piece, options: DropMoveOptions = {}): Move[] {
   const variant = getVariant(state.variantKey);
   if (!variant.supportsDrops || drop.owner !== state.turn) return [];
   const handCount = state.hands?.[drop.owner]?.[drop.code] ?? 0;
@@ -143,6 +147,7 @@ function getLegalDropMoves(state: GameState, drop: Piece): Move[] {
       if (cell.piece || !canDropPieceOn(state, drop, cell.square)) continue;
       const move = { kind: "drop" as const, from: { row: -1, col: -1 }, to: cell.square, drop };
       if (variant.supportsCheck && wouldDropLeaveRoyalInCheck(state, move, drop.owner)) continue;
+      if (options.validatePawnDropMate !== false && isShogiPawnDropMate(state, move)) continue;
       moves.push(move);
     }
   }
@@ -154,6 +159,16 @@ function canDropPieceOn(state: GameState, drop: Piece, to: Square) {
   if (isShogiDeadDrop(drop, to, state.board.length)) return false;
   if (drop.code === "p" && hasUnpromotedShogiPawnOnFile(state, drop.owner, to.col)) return false;
   return true;
+}
+
+function isShogiPawnDropMate(state: GameState, move: Move) {
+  if (state.variantKey !== "shogi" || move.drop?.code !== "p") return false;
+  const next: GameState = structuredClone(state);
+  const toCell = cellAt(next, move.to);
+  if (!toCell || toCell.piece) return false;
+  toCell.piece = { ...move.drop, promoted: false };
+  next.turn = opponentOf(move.drop.owner);
+  return isInCheck(next, next.turn) && !hasAnyLegalMove(next, next.turn, { validatePawnDropMate: false });
 }
 
 function isShogiDeadDrop(piece: Piece, to: Square, boardRows: number) {
@@ -1143,11 +1158,19 @@ function areJanggiGeneralsFacing(state: GameState) {
   return true;
 }
 
-function hasAnyLegalMove(state: GameState, color: PlayerColor) {
+function hasAnyLegalMove(state: GameState, color: PlayerColor, options: DropMoveOptions = {}) {
   if (state.turn !== color) return false;
   for (const row of state.board) {
     for (const cell of row) {
       if (cell.piece?.owner === color && getLegalMoves(state, cell.square).length > 0) {
+        return true;
+      }
+    }
+  }
+  const hand = state.hands?.[color];
+  if (hand) {
+    for (const [code, count] of Object.entries(hand)) {
+      if (count > 0 && getLegalDropMoves(state, { id: `${color}-${code}-hand`, code, owner: color, labelKey: pieceLabels[code] ?? "chess.pawn" }, options).length > 0) {
         return true;
       }
     }

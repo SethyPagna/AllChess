@@ -628,7 +628,7 @@ describe("bot difficulty ladder", () => {
         expect.objectContaining({
           variantKey: "shogi",
           claim: "not-fully-trained",
-          remainingGates: expect.arrayContaining([expect.stringContaining("Pawn-drop mate")])
+          remainingGates: expect.arrayContaining([expect.stringContaining("Impasse")])
         })
       ])
     );
