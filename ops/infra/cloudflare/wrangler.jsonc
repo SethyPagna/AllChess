@@ -51,6 +51,10 @@
     },
     {
       "tag": "v5_restore_learn_realtime_classes"
+    },
+    {
+      "tag": "v6_delete_legacy_study_durable_objects",
+      "deleted_classes": ["StudyRoomDurableObject", "StudyBattleDurableObject"]
     }
   ],
   "r2_buckets": [
