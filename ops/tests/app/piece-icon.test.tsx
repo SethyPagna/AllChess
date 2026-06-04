@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vitest";
 
+import { BoardPlayerCard } from "@/components/board/board-player-card";
 import { PieceIcon } from "@/components/board/piece-icon";
 
 describe("PieceIcon", () => {
@@ -47,6 +48,33 @@ describe("PieceIcon", () => {
     expect(blackStone).toContain('data-piece="stone"');
     expect(whiteStone).toContain('aria-label="Kōnane stone"');
     expect(blackStone).toContain('data-owner="black"');
+  });
+
+  test("shows overlapping captured pieces with material advantage", () => {
+    const card = renderToStaticMarkup(
+      <BoardPlayerCard
+        botLevelLabel="Normal"
+        botModeActive={false}
+        botStrengthDisplay="1300-1600"
+        capturedPieces={[
+          { id: "black-queen", code: "q", owner: "black", labelKey: "chess.queen" },
+          { id: "black-pawn", code: "p", owner: "black", labelKey: "chess.pawn" }
+        ]}
+        opponentCapturedPieces={[{ id: "white-knight", code: "n", owner: "white", labelKey: "chess.knight" }]}
+        clock={{ color: "white", remainingMs: 600000, incrementMs: 0 }}
+        color="white"
+        humanColor="white"
+        isActive
+        placement="bottom"
+        thinking={false}
+        timeControl="rapid"
+        variantKey="classic"
+      />
+    );
+
+    expect(card).toContain('class="captured-piece"');
+    expect(card).toContain('class="captured-material"');
+    expect(card).toContain("+7");
   });
 
   test("keeps non-western pieces as strong native symbols", () => {

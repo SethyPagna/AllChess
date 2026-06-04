@@ -203,6 +203,7 @@ export function GameBoard({
         botModeActive={color === botColor && botMode !== "human"}
         botStrengthDisplay={botStrength.display}
         capturedPieces={capturedBy(color)}
+        opponentCapturedPieces={state.captured.filter((piece) => piece.owner === color)}
         clock={state.clocks.find((entry) => entry.color === color)}
         color={color}
         humanColor={humanColor}

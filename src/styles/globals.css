@@ -951,8 +951,8 @@ option {
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 0.1rem;
-  min-width: 4.5rem;
+  gap: 0;
+  min-width: 5.75rem;
   min-height: 1.65rem;
   overflow: hidden;
 }
@@ -965,6 +965,10 @@ option {
   flex: 0 0 auto;
 }
 
+.captured-piece + .captured-piece {
+  margin-left: -0.46rem;
+}
+
 .captured-piece .piece-symbol,
 .captured-piece .piece-svg,
 .captured-piece .native-piece-symbol {
@@ -972,6 +976,16 @@ option {
   height: 1.15rem;
   font-size: 1rem;
   stroke-width: 5px;
+}
+
+.captured-material {
+  flex: 0 0 auto;
+  margin-left: 0.3rem;
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .captured-empty {
@@ -984,6 +998,7 @@ option {
 .game-board-layout {
   display: grid;
   align-items: start;
+  justify-content: center;
   --board-fixed-size: clamp(320px, min(58vw, calc(100vh - 8rem)), 760px);
 }
 
@@ -1346,9 +1361,13 @@ option {
 }
 
 .play-arena .game-board-layout {
-  --board-fixed-size: clamp(360px, min(48vw, calc(100vh - 14rem)), 740px);
-  grid-template-columns: var(--board-fixed-size) minmax(18rem, 1fr);
+  --board-fixed-size: clamp(420px, min(48vw, calc(100vh - 10rem)), 820px);
+  grid-template-columns: var(--board-fixed-size) minmax(22rem, 34rem);
+  justify-content: center;
   min-width: 0;
+  width: 100%;
+  max-width: calc(var(--board-fixed-size) + 34rem + 1rem);
+  margin-inline: auto;
 }
 
 .board-column {
@@ -1710,8 +1729,10 @@ option {
 }
 
 .play-arena .game-side-panel {
+  width: 100%;
   max-height: calc(var(--board-fixed-size) + 7.8rem);
-  overflow: hidden;
+  overflow: auto;
+  scrollbar-width: thin;
 }
 
 .play-panel-title {

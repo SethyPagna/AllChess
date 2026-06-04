@@ -8,6 +8,7 @@ type BoardPlayerCardProps = {
   botModeActive: boolean;
   botStrengthDisplay: string;
   capturedPieces: Piece[];
+  opponentCapturedPieces: Piece[];
   clock?: PlayerClock;
   color: string;
   humanColor: string;
@@ -23,6 +24,7 @@ export function BoardPlayerCard({
   botModeActive,
   botStrengthDisplay,
   capturedPieces,
+  opponentCapturedPieces,
   clock,
   color,
   humanColor,
@@ -34,6 +36,8 @@ export function BoardPlayerCard({
 }: BoardPlayerCardProps) {
   const isHuman = color === humanColor;
   const isBot = botModeActive;
+  const materialAdvantage = Math.max(0, materialValue(capturedPieces) - materialValue(opponentCapturedPieces));
+  const visibleCaptures = capturedPieces.slice(0, 14);
 
   return (
     <div className={`board-player-card board-player-card-${placement} ${isActive ? "is-active" : ""}`} aria-label={`${colorLabel(color)} player card`}>
@@ -46,16 +50,53 @@ export function BoardPlayerCard({
         <p>{isBot ? `${botStrengthDisplay}${thinking ? " - thinking" : ""}` : `${colorLabel(color)} side`}</p>
       </div>
       <div className={`captured-strip ${capturedPieces.length ? "" : "is-empty"}`} aria-label={`${colorLabel(color)} captured pieces`}>
-        {capturedPieces.length ? (
-          capturedPieces.slice(0, 12).map((piece, index) => (
-            <span key={`${piece.id}-${index}`} className="captured-piece">
-              <PieceIcon code={piece.code} owner={piece.owner} variantKey={variantKey} promoted={piece.promoted} />
-            </span>
-          ))
+        {visibleCaptures.length ? (
+          <>
+            {visibleCaptures.map((piece, index) => (
+              <span key={`${piece.id}-${index}`} className="captured-piece">
+                <PieceIcon code={piece.code} owner={piece.owner} variantKey={variantKey} promoted={piece.promoted} />
+              </span>
+            ))}
+            {materialAdvantage > 0 ? <strong className="captured-material">+{formatMaterialAdvantage(materialAdvantage)}</strong> : null}
+          </>
         ) : (
           <span className="captured-empty">No captures</span>
         )}
       </div>
     </div>
   );
+}
+
+function materialValue(pieces: Piece[]) {
+  return pieces.reduce((total, piece) => total + pieceValue(piece), 0);
+}
+
+function pieceValue(piece: Piece) {
+  if (piece.promoted && piece.code === "p") return 2;
+  const values: Record<string, number> = {
+    p: 1,
+    s: 1,
+    d: 1,
+    w: 2,
+    c: 2,
+    a: 3,
+    b: 3,
+    e: 3,
+    f: 3,
+    g: 0,
+    h: 3,
+    k: 0,
+    l: 5,
+    m: 4,
+    n: 3,
+    q: 9,
+    r: 5,
+    t: 6,
+    x: 2
+  };
+  return values[piece.code] ?? 1;
+}
+
+function formatMaterialAdvantage(value: number) {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
 }
