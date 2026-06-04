@@ -86,6 +86,20 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     drawConditions: ["Repetition rules according to selected mode", "Impasse scoring in supported rules mode"],
     illegalMoveNotes: ["Do not drop a pawn on a file with an unpromoted friendly pawn.", "Do not drop a piece where it can never move.", "Do not leave your king in check."]
   },
+  "mini-shogi": {
+    variantKey: "mini-shogi",
+    sourceLinks: [{ name: "Minishogi rules overview", url: "https://en.wikipedia.org/wiki/Minishogi" }],
+    numberedBasics: [
+      "Play Shogi on a 5x5 board with king, gold, silver, bishop, rook, and pawn per side.",
+      "Captured pieces become pieces in hand and can be dropped back unpromoted.",
+      "The promotion zone is only the farthest rank from each player.",
+      "Checkmate wins; illegal pawn drops and self-check restrictions still apply."
+    ],
+    specialRules: ["5x5 board", "Drops", "One-rank promotion zone", "Nifu pawn restriction", "Pawn-drop mate restriction"],
+    winConditions: ["Checkmate", "Resignation", "Timeout"],
+    drawConditions: ["Repetition/no-progress according to selected room rules"],
+    illegalMoveNotes: ["Do not drop a pawn on a file with an unpromoted friendly pawn.", "Do not drop pawns, lances, or knights where they can never move.", "Do not leave your king in check."]
+  },
   janggi: {
     variantKey: "janggi",
     sourceLinks: [{ name: "AllChess Janggi rules profile", url: "https://en.wikipedia.org/wiki/Janggi" }],
@@ -235,6 +249,15 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
       "Captured Shogi pieces are demoted into the capturer hand and can be dropped back onto legal empty squares.",
       "Pawn-drop mate is rejected while answerable checking pawn drops remain legal.",
       "Fourfold repetition, perpetual-check loss, and impasse material adjudication have fixtures."
+    ],
+    remainingGates: []
+  },
+  "mini-shogi": {
+    status: "verified-playable",
+    verifiedEdgeCases: [
+      "The 5x5 reduced setup is registered with one pawn and five back-rank pieces per side.",
+      "Drops, nifu, dead-drop restrictions, and pawn-drop mate validation reuse the verified Shogi path.",
+      "The one-rank promotion zone is covered for both sides."
     ],
     remainingGates: []
   },

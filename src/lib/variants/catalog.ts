@@ -67,6 +67,22 @@ export const variantCatalog: VariantDefinition[] = [
     aliases: ["japanese-chess"]
   },
   {
+    key: "mini-shogi",
+    nameKey: "variant.mini-shogi",
+    rulesAdapter: "shogiops",
+    engineProtocol: "internal",
+    family: "east-asian",
+    board: { rows: 5, cols: 5, coordinates: "shogi" },
+    players: ["sente", "gote"],
+    supportsDrops: true,
+    supportsPromotion: true,
+    supportsCastling: false,
+    supportsCheck: true,
+    objective: "Checkmate on a 5x5 Shogi board with drops and a one-rank promotion zone.",
+    setup: ["rbsgk", "....p", ".....", "P....", "KGSBR"],
+    aliases: ["minishogi", "gogo-shogi", "5x5-shogi"]
+  },
+  {
     key: "janggi",
     nameKey: "variant.janggi",
     rulesAdapter: "allchess-janggi",

@@ -29,6 +29,9 @@ describe("rules atlas", () => {
     expect(getVariantRuleSummary("shogi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Fourfold repetition")]));
     expect(getVariantRuleSummary("shogi").completion.status).toBe("verified-playable");
     expect(getVariantRuleSummary("shogi").completion.remainingGates).toEqual([]);
+    expect(getVariantRuleSummary("mini-shogi").numberedBasics[0]).toContain("5x5");
+    expect(getVariantRuleSummary("mini-shogi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("one-rank promotion")]));
+    expect(getVariantRuleSummary("mini-shogi").completion.remainingGates).toEqual([]);
     expect(getVariantRuleSummary("janggi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("palace diagonals")]));
     expect(getVariantRuleSummary("janggi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("bikjang")]));
     expect(getVariantRuleSummary("janggi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("consecutive passes")]));

@@ -10,6 +10,7 @@ describe("variant catalog", () => {
       "chess960",
       "xiangqi",
       "shogi",
+      "mini-shogi",
       "janggi",
       "makruk",
       "jungle",
@@ -27,6 +28,7 @@ describe("variant catalog", () => {
       chess960: "chessops",
       xiangqi: "xiangqiops",
       shogi: "shogiops",
+      "mini-shogi": "shogiops",
       janggi: "allchess-janggi",
       makruk: "makruk-js",
       jungle: "allchess-jungle",
@@ -580,6 +582,48 @@ describe("variant engine", () => {
 
     expect(next.hands?.sente?.p).toBe(1);
     expect(next.captured[0]).toMatchObject({ code: "p", owner: "gote", promoted: true });
+  });
+
+  test("mini shogi uses a 5x5 setup with one-rank promotion zones and drops", () => {
+    let state = createInitialState("mini-shogi", "mini-shogi-setup");
+
+    expect(state.board).toHaveLength(5);
+    expect(state.board[0]).toHaveLength(5);
+    expect(state.board[0].map((cell) => cell.piece?.code ?? ".").join("")).toBe("rbsgk");
+    expect(state.board[4].map((cell) => cell.piece?.code ?? ".").join("")).toBe("kgsbr");
+    expect(state.board[0].every((cell) => cell.terrain === "promotion-zone")).toBe(true);
+    expect(state.board[1].every((cell) => cell.terrain !== "promotion-zone")).toBe(true);
+    expect(state.board[4].every((cell) => cell.terrain === "promotion-zone")).toBe(true);
+    expect(state.board[3].every((cell) => cell.terrain !== "promotion-zone")).toBe(true);
+
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      hands: { sente: { p: 1 }, gote: {} },
+      turn: "sente"
+    };
+    state.board[4][0].piece = { id: "sente-king", code: "k", owner: "sente", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "gote-king", code: "k", owner: "gote", labelKey: "chess.king" };
+    const pawnDrop = { id: "drop-pawn", code: "p", owner: "sente" as const, labelKey: "chess.pawn" };
+
+    expect(getLegalMoves(state, { drop: pawnDrop })).not.toContainEqual(expect.objectContaining({ to: { row: 0, col: 0 } }));
+    expect(getLegalMoves(state, { drop: pawnDrop })).toContainEqual(expect.objectContaining({ to: { row: 2, col: 0 } }));
+  });
+
+  test("mini shogi promotes on the farthest rank", () => {
+    let state = createInitialState("mini-shogi", "mini-shogi-promotion");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "sente"
+    };
+    state.board[1][0].piece = { id: "sente-pawn", code: "p", owner: "sente", labelKey: "chess.pawn" };
+    state.board[4][0].piece = { id: "sente-king", code: "k", owner: "sente", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "gote-king", code: "k", owner: "gote", labelKey: "chess.king" };
+
+    const promoted = applyMove(state, { from: { row: 1, col: 0 }, to: { row: 0, col: 0 }, promotion: true });
+
+    expect(promoted.board[0][0].piece).toMatchObject({ code: "p", owner: "sente", promoted: true });
   });
 
   test("shogi forbids pawn-drop mate but allows answerable pawn drops", () => {

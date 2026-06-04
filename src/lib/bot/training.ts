@@ -432,6 +432,23 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
     }
   },
   {
+    id: "mini-shogi-start-king-file-pawn",
+    variantKey: "mini-shogi",
+    positionKey: "mini-shogi|turn:sente|moves:",
+    moveUci: "a2a3",
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.82,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "mini-shogi", "pawn", "drops", "promotion-zone"],
+    explanation: {
+      plan: "Advance the king-file pawn to open the compact board while preserving drop tactics.",
+      threat: "Sente creates space for the king and generals before captures start feeding pieces into hand.",
+      risk: "The small board makes overextension immediate, so the bot keeps legal drops and promotion threats in view.",
+      fallbackGoal: "If Gote contests the file, switch to silver or bishop development while preserving king safety."
+    }
+  },
+  {
     id: "janggi-start-central-soldier",
     variantKey: "janggi",
     positionKey: "janggi|turn:red|moves:",

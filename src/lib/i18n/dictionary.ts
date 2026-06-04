@@ -103,6 +103,7 @@ const en = {
   "variant.chess960": "Chess960",
   "variant.xiangqi": "Xiangqi",
   "variant.shogi": "Shogi",
+  "variant.mini-shogi": "Mini Shogi",
   "variant.janggi": "Janggi",
   "variant.makruk": "Makruk",
   "variant.jungle": "Jungle Chess",

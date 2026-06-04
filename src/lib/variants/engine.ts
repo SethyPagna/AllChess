@@ -145,7 +145,7 @@ function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
   if (variant.key === "janggi") {
     return janggiPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
   }
-  if (variant.key === "shogi") {
+  if (isShogiFamily(variant.key)) {
     return shogiPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
   }
   if (variant.key === "makruk") {
@@ -187,14 +187,14 @@ function getLegalDropMoves(state: GameState, drop: Piece, options: DropMoveOptio
 }
 
 function canDropPieceOn(state: GameState, drop: Piece, to: Square) {
-  if (state.variantKey !== "shogi") return true;
+  if (!isShogiFamily(state.variantKey)) return true;
   if (isShogiDeadDrop(drop, to, state.board.length)) return false;
   if (drop.code === "p" && hasUnpromotedShogiPawnOnFile(state, drop.owner, to.col)) return false;
   return true;
 }
 
 function isShogiPawnDropMate(state: GameState, move: Move) {
-  if (state.variantKey !== "shogi" || move.drop?.code !== "p") return false;
+  if (!isShogiFamily(state.variantKey) || move.drop?.code !== "p") return false;
   const next: GameState = structuredClone(state);
   const toCell = cellAt(next, move.to);
   if (!toCell || toCell.piece) return false;
@@ -776,7 +776,7 @@ export function applyMove(state: GameState, move: Move): GameState {
     next.outcomeReason = "royal-captured";
     return next;
   }
-  if (variant.key === "shogi") {
+  if (isShogiFamily(variant.key)) {
     return withShogiOutcome(next, movingPiece.owner, move.to);
   }
   return withOutcome(next, movingPiece.owner, move.to);
@@ -1351,6 +1351,10 @@ function shouldPromote(variant: VariantDefinition, piece: Piece, to: Square, req
   return Boolean(requested);
 }
 
+function isShogiFamily(variantKey: string) {
+  return variantKey === "shogi" || variantKey === "mini-shogi";
+}
+
 function promotionCodeFor(variant: VariantDefinition, piece: Piece) {
   if (variant.family === "western" && piece.code === "p") return "q";
   if (variant.key === "makruk" && piece.code === "p") return "m";
@@ -1599,6 +1603,9 @@ function terrainFor(variant: VariantDefinition, square: Square): BoardCell["terr
   }
   if (variant.key === "xiangqi" || variant.key === "janggi") {
     if ((square.row <= 2 || square.row >= 7) && square.col >= 3 && square.col <= 5) return "palace";
+  }
+  if (variant.key === "mini-shogi") {
+    return square.row === 0 || square.row === variant.board.rows - 1 ? "promotion-zone" : "land";
   }
   if (variant.supportsPromotion && (square.row <= 2 || square.row >= variant.board.rows - 3)) {
     return "promotion-zone";

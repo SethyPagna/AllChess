@@ -60,6 +60,7 @@ const presentationByVariant: Record<string, PiecePresentationPack> = {
   "three-check": "staunton-svg",
   xiangqi: "xiangqi-disk",
   shogi: "shogi-koma",
+  "mini-shogi": "shogi-koma",
   janggi: "xiangqi-disk",
   makruk: "makruk-carved",
   jungle: "jungle-animals"
@@ -70,6 +71,7 @@ const localizedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
   chess960: { english: "Chess960", romanization: "Fischer Random" },
   xiangqi: { english: "Xiangqi", native: "象棋", romanization: "Xiàngqí" },
   shogi: { english: "Shogi", native: "将棋", romanization: "Shōgi" },
+  "mini-shogi": { english: "Mini Shogi", native: "五五将棋", romanization: "Gogo Shōgi" },
   janggi: { english: "Janggi", native: "장기", romanization: "Janggi" },
   makruk: { english: "Makruk", native: "หมากรุก", romanization: "Makruk" },
   jungle: { english: "Jungle", native: "鬥獸棋", romanization: "Dòu Shòu Qí", short: "Jungle / Dou Shou Qi" },
@@ -143,7 +145,7 @@ function playableEntryFromVariant(variant: VariantDefinition): GameCatalogEntry 
 }
 
 function playableRegion(key: string) {
-  if (["xiangqi", "shogi", "janggi", "jungle"].includes(key)) return ["East Asia"];
+  if (["xiangqi", "shogi", "mini-shogi", "janggi", "jungle"].includes(key)) return ["East Asia"];
   if (key === "makruk") return ["Southeast Asia", "Thailand"];
   return ["Global"];
 }
@@ -154,6 +156,7 @@ function relatedFor(key: string) {
     chess960: ["classic", "horde", "antichess"],
     xiangqi: ["janggi", "jungle", "minixiangqi"],
     shogi: ["mini-shogi", "chu-shogi", "crazyhouse"],
+    "mini-shogi": ["shogi", "chu-shogi", "crazyhouse"],
     janggi: ["xiangqi", "shogi", "jungle"],
     makruk: ["sittuyin", "ouk-chaktrang", "asean-chess"],
     jungle: ["xiangqi", "janggi", "bagha-chal"],
@@ -262,20 +265,6 @@ const learningCatalogEntries: GameCatalogEntry[] = [
     ruleSourceLinks: [{ name: "Chess.com four-player chess guide", url: "https://www.chess.com/terms/4-player-chess" }],
     shortRules: ["Four armies start on an extended board.", "Turn order and teams depend on room mode.", "Scoring and checkmate policies must be room-explicit."],
     winConditions: ["Last player/team standing", "Points mode in selected rooms"]
-  }),
-  catalogEntry({
-    id: "mini-shogi",
-    name: { english: "Mini Shogi", native: "五五将棋", romanization: "Gogo Shōgi" },
-    family: "asian-chess",
-    region: ["Japan"],
-    board: { kind: "square-grid", rows: 5, cols: 5, description: "Compact 5x5 shogi with drops." },
-    piecePresentation: "shogi-koma",
-    playability: "coming-soon",
-    rulesAdapter: "planned-rules-engine",
-    botAdapter: "internal-search",
-    ruleSourceLinks: [{ name: "Shogi Harbour Mini Shogi rules", url: "https://shogi.cz/en/varianty/mini-shogi" }],
-    shortRules: ["Uses a 5x5 board.", "Captured pieces can be dropped.", "Promotion and checkmate follow the selected mini-shogi profile."],
-    winConditions: ["Checkmate", "Illegal move loss in strict profile"]
   }),
   catalogEntry({
     id: "chu-shogi",
