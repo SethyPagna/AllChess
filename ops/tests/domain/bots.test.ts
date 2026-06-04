@@ -50,7 +50,7 @@ describe("bot difficulty ladder", () => {
   });
 
   test("always chooses a legal move for every launch variant", () => {
-    const variants = ["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "shogi", "mini-shogi", "janggi", "makruk", "jungle", "english-draughts", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"];
+    const variants = ["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "shogi", "mini-shogi", "janggi", "makruk", "jungle", "english-draughts", "international-draughts", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"];
 
     for (const variantKey of variants) {
       const state = createInitialState(variantKey, `${variantKey}-bot`);
@@ -436,7 +436,7 @@ describe("bot difficulty ladder", () => {
   });
 
   test("verified playable variants have legal cache-first seed moves", async () => {
-    const variants = ["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "jungle", "english-draughts", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"];
+    const variants = ["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "jungle", "english-draughts", "international-draughts", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"];
 
     for (const variantKey of variants) {
       const state = createInitialState(variantKey, `${variantKey}-seed`);
@@ -483,6 +483,23 @@ describe("bot difficulty ladder", () => {
 
     expect(hit?.entry).toEqual(expect.objectContaining({ variantKey: "english-draughts", minTier: "easy", source: "opening-book" }));
     expect(hit?.move).toMatchObject({ from: { row: 5, col: 0 }, to: { row: 4, col: 1 } });
+    expect(() => applyMove(state, hit!.move)).not.toThrow();
+
+    const result = await requestBotMove(state, "easy", { engine: "auto", maxSearchTimeMs: MAX_BOT_REPLY_MS });
+    expect(result).toMatchObject({
+      status: "ok",
+      knowledgeSource: "opening-book",
+      nodesSearched: 1,
+      legalValidated: true
+    });
+  });
+
+  test("international draughts has a legal cache-first 10x10 seed", async () => {
+    const state = createInitialState("international-draughts", "international-draughts-seed");
+    const hit = lookupBotKnowledge(state, "easy");
+
+    expect(hit?.entry).toEqual(expect.objectContaining({ variantKey: "international-draughts", minTier: "easy", source: "opening-book" }));
+    expect(hit?.move).toMatchObject({ from: { row: 6, col: 1 }, to: { row: 5, col: 0 } });
     expect(() => applyMove(state, hit!.move)).not.toThrow();
 
     const result = await requestBotMove(state, "easy", { engine: "auto", maxSearchTimeMs: MAX_BOT_REPLY_MS });
@@ -689,10 +706,10 @@ describe("bot difficulty ladder", () => {
     const checklists = listBotTrainingChecklists();
     const classic = checklists.find((checklist) => checklist.variantKey === "classic");
     const jungle = checklists.find((checklist) => checklist.variantKey === "jungle");
-    const verifiedPlayable = ["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "shogi", "mini-shogi", "janggi", "jungle", "english-draughts", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"];
+    const verifiedPlayable = ["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "shogi", "mini-shogi", "janggi", "jungle", "english-draughts", "international-draughts", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"];
 
     expect(checklists.map((checklist) => checklist.variantKey)).toEqual(
-      expect.arrayContaining(["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "shogi", "mini-shogi", "janggi", "makruk", "jungle", "english-draughts", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"])
+      expect.arrayContaining(["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "shogi", "mini-shogi", "janggi", "makruk", "jungle", "english-draughts", "international-draughts", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"])
     );
     expect(classic?.coverageStatus).toBe("active");
     expect(classic?.rulesCompletion.status).toBe("verified-playable");
@@ -726,7 +743,7 @@ describe("bot difficulty ladder", () => {
 
     expect(summary.claimPolicy).toBe("verified-playable-only");
     expect(summary.requiredCompletionGates).toEqual(expect.arrayContaining(["native rules", "legal bot moves", "review", "persistence", "E2E fixtures"]));
-    expect(summary.playableVariants).toEqual(expect.arrayContaining(["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "shogi", "mini-shogi", "janggi", "jungle", "english-draughts", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"]));
+    expect(summary.playableVariants).toEqual(expect.arrayContaining(["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "shogi", "mini-shogi", "janggi", "jungle", "english-draughts", "international-draughts", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"]));
     expect(summary.gatedVariants).not.toEqual(expect.arrayContaining([expect.objectContaining({ variantKey: "janggi" })]));
     expect(summary.notice).toContain("guide-first previews");
   });

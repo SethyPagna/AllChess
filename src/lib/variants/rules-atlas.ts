@@ -198,6 +198,20 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     drawConditions: ["Repetition or no-progress policy in selected room rules", "Mutual agreement"],
     illegalMoveNotes: ["A quiet move is illegal when any friendly checker can jump.", "A jump must land on the empty square beyond the captured checker.", "Only the same checker may move during a forced multi-jump continuation."]
   },
+  "international-draughts": {
+    variantKey: "international-draughts",
+    sourceLinks: [{ name: "FMJD rules", url: "https://www.fmjd.org/downloads/Annexes/Annex%201%20Rules%20of%20the%20Game.pdf" }],
+    numberedBasics: [
+      "Play on a 10x10 board with twenty men per side on the dark squares.",
+      "Men move one square diagonally forward but may capture diagonally forward or backward.",
+      "Captures are compulsory, maximum-capture lines are required, and kings are flying kings.",
+      "Win by capturing all opposing checkers or leaving the opponent with no legal move."
+    ],
+    specialRules: ["10x10 board", "Backward man captures", "Maximum-capture rule", "Flying kings", "Kinging"],
+    winConditions: ["Capture all opposing checkers", "Block every opposing legal move"],
+    drawConditions: ["Repetition or no-progress policy in selected room rules", "Mutual agreement"],
+    illegalMoveNotes: ["A shorter capture line is illegal when a longer one exists.", "Flying kings must jump exactly one opposing checker before landing.", "A quiet move is illegal when any capture exists."]
+  },
   antichess: {
     variantKey: "antichess",
     sourceLinks: [{ name: "Lichess antichess rules", url: "https://lichess.org/variant/antichess" }],
@@ -382,6 +396,16 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
       "Compulsory captures suppress quiet moves across the whole side.",
       "Jump captures remove the midpoint checker and Multi-jump continuation locks the turn to the same checker.",
       "Kinging and no-piece/no-legal-move wins are covered by runtime fixtures."
+    ],
+    remainingGates: []
+  },
+  "international-draughts": {
+    status: "verified-playable",
+    verifiedEdgeCases: [
+      "10x10 dark-square setup and forward quiet movement are covered.",
+      "Backward man captures and flying-king captures are covered.",
+      "Maximum-capture filtering rejects shorter capture lines when longer lines exist.",
+      "Multi-jump continuation, kinging, and no-piece/no-legal-move wins reuse the verified draughts runtime path."
     ],
     remainingGates: []
   },

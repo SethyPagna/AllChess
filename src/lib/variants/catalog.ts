@@ -195,6 +195,22 @@ export const variantCatalog: VariantDefinition[] = [
     aliases: ["checkers", "american-checkers", "english-checkers"]
   },
   {
+    key: "international-draughts",
+    nameKey: "variant.international-draughts",
+    rulesAdapter: "draughts-engine",
+    engineProtocol: "internal",
+    family: "draughts",
+    board: { rows: 10, cols: 10, coordinates: "orthodox" },
+    players: ["white", "black"],
+    supportsDrops: false,
+    supportsPromotion: true,
+    supportsCastling: false,
+    supportsCheck: false,
+    objective: "Capture or block every opposing checker on a 10x10 board with maximum-capture rules.",
+    setup: [".p.p.p.p.p", "p.p.p.p.p.", ".p.p.p.p.p", "p.p.p.p.p.", "..........", "..........", ".P.P.P.P.P", "P.P.P.P.P.", ".P.P.P.P.P", "P.P.P.P.P."],
+    aliases: ["polish-draughts", "international-checkers", "10x10-draughts"]
+  },
+  {
     key: "antichess",
     nameKey: "variant.antichess",
     rulesAdapter: "chessops",

@@ -18,6 +18,7 @@ describe("variant catalog", () => {
       "makruk",
       "jungle",
       "english-draughts",
+      "international-draughts",
       "antichess",
       "horde",
       "king-of-the-hill",
@@ -40,6 +41,7 @@ describe("variant catalog", () => {
       makruk: "makruk-js",
       jungle: "allchess-jungle",
       "english-draughts": "draughts-engine",
+      "international-draughts": "draughts-engine",
       antichess: "chessops",
       horde: "chessops",
       "king-of-the-hill": "chessops",
@@ -215,6 +217,79 @@ describe("variant engine", () => {
       status: "completed",
       result: "white",
       outcomeReason: "objective"
+    });
+  });
+
+  test("international draughts uses 10x10 setup, backward jumps, flying kings, and maximum captures", () => {
+    let state = createInitialState("international-draughts", "international-draughts-rules");
+
+    expect(state.board).toHaveLength(10);
+    expect(state.board[0]).toHaveLength(10);
+    expect(state.board.flat().filter((cell) => cell.piece?.owner === "black")).toHaveLength(20);
+    expect(state.board.flat().filter((cell) => cell.piece?.owner === "white")).toHaveLength(20);
+    expect(state.board[0].map((cell) => cell.piece?.code ?? ".").join("")).toBe(".p.p.p.p.p");
+    expect(state.board[9].map((cell) => cell.piece?.code ?? ".").join("")).toBe("p.p.p.p.p.");
+    expect(getLegalMoves(state, { row: 6, col: 1 })).toEqual(
+      expect.arrayContaining([
+        { from: { row: 6, col: 1 }, to: { row: 5, col: 0 } },
+        { from: { row: 6, col: 1 }, to: { row: 5, col: 2 } }
+      ])
+    );
+
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[6][1].piece = { id: "white-short-man", code: "p", owner: "white", labelKey: "chess.pawn" };
+    state.board[5][2].piece = { id: "black-short-target", code: "p", owner: "black", labelKey: "chess.pawn" };
+    state.board[6][5].piece = { id: "white-long-man", code: "p", owner: "white", labelKey: "chess.pawn" };
+    state.board[5][6].piece = { id: "black-first-target", code: "p", owner: "black", labelKey: "chess.pawn" };
+    state.board[3][8].piece = { id: "black-second-target", code: "p", owner: "black", labelKey: "chess.pawn" };
+
+    expect(getLegalMoves(state, { row: 6, col: 1 })).toEqual([]);
+    expect(getLegalMoves(state, { row: 6, col: 5 })).toEqual([{ from: { row: 6, col: 5 }, to: { row: 4, col: 7 } }]);
+
+    const afterFirstJump = applyMove(state, { from: { row: 6, col: 5 }, to: { row: 4, col: 7 } });
+    expect(afterFirstJump.turn).toBe("white");
+    expect(afterFirstJump.board[5][6].piece).toBeNull();
+    expect(getLegalMoves(afterFirstJump, { row: 4, col: 7 })).toEqual([{ from: { row: 4, col: 7 }, to: { row: 2, col: 9 } }]);
+
+    const backwardCaptureState: typeof state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    backwardCaptureState.board[4][3].piece = { id: "white-backward-man", code: "p", owner: "white", labelKey: "chess.pawn" };
+    backwardCaptureState.board[5][4].piece = { id: "black-backward-target", code: "p", owner: "black", labelKey: "chess.pawn" };
+    expect(getLegalMoves(backwardCaptureState, { row: 4, col: 3 })).toEqual([{ from: { row: 4, col: 3 }, to: { row: 6, col: 5 } }]);
+
+    const kingState: typeof state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    kingState.board[6][1].piece = { id: "white-flying-king", code: "x", owner: "white", promoted: true, labelKey: "chess.king" };
+    kingState.board[4][3].piece = { id: "black-flying-target", code: "p", owner: "black", labelKey: "chess.pawn" };
+    expect(getLegalMoves(kingState, { row: 6, col: 1 })).toEqual(
+      expect.arrayContaining([
+        { from: { row: 6, col: 1 }, to: { row: 3, col: 4 } },
+        { from: { row: 6, col: 1 }, to: { row: 2, col: 5 } },
+        { from: { row: 6, col: 1 }, to: { row: 1, col: 6 } },
+        { from: { row: 6, col: 1 }, to: { row: 0, col: 7 } }
+      ])
+    );
+
+    const promotion: typeof state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    promotion.board[1][2].piece = { id: "white-international-crown", code: "p", owner: "white", labelKey: "chess.pawn" };
+    expect(applyMove(promotion, { from: { row: 1, col: 2 }, to: { row: 0, col: 1 } }).board[0][1].piece).toMatchObject({
+      code: "x",
+      owner: "white",
+      promoted: true
     });
   });
 

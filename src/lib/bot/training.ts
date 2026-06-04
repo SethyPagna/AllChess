@@ -449,6 +449,23 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
     }
   },
   {
+    id: "international-draughts-start-left-man",
+    variantKey: "international-draughts",
+    positionKey: "international-draughts|turn:white|moves:",
+    moveUci: "b4a5",
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.82,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "draughts", "10x10", "maximum-capture"],
+    explanation: {
+      plan: "Develop a front-rank man while preserving diagonal coverage on the 10x10 board.",
+      threat: "White gains space without creating an immediate forced-capture liability.",
+      risk: "International Draughts requires maximum-capture validation, so the bot must compare full jump sequences before selecting material.",
+      fallbackGoal: "When captures appear, choose the longest legal capture line and keep the landing square tactically stable."
+    }
+  },
+  {
     id: "chess960-start-center-pawn",
     variantKey: "chess960",
     positionKey: "chess960|turn:white|moves:",

@@ -134,11 +134,11 @@ export function getLegalMoves(state: GameState, fromOrHand: Square | { drop: Pie
   if (variant.key === "antichess" && hasAnyCaptureMove(state, state.turn)) {
     return legalMoves.filter((move) => isCaptureMove(state, move));
   }
-  if (variant.key === "english-draughts") {
+  if (isDraughtsVariant(variant.key)) {
     const continuation = draughtsContinuationFor(state);
     if (continuation && (!sameSquare(from, continuation.square) || continuation.owner !== state.turn)) return [];
-    if (continuation) return legalMoves.filter((move) => isDraughtsJump(move));
-    if (hasAnyDraughtsJump(state, state.turn)) return legalMoves.filter((move) => isDraughtsJump(move));
+    const requiredCaptures = draughtsRequiredCaptureLength(state, state.turn, continuation?.square);
+    if (requiredCaptures > 0) return legalMoves.filter((move) => draughtsCaptureLengthForMove(state, move) === requiredCaptures);
   }
 
   return legalMoves;
@@ -171,7 +171,7 @@ function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
   if (variant.key === "jungle") {
     return junglePieceMoves(state, piece, from);
   }
-  if (variant.key === "english-draughts") {
+  if (isDraughtsVariant(variant.key)) {
     return draughtsPieceMoves(state, piece, from);
   }
   if (piece.code === "p" && ["western", "southeast-asian"].includes(variant.family)) {
@@ -397,11 +397,15 @@ function westernPawnMoves(state: GameState, piece: Piece, from: Square, allowDou
 }
 
 function draughtsPieceMoves(state: GameState, piece: Piece, from: Square) {
-  return [...draughtsQuietMoves(state, piece, from), ...draughtsJumpMoves(state, piece, from)];
+  return [...draughtsQuietMoves(state, piece, from), ...draughtsCaptureMoves(state, piece, from)];
 }
 
 function draughtsQuietMoves(state: GameState, piece: Piece, from: Square) {
-  const directions = draughtsDirections(piece);
+  if (state.variantKey === "international-draughts" && piece.code === "x") {
+    return rayMoves(state, piece, from, draughtsAllDiagonalDirections);
+  }
+
+  const directions = draughtsQuietDirections(piece);
   const moves: Move[] = [];
 
   for (const [dr, dc] of directions) {
@@ -414,8 +418,12 @@ function draughtsQuietMoves(state: GameState, piece: Piece, from: Square) {
   return moves;
 }
 
-function draughtsJumpMoves(state: GameState, piece: Piece, from: Square) {
-  const directions = draughtsDirections(piece);
+function draughtsCaptureMoves(state: GameState, piece: Piece, from: Square) {
+  if (state.variantKey === "international-draughts" && piece.code === "x") {
+    return internationalDraughtsKingCaptures(state, piece, from);
+  }
+
+  const directions = draughtsCaptureDirections(state.variantKey, piece);
   const moves: Move[] = [];
 
   for (const [dr, dc] of directions) {
@@ -429,33 +437,111 @@ function draughtsJumpMoves(state: GameState, piece: Piece, from: Square) {
   return moves;
 }
 
-function draughtsDirections(piece: Piece): Array<[number, number]> {
+const draughtsAllDiagonalDirections: Array<[number, number]> = [[-1, -1], [-1, 1], [1, -1], [1, 1]];
+
+function draughtsQuietDirections(piece: Piece): Array<[number, number]> {
   if (piece.code === "x") return [[-1, -1], [-1, 1], [1, -1], [1, 1]];
   const forward = orient(piece.owner, -1);
   return [[forward, -1], [forward, 1]];
 }
 
-function isDraughtsJump(move: Move) {
-  return Math.abs(move.to.row - move.from.row) === 2 && Math.abs(move.to.col - move.from.col) === 2;
+function draughtsCaptureDirections(variantKey: string, piece: Piece): Array<[number, number]> {
+  if (variantKey === "international-draughts" || piece.code === "x") return draughtsAllDiagonalDirections;
+  return draughtsQuietDirections(piece);
 }
 
-function draughtsJumpedSquare(move: Move): Square | null {
-  if (!isDraughtsJump(move)) return null;
-  return {
-    row: (move.from.row + move.to.row) / 2,
-    col: (move.from.col + move.to.col) / 2
-  };
-}
+function internationalDraughtsKingCaptures(state: GameState, piece: Piece, from: Square) {
+  const moves: Move[] = [];
 
-function hasAnyDraughtsJump(state: GameState, owner: PlayerColor) {
-  for (const row of state.board) {
-    for (const cell of row) {
-      if (cell.piece?.owner === owner && draughtsJumpMoves(state, cell.piece, cell.square).length > 0) {
-        return true;
+  for (const [dr, dc] of draughtsAllDiagonalDirections) {
+    let square = { row: from.row + dr, col: from.col + dc };
+    let jumpedEnemy: Piece | null = null;
+    while (isInside(state, square)) {
+      const target = cellAt(state, square)?.piece;
+      if (!target && jumpedEnemy) {
+        moves.push({ from, to: { ...square } });
+      } else if (target) {
+        if (target.owner === piece.owner || jumpedEnemy) break;
+        jumpedEnemy = target;
       }
+      square = { row: square.row + dr, col: square.col + dc };
     }
   }
-  return false;
+
+  return moves;
+}
+
+function draughtsCapturedSquare(state: GameState, move: Move, piece: Piece): Square | null {
+  const rowDelta = move.to.row - move.from.row;
+  const colDelta = move.to.col - move.from.col;
+  if (Math.abs(rowDelta) !== Math.abs(colDelta) || Math.abs(rowDelta) < 2) return null;
+
+  if (state.variantKey !== "international-draughts" || piece.code !== "x") {
+    if (Math.abs(rowDelta) !== 2) return null;
+    const middle = { row: (move.from.row + move.to.row) / 2, col: (move.from.col + move.to.col) / 2 };
+    const jumped = cellAt(state, middle)?.piece;
+    return jumped && jumped.owner !== piece.owner ? middle : null;
+  }
+
+  const step = { row: Math.sign(rowDelta), col: Math.sign(colDelta) };
+  let square = { row: move.from.row + step.row, col: move.from.col + step.col };
+  let captured: Square | null = null;
+  while (!sameSquare(square, move.to)) {
+    const target = cellAt(state, square)?.piece;
+    if (target) {
+      if (target.owner === piece.owner || captured) return null;
+      captured = { ...square };
+    }
+    square = { row: square.row + step.row, col: square.col + step.col };
+  }
+  return captured;
+}
+
+function draughtsRequiredCaptureLength(state: GameState, owner: PlayerColor, onlyFrom?: Square) {
+  let longest = 0;
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (cell.piece?.owner !== owner) continue;
+      if (onlyFrom && !sameSquare(cell.square, onlyFrom)) continue;
+      longest = Math.max(longest, draughtsMaxCaptureLengthFrom(state, cell.piece, cell.square));
+    }
+  }
+  return longest;
+}
+
+function draughtsCaptureLengthForMove(state: GameState, move: Move) {
+  const piece = cellAt(state, move.from)?.piece;
+  if (!piece) return 0;
+  const capturedSquare = draughtsCapturedSquare(state, move, piece);
+  if (!capturedSquare) return 0;
+  const next = draughtsStateAfterCapture(state, move, piece, capturedSquare);
+  if (shouldCrownDraughtsMan(getVariant(state.variantKey), piece, move.to)) return 1;
+  return 1 + draughtsMaxCaptureLengthFrom(next, piece, move.to);
+}
+
+function draughtsMaxCaptureLengthFrom(state: GameState, piece: Piece, from: Square): number {
+  const captures = draughtsCaptureMoves(state, piece, from);
+  if (captures.length === 0) return 0;
+  return Math.max(
+    ...captures.map((move) => {
+      const capturedSquare = draughtsCapturedSquare(state, move, piece);
+      if (!capturedSquare) return 0;
+      const next = draughtsStateAfterCapture(state, move, piece, capturedSquare);
+      if (shouldCrownDraughtsMan(getVariant(state.variantKey), piece, move.to)) return 1;
+      return 1 + draughtsMaxCaptureLengthFrom(next, piece, move.to);
+    })
+  );
+}
+
+function draughtsStateAfterCapture(state: GameState, move: Move, piece: Piece, capturedSquare: Square): GameState {
+  const next: GameState = structuredClone(state);
+  const fromCell = cellAt(next, move.from);
+  const toCell = cellAt(next, move.to);
+  const capturedCell = cellAt(next, capturedSquare);
+  if (fromCell) fromCell.piece = null;
+  if (capturedCell) capturedCell.piece = null;
+  if (toCell) toCell.piece = { ...piece };
+  return next;
 }
 
 function draughtsContinuationFor(state: GameState): { square: Square; owner: PlayerColor } | null {
@@ -465,6 +551,14 @@ function draughtsContinuationFor(state: GameState): { square: Square; owner: Pla
   if (typeof candidate.row !== "number" || typeof candidate.col !== "number") return null;
   if (candidate.owner !== "white" && candidate.owner !== "black") return null;
   return { square: { row: candidate.row, col: candidate.col }, owner: candidate.owner };
+}
+
+function isDraughtsVariant(variantKey: string) {
+  return variantKey === "english-draughts" || variantKey === "international-draughts";
+}
+
+function shouldCrownDraughtsMan(variant: VariantDefinition, piece: Piece, to: Square) {
+  return piece.owner === "white" ? to.row === 0 : to.row === variant.board.rows - 1;
 }
 
 function xiangqiSoldierMoves(state: GameState, piece: Piece, from: Square) {
@@ -846,7 +940,7 @@ export function applyMove(state: GameState, move: Move): GameState {
     if (!fromCell?.piece) throw new Error("errors.invalidMove");
 
     movingPiece = fromCell.piece;
-    const jumpedSquare = variant.key === "english-draughts" ? draughtsJumpedSquare(move) : null;
+    const jumpedSquare = isDraughtsVariant(variant.key) ? draughtsCapturedSquare(next, move, movingPiece) : null;
     const jumpedCell = jumpedSquare ? cellAt(next, jumpedSquare) : null;
     captured = jumpedCell?.piece ?? toCell!.piece;
     if (captured) {
@@ -893,7 +987,7 @@ export function applyMove(state: GameState, move: Move): GameState {
     return withJungleOutcome(next, movingPiece.owner, move.to);
   }
 
-  if (variant.key === "english-draughts") {
+  if (isDraughtsVariant(variant.key)) {
     return withDraughtsOutcome(next, movingPiece.owner, movingPiece, move, Boolean(captured));
   }
 
@@ -996,7 +1090,7 @@ function withDraughtsOutcome(state: GameState, mover: PlayerColor, movedPieceBef
 
   const movedPiece = cellAt(state, move.to)?.piece;
   const becameKing = movedPieceBeforePromotion.code === "p" && movedPiece?.code === "x";
-  if (captured && isDraughtsJump(move) && movedPiece && !becameKing && draughtsJumpMoves(state, movedPiece, move.to).length > 0) {
+  if (captured && movedPiece && !becameKing && draughtsMaxCaptureLengthFrom(state, movedPiece, move.to) > 0) {
     state.turn = mover;
     state.variantState = {
       ...(state.variantState ?? {}),
@@ -1536,8 +1630,8 @@ function hasMovedFrom(state: GameState, square: Square) {
 
 function shouldPromote(variant: VariantDefinition, piece: Piece, to: Square, requested?: boolean) {
   if (!variant.supportsPromotion || piece.code !== "p") return false;
-  if (variant.key === "english-draughts") {
-    return piece.owner === "white" ? to.row === 0 : to.row === variant.board.rows - 1;
+  if (isDraughtsVariant(variant.key)) {
+    return shouldCrownDraughtsMan(variant, piece, to);
   }
   if (variant.key === "makruk") {
     return piece.owner === "white" ? to.row <= 2 : to.row >= variant.board.rows - 3;
@@ -1553,7 +1647,7 @@ function isShogiFamily(variantKey: string) {
 }
 
 function promotionCodeFor(variant: VariantDefinition, piece: Piece) {
-  if (variant.key === "english-draughts" && piece.code === "p") return "x";
+  if (isDraughtsVariant(variant.key) && piece.code === "p") return "x";
   if (variant.key === "chaturanga" && piece.code === "p") return "m";
   if (variant.key === "shatranj" && piece.code === "p") return "f";
   if (variant.family === "western" && piece.code === "p") return "q";

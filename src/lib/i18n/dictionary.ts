@@ -111,6 +111,7 @@ const en = {
   "variant.makruk": "Makruk",
   "variant.jungle": "Jungle Chess",
   "variant.english-draughts": "English Draughts",
+  "variant.international-draughts": "International Draughts",
   "variant.antichess": "Antichess",
   "variant.horde": "Horde",
   "variant.king-of-the-hill": "King of the Hill",

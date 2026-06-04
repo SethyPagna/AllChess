@@ -22,8 +22,8 @@ const nativeGlyphs: Record<string, string> = {
 
 export function PieceIcon({ code, owner, variantKey, promoted = false }: PieceIconProps) {
   const normalized = code.toLowerCase();
-  if (variantKey === "english-draughts") {
-    return <DraughtsPieceIcon code={normalized} owner={owner} promoted={promoted} />;
+  if (isDraughtsPresentation(variantKey)) {
+    return <DraughtsPieceIcon code={normalized} owner={owner} promoted={promoted} variantKey={variantKey} />;
   }
   if (usesWesternPresentation(variantKey)) {
     return <WesternPieceIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} />;
@@ -48,7 +48,7 @@ export function PieceIcon({ code, owner, variantKey, promoted = false }: PieceIc
   );
 }
 
-function DraughtsPieceIcon({ code, owner, promoted }: { code: string; owner: PlayerColor; promoted: boolean }) {
+function DraughtsPieceIcon({ code, owner, promoted, variantKey }: { code: string; owner: PlayerColor; promoted: boolean; variantKey: string }) {
   const isKing = code === "x" || promoted;
   const piece = isKing ? "checker-king" : "checker-man";
   return (
@@ -58,7 +58,7 @@ function DraughtsPieceIcon({ code, owner, promoted }: { code: string; owner: Pla
       data-owner={owner}
       data-piece={piece}
       data-promoted={isKing || undefined}
-      data-variant="english-draughts"
+      data-variant={variantKey}
       role="img"
       viewBox="0 0 100 100"
     >
@@ -70,6 +70,10 @@ function DraughtsPieceIcon({ code, owner, promoted }: { code: string; owner: Pla
       {isKing ? <path d="M34 46 42 32l8 13 8-13 8 14-7 10H41z" data-detail="checker-crown" /> : null}
     </svg>
   );
+}
+
+function isDraughtsPresentation(variantKey: string) {
+  return variantKey === "english-draughts" || variantKey === "international-draughts";
 }
 
 function usesWesternPresentation(variantKey: string) {

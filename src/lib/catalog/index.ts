@@ -68,7 +68,8 @@ const presentationByVariant: Record<string, PiecePresentationPack> = {
   janggi: "xiangqi-disk",
   makruk: "makruk-carved",
   jungle: "jungle-animals",
-  "english-draughts": "draughts-stacks"
+  "english-draughts": "draughts-stacks",
+  "international-draughts": "draughts-stacks"
 };
 
 const localizedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
@@ -84,6 +85,7 @@ const localizedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
   makruk: { english: "Makruk", native: "หมากรุก", romanization: "Makruk" },
   jungle: { english: "Jungle", native: "鬥獸棋", romanization: "Dòu Shòu Qí", short: "Jungle / Dou Shou Qi" },
   "english-draughts": { english: "English Draughts", short: "Checkers" },
+  "international-draughts": { english: "International Draughts", short: "10x10 Draughts" },
   antichess: { english: "Antichess" },
   horde: { english: "Horde" },
   "king-of-the-hill": { english: "King of the Hill" },
@@ -157,6 +159,7 @@ function playableRegion(key: string) {
   if (["xiangqi", "shogi", "mini-shogi", "janggi", "jungle"].includes(key)) return ["East Asia"];
   if (key === "makruk") return ["Southeast Asia", "Thailand"];
   if (key === "english-draughts") return ["United Kingdom", "United States"];
+  if (key === "international-draughts") return ["Global", "Europe"];
   return ["Global"];
 }
 
@@ -174,6 +177,7 @@ function relatedFor(key: string) {
     makruk: ["sittuyin", "ouk-chaktrang", "asean-chess"],
     jungle: ["xiangqi", "janggi", "bagha-chal"],
     "english-draughts": ["international-draughts", "turkish-draughts", "konane"],
+    "international-draughts": ["english-draughts", "turkish-draughts", "konane"],
     "racing-kings": ["king-of-the-hill", "three-check", "classic"]
   };
   return related[key] ?? ["classic", "chess960", "go-19x19"];
@@ -307,21 +311,6 @@ const learningCatalogEntries: GameCatalogEntry[] = [
     ruleSourceLinks: [{ name: "Cambodian Chess Federation", url: "https://www.cambodianchess.com/" }],
     shortRules: ["Makruk-related movement with Cambodian opening rules.", "Named pieces need Khmer and romanized presentation.", "Counting and tournament profile must be explicit."],
     winConditions: ["Checkmate", "Counting decision in selected profile"]
-  }),
-  catalogEntry({
-    id: "international-draughts",
-    name: { english: "International Draughts" },
-    aliases: ["polish-draughts", "international-checkers"],
-    family: "draughts",
-    region: ["Global", "Europe"],
-    board: { kind: "square-grid", rows: 10, cols: 10, description: "10x10 board using dark squares." },
-    piecePresentation: "draughts-stacks",
-    playability: "coming-soon",
-    rulesAdapter: "draughts-engine",
-    botAdapter: "internal-search",
-    ruleSourceLinks: [{ name: "FMJD rules", url: "https://www.fmjd.org/downloads/Annexes/Annex%201%20Rules%20of%20the%20Game.pdf" }],
-    shortRules: ["Men move forward diagonally.", "Captures are compulsory.", "Kings fly along diagonals and maximum capture rules apply."],
-    winConditions: ["Capture or immobilize all opposing pieces"]
   }),
   catalogEntry({
     id: "turkish-draughts",
