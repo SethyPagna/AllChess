@@ -234,8 +234,12 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
   },
   makruk: {
     status: "rules-gated",
-    verifiedEdgeCases: ["Makruk setup, no-castling flag, and promotion intent are present."],
-    remainingGates: ["Native met/khon movement fixtures", "Makruk promotion fixtures", "Counting-rule draw fixtures"]
+    verifiedEdgeCases: [
+      "Makruk setup uses one royal king and one Met per side with no castling.",
+      "Native Met, Khon, knight, rook, king, and pawn movement have fixtures.",
+      "Pawns do not double-push or en-passant, and promote to Met on the sixth rank."
+    ],
+    remainingGates: ["Counting-rule draw fixtures"]
   },
   jungle: {
     status: "verified-playable",

@@ -14,6 +14,7 @@ const pieceLabels: Record<string, string> = {
   h: "chess.knight",
   c: "chess.rook",
   s: "chess.pawn",
+  m: "chess.queen",
   l: "chess.rook",
   d: "chess.pawn",
   w: "chess.pawn",
@@ -102,6 +103,9 @@ function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
   if (variant.key === "shogi") {
     return shogiPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
   }
+  if (variant.key === "makruk") {
+    return makrukPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
+  }
   if (variant.key === "xiangqi" || variant.key === "janggi") {
     return eastAsianPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
   }
@@ -115,31 +119,7 @@ function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
     return xiangqiSoldierMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
   }
 
-  const directions = movementDirections(piece.code);
-  const sliding = isSlidingPiece(piece.code);
-  const moves: Move[] = [];
-
-  for (const [dr, dc] of directions) {
-    let row = from.row + orient(cell.piece.owner, dr);
-    let col = from.col + dc;
-    while (isInside(state, { row, col })) {
-      const target = cellAt(state, { row, col });
-      if (!target) break;
-      if (!target.piece) {
-        moves.push({ from, to: { row, col } });
-      } else {
-        if (target.piece.owner !== cell.piece.owner) {
-          moves.push({ from, to: { row, col } });
-        }
-        break;
-      }
-      if (!sliding) break;
-      row += orient(cell.piece.owner, dr);
-      col += dc;
-    }
-  }
-
-  return moves.filter((move) => terrainAllows(state, piece, move.to));
+  return genericPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
 }
 
 function getLegalDropMoves(state: GameState, drop: Piece): Move[] {
@@ -229,6 +209,53 @@ function shogiSilverDirections(owner: PlayerColor): Array<[number, number]> {
 function shogiKnightDirections(owner: PlayerColor): Array<[number, number]> {
   const forward = shogiForward(owner);
   return [[forward * 2, -1], [forward * 2, 1]];
+}
+
+function makrukPieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
+  switch (piece.code) {
+    case "m":
+      return steppingMoves(state, piece, from, [[-1, -1], [-1, 1], [1, -1], [1, 1]]);
+    case "s":
+      return steppingMoves(state, piece, from, [
+        [-1, -1],
+        [-1, 1],
+        [1, -1],
+        [1, 1],
+        [orient(piece.owner, -1), 0]
+      ]);
+    case "p":
+      return westernPawnMoves(state, piece, from, false);
+    default:
+      return genericPieceMoves(state, piece, from);
+  }
+}
+
+function genericPieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
+  const directions = movementDirections(piece.code);
+  const sliding = isSlidingPiece(piece.code);
+  const moves: Move[] = [];
+
+  for (const [dr, dc] of directions) {
+    let row = from.row + orient(piece.owner, dr);
+    let col = from.col + dc;
+    while (isInside(state, { row, col })) {
+      const target = cellAt(state, { row, col });
+      if (!target) break;
+      if (!target.piece) {
+        moves.push({ from, to: { row, col } });
+      } else {
+        if (target.piece.owner !== piece.owner) {
+          moves.push({ from, to: { row, col } });
+        }
+        break;
+      }
+      if (!sliding) break;
+      row += orient(piece.owner, dr);
+      col += dc;
+    }
+  }
+
+  return moves;
 }
 
 function westernPawnMoves(state: GameState, piece: Piece, from: Square, allowDouble: boolean) {
@@ -941,6 +968,9 @@ function hasMovedFrom(state: GameState, square: Square) {
 
 function shouldPromote(variant: VariantDefinition, piece: Piece, to: Square, requested?: boolean) {
   if (!variant.supportsPromotion || piece.code !== "p") return false;
+  if (variant.key === "makruk") {
+    return piece.owner === "white" ? to.row <= 2 : to.row >= variant.board.rows - 3;
+  }
   if (variant.family === "western") {
     return to.row === 0 || to.row === variant.board.rows - 1;
   }
@@ -949,7 +979,7 @@ function shouldPromote(variant: VariantDefinition, piece: Piece, to: Square, req
 
 function promotionCodeFor(variant: VariantDefinition, piece: Piece) {
   if (variant.family === "western" && piece.code === "p") return "q";
-  if (variant.key === "makruk" && piece.code === "p") return "a";
+  if (variant.key === "makruk" && piece.code === "p") return "m";
   return piece.code;
 }
 

@@ -17,6 +17,13 @@ describe("PieceIcon", () => {
     expect(queen).toContain('data-detail="queen-jewel"');
   });
 
+  test("renders Makruk met as the queen-style piece", () => {
+    const met = renderToStaticMarkup(<PieceIcon code="m" owner="white" variantKey="makruk" />);
+
+    expect(met).toContain('data-piece="queen"');
+    expect(met).toContain('data-detail="queen-jewel"');
+  });
+
   test("keeps non-western pieces as strong native symbols", () => {
     const redGeneral = renderToStaticMarkup(<PieceIcon code="g" owner="red" variantKey="xiangqi" />);
     const blackGeneral = renderToStaticMarkup(<PieceIcon code="g" owner="black" variantKey="xiangqi" />);

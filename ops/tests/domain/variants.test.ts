@@ -517,6 +517,69 @@ describe("variant engine", () => {
     expect(next.captured[0]).toMatchObject({ code: "p", owner: "gote", promoted: true });
   });
 
+  test("makruk setup uses one king and one met per side", () => {
+    const state = createInitialState("makruk", "makruk-setup");
+    const whitePieces = state.board.flatMap((row) => row.map((cell) => cell.piece).filter((piece) => piece?.owner === "white"));
+    const blackPieces = state.board.flatMap((row) => row.map((cell) => cell.piece).filter((piece) => piece?.owner === "black"));
+
+    expect(whitePieces.filter((piece) => piece?.code === "k")).toHaveLength(1);
+    expect(whitePieces.filter((piece) => piece?.code === "m")).toHaveLength(1);
+    expect(blackPieces.filter((piece) => piece?.code === "k")).toHaveLength(1);
+    expect(blackPieces.filter((piece) => piece?.code === "m")).toHaveLength(1);
+  });
+
+  test("makruk met, khon, and pawns use native movement", () => {
+    let state = createInitialState("makruk", "makruk-movement");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[7][4].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[4][4].piece = { id: "white-met", code: "m", owner: "white", labelKey: "chess.queen" };
+    state.board[5][2].piece = { id: "white-khon", code: "s", owner: "white", labelKey: "chess.bishop" };
+    state.board[5][6].piece = { id: "white-pawn", code: "p", owner: "white", labelKey: "chess.pawn" };
+    state.board[4][7].piece = { id: "black-target", code: "p", owner: "black", labelKey: "chess.pawn" };
+
+    expect(getLegalMoves(state, { row: 4, col: 4 })).toEqual(
+      expect.arrayContaining([
+        { from: { row: 4, col: 4 }, to: { row: 3, col: 3 } },
+        { from: { row: 4, col: 4 }, to: { row: 5, col: 5 } }
+      ])
+    );
+    expect(getLegalMoves(state, { row: 4, col: 4 })).not.toContainEqual({ from: { row: 4, col: 4 }, to: { row: 3, col: 4 } });
+
+    expect(getLegalMoves(state, { row: 5, col: 2 })).toEqual(
+      expect.arrayContaining([
+        { from: { row: 5, col: 2 }, to: { row: 4, col: 2 } },
+        { from: { row: 5, col: 2 }, to: { row: 4, col: 1 } },
+        { from: { row: 5, col: 2 }, to: { row: 6, col: 3 } }
+      ])
+    );
+    expect(getLegalMoves(state, { row: 5, col: 2 })).not.toContainEqual({ from: { row: 5, col: 2 }, to: { row: 5, col: 3 } });
+
+    expect(getLegalMoves(state, { row: 5, col: 6 })).toContainEqual({ from: { row: 5, col: 6 }, to: { row: 4, col: 6 } });
+    expect(getLegalMoves(state, { row: 5, col: 6 })).toContainEqual({ from: { row: 5, col: 6 }, to: { row: 4, col: 7 } });
+    expect(getLegalMoves(state, { row: 5, col: 6 })).not.toContainEqual({ from: { row: 5, col: 6 }, to: { row: 3, col: 6 } });
+  });
+
+  test("makruk pawns promote to met on the sixth rank", () => {
+    let state = createInitialState("makruk", "makruk-promotion");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[7][4].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[3][0].piece = { id: "white-pawn", code: "p", owner: "white", labelKey: "chess.pawn" };
+
+    const promoted = applyMove(state, { from: { row: 3, col: 0 }, to: { row: 2, col: 0 } });
+
+    expect(promoted.board[2][0].piece).toMatchObject({ code: "m", owner: "white", promoted: true });
+  });
+
   test("janggi generals and guards follow palace lines including diagonals", () => {
     let state = createInitialState("janggi", "janggi-palace");
     state = {

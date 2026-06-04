@@ -186,6 +186,7 @@ function westernPieceName(code: string, variantKey: string) {
   if (variantKey === "makruk") {
     const makrukNames: Record<string, string> = {
       k: "king",
+      m: "queen",
       s: "bishop",
       n: "knight",
       r: "rook",
