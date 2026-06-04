@@ -415,6 +415,23 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
     }
   },
   {
+    id: "shogi-start-central-pawn",
+    variantKey: "shogi",
+    positionKey: "shogi|turn:sente|moves:",
+    moveUci: "e3e4",
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.84,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "shogi", "pawn", "promotion-zone"],
+    explanation: {
+      plan: "Advance the central pawn to claim space while keeping drops and promotion routes flexible.",
+      threat: "Sente starts building a file for future rook or silver activity without exposing the king.",
+      risk: "The pawn cannot retreat, so the bot should avoid unsupported follow-up pushes.",
+      fallbackGoal: "If Gote contests the center, keep pieces coordinated and look for safe drops after captures."
+    }
+  },
+  {
     id: "janggi-start-central-soldier",
     variantKey: "janggi",
     positionKey: "janggi|turn:red|moves:",

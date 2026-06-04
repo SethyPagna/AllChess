@@ -276,8 +276,8 @@ test("catalog search finds native and romanized game names", async ({ page }) =>
   await expectNoHorizontalOverflow(page);
 
   await page.goto("/en/games/shogi");
-  await expect(page.getByRole("heading", { name: "Rules gate" })).toBeVisible();
-  await expect(page.getByLabel("Training and rules gate")).toContainText("Guide gated for play");
-  await expect(page.getByText("Nifu pawn-drop fixtures")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Verified rules" })).toBeVisible();
+  await expect(page.getByLabel("Training and rules gate")).toHaveCount(0);
+  await expect(page.getByText(/Nifu pawn drops/)).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });

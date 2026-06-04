@@ -214,14 +214,15 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
     remainingGates: []
   },
   shogi: {
-    status: "rules-gated",
+    status: "verified-playable",
     verifiedEdgeCases: [
       "Board setup, promotion zones, native Shogi movement, and hand/drop intent are present.",
       "Nifu pawn drops and non-movable pawn/lance/knight drops have fixtures.",
       "Captured Shogi pieces are demoted into the capturer hand and can be dropped back onto legal empty squares.",
-      "Pawn-drop mate is rejected while answerable checking pawn drops remain legal."
+      "Pawn-drop mate is rejected while answerable checking pawn drops remain legal.",
+      "Fourfold repetition, perpetual-check loss, and impasse material adjudication have fixtures."
     ],
-    remainingGates: ["Impasse and repetition policy"]
+    remainingGates: []
   },
   janggi: {
     status: "rules-gated",

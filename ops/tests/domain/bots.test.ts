@@ -585,7 +585,7 @@ describe("bot difficulty ladder", () => {
     const checklists = listBotTrainingChecklists();
     const classic = checklists.find((checklist) => checklist.variantKey === "classic");
     const jungle = checklists.find((checklist) => checklist.variantKey === "jungle");
-    const verifiedPlayable = ["classic", "chess960", "xiangqi", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"];
+    const verifiedPlayable = ["classic", "chess960", "xiangqi", "shogi", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"];
 
     expect(checklists.map((checklist) => checklist.variantKey)).toEqual(
       expect.arrayContaining(["classic", "chess960", "xiangqi", "shogi", "janggi", "makruk", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"])
@@ -622,13 +622,13 @@ describe("bot difficulty ladder", () => {
 
     expect(summary.claimPolicy).toBe("verified-playable-only");
     expect(summary.requiredCompletionGates).toEqual(expect.arrayContaining(["native rules", "legal bot moves", "review", "persistence", "E2E fixtures"]));
-    expect(summary.playableVariants).toEqual(expect.arrayContaining(["classic", "chess960", "xiangqi", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"]));
+    expect(summary.playableVariants).toEqual(expect.arrayContaining(["classic", "chess960", "xiangqi", "shogi", "jungle", "antichess", "horde", "king-of-the-hill", "three-check"]));
     expect(summary.gatedVariants).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          variantKey: "shogi",
+          variantKey: "janggi",
           claim: "not-fully-trained",
-          remainingGates: expect.arrayContaining([expect.stringContaining("Impasse")])
+          remainingGates: expect.arrayContaining([expect.stringContaining("Pass/scoring")])
         })
       ])
     );

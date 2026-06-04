@@ -53,6 +53,9 @@ export type GameState = {
     | "insufficient-material"
     | "fifty-move"
     | "counting-rule"
+    | "repetition"
+    | "perpetual-check"
+    | "impasse"
     | "resignation"
     | "draw";
   moves: Array<Move & { notation: string }>;

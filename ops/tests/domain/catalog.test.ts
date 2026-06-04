@@ -25,7 +25,7 @@ describe("universal game catalog", () => {
   test("keeps every current playable variant in the broader catalog", () => {
     const playableIds = gameCatalog.filter((entry) => entry.playability === "playable").map((entry) => entry.id).sort();
 
-    expect(playableIds).toEqual(["antichess", "chess960", "classic", "horde", "jungle", "king-of-the-hill", "makruk", "three-check", "xiangqi"]);
+    expect(playableIds).toEqual(["antichess", "chess960", "classic", "horde", "jungle", "king-of-the-hill", "makruk", "shogi", "three-check", "xiangqi"]);
     expect(gameCatalog.find((entry) => entry.id === "classic")).toMatchObject({
       piecePresentation: "staunton-svg",
       botAdapter: "fairy-stockfish"
@@ -47,18 +47,18 @@ describe("universal game catalog", () => {
     }
 
     expect(getPlayableGameVerification("shogi")).toMatchObject({
-      rulesComplete: false,
-      knownGaps: expect.arrayContaining([expect.stringContaining("Impasse")])
+      rulesComplete: true,
+      knownGaps: []
     });
-    expect(getGameCatalogEntry("shogi")).toMatchObject({ playability: "learn" });
+    expect(getGameCatalogEntry("shogi")).toMatchObject({ playability: "playable" });
     expect(getGameCatalogEntry("jungle")).toMatchObject({ playability: "playable" });
     expect(displayReleaseReadiness(getGameCatalogEntry("classic")!)).toBe("Verified ready");
-    expect(displayReleaseReadiness(getGameCatalogEntry("shogi")!)).toBe("Guide gated");
+    expect(displayReleaseReadiness(getGameCatalogEntry("shogi")!)).toBe("Verified ready");
     expect(getCatalogReleaseReadiness(getGameCatalogEntry("classic")!)).toMatchObject({ status: "verified-ready", gateComplete: true, blockers: [] });
     expect(getCatalogReleaseReadiness(getGameCatalogEntry("shogi")!)).toMatchObject({
-      status: "not-fully-trained",
-      gateComplete: false,
-      blockers: expect.arrayContaining([expect.stringContaining("Impasse")])
+      status: "verified-ready",
+      gateComplete: true,
+      blockers: []
     });
   });
 
@@ -70,12 +70,12 @@ describe("universal game catalog", () => {
 
     expect(getCatalogModeSupport(classic, "online")).toMatchObject({ enabled: true, level: "verified" });
     expect(getCatalogModeSupport(classic, "bot")).toMatchObject({ enabled: true, level: "verified" });
-    expect(getCatalogModeSupport(shogi, "bot")).toMatchObject({ enabled: true, level: "preview" });
-    expect(getCatalogModeSupport(shogi, "offline")).toMatchObject({ enabled: true, level: "preview" });
-    expect(getCatalogModeSupport(shogi, "online")).toMatchObject({ enabled: false, level: "guide-only" });
+    expect(getCatalogModeSupport(shogi, "bot")).toMatchObject({ enabled: true, level: "verified" });
+    expect(getCatalogModeSupport(shogi, "offline")).toMatchObject({ enabled: true, level: "verified" });
+    expect(getCatalogModeSupport(shogi, "online")).toMatchObject({ enabled: true, level: "verified" });
     expect(getCatalogModeSupport(go, "bot")).toMatchObject({ enabled: false, level: "guide-only" });
     expect(getCatalogSupportedModes(shogi).map((support) => support.mode)).toEqual(expect.arrayContaining(["bot", "offline", "spectate"]));
-    expect(displayModeReadiness(shogi, "bot")).toBe("Bot preview");
+    expect(displayModeReadiness(shogi, "bot")).toBe("Bot ready");
     expect(filterGameCatalogEntries(gameCatalog, "", { mode: "bot" }).map((entry) => entry.id)).toEqual(
       expect.arrayContaining(["classic", "shogi", "janggi", "makruk", "jungle"])
     );
@@ -87,6 +87,7 @@ describe("universal game catalog", () => {
       "jungle",
       "king-of-the-hill",
       "makruk",
+      "shogi",
       "three-check",
       "xiangqi"
     ]);
@@ -123,7 +124,7 @@ describe("universal game catalog", () => {
   test("stats and API payloads are real catalog counts, not fake live-player estimates", async () => {
     const stats = getCatalogStats();
     expect(stats.totalGames).toBe(gameCatalog.length);
-    expect(stats.playableGames).toBe(9);
+    expect(stats.playableGames).toBe(10);
     expect(stats.familyCounts.mancala).toBeGreaterThan(0);
 
     const catalog = await catalogGet(new Request("http://allchess.test/api/catalog?q=go"));
@@ -152,7 +153,7 @@ describe("universal game catalog", () => {
     const gatedItem = await catalogItemGet(new Request("http://allchess.test/api/catalog/shogi"), { params: Promise.resolve({ gameId: "shogi" }) });
     await expect(gatedItem.json()).resolves.toMatchObject({
       id: "shogi",
-      releaseReadiness: { status: "not-fully-trained", label: "Guide gated", gateComplete: false }
+      releaseReadiness: { status: "verified-ready", label: "Verified ready", gateComplete: true }
     });
 
     const families = await familiesGet();

@@ -548,6 +548,60 @@ describe("variant engine", () => {
     expect(() => applyMove(mate, { kind: "drop", from: { row: -1, col: -1 }, to: { row: 1, col: 4 }, drop: pawnDrop })).toThrow("errors.invalidMove");
   });
 
+  test("shogi records fourfold repetition as a draw", () => {
+    let state = createInitialState("shogi", "shogi-repetition");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      hands: { sente: {}, gote: {} },
+      turn: "sente"
+    };
+    state.board[8][4].piece = { id: "sente-king", code: "k", owner: "sente", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "gote-king", code: "k", owner: "gote", labelKey: "chess.king" };
+    state.board[7][0].piece = { id: "sente-rook", code: "r", owner: "sente", labelKey: "chess.rook" };
+    state.board[1][0].piece = { id: "gote-rook", code: "r", owner: "gote", labelKey: "chess.rook" };
+
+    const cycleMoves = [
+      { from: { row: 7, col: 0 }, to: { row: 7, col: 1 } },
+      { from: { row: 1, col: 0 }, to: { row: 1, col: 1 } },
+      { from: { row: 7, col: 1 }, to: { row: 7, col: 0 } },
+      { from: { row: 1, col: 1 }, to: { row: 1, col: 0 } }
+    ];
+    for (let cycle = 0; cycle < 4 && state.status === "active"; cycle += 1) {
+      for (const move of cycleMoves) {
+        state = applyMove(state, move);
+        if (state.status === "completed") break;
+      }
+    }
+
+    expect(state).toMatchObject({ status: "completed", result: "draw", outcomeReason: "repetition" });
+    expect(state.variantState?.shogiRepetition).toMatchObject({ count: 4, checker: null });
+  });
+
+  test("shogi impasse adjudicates entered kings by material points", () => {
+    let state = createInitialState("shogi", "shogi-impasse");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      hands: { sente: { r: 2, b: 1, g: 4 }, gote: { r: 2, b: 1, g: 4 } },
+      turn: "sente"
+    };
+    state.board[0][4].piece = { id: "sente-king-entered", code: "k", owner: "sente", labelKey: "chess.king" };
+    state.board[8][4].piece = { id: "gote-king-entered", code: "k", owner: "gote", labelKey: "chess.king" };
+    state.board[1][0].piece = { id: "sente-rook", code: "r", owner: "sente", labelKey: "chess.rook" };
+    state.board[7][0].piece = { id: "gote-rook", code: "r", owner: "gote", labelKey: "chess.rook" };
+
+    const adjudicated = applyMove(state, { from: { row: 1, col: 0 }, to: { row: 1, col: 1 } });
+
+    expect(adjudicated).toMatchObject({ status: "completed", result: "draw", outcomeReason: "impasse" });
+    expect(adjudicated.variantState?.shogiImpasse).toMatchObject({
+      sentePoints: 24,
+      gotePoints: 24,
+      senteKingEntered: true,
+      goteKingEntered: true
+    });
+  });
+
   test("makruk setup uses one king and one met per side", () => {
     const state = createInitialState("makruk", "makruk-setup");
     const whitePieces = state.board.flatMap((row) => row.map((cell) => cell.piece).filter((piece) => piece?.owner === "white"));

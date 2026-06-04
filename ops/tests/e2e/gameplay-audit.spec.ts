@@ -135,15 +135,15 @@ test("game picker exposes bot-capable preview variants without enabling live mod
   await expect(page.getByLabel("Game filters")).toBeVisible();
   await page.getByLabel("Mode filter").getByRole("button", { name: "Bot", exact: true }).click();
   await page.getByPlaceholder("Search games").fill("shogi");
-  const shogiLink = page.getByRole("link", { name: /Shogi.*Bot preview/i }).first();
+  const shogiLink = page.getByRole("link", { name: /Shogi.*Bot ready/i }).first();
   await expect(shogiLink).toHaveAttribute("href", "/en/play/shogi?bot=normal&mode=bot&time=rapid");
   await shogiLink.click();
 
   await expect(page).toHaveURL(/\/en\/play\/shogi\?bot=normal&mode=bot&time=rapid$/);
   await expect(page.getByRole("heading", { name: "Shogi" })).toBeVisible();
   await expect(page.getByLabel("Bot difficulty")).toBeEnabled();
-  await expect(page.getByRole("button", { name: "Play Online" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Play Online" })).toHaveAttribute("title", /Live rooms stay locked until rules/i);
+  await expect(page.getByRole("button", { name: "Play Online" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Play Online" })).toHaveAttribute("title", /Available for live and room setup/i);
   expect(runtimeErrors).toEqual([]);
 });
 

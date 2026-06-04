@@ -30,6 +30,20 @@ type MakrukCountingState = {
   pieceCount: number;
 };
 
+type ShogiRepetitionState = {
+  key: string;
+  count: number;
+  occurrences: Record<string, number>;
+  checker: PlayerColor | null;
+};
+
+type ShogiImpasseState = {
+  sentePoints: number;
+  gotePoints: number;
+  senteKingEntered: boolean;
+  goteKingEntered: boolean;
+};
+
 type DropMoveOptions = {
   validatePawnDropMate?: boolean;
 };
@@ -736,6 +750,9 @@ export function applyMove(state: GameState, move: Move): GameState {
     next.outcomeReason = "royal-captured";
     return next;
   }
+  if (variant.key === "shogi") {
+    return withShogiOutcome(next, movingPiece.owner, move.to);
+  }
   return withOutcome(next, movingPiece.owner, move.to);
 }
 
@@ -871,6 +888,141 @@ function readMakrukCounting(state: GameState): MakrukCountingState | undefined {
   if (typeof candidate.startedAtPly !== "number" || typeof candidate.remainingMoves !== "number" || typeof candidate.limit !== "number") return undefined;
   if (typeof candidate.pieceCount !== "number") return undefined;
   return candidate as MakrukCountingState;
+}
+
+function withShogiOutcome(state: GameState, mover: PlayerColor, destination: Square): GameState {
+  const next = withOutcome(state, mover, destination);
+  if (next.status === "completed") return next;
+
+  updateShogiVariantState(next, mover);
+  const repetition = readShogiRepetition(next);
+  if (repetition && repetition.count >= 4) {
+    next.status = "completed";
+    next.result = repetition.checker === mover ? opponentOf(mover) : "draw";
+    next.outcomeReason = repetition.checker === mover ? "perpetual-check" : "repetition";
+    return next;
+  }
+
+  const impasse = readShogiImpasse(next);
+  if (impasse?.senteKingEntered && impasse.goteKingEntered) {
+    next.status = "completed";
+    if (impasse.sentePoints >= 24 && impasse.gotePoints >= 24) {
+      next.result = "draw";
+    } else if (impasse.sentePoints >= 24) {
+      next.result = "sente";
+    } else if (impasse.gotePoints >= 24) {
+      next.result = "gote";
+    } else {
+      next.result = "draw";
+    }
+    next.outcomeReason = "impasse";
+  }
+
+  return next;
+}
+
+function updateShogiVariantState(state: GameState, mover: PlayerColor) {
+  const key = shogiPositionKey(state);
+  const previous = readShogiRepetition(state);
+  const occurrences = { ...(previous?.occurrences ?? {}) };
+  const count = (occurrences[key] ?? 0) + 1;
+  occurrences[key] = count;
+  const defender = state.turn;
+  const checker = isInCheck(state, defender) ? mover : null;
+
+  state.variantState = { ...(state.variantState ?? {}) };
+  state.variantState.shogiRepetition = { key, count, occurrences, checker } satisfies ShogiRepetitionState;
+  state.variantState.shogiImpasse = calculateShogiImpasse(state);
+}
+
+function shogiPositionKey(state: GameState) {
+  const boardParts: string[] = [];
+  for (const row of state.board) {
+    for (const cell of row) {
+      const piece = cell.piece;
+      if (piece) {
+        boardParts.push(`${cell.square.row},${cell.square.col}:${piece.owner}:${piece.code}:${piece.promoted ? 1 : 0}`);
+      }
+    }
+  }
+  const board = boardParts.join("|");
+  const hands = ["sente", "gote"]
+    .map((owner) => {
+      const hand = state.hands?.[owner as PlayerColor] ?? {};
+      const pieces = Object.entries(hand)
+        .filter(([, count]) => count > 0)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([code, count]) => `${code}${count}`)
+        .join(",");
+      return `${owner}:${pieces}`;
+    })
+    .join("|");
+  return `${state.variantKey};turn=${state.turn};board=${board};hands=${hands}`;
+}
+
+function readShogiRepetition(state: GameState): ShogiRepetitionState | undefined {
+  const value = state.variantState?.shogiRepetition;
+  if (!value || typeof value !== "object") return undefined;
+  const candidate = value as Partial<ShogiRepetitionState>;
+  if (typeof candidate.key !== "string" || typeof candidate.count !== "number" || typeof candidate.occurrences !== "object") return undefined;
+  return candidate as ShogiRepetitionState;
+}
+
+function calculateShogiImpasse(state: GameState): ShogiImpasseState {
+  return {
+    sentePoints: countShogiMaterialPoints(state, "sente"),
+    gotePoints: countShogiMaterialPoints(state, "gote"),
+    senteKingEntered: isShogiKingEntered(state, "sente"),
+    goteKingEntered: isShogiKingEntered(state, "gote")
+  };
+}
+
+function readShogiImpasse(state: GameState): ShogiImpasseState | undefined {
+  const value = state.variantState?.shogiImpasse;
+  if (!value || typeof value !== "object") return undefined;
+  const candidate = value as Partial<ShogiImpasseState>;
+  if (
+    typeof candidate.sentePoints !== "number" ||
+    typeof candidate.gotePoints !== "number" ||
+    typeof candidate.senteKingEntered !== "boolean" ||
+    typeof candidate.goteKingEntered !== "boolean"
+  ) {
+    return undefined;
+  }
+  return candidate as ShogiImpasseState;
+}
+
+function isShogiKingEntered(state: GameState, owner: PlayerColor) {
+  for (const row of state.board) {
+    for (const cell of row) {
+      if (cell.piece?.owner === owner && cell.piece.code === "k") {
+        return owner === "sente" ? cell.square.row <= 2 : cell.square.row >= state.board.length - 3;
+      }
+    }
+  }
+  return false;
+}
+
+function countShogiMaterialPoints(state: GameState, owner: PlayerColor) {
+  let points = 0;
+  for (const row of state.board) {
+    for (const cell of row) {
+      const piece = cell.piece;
+      if (!piece || piece.owner !== owner) continue;
+      points += shogiPiecePoint(piece.code);
+    }
+  }
+  const hand = state.hands?.[owner] ?? {};
+  for (const [code, count] of Object.entries(hand)) {
+    points += shogiPiecePoint(code) * count;
+  }
+  return points;
+}
+
+function shogiPiecePoint(code: string) {
+  if (code === "k") return 0;
+  if (code === "r" || code === "b") return 5;
+  return 1;
 }
 
 function withOutcome(state: GameState, mover: PlayerColor, destination: Square): GameState {

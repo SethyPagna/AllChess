@@ -23,6 +23,9 @@ const reasonLabels: Record<NonNullable<GameState["outcomeReason"]>, string> = {
   "insufficient-material": "insufficient material",
   "fifty-move": "fifty-move rule",
   "counting-rule": "counting rule",
+  repetition: "repetition",
+  "perpetual-check": "perpetual check",
+  impasse: "impasse",
   resignation: "resignation",
   draw: "draw"
 };
@@ -84,6 +87,9 @@ function outcomeContext(state: GameState, reason: NonNullable<GameState["outcome
     "insufficient-material": "Neither side has enough material left to force checkmate. With only the two kings, the game is immediately drawn.",
     "fifty-move": "Fifty full moves passed without a pawn move or capture, so standard chess rules allow the game to be drawn.",
     "counting-rule": "The variant-specific endgame count expired before checkmate was delivered.",
+    repetition: "The same position occurred four times with the same side to move, so the Shogi repetition rule ended the game.",
+    "perpetual-check": "The repeated position was sustained by continuous checking, so the checking side loses under Shogi rules.",
+    impasse: "Both Shogi kings entered the promotion zones, and the material-point profile adjudicated the position.",
     resignation: "A player resigned, so the opponent receives the win without more moves being played.",
     draw: "The selected ruleset reached a drawn result with no winner."
   };
