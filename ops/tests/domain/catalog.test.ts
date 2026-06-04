@@ -27,6 +27,7 @@ describe("universal game catalog", () => {
 
     expect(playableIds).toEqual([
       "antichess",
+      "chaturanga",
       "chess960",
       "classic",
       "crazyhouse",
@@ -69,6 +70,7 @@ describe("universal game catalog", () => {
     expect(getGameCatalogEntry("shogi")).toMatchObject({ playability: "playable" });
     expect(getGameCatalogEntry("mini-shogi")).toMatchObject({ playability: "playable", botAdapter: "internal-search" });
     expect(getGameCatalogEntry("crazyhouse")).toMatchObject({ playability: "playable", botAdapter: "internal-search" });
+    expect(getGameCatalogEntry("chaturanga")).toMatchObject({ playability: "playable", botAdapter: "internal-search" });
     expect(getGameCatalogEntry("shatranj")).toMatchObject({ playability: "playable", botAdapter: "internal-search" });
     expect(getGameCatalogEntry("janggi")).toMatchObject({ playability: "playable" });
     expect(getGameCatalogEntry("jungle")).toMatchObject({ playability: "playable" });
@@ -98,10 +100,11 @@ describe("universal game catalog", () => {
     expect(getCatalogSupportedModes(shogi).map((support) => support.mode)).toEqual(expect.arrayContaining(["bot", "offline", "spectate"]));
     expect(displayModeReadiness(shogi, "bot")).toBe("Bot ready");
     expect(filterGameCatalogEntries(gameCatalog, "", { mode: "bot" }).map((entry) => entry.id)).toEqual(
-      expect.arrayContaining(["classic", "crazyhouse", "shatranj", "shogi", "mini-shogi", "janggi", "makruk", "jungle"])
+      expect.arrayContaining(["classic", "chaturanga", "crazyhouse", "shatranj", "shogi", "mini-shogi", "janggi", "makruk", "jungle"])
     );
     expect(filterGameCatalogEntries(gameCatalog, "", { mode: "online" }).map((entry) => entry.id).sort()).toEqual([
       "antichess",
+      "chaturanga",
       "chess960",
       "classic",
       "crazyhouse",
@@ -150,7 +153,7 @@ describe("universal game catalog", () => {
   test("stats and API payloads are real catalog counts, not fake live-player estimates", async () => {
     const stats = getCatalogStats();
     expect(stats.totalGames).toBe(gameCatalog.length);
-    expect(stats.playableGames).toBe(15);
+    expect(stats.playableGames).toBe(16);
     expect(stats.familyCounts.mancala).toBeGreaterThan(0);
 
     const catalog = await catalogGet(new Request("http://allchess.test/api/catalog?q=go"));

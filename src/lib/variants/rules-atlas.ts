@@ -41,6 +41,20 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     drawConditions: ["Stalemate", "Insufficient material", "Repetition", "Fifty-move rule", "Mutual agreement"],
     illegalMoveNotes: ["A king may not move into check.", "A checked player must remove the check.", "Royal captures are never legal."]
   },
+  chaturanga: {
+    variantKey: "chaturanga",
+    sourceLinks: [{ name: "Encyclopaedia Britannica chess origins overview", url: "https://www.britannica.com/topic/chess" }],
+    numberedBasics: [
+      "The minister moves one square diagonally and the elephant jumps exactly two squares diagonally.",
+      "Chariots move like rooks, horses move like knights, and pawns move one square forward.",
+      "Pawns promote to minister on the back rank; no castling, double pawn push, or en passant is used.",
+      "Win by checkmate or by baring the opposing king."
+    ],
+    specialRules: ["Minister", "Elephant jump", "One-step pawns", "No castling", "Bare-king objective"],
+    winConditions: ["Checkmate", "Bare the opposing king", "Timeout"],
+    drawConditions: ["Mutual bare kings", "Repetition/no-progress according to selected room rules"],
+    illegalMoveNotes: ["The elephant must land exactly two diagonal squares away.", "Pawns may not double-push.", "A player may not leave their king in check."]
+  },
   chess960: {
     variantKey: "chess960",
     sourceLinks: [{ name: "FIDE Laws of Chess, Chess960 Guidelines", url: "https://rcc.fide.com/fide-laws-of-chess_fulltexthtml/" }],
@@ -253,6 +267,16 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
   classic: {
     status: "verified-playable",
     verifiedEdgeCases: verifiedChessEdgeCases,
+    remainingGates: []
+  },
+  chaturanga: {
+    status: "verified-playable",
+    verifiedEdgeCases: [
+      "Minister one-step diagonal movement and elephant two-square jump movement are covered.",
+      "Pawns move one step, cannot double-push, and promote to minister on the back rank.",
+      "The bare-king objective ends the game when the opponent has only a royal piece left.",
+      "No castling is exposed for the historical ruleset and bot legal validation uses the native moves."
+    ],
     remainingGates: []
   },
   chess960: {

@@ -100,6 +100,7 @@ const en = {
   "chess.knight": "Knight",
   "chess.pawn": "Pawn",
   "variant.classic": "Classic Chess",
+  "variant.chaturanga": "Chaturanga",
   "variant.crazyhouse": "Crazyhouse",
   "variant.shatranj": "Shatranj",
   "variant.chess960": "Chess960",

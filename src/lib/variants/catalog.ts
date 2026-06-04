@@ -19,6 +19,22 @@ export const variantCatalog: VariantDefinition[] = [
     aliases: ["standard", "fide"]
   },
   {
+    key: "chaturanga",
+    nameKey: "variant.chaturanga",
+    rulesAdapter: "chessops",
+    engineProtocol: "internal",
+    family: "western",
+    board: { rows: 8, cols: 8, coordinates: "orthodox" },
+    players: ["white", "black"],
+    supportsDrops: false,
+    supportsPromotion: true,
+    supportsCastling: false,
+    supportsCheck: true,
+    objective: "Checkmate or bare the opposing king using the ancient four-division army.",
+    setup: ["rnekmenr", "pppppppp", "........", "........", "........", "........", "PPPPPPPP", "RNEKMENR"],
+    aliases: ["ancient-indian-chess"]
+  },
+  {
     key: "crazyhouse",
     nameKey: "variant.crazyhouse",
     rulesAdapter: "chessops",

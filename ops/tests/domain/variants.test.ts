@@ -7,6 +7,7 @@ describe("variant catalog", () => {
   test("contains the planned global launch variants", () => {
     expect(variantCatalog.map((variant) => variant.key)).toEqual([
       "classic",
+      "chaturanga",
       "crazyhouse",
       "shatranj",
       "chess960",
@@ -27,6 +28,7 @@ describe("variant catalog", () => {
   test("declares a rules adapter for every launch variant", () => {
     expect(Object.fromEntries(variantCatalog.map((variant) => [variant.key, variant.rulesAdapter]))).toEqual({
       classic: "chessops",
+      chaturanga: "chessops",
       crazyhouse: "chessops",
       shatranj: "chessops",
       chess960: "chessops",
@@ -150,6 +152,65 @@ describe("variant engine", () => {
     expect(drops).not.toContainEqual(expect.objectContaining({ to: { row: 0, col: 0 } }));
     expect(drops).not.toContainEqual(expect.objectContaining({ to: { row: 7, col: 0 } }));
     expect(drops).toContainEqual(expect.objectContaining({ to: { row: 3, col: 3 } }));
+  });
+
+  test("chaturanga uses minister, elephant jump, and one-step pawn movement", () => {
+    let state = createInitialState("chaturanga", "chaturanga-movement");
+    expect(state.board[7].map((cell) => cell.piece?.code ?? ".").join("")).toBe("rnekmenr");
+
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[7][4].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    state.board[4][4].piece = { id: "white-minister", code: "m", owner: "white", labelKey: "chess.queen" };
+    state.board[4][1].piece = { id: "white-elephant", code: "e", owner: "white", labelKey: "chess.elephant" };
+    state.board[6][0].piece = { id: "white-pawn", code: "p", owner: "white", labelKey: "chess.pawn" };
+
+    expect(getLegalMoves(state, { row: 4, col: 4 })).toEqual(
+      expect.arrayContaining([
+        { from: { row: 4, col: 4 }, to: { row: 3, col: 3 } },
+        { from: { row: 4, col: 4 }, to: { row: 5, col: 5 } }
+      ])
+    );
+    expect(getLegalMoves(state, { row: 4, col: 4 })).not.toContainEqual({ from: { row: 4, col: 4 }, to: { row: 4, col: 5 } });
+    expect(getLegalMoves(state, { row: 4, col: 1 })).toContainEqual({ from: { row: 4, col: 1 }, to: { row: 2, col: 3 } });
+    expect(getLegalMoves(state, { row: 4, col: 1 })).not.toContainEqual({ from: { row: 4, col: 1 }, to: { row: 3, col: 2 } });
+    expect(getLegalMoves(state, { row: 6, col: 0 })).toEqual([{ from: { row: 6, col: 0 }, to: { row: 5, col: 0 } }]);
+  });
+
+  test("chaturanga promotes pawns to minister and wins by baring the opposing king", () => {
+    let promotion = createInitialState("chaturanga", "chaturanga-promotion");
+    promotion = {
+      ...promotion,
+      board: promotion.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    promotion.board[7][4].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    promotion.board[0][4].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    promotion.board[1][0].piece = { id: "white-pawn", code: "p", owner: "white", labelKey: "chess.pawn" };
+
+    const promoted = applyMove(promotion, { from: { row: 1, col: 0 }, to: { row: 0, col: 0 } });
+    expect(promoted.board[0][0].piece).toMatchObject({ code: "m", owner: "white", promoted: true });
+
+    let bareKing = createInitialState("chaturanga", "chaturanga-bare-king");
+    bareKing = {
+      ...bareKing,
+      board: bareKing.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    bareKing.board[7][4].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    bareKing.board[0][4].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    bareKing.board[1][0].piece = { id: "white-chariot", code: "r", owner: "white", labelKey: "chess.rook" };
+    bareKing.board[0][0].piece = { id: "black-elephant", code: "e", owner: "black", labelKey: "chess.elephant" };
+
+    expect(applyMove(bareKing, { from: { row: 1, col: 0 }, to: { row: 0, col: 0 } })).toMatchObject({
+      status: "completed",
+      result: "white",
+      outcomeReason: "objective"
+    });
   });
 
   test("shatranj uses ferz, alfil, and one-step pawn movement", () => {

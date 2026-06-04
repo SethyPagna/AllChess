@@ -152,6 +152,9 @@ function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
   if (variant.key === "makruk") {
     return makrukPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
   }
+  if (variant.key === "chaturanga") {
+    return chaturangaPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
+  }
   if (variant.key === "shatranj") {
     return shatranjPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
   }
@@ -296,12 +299,12 @@ function makrukPieceMoves(state: GameState, piece: Piece, from: Square): Move[] 
   }
 }
 
-function shatranjPieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
+function chaturangaPieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
   switch (piece.code) {
-    case "f":
+    case "m":
       return steppingMoves(state, piece, from, [[-1, -1], [-1, 1], [1, -1], [1, 1]]);
-    case "a":
-      return shatranjAlfilMoves(state, piece, from);
+    case "e":
+      return historicalElephantJumpMoves(state, piece, from);
     case "p":
       return westernPawnMoves(state, piece, from, false);
     default:
@@ -309,7 +312,20 @@ function shatranjPieceMoves(state: GameState, piece: Piece, from: Square): Move[
   }
 }
 
-function shatranjAlfilMoves(state: GameState, piece: Piece, from: Square): Move[] {
+function shatranjPieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
+  switch (piece.code) {
+    case "f":
+      return steppingMoves(state, piece, from, [[-1, -1], [-1, 1], [1, -1], [1, 1]]);
+    case "a":
+      return historicalElephantJumpMoves(state, piece, from);
+    case "p":
+      return westernPawnMoves(state, piece, from, false);
+    default:
+      return genericPieceMoves(state, piece, from);
+  }
+}
+
+function historicalElephantJumpMoves(state: GameState, piece: Piece, from: Square): Move[] {
   const moves: Move[] = [];
   for (const [dr, dc] of [[-2, -2], [-2, 2], [2, -2], [2, 2]] satisfies Array<[number, number]>) {
     const to = { row: from.row + dr, col: from.col + dc };
@@ -802,8 +818,8 @@ export function applyMove(state: GameState, move: Move): GameState {
     updateMakrukCounting(next);
   }
 
-  if (variant.key === "shatranj") {
-    return withShatranjOutcome(next, movingPiece.owner, move.to);
+  if (variant.key === "chaturanga" || variant.key === "shatranj") {
+    return withHistoricalBareKingOutcome(next, movingPiece.owner, move.to);
   }
 
   if (!variant.supportsCheck && captured && isRoyal(captured)) {
@@ -818,7 +834,7 @@ export function applyMove(state: GameState, move: Move): GameState {
   return withOutcome(next, movingPiece.owner, move.to);
 }
 
-function withShatranjOutcome(state: GameState, mover: PlayerColor, destination?: Square): GameState {
+function withHistoricalBareKingOutcome(state: GameState, mover: PlayerColor, destination?: Square): GameState {
   const variant = getVariant(state.variantKey);
   const barePlayers = variant.players.filter((player) => isBareRoyalSide(state, player));
   if (barePlayers.length === variant.players.length) {
@@ -1410,6 +1426,7 @@ function isShogiFamily(variantKey: string) {
 }
 
 function promotionCodeFor(variant: VariantDefinition, piece: Piece) {
+  if (variant.key === "chaturanga" && piece.code === "p") return "m";
   if (variant.key === "shatranj" && piece.code === "p") return "f";
   if (variant.family === "western" && piece.code === "p") return "q";
   if (variant.key === "makruk" && piece.code === "p") return "m";

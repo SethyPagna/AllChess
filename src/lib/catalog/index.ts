@@ -53,6 +53,7 @@ const playableFamilyByVariant: Record<VariantDefinition["family"], GameFamilyKey
 
 const presentationByVariant: Record<string, PiecePresentationPack> = {
   classic: "staunton-svg",
+  chaturanga: "makruk-carved",
   crazyhouse: "staunton-svg",
   shatranj: "makruk-carved",
   chess960: "staunton-svg",
@@ -70,6 +71,7 @@ const presentationByVariant: Record<string, PiecePresentationPack> = {
 
 const localizedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
   classic: { english: "Classic Chess", short: "Chess" },
+  chaturanga: { english: "Chaturanga", native: "चतुरङ्ग", romanization: "Chaturanga" },
   crazyhouse: { english: "Crazyhouse" },
   shatranj: { english: "Shatranj", native: "شطرنج", romanization: "Shatranj" },
   chess960: { english: "Chess960", romanization: "Fischer Random" },
@@ -157,6 +159,7 @@ function playableRegion(key: string) {
 function relatedFor(key: string) {
   const related: Record<string, string[]> = {
     classic: ["chess960", "three-check", "king-of-the-hill"],
+    chaturanga: ["shatranj", "makruk", "classic"],
     crazyhouse: ["classic", "shogi", "bughouse"],
     shatranj: ["classic", "chaturanga", "makruk"],
     chess960: ["classic", "horde", "antichess"],
@@ -182,21 +185,6 @@ function catalogEntry(input: Omit<GameCatalogEntry, "aliases" | "learningStatus"
 }
 
 const learningCatalogEntries: GameCatalogEntry[] = [
-  catalogEntry({
-    id: "chaturanga",
-    name: { english: "Chaturanga", native: "चतुरङ्ग", romanization: "Chaturanga" },
-    aliases: ["ancient-indian-chess"],
-    family: "chess-family",
-    region: ["India", "South Asia"],
-    board: { kind: "square-grid", rows: 8, cols: 8, description: "Historic 8x8 ancestor of the chess family." },
-    piecePresentation: "makruk-carved",
-    playability: "learn",
-    rulesAdapter: "planned-rules-engine",
-    botAdapter: "none",
-    ruleSourceLinks: [{ name: "Encyclopaedia Britannica overview", url: "https://www.britannica.com/topic/chess" }],
-    shortRules: ["Historic four-division army game.", "Rules varied by source and period.", "AllChess will keep it learning-only until one rules profile is locked."],
-    winConditions: ["Rules profile pending"]
-  }),
   catalogEntry({
     id: "atomic",
     name: { english: "Atomic Chess" },

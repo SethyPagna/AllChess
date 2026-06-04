@@ -398,6 +398,23 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
     }
   },
   {
+    id: "chaturanga-start-king-pawn",
+    variantKey: "chaturanga",
+    positionKey: "chaturanga|turn:white|moves:",
+    moveUci: "e2e3",
+    source: "opening-book",
+    minTier: "easy",
+    confidence: 0.82,
+    benchmarkVersion: "allchess-variant-seed-v1",
+    tags: ["opening", "chaturanga", "historical", "minister", "elephant"],
+    explanation: {
+      plan: "Advance the king pawn one step to open space for the ancient four-division army.",
+      threat: "White prepares minister and horse development without relying on modern double-pawn pushes.",
+      risk: "The slower army needs coordinated piece play, so the bot should not overextend pawns without support.",
+      fallbackGoal: "If the center is blocked, improve chariot and horse activity while preserving king safety."
+    }
+  },
+  {
     id: "jungle-start-tiger-pressure",
     variantKey: "jungle",
     positionKey: "jungle|turn:white|moves:",

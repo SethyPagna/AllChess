@@ -35,6 +35,9 @@ describe("rules atlas", () => {
     expect(getVariantRuleSummary("crazyhouse").numberedBasics[1]).toContain("pocket");
     expect(getVariantRuleSummary("crazyhouse").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Captured pieces enter the mover pocket")]));
     expect(getVariantRuleSummary("crazyhouse").completion.remainingGates).toEqual([]);
+    expect(getVariantRuleSummary("chaturanga").numberedBasics[0]).toContain("minister");
+    expect(getVariantRuleSummary("chaturanga").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("bare-king objective")]));
+    expect(getVariantRuleSummary("chaturanga").completion.remainingGates).toEqual([]);
     expect(getVariantRuleSummary("shatranj").numberedBasics[0]).toContain("ferz");
     expect(getVariantRuleSummary("shatranj").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("bare-king objective")]));
     expect(getVariantRuleSummary("shatranj").completion.remainingGates).toEqual([]);
