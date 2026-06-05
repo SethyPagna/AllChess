@@ -14,6 +14,7 @@ describe("PieceIcon", () => {
     expect(king).not.toBe(queen);
     expect(king).toContain("viewBox");
     expect(queen).toContain("viewBox");
+    expect(king).toContain('data-skin="western"');
     expect(king).toContain('data-detail="king-cross"');
     expect(queen).toContain('data-detail="queen-jewel"');
   });
@@ -22,16 +23,21 @@ describe("PieceIcon", () => {
     const met = renderToStaticMarkup(<PieceIcon code="m" owner="white" variantKey="makruk" />);
 
     expect(met).toContain('data-piece="queen"');
+    expect(met).toContain('data-skin="makruk"');
     expect(met).toContain('data-detail="queen-jewel"');
     expect(met).toContain("<title>Met</title>");
   });
 
   test("localizes piece titles for language-specific board labels", () => {
     const shogiPawn = renderToStaticMarkup(<PieceIcon code="p" owner="sente" variantKey="shogi" locale="ja" />);
+    const miniShogiPawn = renderToStaticMarkup(<PieceIcon code="p" owner="sente" variantKey="mini-shogi" locale="ja" />);
     const chineseKing = renderToStaticMarkup(<PieceIcon code="k" owner="white" variantKey="classic" locale="zh-CN" />);
 
     expect(shogiPawn).toContain('aria-label="歩"');
     expect(shogiPawn).toContain('title="歩"');
+    expect(miniShogiPawn).toContain('data-variant="mini-shogi"');
+    expect(miniShogiPawn).toContain('data-skin="mini-wedge"');
+    expect(miniShogiPawn).toContain("\u6b69");
     expect(chineseKing).toContain("<title>王</title>");
   });
 
@@ -55,6 +61,7 @@ describe("PieceIcon", () => {
     const blackStone = renderToStaticMarkup(<PieceIcon code="p" owner="black" variantKey="konane" />);
 
     expect(whiteStone).toContain('data-piece="stone"');
+    expect(whiteStone).toContain('data-skin="stone"');
     expect(blackStone).toContain('data-piece="stone"');
     expect(whiteStone).toContain('aria-label="Stone"');
     expect(blackStone).toContain('data-owner="black"');
@@ -143,9 +150,11 @@ describe("PieceIcon", () => {
     );
 
     expect(card).toContain('aria-label="Sente pieces in hand"');
+    expect(card).toContain('aria-label="Drop \u6b69, 2 in hand"');
     expect(card).toContain('class="hand-piece-button focus-ring is-selected"');
+    expect(card).toContain('data-skin="wedge"');
     expect(card).toContain("draggable=\"true\"");
-    expect(card).toContain(">2</span>");
+    expect(card).toContain('aria-hidden="true">2</span>');
   });
 
   test("keeps non-western pieces as strong native symbols", () => {

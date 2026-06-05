@@ -723,6 +723,20 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
     risk: "Any capture can unlock drops, so the cache must still validate checks, pockets, and king safety."
   },
   {
+    variantKey: "crazyhouse",
+    line: ["g1f3"],
+    family: "drop-aware knight development",
+    plan: "Broaden Crazyhouse starts with a quiet developing move that keeps future pocket drops flexible.",
+    risk: "A knight move can invite central grabs, so live search must recheck king safety before any capture race."
+  },
+  {
+    variantKey: "crazyhouse",
+    line: ["c2c4"],
+    family: "drop-aware flank center",
+    plan: "Add an English-style Crazyhouse start that fights for central targets before hand pieces exist.",
+    risk: "If the opponent creates early pockets, the bot must stop following quiet-cache assumptions."
+  },
+  {
     variantKey: "shatranj",
     line: ["e2e3", "g8f6"],
     family: "historical development",
@@ -779,6 +793,20 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
     risk: "Promotion and drops change value quickly, so the cached line must stop before tactical hand play."
   },
   {
+    variantKey: "shogi",
+    line: ["h2e2"],
+    family: "drop-aware rook centralization",
+    plan: "Add a Shogi rook-flex seed for players who open with piece activity instead of an immediate pawn push.",
+    risk: "Rook shifts can expose files, so legal search must confirm the king is not left vulnerable."
+  },
+  {
+    variantKey: "shogi",
+    line: ["i3i4"],
+    family: "drop-aware edge pawn",
+    plan: "Broaden Shogi starts with an edge-pawn option that creates space without committing the center.",
+    risk: "Edge space is useful only if later drops remain legal and coordinated."
+  },
+  {
     variantKey: "mini-shogi",
     line: ["a2a3", "c5c4"],
     family: "compact-board shogi",
@@ -791,6 +819,20 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
     family: "compact-board king safety",
     plan: "Cache a second Mini Shogi route that improves king space before central contact.",
     risk: "The 5x5 board punishes stale lines, so every cached move is rechecked against drops and promotion."
+  },
+  {
+    variantKey: "mini-shogi",
+    line: ["d1b3"],
+    family: "compact-board bishop activity",
+    plan: "Add a Mini Shogi bishop-development seed for compact-board tactics before pieces enter hand.",
+    risk: "The short board can turn one diagonal move into immediate contact, so every reply is still validated."
+  },
+  {
+    variantKey: "mini-shogi",
+    line: ["e1e3"],
+    family: "compact-board rook lift",
+    plan: "Broaden Mini Shogi with a rook-lift seed that contests the file without requiring a capture.",
+    risk: "Rook lifts are risky on 5x5 boards, so search takes over as soon as threats or drops appear."
   },
   {
     variantKey: "janggi",

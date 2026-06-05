@@ -10,6 +10,8 @@ type PieceIconProps = {
   promoted?: boolean;
 };
 
+export type PieceSkin = "western" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
+
 const nativeGlyphs: Record<string, string> = {
   g: "\u738b",
   a: "\u58eb",
@@ -26,14 +28,15 @@ const nativeGlyphs: Record<string, string> = {
 export function PieceIcon({ code, owner, variantKey, locale = "en", promoted = false }: PieceIconProps) {
   const normalized = code.toLowerCase();
   const label = getPieceDisplayName(normalized, variantKey, locale, promoted);
+  const skin = getPieceSkin(variantKey);
   if (isDraughtsPresentation(variantKey)) {
-    return <DraughtsPieceIcon code={normalized} owner={owner} promoted={promoted} variantKey={variantKey} label={label} />;
+    return <DraughtsPieceIcon code={normalized} owner={owner} promoted={promoted} variantKey={variantKey} label={label} skin={skin} />;
   }
   if (isStonePresentation(variantKey)) {
-    return <StonePieceIcon owner={owner} variantKey={variantKey} label={label} />;
+    return <StonePieceIcon owner={owner} variantKey={variantKey} label={label} skin={skin} />;
   }
   if (usesWesternPresentation(variantKey)) {
-    return <WesternPieceIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} />;
+    return <WesternPieceIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} skin={skin} />;
   }
 
   const glyph = getNativeGlyph({ code: normalized, owner, variantKey, promoted });
@@ -45,6 +48,7 @@ export function PieceIcon({ code, owner, variantKey, locale = "en", promoted = f
       data-owner={owner}
       data-piece="native"
       data-code={normalized}
+      data-skin={skin}
       data-variant={variantKey}
       data-promoted={promoted || undefined}
       role="img"
@@ -55,7 +59,7 @@ export function PieceIcon({ code, owner, variantKey, locale = "en", promoted = f
   );
 }
 
-function DraughtsPieceIcon({ code, owner, promoted, variantKey, label }: { code: string; owner: PlayerColor; promoted: boolean; variantKey: string; label: string }) {
+function DraughtsPieceIcon({ code, owner, promoted, variantKey, label, skin }: { code: string; owner: PlayerColor; promoted: boolean; variantKey: string; label: string; skin: PieceSkin }) {
   const isKing = code === "x" || promoted;
   const piece = isKing ? "checker-king" : "checker-man";
   return (
@@ -65,6 +69,7 @@ function DraughtsPieceIcon({ code, owner, promoted, variantKey, label }: { code:
       data-owner={owner}
       data-piece={piece}
       data-promoted={isKing || undefined}
+      data-skin={skin}
       data-variant={variantKey}
       role="img"
       viewBox="0 0 100 100"
@@ -87,13 +92,14 @@ function isStonePresentation(variantKey: string) {
   return variantKey === "konane";
 }
 
-function StonePieceIcon({ owner, variantKey, label }: { owner: PlayerColor; variantKey: string; label: string }) {
+function StonePieceIcon({ owner, variantKey, label, skin }: { owner: PlayerColor; variantKey: string; label: string; skin: PieceSkin }) {
   return (
     <svg
       aria-label={label}
       className="piece-symbol piece-icon piece-svg"
       data-owner={owner}
       data-piece="stone"
+      data-skin={skin}
       data-variant={variantKey}
       role="img"
       viewBox="0 0 100 100"
@@ -110,7 +116,7 @@ function usesWesternPresentation(variantKey: string) {
   return ["classic", "chess960", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings", "makruk"].includes(variantKey);
 }
 
-function WesternPieceIcon({ code, owner, variantKey, promoted, label }: { code: string; owner: PlayerColor; variantKey: string; promoted: boolean; label: string }) {
+function WesternPieceIcon({ code, owner, variantKey, promoted, label, skin }: { code: string; owner: PlayerColor; variantKey: string; promoted: boolean; label: string; skin: PieceSkin }) {
   const piece = westernPieceName(code, variantKey);
   return (
     <svg
@@ -119,6 +125,7 @@ function WesternPieceIcon({ code, owner, variantKey, promoted, label }: { code: 
       data-owner={owner}
       data-piece={piece}
       data-promoted={promoted || undefined}
+      data-skin={skin}
       data-variant={variantKey}
       role="img"
       viewBox="0 0 100 100"
@@ -220,7 +227,7 @@ function getNativeGlyph({ code, owner, variantKey, promoted }: { code: string; o
     const blue: Record<string, string> = { g: "\u6f22", a: "\u58eb", e: "\u8c61", h: "\u99ac", r: "\u8eca", c: "\u5305", p: "\u5175" };
     return (owner === "blue" ? blue : red)[code] ?? nativeGlyphs[code] ?? code.toUpperCase();
   }
-  if (variantKey === "shogi") {
+  if (isShogiPresentation(variantKey)) {
     const base: Record<string, string> = { k: "\u738b", r: "\u98db", b: "\u89d2", g: "\u91d1", s: "\u9280", n: "\u6842", l: "\u9999", p: "\u6b69" };
     const promotedMap: Record<string, string> = { r: "\u9f8d", b: "\u99ac", s: "\u5168", n: "\u572d", l: "\u674f", p: "\u3068" };
     return promoted ? promotedMap[code] ?? base[code] ?? code.toUpperCase() : base[code] ?? code.toUpperCase();
@@ -230,6 +237,17 @@ function getNativeGlyph({ code, owner, variantKey, promoted }: { code: string; o
     return animals[code] ?? code.toUpperCase();
   }
   return nativeGlyphs[code] ?? code.toUpperCase();
+}
+
+export function getPieceSkin(variantKey: string): PieceSkin {
+  if (variantKey === "makruk") return "makruk";
+  if (isDraughtsPresentation(variantKey)) return "checker";
+  if (isStonePresentation(variantKey)) return "stone";
+  if (variantKey === "xiangqi" || variantKey === "janggi") return "disc";
+  if (variantKey === "mini-shogi") return "mini-wedge";
+  if (variantKey === "shogi") return "wedge";
+  if (variantKey === "jungle") return "tile";
+  return "western";
 }
 
 export function getPieceDisplayName(code: string, variantKey: string, locale = "en", promoted = false) {
@@ -265,6 +283,10 @@ function pieceVocabularyKey(code: string, variantKey: string, promoted: boolean)
   }
   const names: Record<string, string> = { k: "king", q: "queen", r: "rook", b: "bishop", n: "knight", p: "pawn", f: "ferz", m: "minister", a: "alfil", e: "elephant" };
   return names[code] ?? "piece";
+}
+
+function isShogiPresentation(variantKey: string) {
+  return variantKey === "shogi" || variantKey === "mini-shogi";
 }
 
 function westernPieceName(code: string, variantKey: string) {
