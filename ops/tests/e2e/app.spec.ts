@@ -16,6 +16,15 @@ async function expectWithinViewport(page: Page, locator: Locator) {
   expect(Math.ceil(box!.y + box!.height)).toBeLessThanOrEqual(viewport!.height);
 }
 
+async function expectHorizontallyWithinViewport(page: Page, locator: Locator) {
+  const box = await locator.boundingBox();
+  const viewport = page.viewportSize();
+  expect(box).not.toBeNull();
+  expect(viewport).not.toBeNull();
+  expect(Math.floor(box!.x)).toBeGreaterThanOrEqual(0);
+  expect(Math.ceil(box!.x + box!.width)).toBeLessThanOrEqual(viewport!.width);
+}
+
 test("localized game hub can open variants and a playable board", async ({ page }) => {
   await page.goto("/en");
   await expect(page.getByRole("heading", { name: "AllChess" })).toBeVisible();
@@ -211,6 +220,8 @@ test("watch rooms and catalog filters land on honest real-data views", async ({ 
   await expect(page.getByLabel("Watch room controls").getByRole("button", { name: "Search" })).toBeEnabled();
   await expect(page.getByLabel("Watch room controls").getByRole("link", { name: "Live" })).toHaveAttribute("href", "/en/watch?status=active");
   await expect(page.getByLabel("Watch room controls").getByRole("link", { name: "Spectators" })).toHaveAttribute("href", "/en/watch?sort=spectators");
+  await expectHorizontallyWithinViewport(page, page.getByRole("main").getByRole("link", { name: "Start playing" }));
+  await expectHorizontallyWithinViewport(page, page.getByRole("main").getByRole("link", { name: "Leaderboards" }));
   await expectNoHorizontalOverflow(page);
 
   await page.goto("/en/variants?playability=learn");
@@ -227,6 +238,8 @@ test("watch rooms and catalog filters land on honest real-data views", async ({ 
   await expect(page.getByRole("heading", { name: "Leaderboards" })).toBeVisible();
   await expect(page.getByLabel("Leaderboard scope")).toBeEnabled();
   await expect(page.getByLabel("Leaderboard scope").getByRole("button", { name: "Asian chess" })).toHaveAttribute("aria-pressed", "true");
+  await expectHorizontallyWithinViewport(page, page.getByRole("main").getByRole("link", { name: "Play rated" }));
+  await expectHorizontallyWithinViewport(page, page.getByRole("main").getByRole("link", { name: "Back to lobby" }));
   await expectNoHorizontalOverflow(page);
 });
 

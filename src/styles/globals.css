@@ -3515,7 +3515,7 @@ option {
 
 .lobby-action-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.75rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.75rem), 1fr));
   gap: 0.65rem;
   padding: clamp(0.8rem, 1.4vw, 1rem);
 }
@@ -3531,7 +3531,15 @@ option {
   text-align: center;
   font-size: 0.84rem;
   font-weight: 950;
-  white-space: nowrap;
+  line-height: 1.15;
+  white-space: normal;
+}
+
+.lobby-action-button svg,
+.watch-action-button svg,
+.watch-filter-chip svg,
+.watch-room-tools button svg {
+  flex: 0 0 auto;
 }
 
 .lobby-stat-grid {
@@ -3655,7 +3663,7 @@ option {
 
 .watch-actions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.75rem), 1fr));
   gap: 0.65rem;
   width: 100%;
 }
@@ -3671,7 +3679,8 @@ option {
   text-align: center;
   font-size: 0.84rem;
   font-weight: 950;
-  white-space: nowrap;
+  line-height: 1.15;
+  white-space: normal;
 }
 
 .watch-room-tools {
@@ -3736,7 +3745,7 @@ option {
 }
 
 .watch-filter-list .watch-filter-chip {
-  flex: 1 1 7.25rem;
+  flex: 1 1 8.5rem;
   min-width: 0;
 }
 
@@ -3982,7 +3991,7 @@ option {
 .leaderboard-filter-bar,
 .analysis-command-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) repeat(2, minmax(7.5rem, auto));
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
@@ -3994,6 +4003,7 @@ option {
   display: inline-flex;
   min-height: 2.25rem;
   align-items: center;
+  justify-content: center;
   gap: 0.45rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -4002,6 +4012,8 @@ option {
   color: var(--muted);
   font-size: 0.84rem;
   font-weight: 850;
+  text-align: center;
+  white-space: normal;
 }
 
 .leaderboard-scope-select {
@@ -4014,6 +4026,7 @@ option {
   border-radius: var(--radius-md);
   background: var(--surface-strong);
   min-width: 0;
+  overflow: hidden;
   padding: 0.4rem;
   color: var(--muted);
 }
