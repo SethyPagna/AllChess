@@ -11,13 +11,24 @@ import { createDefaultStats } from "@/lib/realtime/stats";
 
 export const dynamic = "force-dynamic";
 
+const featuredGameOrder = new Map([
+  ["classic", 0],
+  ["crazyhouse", 1],
+  ["chess960", 2],
+  ["xiangqi", 3],
+  ["shogi", 4],
+  ["janggi", 5]
+]);
+
 export default async function LobbyPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
   const [catalog, liveStats] = await Promise.all([getRuntimeCatalogEntries(), getRuntimeLiveStats()]);
   const stats = getCatalogStats(catalog);
-  const featured = catalog.filter((entry) => entry.playability === "playable").slice(0, 6);
+  const featured = [...catalog.filter((entry) => entry.playability === "playable")]
+    .sort((a, b) => (featuredGameOrder.get(a.variantKey ?? a.id) ?? 100) - (featuredGameOrder.get(b.variantKey ?? b.id) ?? 100))
+    .slice(0, 6);
   const siteStats = createDefaultStats(liveStats);
 
   return (

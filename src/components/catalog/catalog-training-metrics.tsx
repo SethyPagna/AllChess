@@ -11,6 +11,9 @@ type CatalogTrainingMetricsProps = {
 };
 
 export function CatalogTrainingMetrics({ knowledge, legendBand, trainingGate }: CatalogTrainingMetricsProps) {
+  const legendStrength = legendBand.display.replace(/\s+benchmark$/i, "");
+  const calibration = legendBand.calibrationStatus.replace(/-/g, " ");
+
   return (
     <div className="panel bot-training-metrics" aria-label="Bot training status">
       <div>
@@ -37,8 +40,8 @@ export function CatalogTrainingMetrics({ knowledge, legendBand, trainingGate }: 
           Legend
           <InfoHint text={legendBand.basis} />
         </span>
-        <strong>{legendBand.display}</strong>
-        <small>{legendBand.calibrationStatus.replace(/-/g, " ")}</small>
+        <strong>{legendStrength}</strong>
+        <small>benchmark / {calibration}</small>
       </div>
       <div>
         <span>
@@ -46,8 +49,8 @@ export function CatalogTrainingMetrics({ knowledge, legendBand, trainingGate }: 
           Release gate
           <InfoHint text={trainingGate.notice} />
         </span>
-        <strong>{trainingGate.playableVariants.length} ready</strong>
-        <small>{trainingGate.gatedVariants.length} guide gated</small>
+        <strong>{trainingGate.playableVariants.length}</strong>
+        <small>ready / {trainingGate.gatedVariants.length} gated</small>
       </div>
     </div>
   );
