@@ -38,39 +38,24 @@ export function AuthCard({
           <input type="hidden" name="locale" value={locale} />
           <label className="grid gap-2 text-sm font-bold">
             {copy.email}
-            <input
-              className="focus-ring rounded-md border border-[var(--border)] bg-[var(--surface-strong)] px-3 py-3"
-              type="email"
-              name="email"
-              autoComplete="email"
-              required
-            />
+            <input className="auth-input focus-ring" type="email" name="email" autoComplete="email" required />
           </label>
           <label className="grid gap-2 text-sm font-bold">
             {copy.password}
-            <input
-              className="focus-ring rounded-md border border-[var(--border)] bg-[var(--surface-strong)] px-3 py-3"
-              type="password"
-              name="password"
-              autoComplete="current-password"
-              required
-            />
+            <input className="auth-input focus-ring" type="password" name="password" autoComplete="current-password" required />
           </label>
           <div className="grid grid-cols-2 gap-3">
-            <button className="focus-ring rounded-md bg-[var(--foreground)] px-4 py-3 font-bold text-[var(--background)]">
+            <button className="auth-submit-primary focus-ring">
               {copy.login}
             </button>
-            <button
-              formAction={signUpWithPassword}
-              className="focus-ring rounded-md border border-[var(--border)] px-4 py-3 font-bold"
-            >
+            <button formAction={signUpWithPassword} className="auth-submit-secondary focus-ring">
               Create
             </button>
           </div>
         </form>
         <form action={signInWithGoogle} className="mt-3">
           <input type="hidden" name="locale" value={locale} />
-          <button className="focus-ring w-full rounded-md border border-[var(--border)] px-4 py-3 font-bold">
+          <button className="auth-google-button focus-ring">
             Continue with Google
           </button>
         </form>

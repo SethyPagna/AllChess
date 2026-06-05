@@ -40,7 +40,7 @@ export function LobbyActivity({ locale, siteStats, t }: LobbyActivityProps) {
         <InfoHint text="Every row opens the matching flow; room and presence counts stay empty until Cloudflare reports real activity." />
       </div>
       {lobbyActions.map(({ Icon, title, href, body }) => (
-        <div key={title} className="lobby-tool-row rounded-md bg-[var(--surface-strong)] p-3">
+        <div key={title} className="lobby-tool-row">
           <Link href={href as never} className="focus-ring lobby-tool-link">
             <span>
               <Icon size={16} className="text-[var(--accent)]" />
