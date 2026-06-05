@@ -2,7 +2,7 @@
 
 import { useRef, useState, type DragEvent } from "react";
 
-import { PieceIcon, getPieceDisplayName } from "@/components/board/piece-icon";
+import { PieceIcon, getPieceDisplayName, type PieceSkinPreference } from "@/components/board/piece-icon";
 import { squareName } from "@/components/board/game-board-utils";
 import { sameSquare, serializeSquare, type BoardCell, type Square } from "@/lib/variants";
 
@@ -20,6 +20,7 @@ type BoardGridProps = {
   onDragMove?: (from: Square, to: Square) => boolean;
   onDropHandPiece?: (code: string, to: Square) => boolean;
   orientedRows: BoardCell[][];
+  pieceSkin?: PieceSkinPreference;
   rows: number;
   selected: Square | null;
   suggestedMove: SuggestedBoardMove | null;
@@ -28,7 +29,7 @@ type BoardGridProps = {
 
 const handPieceDragType = "application/x-allchess-hand-piece";
 
-export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, onDragMove, onDropHandPiece, orientedRows, rows, selected, suggestedMove, variantKey }: BoardGridProps) {
+export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, onDragMove, onDropHandPiece, orientedRows, pieceSkin = "default", rows, selected, suggestedMove, variantKey }: BoardGridProps) {
   const [draggingSquare, setDraggingSquare] = useState<Square | null>(null);
   const [pointerDragSquare, setPointerDragSquare] = useState<Square | null>(null);
   const pointerDragSquareRef = useRef<Square | null>(null);
@@ -186,7 +187,7 @@ export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, 
                 color: isDarkPiece ? "var(--piece-dark)" : "var(--piece-light)"
               }}
             >
-              {cell.piece ? <PieceIcon code={cell.piece.code} owner={cell.piece.owner} variantKey={variantKey} locale={locale} promoted={cell.piece.promoted} /> : null}
+              {cell.piece ? <PieceIcon code={cell.piece.code} owner={cell.piece.owner} pieceSkin={pieceSkin} variantKey={variantKey} locale={locale} promoted={cell.piece.promoted} /> : null}
               {visualCol === 0 ? <span className="board-coordinate board-rank">{rows - cell.square.row}</span> : null}
               {visualRow === rows - 1 ? <span className="board-coordinate board-file">{files[cell.square.col]}</span> : null}
             </button>

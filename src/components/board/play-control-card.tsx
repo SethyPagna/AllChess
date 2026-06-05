@@ -1,4 +1,6 @@
-import { Bot, Flag, FlipHorizontal2, Handshake, Lightbulb, PauseCircle, PlayCircle, Redo2, RotateCcw, SlidersHorizontal, Undo2 } from "lucide-react";
+import { Bot, Flag, FlipHorizontal2, Handshake, Lightbulb, Palette, PauseCircle, PlayCircle, Redo2, RotateCcw, SlidersHorizontal, Undo2 } from "lucide-react";
+
+import type { PieceSkinOption, PieceSkinPreference } from "@/components/board/piece-icon";
 
 type BotMode = "human" | "opponent" | "both";
 
@@ -17,6 +19,7 @@ type PlayControlCardProps = {
   onFlipBoard: () => void;
   onMoveForCurrentSide: () => void;
   onOfferDraw: () => void;
+  onPieceSkinChange: (pieceSkin: PieceSkinPreference) => void;
   onRedo: () => void;
   onResign: () => void;
   onReset: () => void;
@@ -24,6 +27,8 @@ type PlayControlCardProps = {
   onToggleAuto: () => void;
   onToggleBot: () => void;
   onUndo: () => void;
+  pieceSkin: PieceSkinPreference;
+  pieceSkinOptions: PieceSkinOption[];
   suggestedMoveReady: boolean;
 };
 
@@ -42,6 +47,7 @@ export function PlayControlCard({
   onFlipBoard,
   onMoveForCurrentSide,
   onOfferDraw,
+  onPieceSkinChange,
   onRedo,
   onResign,
   onReset,
@@ -49,6 +55,8 @@ export function PlayControlCard({
   onToggleAuto,
   onToggleBot,
   onUndo,
+  pieceSkin,
+  pieceSkinOptions,
   suggestedMoveReady
 }: PlayControlCardProps) {
   return (
@@ -94,6 +102,17 @@ export function PlayControlCard({
             <button type="button" title="Reset the game with the current setup." onClick={onReset} className="focus-ring action-secondary play-icon-button" aria-label="Reset">
               <RotateCcw size={15} />
             </button>
+            <label className="play-skin-select" title="Change piece skin for this game.">
+              <Palette size={14} />
+              <span className="sr-only">Piece skin</span>
+              <select aria-label="Piece skin" value={pieceSkin} onChange={(event) => onPieceSkinChange(event.target.value as PieceSkinPreference)}>
+                {pieceSkinOptions.map((option) => (
+                  <option key={option.key} value={option.key}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
         </section>
         <section className="play-control-section" aria-label="Match controls">

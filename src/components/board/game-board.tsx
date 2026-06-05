@@ -31,6 +31,7 @@ import { BoardGrid } from "@/components/board/board-grid";
 import { BoardPlayerCard } from "@/components/board/board-player-card";
 import { GameGuideModal } from "@/components/board/game-guide-modal";
 import { MatchResultOverlay } from "@/components/board/match-result-overlay";
+import { getPieceSkinOptions, type PieceSkinPreference } from "@/components/board/piece-icon";
 import { PlayActiveSetupCard } from "@/components/board/play-active-setup-card";
 import { PlayControlCard } from "@/components/board/play-control-card";
 import { PlayMatchHeader } from "@/components/board/play-match-header";
@@ -42,6 +43,13 @@ import { PlaySectionTabs } from "@/components/board/play-section-tabs";
 type BotMode = "human" | "opponent" | "both";
 type SeatChoice = "random" | "first" | "second";
 type BoardOrientation = "auto" | "first" | "second";
+const pieceSkinStoragePrefix = "allchess-piece-skin:";
+
+function initialPieceSkinPreference(variantKey: string): PieceSkinPreference {
+  if (typeof window === "undefined") return "default";
+  const stored = window.localStorage.getItem(`${pieceSkinStoragePrefix}${variantKey}`) as PieceSkinPreference | null;
+  return stored && getPieceSkinOptions(variantKey).some((option) => option.key === stored) ? stored : "default";
+}
 
 type ThinkingState = {
   status: "idle" | "thinking" | "cancelled" | "failed";
@@ -121,6 +129,7 @@ export function GameBoard({
   const [playMode, setPlayMode] = useState<PlayMode>(() => resolveSupportedPlayMode(variantKey, initialPlayMode ?? (initialBotMode === "opponent" ? "bot" : "offline")));
   const [botDifficulty, setBotDifficulty] = useState<BotDifficultyKey>(initialBotDifficulty);
   const [botMode, setBotMode] = useState<BotMode>(initialBotMode);
+  const [pieceSkin, setPieceSkinState] = useState<PieceSkinPreference>(() => initialPieceSkinPreference(variantKey));
   const [seatChoice, setSeatChoice] = useState<SeatChoice>("random");
   const [boardOrientation, setBoardOrientation] = useState<BoardOrientation>("auto");
   const [humanColor, setHumanColor] = useState(() => pickHumanColor(withTimeControl(initialState ?? createInitialState(variantKey), initialTimeControl), "first"));
@@ -153,6 +162,7 @@ export function GameBoard({
   const cols = displayState.board[0]?.length ?? 8;
   const files = useMemo(() => Array.from({ length: cols }, (_, index) => String.fromCharCode(97 + index)), [cols]);
   const botLevel = botDifficultyLevels.find((level) => level.key === botDifficulty) ?? botDifficultyLevels[1];
+  const pieceSkinOptions = useMemo(() => getPieceSkinOptions(variantKey), [variantKey]);
   const botStrength = useMemo(() => getVariantBotStrengthProfile(variantKey, botDifficulty), [botDifficulty, variantKey]);
   const botCalibrationLabel = botStrength.calibrationStatus.replace(/-/g, " ");
   const botResponseBudget = Math.min(botLevel.moveTimeMs, MAX_BOT_REPLY_MS - 180);
@@ -225,6 +235,7 @@ export function GameBoard({
         isActive={state.turn === color}
         locale={locale}
         onHandPieceClick={(code) => chooseHandPiece(color, code)}
+        pieceSkin={pieceSkin}
         placement={placement}
         selectedHandCode={color === state.turn ? selectedHandCode : null}
         thinking={thinking.status === "thinking"}
@@ -246,6 +257,12 @@ export function GameBoard({
       botMode !== "both" &&
       !(botMode === "opponent" && state.turn !== humanColor)
     );
+  }
+
+  function changePieceSkin(nextSkin: PieceSkinPreference) {
+    const validSkin = pieceSkinOptions.some((option) => option.key === nextSkin) ? nextSkin : "default";
+    setPieceSkinState(validSkin);
+    window.localStorage.setItem(`${pieceSkinStoragePrefix}${variantKey}`, validSkin);
   }
 
   function commitPlayerMove(move: Move) {
@@ -757,7 +774,7 @@ export function GameBoard({
         {playerCard(topPlayerColor, "top")}
         <div className="board-shell" data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
-            <BoardGrid cols={cols} files={files} legalTargets={legalTargets} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} rows={rows} selected={selected} suggestedMove={suggestedMove} variantKey={displayState.variantKey} />
+            <BoardGrid cols={cols} files={files} legalTargets={legalTargets} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} variantKey={displayState.variantKey} />
             {!gameStarted ? (
               <div className="pregame-board-overlay" role="status">
                 <strong>Choose setup first</strong>
@@ -843,6 +860,7 @@ export function GameBoard({
                 onFlipBoard={flipBoard}
                 onMoveForCurrentSide={() => void playBotMove("manual")}
                 onOfferDraw={offerDraw}
+                onPieceSkinChange={changePieceSkin}
                 onRedo={redo}
                 onResign={resignGame}
                 onReset={reset}
@@ -857,6 +875,8 @@ export function GameBoard({
                   });
                 }}
                 onUndo={undo}
+                pieceSkin={pieceSkin}
+                pieceSkinOptions={pieceSkinOptions}
                 suggestedMoveReady={Boolean(suggestedMove)}
               />
               <div className="play-table-card">

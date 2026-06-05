@@ -5,12 +5,19 @@ import type { PlayerColor } from "@/lib/variants";
 type PieceIconProps = {
   code: string;
   owner: PlayerColor;
+  pieceSkin?: PieceSkinPreference;
   variantKey: string;
   locale?: string;
   promoted?: boolean;
 };
 
 export type PieceSkin = "western" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
+export type PieceSkinPreference = "default" | PieceSkin;
+
+export type PieceSkinOption = {
+  key: PieceSkinPreference;
+  label: string;
+};
 
 const nativeGlyphs: Record<string, string> = {
   g: "\u738b",
@@ -25,10 +32,10 @@ const nativeGlyphs: Record<string, string> = {
   t: "\u864e"
 };
 
-export function PieceIcon({ code, owner, variantKey, locale = "en", promoted = false }: PieceIconProps) {
+export function PieceIcon({ code, owner, pieceSkin = "default", variantKey, locale = "en", promoted = false }: PieceIconProps) {
   const normalized = code.toLowerCase();
   const label = getPieceDisplayName(normalized, variantKey, locale, promoted);
-  const skin = getPieceSkin(variantKey);
+  const skin = resolvePieceSkin(variantKey, pieceSkin);
   if (isDraughtsPresentation(variantKey)) {
     return <DraughtsPieceIcon code={normalized} owner={owner} promoted={promoted} variantKey={variantKey} label={label} skin={skin} />;
   }
@@ -250,6 +257,36 @@ export function getPieceSkin(variantKey: string): PieceSkin {
   return "western";
 }
 
+export function getPieceSkinOptions(variantKey: string): PieceSkinOption[] {
+  const defaultSkin = getPieceSkin(variantKey);
+  const defaults: PieceSkinOption[] = [{ key: "default", label: `Auto (${pieceSkinLabel(defaultSkin)})` }];
+  if (variantKey === "shogi" || variantKey === "mini-shogi") {
+    return [...defaults, option("wedge"), option("mini-wedge"), option("tile")];
+  }
+  if (variantKey === "xiangqi" || variantKey === "janggi") {
+    return [...defaults, option("disc"), option("tile")];
+  }
+  if (variantKey === "jungle") {
+    return [...defaults, option("tile"), option("disc")];
+  }
+  if (isDraughtsPresentation(variantKey)) {
+    return [...defaults, option("checker"), option("stone")];
+  }
+  if (isStonePresentation(variantKey)) {
+    return [...defaults, option("stone"), option("checker")];
+  }
+  if (variantKey === "makruk") {
+    return [...defaults, option("makruk"), option("western")];
+  }
+  return [...defaults, option("western"), option("makruk")];
+}
+
+export function resolvePieceSkin(variantKey: string, preference: PieceSkinPreference = "default"): PieceSkin {
+  if (preference === "default") return getPieceSkin(variantKey);
+  const allowed = new Set(getPieceSkinOptions(variantKey).map((skin) => skin.key));
+  return allowed.has(preference) ? preference : getPieceSkin(variantKey);
+}
+
 export function getPieceDisplayName(code: string, variantKey: string, locale = "en", promoted = false) {
   const vocabulary = getVocabulary(normalizeLocale(locale));
   const key = pieceVocabularyKey(code, variantKey, promoted);
@@ -287,6 +324,24 @@ function pieceVocabularyKey(code: string, variantKey: string, promoted: boolean)
 
 function isShogiPresentation(variantKey: string) {
   return variantKey === "shogi" || variantKey === "mini-shogi";
+}
+
+function option(key: PieceSkin): PieceSkinOption {
+  return { key, label: pieceSkinLabel(key) };
+}
+
+function pieceSkinLabel(key: PieceSkin) {
+  const labels: Record<PieceSkin, string> = {
+    western: "Classic",
+    makruk: "Warm",
+    disc: "Disc",
+    wedge: "Wedge",
+    "mini-wedge": "Compact",
+    tile: "Tile",
+    checker: "Checker",
+    stone: "Stone"
+  };
+  return labels[key];
 }
 
 function westernPieceName(code: string, variantKey: string) {

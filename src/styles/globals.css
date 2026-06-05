@@ -1780,7 +1780,8 @@ option {
 }
 
 .native-piece-symbol[data-variant="xiangqi"],
-.native-piece-symbol[data-variant="janggi"] {
+.native-piece-symbol[data-variant="janggi"],
+.native-piece-symbol[data-skin="disc"] {
   width: 90%;
   height: 90%;
   border: 3px solid currentColor;
@@ -1802,7 +1803,9 @@ option {
 }
 
 .native-piece-symbol[data-variant="shogi"],
-.native-piece-symbol[data-variant="mini-shogi"] {
+.native-piece-symbol[data-variant="mini-shogi"],
+.native-piece-symbol[data-skin="wedge"],
+.native-piece-symbol[data-skin="mini-wedge"] {
   width: 88%;
   height: 95%;
   clip-path: polygon(50% 0, 93% 23%, 83% 100%, 17% 100%, 7% 23%);
@@ -1817,7 +1820,8 @@ option {
     0 0.14rem 0.22rem rgb(0 0 0 / 25%);
 }
 
-.native-piece-symbol[data-variant="mini-shogi"] {
+.native-piece-symbol[data-variant="mini-shogi"],
+.native-piece-symbol[data-skin="mini-wedge"] {
   width: 82%;
   height: 90%;
   background:
@@ -1827,11 +1831,14 @@ option {
 }
 
 .native-piece-symbol[data-variant="shogi"][data-owner="gote"],
-.native-piece-symbol[data-variant="mini-shogi"][data-owner="gote"] {
+.native-piece-symbol[data-variant="mini-shogi"][data-owner="gote"],
+.native-piece-symbol[data-skin="wedge"][data-owner="gote"],
+.native-piece-symbol[data-skin="mini-wedge"][data-owner="gote"] {
   transform: rotate(180deg);
 }
 
-.native-piece-symbol[data-variant="jungle"] {
+.native-piece-symbol[data-variant="jungle"],
+.native-piece-symbol[data-skin="tile"] {
   width: 90%;
   height: 90%;
   border: 3px solid color-mix(in srgb, currentColor 82%, #111);
@@ -1847,7 +1854,10 @@ option {
     0 0.1rem 0.18rem rgb(0 0 0 / 24%);
 }
 
-.native-piece-symbol[data-variant="jungle"][data-owner="black"] {
+.native-piece-symbol[data-variant="jungle"][data-owner="black"],
+.native-piece-symbol[data-skin="tile"][data-owner="black"],
+.native-piece-symbol[data-skin="tile"][data-owner="blue"],
+.native-piece-symbol[data-skin="tile"][data-owner="gote"] {
   color: #553f87;
 }
 
@@ -2695,6 +2705,34 @@ option {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.play-skin-select {
+  display: inline-grid;
+  grid-template-columns: auto minmax(4.8rem, 1fr);
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  min-height: 2.36rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--foreground);
+  padding: 0 0.35rem;
+}
+
+.play-skin-select svg {
+  color: var(--accent);
+}
+
+.play-skin-select select {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 0.68rem;
+  font-weight: 950;
 }
 
 .play-control-button svg,

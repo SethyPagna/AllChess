@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vitest";
 
 import { BoardPlayerCard } from "@/components/board/board-player-card";
-import { PieceIcon } from "@/components/board/piece-icon";
+import { PieceIcon, getPieceSkinOptions } from "@/components/board/piece-icon";
 
 describe("PieceIcon", () => {
   test("renders visually distinct full-size western king and queen icons", () => {
@@ -39,6 +39,17 @@ describe("PieceIcon", () => {
     expect(miniShogiPawn).toContain('data-skin="mini-wedge"');
     expect(miniShogiPawn).toContain("\u6b69");
     expect(chineseKing).toContain("<title>王</title>");
+  });
+
+  test("offers and applies alternate piece skins per variant family", () => {
+    const shogiSkins = getPieceSkinOptions("shogi").map((option) => option.key);
+    const shogiTile = renderToStaticMarkup(<PieceIcon code="p" owner="sente" pieceSkin="tile" variantKey="shogi" />);
+    const westernWarm = renderToStaticMarkup(<PieceIcon code="k" owner="white" pieceSkin="makruk" variantKey="classic" />);
+
+    expect(shogiSkins).toEqual(expect.arrayContaining(["default", "wedge", "mini-wedge", "tile"]));
+    expect(shogiTile).toContain('data-skin="tile"');
+    expect(shogiTile).toContain("\u6b69");
+    expect(westernWarm).toContain('data-skin="makruk"');
   });
 
   test("renders draughts men and kings as checker discs", () => {
@@ -141,6 +152,7 @@ describe("PieceIcon", () => {
         humanColor="sente"
         isActive
         locale="ja"
+        pieceSkin="mini-wedge"
         placement="bottom"
         selectedHandCode="p"
         thinking={false}
@@ -152,7 +164,7 @@ describe("PieceIcon", () => {
     expect(card).toContain('aria-label="Sente pieces in hand"');
     expect(card).toContain('aria-label="Drop \u6b69, 2 in hand"');
     expect(card).toContain('class="hand-piece-button focus-ring is-selected"');
-    expect(card).toContain('data-skin="wedge"');
+    expect(card).toContain('data-skin="mini-wedge"');
     expect(card).toContain("draggable=\"true\"");
     expect(card).toContain('aria-hidden="true">2</span>');
   });
