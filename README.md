@@ -2,7 +2,7 @@
 
 AllChess is a multilingual, Cloudflare-first chess ecosystem for classic chess and global variants.
 
-The active app is a Next.js 16 application deployed as the Cloudflare Worker `learn`, with Cloudflare D1 for data and Cloudflare R2 for object storage.
+The active app is a Next.js 16 application deployed as the Cloudflare Worker `chess`, with Cloudflare D1 for data and Cloudflare R2 for object storage.
 
 ## Current Stack
 
@@ -92,7 +92,7 @@ npm run db:migrate:remote
 npm run cf:deploy
 ```
 
-The current workers.dev deployment URL for this Cloudflare account is `https://learn.learn-app.workers.dev`.
+The current workers.dev deployment URL for this Cloudflare account is `https://chess.learn-app.workers.dev`.
 
 Vercel:
 

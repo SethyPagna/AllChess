@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { createD1GameRepository } from "@/lib/cloudflare/d1";
+import { createD1GameRepository, DEFAULT_SAVED_GAME_POSITION_LIMIT, MAX_SAVED_GAME_POSITION_LIMIT } from "@/lib/cloudflare/d1";
 import { createInitialState } from "@/lib/variants";
 import type { D1Database } from "@cloudflare/workers-types";
 
@@ -33,6 +33,18 @@ function createMockD1(firstRows: Record<string, unknown> = {}, allRows: Record<s
 }
 
 describe("D1 persistence", () => {
+  test("keeps a larger bounded move-position read cache for review", async () => {
+    const { db, calls } = createMockD1({}, { "from moves": [] });
+    const repository = createD1GameRepository(db);
+
+    await repository.getSavedMoves("game-1");
+    await repository.getSavedMoves("game-1", 9999);
+
+    const moveQueries = calls.filter((call) => call.sql.includes("from moves"));
+    expect(moveQueries[0]?.values).toEqual(["game-1", DEFAULT_SAVED_GAME_POSITION_LIMIT]);
+    expect(moveQueries[1]?.values).toEqual(["game-1", MAX_SAVED_GAME_POSITION_LIMIT]);
+  });
+
   test("loads authoritative game state from D1 before move application", async () => {
     const state = createInitialState("classic", "authoritative-game");
     const { db, calls } = createMockD1({ "select board_state from games": { board_state: JSON.stringify(state) } });

@@ -5,7 +5,7 @@ import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficulty, type BotDiff
 import type { BotStrengthBand, BotTierKey } from "@/lib/bot/strength";
 
 const MIN_BOT_SEARCH_MS = 8;
-const MAX_GLOBAL_TRANSPOSITIONS = 6000;
+export const MAX_GLOBAL_TRANSPOSITIONS = 24000;
 const BOT_REPLY_SAFETY_MS = 120;
 const MAX_TERMINAL_THREAT_CANDIDATES = 32;
 const MAX_TERMINAL_THREAT_REPLIES = 40;

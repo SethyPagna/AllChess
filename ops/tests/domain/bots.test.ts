@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { cancelBotMove, chooseBotMove, chooseBotMoveSafe, botDifficultyLevels, MAX_BOT_REPLY_MS, requestBotMove } from "@/lib/bot/runtime";
+import { cancelBotMove, chooseBotMove, chooseBotMoveSafe, botDifficultyLevels, MAX_BOT_REPLY_MS, MAX_GLOBAL_TRANSPOSITIONS, requestBotMove } from "@/lib/bot/runtime";
 import {
   createBotBoardSignature,
   createBotPositionKey,
@@ -19,6 +19,10 @@ import {
 import { applyMove, createInitialState, getLegalMoves } from "@/lib/variants";
 
 describe("bot difficulty ladder", () => {
+  test("keeps a larger bounded cross-request position cache", () => {
+    expect(MAX_GLOBAL_TRANSPOSITIONS).toBeGreaterThanOrEqual(24000);
+  });
+
   test("defines the requested six difficulty levels in increasing search budget", () => {
     expect(botDifficultyLevels.map((level) => level.key)).toEqual(["easy", "normal", "hard", "very-hard", "grandmaster", "legend"]);
     expect(botDifficultyLevels.map((level) => level.label)).toEqual(["Easy", "Normal", "Hard", "Very Hard", "Grandmaster", "Legend"]);

@@ -5,6 +5,9 @@ import { getD1CatalogStats } from "@/lib/cloudflare/d1-catalog";
 import type { GameState, Move, PlayerClock, PlayerColor } from "@/lib/variants";
 import type { ChatPolicy, LiveStats, MatchmakingTicket, RoomPlayer, RoomSnapshot, RoomStatus } from "@/lib/realtime/types";
 
+export const DEFAULT_SAVED_GAME_POSITION_LIMIT = 240;
+export const MAX_SAVED_GAME_POSITION_LIMIT = 1000;
+
 export type CreateGameInput = {
   state: GameState;
   privateRoom?: boolean;
@@ -772,7 +775,7 @@ export function createD1GameRepository(db: D1Database): GameRepository {
       return row ? toAnalysisReportSnapshot(row) : null;
     },
 
-    async getSavedMoves(gameId, limit = 120) {
+    async getSavedMoves(gameId, limit = DEFAULT_SAVED_GAME_POSITION_LIMIT) {
       const rows = await db
         .prepare(
           `select game_id, ply, move, notation, board_state_after, created_at
@@ -781,7 +784,7 @@ export function createD1GameRepository(db: D1Database): GameRepository {
            order by ply asc
            limit ?`
         )
-        .bind(gameId, Math.max(1, Math.min(limit, 300)))
+        .bind(gameId, Math.max(1, Math.min(limit, MAX_SAVED_GAME_POSITION_LIMIT)))
         .all<SavedMoveRow>();
 
       return (rows.results ?? []).map(toSavedMoveSnapshot);

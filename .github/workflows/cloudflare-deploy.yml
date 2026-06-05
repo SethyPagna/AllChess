@@ -8,7 +8,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy learn worker
+    name: Deploy chess worker
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:

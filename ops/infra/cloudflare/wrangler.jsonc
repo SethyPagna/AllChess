@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "learn",
+  "name": "chess",
   "main": "../../../.open-next/worker.js",
   "account_id": "d105a82bc26b6913575355352c2d1bb1",
   "workers_dev": true,
@@ -17,7 +17,7 @@
   "services": [
     {
       "binding": "WORKER_SELF_REFERENCE",
-      "service": "learn"
+      "service": "chess"
     }
   ],
   "durable_objects": {
@@ -38,23 +38,8 @@
   },
   "migrations": [
     {
-      "tag": "v2_realtime_main_worker_classes",
+      "tag": "v1_chess_realtime_classes",
       "new_sqlite_classes": ["GameRoomDO", "MatchmakingDO", "PresenceDO"]
-    },
-    {
-      "tag": "v3_delete_study_room_durable_object",
-      "deleted_classes": ["StudyRoomDurableObject"]
-    },
-    {
-      "tag": "v4_delete_study_battle_durable_object",
-      "deleted_classes": ["StudyBattleDurableObject"]
-    },
-    {
-      "tag": "v5_restore_learn_realtime_classes"
-    },
-    {
-      "tag": "v6_delete_legacy_study_durable_objects",
-      "deleted_classes": ["StudyRoomDurableObject", "StudyBattleDurableObject"]
     }
   ],
   "r2_buckets": [
@@ -86,13 +71,13 @@
   },
   "env": {
     "production": {
-      "name": "learn",
+      "name": "chess",
       "workers_dev": true,
       "preview_urls": false,
       "services": [
         {
           "binding": "WORKER_SELF_REFERENCE",
-          "service": "learn"
+          "service": "chess"
         }
       ],
       "durable_objects": {

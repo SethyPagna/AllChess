@@ -4,7 +4,7 @@ AllChess is Cloudflare-first. Supabase, Hyperdrive, Vercel databases, and Vercel
 
 ## Architecture
 
-- Runtime: Cloudflare Workers through the OpenNext Cloudflare adapter, deployed as Worker `learn`.
+- Runtime: Cloudflare Workers through the OpenNext Cloudflare adapter, deployed as Worker `chess`.
 - Database: D1 database `allchess`.
 - User objects: R2 bucket `allchess-objects`.
 - Preview objects: R2 bucket `allchess-objects-preview`.
@@ -25,7 +25,7 @@ npm run db:migrate:remote
 ```
 
 Copy the D1 database id into `ops/infra/cloudflare/wrangler.jsonc` and set the same value as `CLOUDFLARE_D1_DATABASE_ID` anywhere the app runs outside Workers.
-Use the existing Worker named `learn` when it exists; redeploy that target instead of creating a duplicate. Preferred short hostnames are `learn.<domain>` first, then `allchess.<domain>` if the shorter name is unavailable.
+Use the existing Worker named `chess` when it exists; redeploy that target instead of creating a duplicate. Preferred short hostnames are `chess.<domain>` first, then `allchess.<domain>` if the shorter name is unavailable.
 
 ## Secrets
 
