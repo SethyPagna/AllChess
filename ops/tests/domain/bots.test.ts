@@ -16,6 +16,7 @@ import {
   listTrainingDataManifests,
   lookupBotKnowledge
 } from "@/lib/bot/training";
+import { moveToUci } from "@/lib/bot/stockfish-engine";
 import { applyMove, createInitialState, getLegalMoves } from "@/lib/variants";
 
 describe("bot difficulty ladder", () => {
@@ -440,7 +441,7 @@ describe("bot difficulty ladder", () => {
   });
 
   test("verified playable variants have legal cache-first seed moves", async () => {
-    const variants = ["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "jungle", "english-draughts", "international-draughts", "turkish-draughts", "konane", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"];
+    const variants = ["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "shogi", "jungle", "english-draughts", "international-draughts", "turkish-draughts", "konane", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"];
 
     for (const variantKey of variants) {
       const state = createInitialState(variantKey, `${variantKey}-seed`);
@@ -461,6 +462,59 @@ describe("bot difficulty ladder", () => {
         legalValidated: true
       });
       expect(result.elapsedMs).toBeLessThan(MAX_BOT_REPLY_MS);
+    }
+  });
+
+  test("verified playable variants cache first-reply positions across game families", () => {
+    const expectedReplies: Record<string, string> = {
+      classic: "e7e5",
+      chaturanga: "b8c6",
+      crazyhouse: "g8f6",
+      shatranj: "g8f6",
+      chess960: "c7c5",
+      xiangqi: "b10c8",
+      shogi: "c9d8",
+      "mini-shogi": "c5c4",
+      janggi: "b10c8",
+      jungle: "a9a8",
+      "english-draughts": "b6a5",
+      "international-draughts": "c7b6",
+      "turkish-draughts": "a6a5",
+      konane: "a8a8",
+      antichess: "b8c6",
+      horde: "g8f6",
+      "king-of-the-hill": "e7e5",
+      "three-check": "e7e5",
+      "racing-kings": "a2a3"
+    };
+
+    for (const [variantKey, expectedReply] of Object.entries(expectedReplies)) {
+      const initial = createInitialState(variantKey, `${variantKey}-reply-cache`);
+      const firstHit = lookupBotKnowledge(initial, "easy");
+      if (!firstHit) throw new Error(`Expected a first cached move for ${variantKey}.`);
+      const afterFirst = applyMove(initial, firstHit.move);
+      const replyPositionKey = createBotPositionKey(afterFirst);
+      const lineEntries = listBotKnowledge(variantKey).filter((entry) => entry.positionKey === replyPositionKey);
+      const replyHit = lookupBotKnowledge(afterFirst, "easy");
+
+      expect(lineEntries).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            benchmarkVersion: "allchess-variant-line-cache-v1",
+            minTier: "easy",
+            moveUci: expectedReply,
+            variantKey
+          })
+        ])
+      );
+      expect(replyHit?.entry).toEqual(
+        expect.objectContaining({
+          minTier: "easy",
+          variantKey
+        })
+      );
+      expect(replyHit?.move ? moveToUci(afterFirst, replyHit.move) : null).toBe(expectedReply);
+      expect(() => applyMove(afterFirst, replyHit!.move)).not.toThrow();
     }
   });
 

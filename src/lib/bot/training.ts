@@ -1,7 +1,7 @@
 import { moveToUci } from "@/lib/bot/stockfish-engine";
 import { getVariantBotStrengthProfile, type BotTierKey, type VariantBotStrengthProfile } from "@/lib/bot/strength";
 import { MAX_BOT_REPLY_MS } from "@/lib/bot/config";
-import { getLegalMoves, variantCatalog, type GameState, type Move, type VariantDefinition } from "@/lib/variants";
+import { applyMove, createInitialState, getLegalMoves, variantCatalog, type GameState, type Move, type VariantDefinition } from "@/lib/variants";
 import { getVariantRuleSummary, type VariantRuleCompletion } from "@/lib/variants/rules-atlas";
 import generatedKnowledge from "@/data/bot-knowledge.generated.json";
 
@@ -671,10 +671,154 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
   }
 ];
 
+type CuratedLineSeedSpec = {
+  variantKey: string;
+  line: string[];
+  family: string;
+  plan: string;
+  risk: string;
+};
+
+const curatedLineSeedEntries = createCuratedLineSeedEntries([
+  {
+    variantKey: "classic",
+    line: ["e2e4", "e7e5", "g1f3"],
+    family: "standard development",
+    plan: "Keep a cached mainline path available beyond the first move before spending live search.",
+    risk: "If the opponent leaves the book, validate the current position and fall back to search immediately."
+  },
+  {
+    variantKey: "chaturanga",
+    line: ["e2e3", "b8c6"],
+    family: "historical center",
+    plan: "Open the ancient army slowly and let Black answer with horse development.",
+    risk: "The slower pieces punish unsupported pawn races, so the cache should preserve mobility first."
+  },
+  {
+    variantKey: "crazyhouse",
+    line: ["e2e4", "g8f6"],
+    family: "drop-aware center",
+    plan: "Develop into the center while keeping future pocket tactics legal and king-safe.",
+    risk: "Early captures can create immediate drops, so every cached reply is still revalidated."
+  },
+  {
+    variantKey: "shatranj",
+    line: ["e2e3", "g8f6"],
+    family: "historical development",
+    plan: "Use a one-step pawn start and answer with a horse before committing the slow ferz.",
+    risk: "Bare-king and slow-piece endings need mobility more than material grabbing."
+  },
+  {
+    variantKey: "chess960",
+    line: ["e2e4", "c7c5"],
+    family: "random back-rank center",
+    plan: "Cache a flexible central response that does not assume orthodox back-rank routes.",
+    risk: "Castling paths differ, so later moves must keep using the active board state."
+  },
+  {
+    variantKey: "xiangqi",
+    line: ["e4e5", "b10c8"],
+    family: "river pressure",
+    plan: "Advance the central soldier and answer with a horse route that keeps palace defense intact.",
+    risk: "Soldiers cannot retreat, so the cache avoids overextending without support."
+  },
+  {
+    variantKey: "shogi",
+    line: ["e3e4", "c9d8"],
+    family: "drop-aware shogi",
+    plan: "Cache the first Sente pawn push and a compact Gote gold response before deeper search.",
+    risk: "Drops, promotion zones, and pawn-drop mate rules still decide whether a cached move is accepted."
+  },
+  {
+    variantKey: "mini-shogi",
+    line: ["a2a3", "c5c4"],
+    family: "compact-board shogi",
+    plan: "Open one file and answer centrally on the 5x5 board where every tempo matters.",
+    risk: "The small board makes stale book moves dangerous, so legality is checked at lookup time."
+  },
+  {
+    variantKey: "janggi",
+    line: ["e4e5", "b10c8"],
+    family: "palace pressure",
+    plan: "Advance a central soldier and answer with a horse route that preserves cannon screens.",
+    risk: "Palace movement and facing generals must remain validated by the native adapter."
+  },
+  {
+    variantKey: "jungle",
+    line: ["a1a2", "a9a8"],
+    family: "den race",
+    plan: "Advance high-rank animals toward den pressure while keeping trap control available.",
+    risk: "River and trap rules can flip captures, so cached animal moves are never trusted blindly."
+  },
+  {
+    variantKey: "english-draughts",
+    line: ["a3b4", "b6a5"],
+    family: "compulsory capture",
+    plan: "Cache a basic checker development pair while preserving forced-jump awareness.",
+    risk: "Any capture obligation overrides quiet book moves."
+  },
+  {
+    variantKey: "international-draughts",
+    line: ["b4a5", "c7b6"],
+    family: "maximum capture",
+    plan: "Cache an early flank development pair for 10x10 draughts.",
+    risk: "The longest capture sequence must beat every quiet cached move."
+  },
+  {
+    variantKey: "turkish-draughts",
+    line: ["a3a4", "a6a5"],
+    family: "orthogonal draughts",
+    plan: "Cache the first orthogonal advance and matching reply for Turkish Draughts.",
+    risk: "Rank-file jump chains can appear quickly and must override the seed."
+  },
+  {
+    variantKey: "konane",
+    line: ["b8b8", "a8a8"],
+    family: "opening removals",
+    plan: "Cache both opening removals so the first real jump position starts quickly.",
+    risk: "After removals, every move must be an orthogonal jump and cannot rely on quiet heuristics."
+  },
+  {
+    variantKey: "antichess",
+    line: ["e2e4", "b8c6"],
+    family: "forced capture lanes",
+    plan: "Open a trade lane and develop a reply while preserving compulsory-capture logic.",
+    risk: "The best move can be the one that safely loses material, so normal chess heuristics are only a fallback."
+  },
+  {
+    variantKey: "horde",
+    line: ["e5e6", "g8f6"],
+    family: "asymmetric horde",
+    plan: "Cache a front-pawn squeeze and a developing response for the standard army.",
+    risk: "The horde needs connected pawns, while Black must avoid getting boxed in."
+  },
+  {
+    variantKey: "king-of-the-hill",
+    line: ["e2e4", "e7e5"],
+    family: "center objective",
+    plan: "Cache central space for both sides before hill-race tactics begin.",
+    risk: "A king reaching the center ends the game, so objective threats outrank material."
+  },
+  {
+    variantKey: "three-check",
+    line: ["e2e4", "e7e5"],
+    family: "check-count pressure",
+    plan: "Cache central development that can later create checks without forcing unsound queen moves.",
+    risk: "Check count is decisive, but early fishing for checks can still lose the position."
+  },
+  {
+    variantKey: "racing-kings",
+    line: ["h2h3", "a2a3"],
+    family: "king race",
+    plan: "Cache both sides' first race tempos without allowing checks.",
+    risk: "Any move that gives check is illegal, so the cache must respect the no-check rule."
+  }
+]);
+
 const generated = generatedKnowledge as GeneratedBotKnowledgeFile;
 const generatedKnowledgeEntries = generated.entries;
 const generatedEngineLabels = generated.engineLabels ?? [];
-const knowledgeEntries: BotKnowledgeEntry[] = [...curatedKnowledgeEntries, ...generatedKnowledgeEntries];
+const knowledgeEntries: BotKnowledgeEntry[] = [...curatedKnowledgeEntries, ...curatedLineSeedEntries, ...generatedKnowledgeEntries];
 const curatedEngineLabels = curatedKnowledgeEntries.map(knowledgeEntryToEngineLabel);
 const runtimeEngineLabels = generatedEngineLabels.length ? [...generatedEngineLabels, ...curatedEngineLabels] : [...generatedKnowledgeEntries.map(knowledgeEntryToEngineLabel), ...curatedEngineLabels];
 const knowledgeIndex = createKnowledgeIndex(knowledgeEntries);
@@ -687,6 +831,48 @@ const totalGeneratedPositionCount = new Set(
   generatedKnowledgeEntries.map((entry) => `${entry.variantKey}|${entry.boardSignature || entry.positionKey || entry.id}`)
 ).size;
 const localBenchmarkVersion = generatedKnowledgeEntries[0]?.benchmarkVersion ?? generatedEngineLabels[0]?.benchmarkVersion ?? "allchess-local-knowledge-v1";
+
+function createCuratedLineSeedEntries(specs: CuratedLineSeedSpec[]): BotKnowledgeEntry[] {
+  const entries: BotKnowledgeEntry[] = [];
+
+  for (const spec of specs) {
+    let state = createInitialState(spec.variantKey, `${spec.variantKey}-curated-line`);
+    const playedMoves: string[] = [];
+
+    for (let index = 0; index < spec.line.length; index += 1) {
+      const moveUci = spec.line[index];
+      const positionKey = createBotPositionKey(state);
+      const move = legalMoveByUci(state, moveUci);
+      if (!move) {
+        throw new Error(`Invalid curated bot seed for ${spec.variantKey}: ${moveUci} after ${playedMoves.join(" ") || "start"}`);
+      }
+
+      entries.push({
+        id: `${spec.variantKey}-line-${index + 1}-${moveUci}`,
+        variantKey: spec.variantKey,
+        positionKey,
+        boardSignature: createBotBoardSignature(state),
+        moveUci,
+        source: "opening-book",
+        minTier: "easy",
+        confidence: Number(Math.max(0.78, 0.86 - index * 0.025).toFixed(3)),
+        benchmarkVersion: "allchess-variant-line-cache-v1",
+        tags: ["opening", "line-cache", spec.family, `ply:${index + 1}`],
+        explanation: {
+          plan: spec.plan,
+          threat: `Keep ${spec.family} play responsive through cached ply ${index + 1}.`,
+          risk: spec.risk,
+          fallbackGoal: "If the current board no longer matches the cache, continue with legal internal search."
+        }
+      });
+
+      state = applyMove(state, move);
+      playedMoves.push(moveUci);
+    }
+  }
+
+  return entries;
+}
 
 const modelManifests: BotModelManifest[] = [
   {
