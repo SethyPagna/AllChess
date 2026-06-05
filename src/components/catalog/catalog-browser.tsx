@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { BookOpen, Bot, Filter, Play, RotateCcw, Search, X } from "lucide-react";
+import { BookOpen, Bot, ChevronDown, Filter, Play, RotateCcw, Search, X } from "lucide-react";
 
 import { CatalogModeGrid, CatalogModeStrip, catalogModeKeys, catalogModeLabels } from "@/components/catalog/catalog-mode-support";
 import {
@@ -37,18 +37,18 @@ const playabilityLabels: Record<PlayabilityStatus | "all", string> = {
   "coming-soon": "In progress"
 };
 
-const familyShortLabels: Record<GameFamilyKey | "all", string> = {
-  all: "All",
-  "chess-family": "Chess",
-  "asian-chess": "Asian",
-  draughts: "Draughts",
+const familySelectLabels: Record<GameFamilyKey | "all", string> = {
+  all: "All families",
+  "chess-family": "Chess family",
+  "asian-chess": "Asian chess systems",
+  draughts: "Draughts and checkers",
   mancala: "Mancala",
-  "go-family": "Go",
-  tables: "Tables",
-  tafl: "Tafl",
-  race: "Race",
-  mill: "Mill",
-  regional: "Regional"
+  "go-family": "Go, Gomoku, and territory",
+  tables: "Tables and backgammon",
+  tafl: "Tafl games",
+  race: "Race games",
+  mill: "Mill games",
+  regional: "Regional classics"
 };
 
 export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "all", initialStatus = "all", locale }: CatalogBrowserProps) {
@@ -56,6 +56,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
   const [family, setFamily] = useState<GameFamilyKey | "all">(initialFamily);
   const [mode, setMode] = useState<CatalogPlayMode | "all">(initialMode);
   const [status, setStatus] = useState<PlayabilityStatus | "all">(initialStatus);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<GameCatalogEntry | null>(null);
 
   const filtered = useMemo(() => {
@@ -71,6 +72,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
     });
   }, [entries, family, mode, query, status]);
   const hasFilters = Boolean(query) || family !== "all" || mode !== "all" || status !== "all";
+  const filterCount = [family !== "all", mode !== "all", status !== "all"].filter(Boolean).length;
 
   return (
     <section className="catalog-browser">
@@ -78,68 +80,81 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
         <label className="catalog-search focus-within:ring-2 focus-within:ring-[var(--accent)]">
           <Search size={18} />
           <span className="sr-only">Search games</span>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search names, aliases, native names" />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search games" />
         </label>
-        <div className="catalog-filter-group" role="group" aria-label="Family filter">
-          <span className="catalog-filter-icon" aria-hidden="true">
+        <div className={`catalog-filter-popover${filtersOpen ? " is-open" : ""}`}>
+          <button
+            type="button"
+            className="catalog-filter-trigger focus-ring"
+            aria-expanded={filtersOpen}
+            aria-controls="catalog-filter-panel"
+            onClick={() => setFiltersOpen((isOpen) => !isOpen)}
+          >
             <Filter size={15} />
-          </span>
-          <div className="catalog-chip-list">
-            <button type="button" className={`catalog-filter-chip focus-ring${family === "all" ? " is-active" : ""}`} onClick={() => setFamily("all")}>
-              {familyShortLabels.all}
-            </button>
-            {gameFamilies.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                className={`catalog-filter-chip focus-ring${family === item.key ? " is-active" : ""}`}
-                onClick={() => setFamily(item.key)}
-                aria-pressed={family === item.key}
-                title={item.label}
-              >
-                {familyShortLabels[item.key]}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="catalog-filter-group catalog-filter-group-compact" role="group" aria-label="Playability filter">
-          <span className="catalog-filter-icon" aria-hidden="true">
-            <Play size={15} />
-          </span>
-          <div className="catalog-chip-list">
-            {Object.entries(playabilityLabels).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                className={`catalog-filter-chip focus-ring${status === value ? " is-active" : ""}`}
-                onClick={() => setStatus(value as PlayabilityStatus | "all")}
-                aria-pressed={status === value}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="catalog-filter-group catalog-filter-group-compact" role="group" aria-label="Mode filter">
-          <span className="catalog-filter-icon" aria-hidden="true">
-            <Bot size={15} />
-          </span>
-          <div className="catalog-chip-list">
-            <button type="button" className={`catalog-filter-chip focus-ring${mode === "all" ? " is-active" : ""}`} onClick={() => setMode("all")} aria-pressed={mode === "all"}>
-              {catalogModeLabels.all}
-            </button>
-            {catalogModeKeys.map((modeKey) => (
-              <button
-                key={modeKey}
-                type="button"
-                className={`catalog-filter-chip focus-ring${mode === modeKey ? " is-active" : ""}`}
-                onClick={() => setMode(modeKey)}
-                aria-pressed={mode === modeKey}
-              >
-                {catalogModeLabels[modeKey]}
-              </button>
-            ))}
-          </div>
+            <span>Filters</span>
+            {filterCount ? <span className="catalog-filter-count">{filterCount}</span> : null}
+          </button>
+          {filtersOpen ? (
+            <div id="catalog-filter-panel" className="catalog-filter-panel" role="dialog" aria-label="Catalog filters">
+              <div className="catalog-filter-panel-head">
+                <strong>Filters</strong>
+                <div>
+                  {hasFilters ? (
+                    <button
+                      type="button"
+                      className="catalog-filter-clear focus-ring"
+                      onClick={() => {
+                        setQuery("");
+                        setFamily("all");
+                        setMode("all");
+                        setStatus("all");
+                      }}
+                    >
+                      Clear
+                    </button>
+                  ) : null}
+                  <button type="button" className="catalog-filter-close focus-ring" aria-label="Close filters" onClick={() => setFiltersOpen(false)}>
+                    <X size={16} />
+                  </button>
+                </div>
+              </div>
+              <label className="catalog-filter-field">
+                <span>Family</span>
+                <select value={family} onChange={(event) => setFamily(event.target.value as GameFamilyKey | "all")} aria-label="Family filter">
+                  <option value="all">{familySelectLabels.all}</option>
+                  {gameFamilies.map((item) => (
+                    <option key={item.key} value={item.key}>
+                      {familySelectLabels[item.key]}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={16} aria-hidden="true" />
+              </label>
+              <label className="catalog-filter-field">
+                <span>Playability</span>
+                <select value={status} onChange={(event) => setStatus(event.target.value as PlayabilityStatus | "all")} aria-label="Playability filter">
+                  {Object.entries(playabilityLabels).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={16} aria-hidden="true" />
+              </label>
+              <label className="catalog-filter-field">
+                <span>Mode</span>
+                <select value={mode} onChange={(event) => setMode(event.target.value as CatalogPlayMode | "all")} aria-label="Mode filter">
+                  <option value="all">{catalogModeLabels.all}</option>
+                  {catalogModeKeys.map((modeKey) => (
+                    <option key={modeKey} value={modeKey}>
+                      {catalogModeLabels[modeKey]}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={16} aria-hidden="true" />
+              </label>
+            </div>
+          ) : null}
         </div>
         {hasFilters ? (
           <button

@@ -198,7 +198,8 @@ test("watch rooms and catalog filters land on honest real-data views", async ({ 
   await expectNoHorizontalOverflow(page);
 
   await page.goto("/en/variants?playability=learn");
-  await expect(page.getByLabel("Playability filter").getByRole("button", { name: "Guide first" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: /Filters/ }).click();
+  await expect(page.getByLabel("Playability filter")).toHaveValue("learn");
   await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
@@ -226,7 +227,8 @@ test("legacy practice route redirects into the unified games and rules flow", as
 
   await expect(page).toHaveURL(/\/en\/variants\?playability=playable$/);
   await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
-  await expect(page.getByLabel("Playability filter").getByRole("button", { name: "Ready to play" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: /Filters/ }).click();
+  await expect(page.getByLabel("Playability filter")).toHaveValue("playable");
   await expectNoHorizontalOverflow(page);
 });
 
@@ -272,18 +274,19 @@ test("language menu preserves catalog filters", async ({ page }) => {
   await Promise.all([page.waitForURL(/\/de\/variants\?playability=learn$/), german.click()]);
 
   await expect(page).toHaveURL(/\/de\/variants\?playability=learn$/);
-  await expect(page.getByLabel("Playability filter").getByRole("button", { name: "Guide first" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("button", { name: /Filters/ }).click();
+  await expect(page.getByLabel("Playability filter")).toHaveValue("learn");
   await expectNoHorizontalOverflow(page);
 });
 
 test("catalog search finds native and romanized game names", async ({ page }) => {
   await page.goto("/en/variants");
 
-  await page.getByPlaceholder("Search names, aliases, native names").fill("Dou Shou Qi");
+  await page.getByPlaceholder("Search games").fill("Dou Shou Qi");
   await expect(page.getByRole("heading", { name: /Jungle/ })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
-  await page.getByPlaceholder("Search names, aliases, native names").fill("Oware");
+  await page.getByPlaceholder("Search games").fill("Oware");
   await page.getByRole("button", { name: /Open guide for Oware/ }).click();
   await expect(page.getByRole("dialog").getByRole("link", { name: "Full guide" })).toHaveAttribute("href", "/en/games/oware");
   await page.goto("/en/games/oware");
