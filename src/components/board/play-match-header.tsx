@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, ChevronDown, Eye, Search, Share2 } from "lucide-react";
 
 import {
@@ -44,6 +44,8 @@ export function PlayMatchHeader({
   const [query, setQuery] = useState("");
   const [modeFilter, setModeFilter] = useState<"current" | CatalogPlayMode>("current");
   const [familyFilter, setFamilyFilter] = useState<"all" | GameFamilyKey>("all");
+  const gamePickerRef = useRef<HTMLDivElement>(null);
+  const gamePickerButtonRef = useRef<HTMLButtonElement>(null);
   const targetMode = modeFilter === "current" ? playMode : modeFilter;
   const playableGames = useMemo(() => gameCatalog.filter((entry) => entry.variantKey), []);
   const filteredGames = useMemo(() => {
@@ -66,17 +68,50 @@ export function PlayMatchHeader({
     { key: "online", label: "Online" }
   ];
 
+  useEffect(() => {
+    if (!gamePickerOpen) return;
+
+    function closePicker({ restoreFocus }: { restoreFocus: boolean }) {
+      setGamePickerOpen(false);
+      if (restoreFocus) {
+        gamePickerButtonRef.current?.focus();
+      }
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target;
+      if (target instanceof Node && !gamePickerRef.current?.contains(target)) {
+        closePicker({ restoreFocus: false });
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closePicker({ restoreFocus: true });
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown, true);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [gamePickerOpen]);
+
   return (
     <div className="play-panel-match-header">
       <div className="play-title-block">
         <div className="play-title-row">
-          <div className="play-title-picker">
-            <button type="button" className="focus-ring play-title-button" aria-label="Choose game" aria-expanded={gamePickerOpen} aria-controls="play-game-title-picker" onClick={() => setGamePickerOpen((current) => !current)} title="Change game or search other playable games.">
+          <div ref={gamePickerRef} className="play-title-picker">
+            <button ref={gamePickerButtonRef} type="button" className="focus-ring play-title-button" aria-label="Choose game" aria-expanded={gamePickerOpen} aria-controls="play-game-title-picker" onClick={() => setGamePickerOpen((current) => !current)} title="Change game or search other playable games.">
               <h1>{title}</h1>
               <ChevronDown size={18} />
             </button>
             {gamePickerOpen ? (
-              <div id="play-game-title-picker" className="play-title-picker-menu" role="dialog" aria-label="Choose game">
+              <div id="play-game-title-picker" className="play-title-picker-menu" role="dialog" aria-modal="false" aria-label="Choose game">
                 <label className="play-title-picker-search">
                   <Search size={15} />
                   <span className="sr-only">Search games</span>

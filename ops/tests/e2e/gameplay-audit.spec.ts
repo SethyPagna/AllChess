@@ -111,7 +111,13 @@ test("play setup carries selected clock into game links", async ({ page }) => {
   await expect(page.getByLabel("Play modes")).toContainText("Bot Mode");
   await expect(page.getByLabel("Play modes")).not.toContainText("Matchmaking");
 
-  await page.getByRole("button", { name: "Choose game" }).click();
+  const chooseGame = page.getByRole("button", { name: "Choose game" });
+  await chooseGame.click();
+  await expect(page.getByRole("dialog", { name: "Choose game" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Choose game" })).toHaveCount(0);
+  await expect(chooseGame).toBeFocused();
+  await chooseGame.click();
   await page.getByPlaceholder("Search games").fill("classic");
   const classicLink = page.getByRole("link", { name: /Classic Chess/ }).first();
   await expect(classicLink).toHaveAttribute("href", "/en/play/classic?bot=normal&mode=bot&time=blitz");
