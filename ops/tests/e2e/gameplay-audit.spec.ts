@@ -46,7 +46,9 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await expect(coordinate).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(coordinate).toHaveCSS("box-shadow", "none");
   await expect(coordinate).toHaveCSS("border-radius", "0px");
-  await expect(coordinate).toHaveCSS("text-shadow", "none");
+  await expect(coordinate).not.toHaveCSS("color", "rgba(0, 0, 0, 0)");
+  await expect(coordinate).not.toHaveCSS("text-shadow", "none");
+  await expect(page.getByLabel("Black player card")).not.toHaveCSS("background-color", "rgb(36, 35, 31)");
 
   await page.getByRole("button", { name: "Suggest" }).click();
   await expect(board.locator('[data-suggested="from"]')).toBeVisible();
@@ -334,7 +336,8 @@ test("non-classic boards use clean coordinate labels too", async ({ page }) => {
   await expect(coordinate).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(coordinate).toHaveCSS("box-shadow", "none");
   await expect(coordinate).toHaveCSS("border-radius", "0px");
-  await expect(coordinate).toHaveCSS("text-shadow", "none");
+  await expect(coordinate).not.toHaveCSS("color", "rgba(0, 0, 0, 0)");
+  await expect(coordinate).not.toHaveCSS("text-shadow", "none");
 
   const boardBox = await board.boundingBox();
   const coordinateBox = await coordinate.boundingBox();

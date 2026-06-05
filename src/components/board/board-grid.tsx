@@ -55,9 +55,9 @@ export function BoardGrid({ cols, files, legalTargets, onChoose, orientedRows, r
                 color: isDarkPiece ? "var(--piece-dark)" : "var(--piece-light)"
               }}
             >
+              {cell.piece ? <PieceIcon code={cell.piece.code} owner={cell.piece.owner} variantKey={variantKey} promoted={cell.piece.promoted} /> : null}
               {visualCol === 0 ? <span className="board-coordinate board-rank">{rows - cell.square.row}</span> : null}
               {visualRow === rows - 1 ? <span className="board-coordinate board-file">{files[cell.square.col]}</span> : null}
-              {cell.piece ? <PieceIcon code={cell.piece.code} owner={cell.piece.owner} variantKey={variantKey} promoted={cell.piece.promoted} /> : null}
             </button>
           );
         })

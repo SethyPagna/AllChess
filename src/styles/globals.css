@@ -1006,14 +1006,25 @@ option {
   max-width: calc(100vw - 1.5rem);
   min-height: 3.15rem;
   margin-inline: auto;
-  border: 1px solid rgb(255 255 255 / 8%);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #24231f;
+  background: color-mix(in srgb, var(--surface-raised) 96%, transparent);
   padding: 0.45rem 0.6rem;
-  box-shadow: 0 10px 20px rgb(0 0 0 / 14%);
+  box-shadow: var(--shadow-card);
 }
 
 .board-player-card.is-active {
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent), var(--shadow-card);
+}
+
+.dark .board-player-card {
+  border-color: rgb(255 255 255 / 8%);
+  background: #24231f;
+  box-shadow: 0 10px 20px rgb(0 0 0 / 14%);
+}
+
+.dark .board-player-card.is-active {
   border-color: rgb(115 184 80 / 62%);
   box-shadow: 0 0 0 1px rgb(115 184 80 / 18%), 0 10px 20px rgb(0 0 0 / 14%);
 }
@@ -1024,11 +1035,16 @@ option {
   height: 2.2rem;
   place-items: center;
   border-radius: 7px;
-  background: linear-gradient(160deg, #3c3a34, #191815);
-  color: #fffdf7;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
   font-size: 0.72rem;
   font-weight: 950;
   text-transform: uppercase;
+}
+
+.dark .player-avatar {
+  background: linear-gradient(160deg, #3c3a34, #191815);
+  color: #fffdf7;
 }
 
 .player-card-main {
@@ -1045,7 +1061,7 @@ option {
 
 .player-card-row strong {
   overflow: hidden;
-  color: #fffdf7;
+  color: var(--foreground);
   font-size: 0.92rem;
   font-weight: 950;
   text-overflow: ellipsis;
@@ -1062,11 +1078,19 @@ option {
 .player-card-main p {
   margin: 0.1rem 0 0;
   overflow: hidden;
-  color: #bbb3a4;
+  color: var(--muted);
   font-size: 0.75rem;
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.dark .player-card-row strong {
+  color: #fffdf7;
+}
+
+.dark .player-card-main p {
+  color: #bbb3a4;
 }
 
 .captured-strip {
@@ -1111,10 +1135,14 @@ option {
 }
 
 .captured-empty {
-  color: #8d8679;
+  color: var(--muted);
   font-size: 0.7rem;
   font-weight: 850;
   white-space: nowrap;
+}
+
+.dark .captured-empty {
+  color: #8d8679;
 }
 
 .game-board-layout {
@@ -1546,20 +1574,20 @@ option {
 
 .board-coordinate {
   position: absolute;
-  z-index: 4;
+  z-index: 8;
   background: transparent;
-  color: #315d22;
+  color: #274f1b;
   font-size: clamp(0.78rem, calc((var(--board-fixed-size) / var(--board-cols)) * 0.18), 1.12rem);
   font-weight: 950;
   line-height: 1;
   pointer-events: none;
   text-align: center;
-  text-shadow: none;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 52%);
 }
 
 .board-square[data-tone="dark"] .board-coordinate {
-  color: #fbf7ca;
-  text-shadow: none;
+  color: #fff8c7;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 32%);
 }
 
 .board-rank {
