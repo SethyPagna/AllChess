@@ -51,7 +51,7 @@ export function GameGuideModal({ onClose, rulesSummary, show }: GameGuideModalPr
             <summary>Sources</summary>
             <div className="flex flex-wrap gap-2">
               {rulesSummary.sourceLinks.map((source) => (
-                <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="focus-ring rounded-md border border-[var(--border)] px-2 py-1 text-xs font-bold text-[var(--muted)]">
+                <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="rules-source-link focus-ring">
                   {source.name}
                 </a>
               ))}

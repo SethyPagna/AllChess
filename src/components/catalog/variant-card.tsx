@@ -17,36 +17,33 @@ export function VariantCard({
   ruleSummary?: VariantRuleSummary;
 }) {
   return (
-    <article className="panel grid gap-4 p-4">
-      <div className="flex items-start justify-between gap-3">
+    <article className="variant-card panel">
+      <div className="variant-card-head">
         <div>
-          <h3 className="text-xl font-black">{name}</h3>
-          <p className="text-sm capitalize text-[var(--muted)]">{variant.family.replace("-", " ")}</p>
+          <h3>{name}</h3>
+          <p>{variant.family.replace("-", " ")}</p>
         </div>
-        <span className="rounded-md bg-[var(--surface-strong)] px-2 py-1 font-mono text-xs">
+        <span className="variant-board-size">
           {variant.board.rows}x{variant.board.cols}
         </span>
       </div>
-      <p className="min-h-12 text-sm leading-6 text-[var(--muted)]">{variant.objective}</p>
+      <p className="variant-card-objective">{variant.objective}</p>
       {ruleSummary ? (
-        <ol className="grid gap-1 text-xs text-[var(--muted)]">
+        <ol className="variant-rule-preview">
           {ruleSummary.numberedBasics.slice(0, 2).map((rule, index) => (
-            <li key={rule} className="flex gap-2">
-              <span className="font-black text-[var(--foreground)]">{index + 1}.</span>
+            <li key={rule}>
+              <strong>{index + 1}.</strong>
               <span>{rule}</span>
             </li>
           ))}
         </ol>
       ) : null}
-      <div className="flex flex-wrap gap-2 text-xs">
-        {variant.supportsDrops ? <span className="rounded bg-[var(--surface-strong)] px-2 py-1">drops</span> : null}
-        {variant.supportsPromotion ? <span className="rounded bg-[var(--surface-strong)] px-2 py-1">promotion</span> : null}
-        {variant.supportsCheck ? <span className="rounded bg-[var(--surface-strong)] px-2 py-1">check</span> : null}
+      <div className="variant-feature-list">
+        {variant.supportsDrops ? <span>drops</span> : null}
+        {variant.supportsPromotion ? <span>promotion</span> : null}
+        {variant.supportsCheck ? <span>check</span> : null}
       </div>
-      <Link
-        href={playGameHref(locale, variant.key, { mode: "offline", time: "rapid" }) as never}
-        className="focus-ring rounded-md bg-[var(--accent)] px-4 py-3 text-center font-bold text-black"
-      >
+      <Link href={playGameHref(locale, variant.key, { mode: "offline", time: "rapid" }) as never} className="variant-start-link action-primary focus-ring">
         Start
       </Link>
     </article>

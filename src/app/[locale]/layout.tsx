@@ -114,7 +114,7 @@ export default async function LocaleLayout({
                   <NotificationCenter />
                 </div>
                 <details className="dropdown app-menu">
-                  <summary className="btn btn-square focus-ring grid h-10 w-10 cursor-pointer list-none place-items-center rounded-md border border-[var(--border)]">
+                  <summary className="btn btn-square focus-ring action-secondary grid h-10 w-10 cursor-pointer list-none place-items-center">
                     <Menu size={18} />
                   </summary>
                   <div className="dropdown-content app-menu-panel">

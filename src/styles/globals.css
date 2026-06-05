@@ -184,6 +184,28 @@ option {
   height: auto;
 }
 
+.language-option {
+  justify-content: space-between;
+  border-radius: var(--radius-md);
+  color: var(--muted);
+  padding: 0.5rem 0.7rem;
+  font-size: 0.88rem;
+  font-weight: 850;
+  transition: background var(--motion-fast), color var(--motion-fast), transform var(--motion-fast);
+}
+
+.language-option:hover {
+  transform: translateY(-1px);
+  background: var(--accent-soft);
+  color: var(--foreground);
+}
+
+.language-option.is-active {
+  background: var(--accent);
+  color: #06130d;
+  font-weight: 950;
+}
+
 .notification-read-button.btn {
   height: 2rem;
 }
@@ -444,12 +466,16 @@ option {
   position: absolute;
   top: calc(100% + 0.5rem);
   right: 0;
-  z-index: 95;
+  z-index: 120;
   width: min(18rem, calc(100vw - 1rem));
   max-height: min(24rem, calc(100vh - 5rem));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   animation: menu-pop 140ms ease-out;
-  background: var(--surface-strong);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-popover);
   color: var(--foreground);
+  isolation: isolate;
   overflow: auto;
   transform-origin: top right;
 }
@@ -477,7 +503,7 @@ option {
 
 .language-menu[open],
 .notification-menu[open] {
-  z-index: 95;
+  z-index: 120;
 }
 
 .language-option {
@@ -486,11 +512,21 @@ option {
   justify-content: space-between;
   gap: 0.75rem;
   min-height: 2.55rem;
-  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+  opacity: 1;
+  transition: background var(--motion-fast), color var(--motion-fast), transform var(--motion-fast);
 }
 
 .language-option:hover {
   transform: translateX(-2px);
+}
+
+.language-menu-panel .language-option {
+  background: transparent;
+}
+
+.language-menu-panel .language-option.is-active {
+  background: var(--accent);
+  color: #06130d;
 }
 
 .notification-menu summary {
@@ -583,7 +619,7 @@ option {
 
 @keyframes menu-pop {
   from {
-    opacity: 0;
+    opacity: 0.94;
     transform: translateY(-0.25rem) scale(0.98);
   }
   to {
@@ -2455,7 +2491,7 @@ option {
   min-width: 0;
   width: 100%;
   min-height: 2rem;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   padding: 0.3rem 0.22rem;
   font-size: 0.64rem;
   font-weight: 950;
@@ -2480,6 +2516,12 @@ option {
   font-size: 0.66rem;
 }
 
+.play-control-button.is-selected {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #06130d;
+}
+
 .play-icon-button {
   width: 2rem;
   aspect-ratio: auto;
@@ -2492,7 +2534,7 @@ option {
 
 .play-control-button.is-danger {
   border: 1px solid var(--danger);
-  background: color-mix(in srgb, var(--danger) 9%, var(--surface));
+  background: color-mix(in srgb, var(--danger) 9%, var(--surface-raised));
   color: var(--danger);
 }
 
@@ -4433,6 +4475,105 @@ option {
   background: var(--accent-soft);
 }
 
+.variant-card {
+  display: grid;
+  gap: 1rem;
+  padding: clamp(0.9rem, 1.5vw, 1rem);
+  transition: transform var(--motion-fast), border-color var(--motion-fast), background var(--motion-fast), box-shadow var(--motion-fast);
+}
+
+.variant-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface-raised));
+  box-shadow: 0 16px 34px rgb(36 54 47 / 13%);
+}
+
+.variant-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.85rem;
+}
+
+.variant-card-head h3 {
+  margin: 0;
+  font-size: 1.18rem;
+  font-weight: 950;
+  line-height: 1.15;
+}
+
+.variant-card-head p,
+.variant-card-objective,
+.variant-rule-preview {
+  color: var(--muted);
+}
+
+.variant-card-head p {
+  margin: 0.18rem 0 0;
+  font-size: 0.86rem;
+  font-weight: 780;
+  text-transform: capitalize;
+}
+
+.variant-board-size,
+.variant-feature-list span {
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  color: color-mix(in srgb, var(--foreground) 72%, var(--muted));
+  font-size: 0.74rem;
+  font-weight: 900;
+  padding: 0.24rem 0.5rem;
+}
+
+.variant-board-size {
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  white-space: nowrap;
+}
+
+.variant-card-objective {
+  min-height: 3rem;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 720;
+  line-height: 1.5;
+}
+
+.variant-rule-preview {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  font-size: 0.78rem;
+  font-weight: 760;
+  list-style: none;
+}
+
+.variant-rule-preview li {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.variant-rule-preview strong {
+  color: var(--foreground);
+  font-weight: 950;
+}
+
+.variant-feature-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.variant-start-link {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1rem;
+  text-align: center;
+}
+
 .catalog-browser {
   display: grid;
   gap: 0.85rem;
@@ -4769,6 +4910,27 @@ option {
 .rules-modal-grid {
   display: grid;
   gap: 0.45rem;
+}
+
+.rules-source-link {
+  display: inline-flex;
+  min-height: 1.85rem;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--muted);
+  padding: 0 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 850;
+  transition: transform var(--motion-fast), border-color var(--motion-fast), background var(--motion-fast), color var(--motion-fast);
+}
+
+.rules-source-link:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+  background: var(--accent-soft);
+  color: var(--foreground);
 }
 
 .play-setup-page {

@@ -32,9 +32,7 @@ export function LocaleSwitcher({ active }: { active: LocaleCode }) {
           <Link
             key={locale}
             href={localizePath(currentPath, locale) as never}
-            className={`language-option focus-ring btn btn-ghost rounded-md px-3 py-2 text-sm ${
-              locale === active ? "is-active bg-[var(--accent)] font-bold text-black" : "text-[var(--muted)] hover:bg-[var(--surface-soft)]"
-            }`}
+            className={`language-option focus-ring btn btn-ghost ${locale === active ? "is-active" : ""}`}
           >
             <span>{localeNames[locale]}</span>
             {locale === active ? <Check aria-hidden="true" size={15} /> : null}

@@ -102,11 +102,11 @@ export function PlayControlCard({
             <small>{canUseBots ? botLevelLabel : canEndGame ? "Live" : "Start"}</small>
           </div>
           <div className="play-control-group play-control-group-match">
-            <button type="button" aria-label="Bot Mode" title={canUseBots ? "Toggle bot opponent. You move your selected side; the bot replies for the other side." : "Bot opponent is only available in Bot Mode during an active local game."} onClick={onToggleBot} disabled={!canUseBots} className={`focus-ring play-control-button ${botMode === "opponent" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"}`}>
+            <button type="button" aria-label="Bot Mode" title={canUseBots ? "Toggle bot opponent. You move your selected side; the bot replies for the other side." : "Bot opponent is only available in Bot Mode during an active local game."} onClick={onToggleBot} disabled={!canUseBots} className={`focus-ring action-secondary play-control-button ${botMode === "opponent" ? "is-selected" : ""}`}>
               <Bot size={15} />
               <span>Bot</span>
             </button>
-            <button type="button" aria-label="Auto" title={canUseBots ? "Let bots control both sides until you turn this off." : "Auto is only available in Bot Mode during an active local game."} onClick={onToggleAuto} disabled={!canUseBots} className={`focus-ring play-control-button ${botMode === "both" ? "bg-[var(--accent)] text-black" : "border border-[var(--border)] bg-[var(--surface)]"}`}>
+            <button type="button" aria-label="Auto" title={canUseBots ? "Let bots control both sides until you turn this off." : "Auto is only available in Bot Mode during an active local game."} onClick={onToggleAuto} disabled={!canUseBots} className={`focus-ring action-secondary play-control-button ${botMode === "both" ? "is-selected" : ""}`}>
               <Bot size={15} />
               <span>Auto</span>
             </button>
