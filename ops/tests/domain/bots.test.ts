@@ -442,7 +442,7 @@ describe("bot difficulty ladder", () => {
   });
 
   test("verified playable variants have legal cache-first seed moves", async () => {
-    const variants = ["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "shogi", "jungle", "english-draughts", "international-draughts", "turkish-draughts", "konane", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"];
+    const variants = ["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "shogi", "jungle", "english-draughts", "international-draughts", "turkish-draughts", "konane", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings", "makruk"];
 
     for (const variantKey of variants) {
       const state = createInitialState(variantKey, `${variantKey}-seed`);
@@ -486,7 +486,8 @@ describe("bot difficulty ladder", () => {
       horde: "g8f6",
       "king-of-the-hill": "e7e5",
       "three-check": "e7e5",
-      "racing-kings": "a2a3"
+      "racing-kings": "a2a3",
+      makruk: "e6e5"
     };
 
     for (const [variantKey, expectedReply] of Object.entries(expectedReplies)) {
@@ -516,6 +517,20 @@ describe("bot difficulty ladder", () => {
       );
       expect(replyHit?.move ? moveToUci(afterFirst, replyHit.move) : null).toBe(expectedReply);
       expect(() => applyMove(afterFirst, replyHit!.move)).not.toThrow();
+    }
+  });
+
+  test("verified playable variants expose multiple distinct cached line positions", () => {
+    const variants = ["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "shogi", "mini-shogi", "janggi", "jungle", "english-draughts", "international-draughts", "turkish-draughts", "konane", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings", "makruk"];
+
+    for (const variantKey of variants) {
+      const linePositions = new Set(
+        listBotKnowledge(variantKey)
+          .filter((entry) => entry.benchmarkVersion === "allchess-variant-line-cache-v1")
+          .map((entry) => entry.positionKey)
+      );
+
+      expect(linePositions.size).toBeGreaterThanOrEqual(variantKey === "makruk" ? 2 : 3);
     }
   });
 
