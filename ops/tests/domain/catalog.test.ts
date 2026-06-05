@@ -20,6 +20,7 @@ import {
   filterGameCatalogEntries,
   searchGameCatalog
 } from "@/lib/catalog";
+import { parseCatalogMode } from "@/lib/routing/params";
 
 describe("universal game catalog", () => {
   test("keeps every current playable variant in the broader catalog", () => {
@@ -127,6 +128,8 @@ describe("universal game catalog", () => {
     expect(getCatalogModeSupport(go, "bot")).toMatchObject({ enabled: false, level: "guide-only" });
     expect(getCatalogSupportedModes(shogi).map((support) => support.mode)).toEqual(expect.arrayContaining(["bot", "offline", "spectate"]));
     expect(displayModeReadiness(shogi, "bot")).toBe("Bot ready");
+    expect(parseCatalogMode("bot")).toBe("bot");
+    expect(parseCatalogMode("broken")).toBeUndefined();
     expect(filterGameCatalogEntries(gameCatalog, "", { mode: "bot" }).map((entry) => entry.id)).toEqual(
       expect.arrayContaining(["classic", "chaturanga", "crazyhouse", "shatranj", "shogi", "mini-shogi", "janggi", "makruk", "jungle", "english-draughts", "international-draughts", "turkish-draughts", "konane"])
     );
@@ -201,6 +204,11 @@ describe("universal game catalog", () => {
     const botFilteredCatalog = await catalogGet(new Request("http://allchess.test/api/catalog?mode=bot&q=shogi"));
     await expect(botFilteredCatalog.json()).resolves.toMatchObject({
       entries: expect.arrayContaining([expect.objectContaining({ id: "shogi" }), expect.objectContaining({ id: "mini-shogi" })])
+    });
+
+    const onlineFilteredCatalog = await catalogGet(new Request("http://allchess.test/api/catalog?mode=online&q=oware"));
+    await expect(onlineFilteredCatalog.json()).resolves.toMatchObject({
+      entries: []
     });
 
     const invalidFilteredCatalog = await catalogGet(new Request("http://allchess.test/api/catalog?family=bad&playability=broken&mode=broken"));

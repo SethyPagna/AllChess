@@ -7,11 +7,16 @@ import { BookOpen, Bot, Filter, Play, RotateCcw, Search, X } from "lucide-react"
 import {
   displayBotReadiness,
   displayGameName,
+  displayModeReadiness,
   displayPiecePresentation,
   displayPlayabilityStatus,
   displayReleaseReadiness,
   displayRulesReadiness,
   gameFamilies,
+  getCatalogModeSupport,
+  getCatalogSupportedModes,
+  type CatalogModeSupport,
+  type CatalogPlayMode,
   type GameCatalogEntry,
   type GameFamilyKey,
   type PlayabilityStatus
@@ -22,6 +27,7 @@ import { playGameHref } from "@/lib/routing/play-links";
 type CatalogBrowserProps = {
   entries: GameCatalogEntry[];
   initialFamily?: GameFamilyKey | "all";
+  initialMode?: CatalogPlayMode | "all";
   initialStatus?: PlayabilityStatus | "all";
   locale: LocaleCode;
 };
@@ -47,9 +53,21 @@ const familyShortLabels: Record<GameFamilyKey | "all", string> = {
   regional: "Regional"
 };
 
-export function CatalogBrowser({ entries, initialFamily = "all", initialStatus = "all", locale }: CatalogBrowserProps) {
+const catalogModeKeys = ["online", "bot", "offline", "room", "spectate"] as const;
+
+const modeLabels: Record<CatalogPlayMode | "all", string> = {
+  all: "All modes",
+  online: "Online",
+  bot: "Bot",
+  offline: "Local",
+  room: "Room",
+  spectate: "Watch"
+};
+
+export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "all", initialStatus = "all", locale }: CatalogBrowserProps) {
   const [query, setQuery] = useState("");
   const [family, setFamily] = useState<GameFamilyKey | "all">(initialFamily);
+  const [mode, setMode] = useState<CatalogPlayMode | "all">(initialMode);
   const [status, setStatus] = useState<PlayabilityStatus | "all">(initialStatus);
   const [selectedEntry, setSelectedEntry] = useState<GameCatalogEntry | null>(null);
 
@@ -57,14 +75,15 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
     const normalized = normalize(query);
     return entries.filter((entry) => {
       if (family !== "all" && entry.family !== family) return false;
+      if (mode !== "all" && !getCatalogModeSupport(entry, mode).enabled) return false;
       if (status !== "all" && entry.playability !== status) return false;
       if (!normalized) return true;
       return [entry.id, entry.name.english, entry.name.native, entry.name.romanization, entry.name.short, ...entry.aliases]
         .filter(Boolean)
         .some((value) => normalize(value ?? "").includes(normalized));
     });
-  }, [entries, family, query, status]);
-  const hasFilters = Boolean(query) || family !== "all" || status !== "all";
+  }, [entries, family, mode, query, status]);
+  const hasFilters = Boolean(query) || family !== "all" || mode !== "all" || status !== "all";
 
   return (
     <section className="catalog-browser">
@@ -112,6 +131,26 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
             ))}
           </div>
         </div>
+        <div className="catalog-filter-group catalog-filter-group-compact" role="group" aria-label="Mode filter">
+          <span className="catalog-filter-icon" aria-hidden="true">
+            <Bot size={15} />
+          </span>
+          <div className="catalog-chip-list">
+            <button type="button" className={`catalog-filter-chip focus-ring${mode === "all" ? " is-active" : ""}`} onClick={() => setMode("all")}>
+              {modeLabels.all}
+            </button>
+            {catalogModeKeys.map((modeKey) => (
+              <button
+                key={modeKey}
+                type="button"
+                className={`catalog-filter-chip focus-ring${mode === modeKey ? " is-active" : ""}`}
+                onClick={() => setMode(modeKey)}
+              >
+                {modeLabels[modeKey]}
+              </button>
+            ))}
+          </div>
+        </div>
         {hasFilters ? (
           <button
             type="button"
@@ -119,6 +158,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
             onClick={() => {
               setQuery("");
               setFamily("all");
+              setMode("all");
               setStatus("all");
             }}
           >
@@ -142,6 +182,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
               </button>
             </div>
             <p className="catalog-card-summary">{entry.shortRules[0] ?? entry.winConditions[0]}</p>
+            <ModeSupportStrip entry={entry} />
             <div className="catalog-card-actions">
               {entry.playability === "playable" && entry.variantKey ? (
                 <Link href={playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) as never} className="action-primary focus-ring">
@@ -173,6 +214,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
             onClick={() => {
               setQuery("");
               setFamily("all");
+              setMode("all");
               setStatus("all");
             }}
           >
@@ -182,6 +224,28 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialStatus =
         </div>
       ) : null}
     </section>
+  );
+}
+
+function ModeSupportStrip({ entry }: { entry: GameCatalogEntry }) {
+  const supportedModes = getCatalogSupportedModes(entry);
+  const compactModes = supportedModes.length ? supportedModes : [getCatalogModeSupport(entry, "spectate")];
+
+  return (
+    <div className="catalog-mode-strip" aria-label={`${displayGameName(entry)} mode support`}>
+      {compactModes.slice(0, 5).map((support) => (
+        <ModeSupportChip key={support.mode} entry={entry} support={support} />
+      ))}
+    </div>
+  );
+}
+
+function ModeSupportChip({ entry, support }: { entry: GameCatalogEntry; support: CatalogModeSupport }) {
+  return (
+    <span className="catalog-mode-chip" data-level={support.level} title={support.reason}>
+      {modeLabels[support.mode]}
+      <small>{displayModeReadiness(entry, support.mode)}</small>
+    </span>
   );
 }
 
@@ -246,6 +310,21 @@ export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCata
               <span>{displayRulesReadiness(entry)}</span>
               <span>{displayReleaseReadiness(entry)}</span>
               <span>{entry.botAdapter !== "none" ? displayBotReadiness(entry) : "Rules only"}</span>
+            </div>
+          </details>
+          <details open>
+            <summary>Modes</summary>
+            <div className="catalog-mode-grid">
+              {catalogModeKeys.map((modeKey) => {
+                const support = getCatalogModeSupport(entry, modeKey);
+                return (
+                  <div key={modeKey} className="catalog-mode-row" data-enabled={support.enabled}>
+                    <strong>{modeLabels[modeKey]}</strong>
+                    <span>{displayModeReadiness(entry, modeKey)}</span>
+                    <p>{support.reason}</p>
+                  </div>
+                );
+              })}
             </div>
           </details>
           <details>

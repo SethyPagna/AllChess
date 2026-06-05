@@ -1,5 +1,5 @@
 import { botDifficultyLevels, type BotDifficultyKey } from "@/lib/bot/config";
-import { gameFamilies, type GameFamilyKey, type PlayabilityStatus } from "@/lib/catalog";
+import { gameFamilies, type CatalogPlayMode, type GameFamilyKey, type PlayabilityStatus } from "@/lib/catalog";
 import { timeControls, type TimeControlKey } from "@/lib/game/time-controls";
 
 const playabilityStatuses: PlayabilityStatus[] = ["playable", "learn", "coming-soon"];
@@ -16,6 +16,11 @@ export function parseCatalogFamily(value: string | null): GameFamilyKey | undefi
 export function parsePlayabilityStatus(value: string | null): PlayabilityStatus | undefined {
   if (!value) return undefined;
   return playabilityStatuses.includes(value as PlayabilityStatus) ? (value as PlayabilityStatus) : undefined;
+}
+
+export function parseCatalogMode(value: string | null): CatalogPlayMode | undefined {
+  if (!value) return undefined;
+  return playModes.includes(value as CatalogPlayMode) ? (value as CatalogPlayMode) : undefined;
 }
 
 export function parsePlayMode(value: string | string[] | undefined, fallback?: PlayModeKey): PlayModeKey | undefined {

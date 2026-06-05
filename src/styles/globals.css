@@ -4768,6 +4768,53 @@ option {
   line-height: 1.25;
 }
 
+.catalog-mode-strip {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.catalog-mode-chip {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.32rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--foreground);
+  padding: 0.26rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.catalog-mode-chip small {
+  max-width: 8.5rem;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalog-mode-chip[data-level="verified"] {
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  background: color-mix(in srgb, var(--accent) 15%, var(--surface-soft));
+}
+
+.catalog-mode-chip[data-level="preview"] {
+  border-color: color-mix(in srgb, var(--warning) 48%, transparent);
+  background: color-mix(in srgb, var(--warning) 13%, var(--surface-soft));
+}
+
+.catalog-mode-chip[data-level="watch"] {
+  border-color: color-mix(in srgb, var(--info) 46%, transparent);
+  background: color-mix(in srgb, var(--info) 12%, var(--surface-soft));
+}
+
 .catalog-icon-button {
   display: grid;
   width: 2.55rem;
@@ -4851,6 +4898,42 @@ option {
   gap: 0.35rem;
   padding: 0.48rem 0.7rem;
   font-size: 0.84rem;
+}
+
+.catalog-mode-grid {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.catalog-mode-row {
+  display: grid;
+  gap: 0.22rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  padding: 0.62rem;
+}
+
+.catalog-mode-row[data-enabled="false"] {
+  opacity: 0.62;
+}
+
+.catalog-mode-row strong,
+.catalog-mode-row span {
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.catalog-mode-row span {
+  color: var(--accent);
+}
+
+.catalog-mode-row p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.25;
 }
 
 .catalog-status {
@@ -5342,6 +5425,15 @@ option {
 
   .catalog-filter-chip {
     flex: 1 1 6.5rem;
+  }
+
+  .catalog-mode-chip {
+    flex: 1 1 7rem;
+    justify-content: center;
+  }
+
+  .catalog-mode-chip small {
+    max-width: 5.5rem;
   }
 
   .lobby-featured-head {

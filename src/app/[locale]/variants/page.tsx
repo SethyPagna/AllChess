@@ -6,7 +6,7 @@ import { getCatalogStats } from "@/lib/catalog";
 import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
-import { parseCatalogFamily, parsePlayabilityStatus } from "@/lib/routing/params";
+import { parseCatalogFamily, parseCatalogMode, parsePlayabilityStatus } from "@/lib/routing/params";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +15,7 @@ export default async function VariantsPage({
   searchParams
 }: {
   params: Promise<{ locale: string }>;
-  searchParams?: Promise<{ family?: string; playability?: string }>;
+  searchParams?: Promise<{ family?: string; mode?: string; playability?: string }>;
 }) {
   const { locale: rawLocale } = await params;
   const query = (await searchParams) ?? {};
@@ -29,6 +29,7 @@ export default async function VariantsPage({
   const legendBand = strengthBands[strengthBands.length - 1];
   const initialFamily = parseCatalogFamily(query.family ?? null) ?? "all";
   const initialStatus = parsePlayabilityStatus(query.playability ?? null) ?? "all";
+  const initialMode = parseCatalogMode(query.mode ?? null) ?? "all";
 
   return (
     <section className="grid gap-6">
@@ -39,7 +40,7 @@ export default async function VariantsPage({
         <span>{stats.comingSoonGames} building</span>
       </div>
       <CatalogTrainingMetrics knowledge={knowledge} legendBand={legendBand} trainingGate={trainingGate} />
-      <CatalogBrowser entries={entries} initialFamily={initialFamily} initialStatus={initialStatus} locale={locale} />
+      <CatalogBrowser entries={entries} initialFamily={initialFamily} initialMode={initialMode} initialStatus={initialStatus} locale={locale} />
     </section>
   );
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { parseCatalogFamily, parsePlayabilityStatus } from "@/lib/routing/params";
-import { filterGameCatalogEntries, getCatalogStats, serializeCatalogEntry, type CatalogPlayMode } from "@/lib/catalog";
+import { parseCatalogFamily, parseCatalogMode, parsePlayabilityStatus } from "@/lib/routing/params";
+import { filterGameCatalogEntries, getCatalogStats, serializeCatalogEntry } from "@/lib/catalog";
 import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 
 export async function GET(request: Request) {
@@ -20,9 +20,4 @@ export async function GET(request: Request) {
     entries: entries.map(serializeCatalogEntry),
     stats: getCatalogStats(entries)
   });
-}
-
-function parseCatalogMode(value: string | null): CatalogPlayMode | undefined {
-  if (!value) return undefined;
-  return ["online", "bot", "offline", "room", "spectate"].includes(value) ? (value as CatalogPlayMode) : undefined;
 }
