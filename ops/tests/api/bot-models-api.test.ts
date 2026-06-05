@@ -83,7 +83,7 @@ describe("bot models API", () => {
         expect.objectContaining({
           variantKey: "makruk",
           coverageStatus: "active",
-          indexedPositions: 2,
+          indexedPositions: 4,
           runtimePath: "knowledge-cache"
         })
       ])

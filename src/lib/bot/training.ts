@@ -952,6 +952,20 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
     family: "Thai Makruk center",
     plan: "Cache a legal Thai Makruk central pawn line with native one-step pawn movement.",
     risk: "Makruk promotion and counting rules remain variant-specific, so stale cached moves fall back to search."
+  },
+  {
+    variantKey: "makruk",
+    line: ["d3d4", "d6d5"],
+    family: "Thai Makruk adjacent center",
+    plan: "Cache another Thai Makruk center file so the bot can answer a neighboring pawn start without live search.",
+    risk: "Makruk pawns promote differently from western chess, so cached play must stop before counting or promotion tactics diverge."
+  },
+  {
+    variantKey: "makruk",
+    line: ["c3c4", "c6c5"],
+    family: "Thai Makruk wing center",
+    plan: "Add a third Thai Makruk pawn-file start to broaden opening coverage while staying in native one-step movement.",
+    risk: "If the opponent changes files or opens piece contact early, legal search takes over from the cache."
   }
 ]);
 

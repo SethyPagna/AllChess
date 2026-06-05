@@ -530,7 +530,7 @@ describe("bot difficulty ladder", () => {
           .map((entry) => entry.positionKey)
       );
 
-      expect(linePositions.size).toBeGreaterThanOrEqual(variantKey === "makruk" ? 2 : 3);
+      expect(linePositions.size).toBeGreaterThanOrEqual(variantKey === "makruk" ? 4 : 3);
     }
   });
 
