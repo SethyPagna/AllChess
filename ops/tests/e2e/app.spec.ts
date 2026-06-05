@@ -80,6 +80,22 @@ test("settings exposes language and theme controls", async ({ page }) => {
   await expect(page.getByRole("main").getByRole("button", { name: "Dark" })).toBeVisible();
 });
 
+test("light theme keeps board player cards on light surfaces", async ({ page }) => {
+  await page.addInitScript(() => window.localStorage.setItem("allchess-theme", "light"));
+  await page.goto("/en/play/classic");
+
+  const blackPlayerCard = page.getByLabel("Black player card");
+  await expect(page.locator("html")).not.toHaveClass(/dark/);
+  await expect(blackPlayerCard).not.toHaveCSS("background-color", "rgb(36, 35, 31)");
+  await expect(page.getByLabel("Game board").locator(".board-coordinate").first()).toBeVisible();
+
+  const visibleShell = page.locator(".app-sidebar:visible, .app-mobile-header:visible");
+  await visibleShell.getByRole("button", { name: "Dark" }).click();
+  await expect(page.locator("html")).toHaveClass(/dark/);
+  await expect(blackPlayerCard).toHaveCSS("background-color", "rgb(36, 35, 31)");
+  await expectNoHorizontalOverflow(page);
+});
+
 test("login explains unavailable Google sign-in", async ({ page }) => {
   await page.goto("/en/login?error=google-oauth-not-configured");
 
