@@ -26,7 +26,7 @@ import { analyzeMoveList, summarizeReview } from "@/lib/game/review";
 import { describeGameOutcome } from "@/lib/game/outcome";
 import type { VariantRuleSummary } from "@/lib/variants/rules-atlas";
 import { getTimeControl, type TimeControlKey } from "@/lib/game/time-controls";
-import { applyMove, createInitialState, getLegalMoves, sameSquare, serializeSquare, type GameState, type Move, type Piece, type Square } from "@/lib/variants";
+import { applyMove, createInitialState, getLegalMoves, getVariant, sameSquare, serializeSquare, type GameState, type Move, type Piece, type Square } from "@/lib/variants";
 import { BoardGrid } from "@/components/board/board-grid";
 import { BoardPlayerCard } from "@/components/board/board-player-card";
 import { GameGuideModal } from "@/components/board/game-guide-modal";
@@ -163,6 +163,7 @@ export function GameBoard({
   const files = useMemo(() => Array.from({ length: cols }, (_, index) => String.fromCharCode(97 + index)), [cols]);
   const botLevel = botDifficultyLevels.find((level) => level.key === botDifficulty) ?? botDifficultyLevels[1];
   const pieceSkinOptions = useMemo(() => getPieceSkinOptions(variantKey), [variantKey]);
+  const supportsDrops = useMemo(() => getVariant(variantKey).supportsDrops, [variantKey]);
   const botStrength = useMemo(() => getVariantBotStrengthProfile(variantKey, botDifficulty), [botDifficulty, variantKey]);
   const botCalibrationLabel = botStrength.calibrationStatus.replace(/-/g, " ");
   const botResponseBudget = Math.min(botLevel.moveTimeMs, MAX_BOT_REPLY_MS - 180);
@@ -238,6 +239,7 @@ export function GameBoard({
         pieceSkin={pieceSkin}
         placement={placement}
         selectedHandCode={color === state.turn ? selectedHandCode : null}
+        supportsDrops={supportsDrops}
         thinking={thinking.status === "thinking"}
         timeControl={timeControl}
         variantKey={displayState.variantKey}

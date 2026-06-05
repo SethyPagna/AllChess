@@ -20,6 +20,7 @@ type BoardPlayerCardProps = {
   pieceSkin?: PieceSkinPreference;
   placement: "top" | "bottom";
   selectedHandCode?: string | null;
+  supportsDrops?: boolean;
   thinking: boolean;
   timeControl: string;
   variantKey: string;
@@ -45,6 +46,7 @@ export function BoardPlayerCard({
   pieceSkin = "default",
   placement,
   selectedHandCode = null,
+  supportsDrops = false,
   thinking,
   timeControl,
   variantKey
@@ -56,6 +58,8 @@ export function BoardPlayerCard({
   const hiddenCaptureCount = Math.max(0, capturedPieces.length - visibleCaptures.length);
   const handEntries = Object.entries(handCounts).filter(([, count]) => count > 0);
   const resolvedPieceSkin = resolvePieceSkin(variantKey, pieceSkin);
+  const handLabel = variantKey === "crazyhouse" ? "Pocket" : "Hand";
+  const showHandTray = supportsDrops || handEntries.length > 0;
 
   return (
     <div className={`board-player-card board-player-card-${placement} ${isActive ? "is-active" : ""}`} aria-label={`${colorLabel(color)} player card`}>
@@ -68,10 +72,10 @@ export function BoardPlayerCard({
         <p>{isBot ? `${botStrengthDisplay}${thinking ? " - thinking" : ""}` : `${colorLabel(color)} side`}</p>
       </div>
       <div className="player-piece-rail">
-        {handEntries.length ? (
-          <div className="hand-strip" aria-label={`${colorLabel(color)} pieces in hand`} data-skin={resolvedPieceSkin}>
+        {showHandTray ? (
+          <div className={`hand-strip ${handEntries.length ? "" : "is-empty"}`} aria-label={`${colorLabel(color)} ${handLabel.toLowerCase()} ${handEntries.length ? "pieces" : "empty"}`} data-skin={resolvedPieceSkin}>
             <span className="sr-only">Tap or drag a piece in hand to a legal empty square.</span>
-            {handEntries.map(([code, count]) => {
+            {handEntries.length ? handEntries.map(([code, count]) => {
               const pieceLabel = getPieceDisplayName(code, variantKey, locale);
               const actionLabel = `${canUseHand ? "Drop" : "Held"} ${pieceLabel}, ${count} in hand`;
               const helpText = canUseHand ? `Tap or drag ${pieceLabel} to a legal empty square.` : `${pieceLabel} is in hand. Start or resume your turn to drop it.`;
@@ -97,7 +101,7 @@ export function BoardPlayerCard({
                   <span aria-hidden="true">{count}</span>
                 </button>
               );
-            })}
+            }) : <span className="hand-empty-pill" title={`${handLabel} is empty. Captured pieces will appear here.`}>{handLabel} 0</span>}
           </div>
         ) : null}
         <div className={`captured-strip ${capturedPieces.length ? "" : "is-empty"}`} aria-label={`${colorLabel(color)} captured pieces`}>

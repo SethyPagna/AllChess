@@ -155,18 +155,66 @@ describe("PieceIcon", () => {
         pieceSkin="mini-wedge"
         placement="bottom"
         selectedHandCode="p"
+        supportsDrops
         thinking={false}
         timeControl="rapid"
         variantKey="shogi"
       />
     );
 
-    expect(card).toContain('aria-label="Sente pieces in hand"');
+    expect(card).toContain('aria-label="Sente hand pieces"');
     expect(card).toContain('aria-label="Drop \u6b69, 2 in hand"');
     expect(card).toContain('class="hand-piece-button focus-ring is-selected"');
     expect(card).toContain('data-skin="mini-wedge"');
     expect(card).toContain("draggable=\"true\"");
     expect(card).toContain('aria-hidden="true">2</span>');
+  });
+
+  test("shows empty hand and pocket trays for drop variants before captures", () => {
+    const shogiCard = renderToStaticMarkup(
+      <BoardPlayerCard
+        botLevelLabel="Normal"
+        botModeActive={false}
+        botStrengthDisplay="1300-1600"
+        capturedPieces={[]}
+        handCounts={{}}
+        opponentCapturedPieces={[]}
+        clock={{ color: "sente", remainingMs: 600000, incrementMs: 0 }}
+        color="sente"
+        humanColor="sente"
+        isActive
+        placement="bottom"
+        supportsDrops
+        thinking={false}
+        timeControl="rapid"
+        variantKey="shogi"
+      />
+    );
+    const crazyhouseCard = renderToStaticMarkup(
+      <BoardPlayerCard
+        botLevelLabel="Normal"
+        botModeActive={false}
+        botStrengthDisplay="1300-1600"
+        capturedPieces={[]}
+        handCounts={{}}
+        opponentCapturedPieces={[]}
+        clock={{ color: "white", remainingMs: 600000, incrementMs: 0 }}
+        color="white"
+        humanColor="white"
+        isActive
+        placement="bottom"
+        supportsDrops
+        thinking={false}
+        timeControl="rapid"
+        variantKey="crazyhouse"
+      />
+    );
+
+    expect(shogiCard).toContain('aria-label="Sente hand empty"');
+    expect(shogiCard).toContain('class="hand-empty-pill"');
+    expect(shogiCard).toContain(">Hand 0</span>");
+    expect(crazyhouseCard).toContain('aria-label="White pocket empty"');
+    expect(crazyhouseCard).toContain(">Pocket 0</span>");
   });
 
   test("keeps non-western pieces as strong native symbols", () => {

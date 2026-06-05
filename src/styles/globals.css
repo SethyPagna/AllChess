@@ -1119,6 +1119,10 @@ option {
   overflow: hidden;
 }
 
+.hand-strip.is-empty {
+  min-height: 1.45rem;
+}
+
 .hand-strip[data-skin="wedge"],
 .hand-strip[data-skin="mini-wedge"] {
   gap: 0.3rem;
@@ -1161,6 +1165,26 @@ option {
 .hand-piece-button:disabled {
   cursor: not-allowed;
   opacity: 0.58;
+}
+
+.hand-empty-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.35rem;
+  border: 1px dashed color-mix(in srgb, var(--border) 82%, var(--muted));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 76%, transparent);
+  color: var(--muted);
+  padding: 0.08rem 0.42rem;
+  font-size: 0.64rem;
+  font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.hand-strip[data-skin="wedge"] .hand-empty-pill,
+.hand-strip[data-skin="mini-wedge"] .hand-empty-pill {
+  border-radius: 0.45rem;
 }
 
 .hand-piece-button.is-selected {
