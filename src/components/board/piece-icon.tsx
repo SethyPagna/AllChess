@@ -54,6 +54,7 @@ export function PieceIcon({ code, owner, pieceSkin = "default", variantKey, loca
       className="piece-symbol piece-icon native-piece-symbol"
       data-owner={owner}
       data-piece="native"
+      data-piece-label={label}
       data-code={normalized}
       data-skin={skin}
       data-variant={variantKey}
@@ -75,6 +76,7 @@ function DraughtsPieceIcon({ code, owner, promoted, variantKey, label, skin }: {
       className="piece-symbol piece-icon piece-svg"
       data-owner={owner}
       data-piece={piece}
+      data-piece-label={label}
       data-promoted={isKing || undefined}
       data-skin={skin}
       data-variant={variantKey}
@@ -106,6 +108,7 @@ function StonePieceIcon({ owner, variantKey, label, skin }: { owner: PlayerColor
       className="piece-symbol piece-icon piece-svg"
       data-owner={owner}
       data-piece="stone"
+      data-piece-label={label}
       data-skin={skin}
       data-variant={variantKey}
       role="img"
@@ -131,6 +134,7 @@ function WesternPieceIcon({ code, owner, variantKey, promoted, label, skin }: { 
       className="piece-symbol piece-icon piece-svg"
       data-owner={owner}
       data-piece={piece}
+      data-piece-label={label}
       data-promoted={promoted || undefined}
       data-skin={skin}
       data-variant={variantKey}

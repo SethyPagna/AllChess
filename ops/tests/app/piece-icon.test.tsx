@@ -14,6 +14,7 @@ describe("PieceIcon", () => {
     expect(king).not.toBe(queen);
     expect(king).toContain("viewBox");
     expect(queen).toContain("viewBox");
+    expect(king).toContain('data-piece-label="King"');
     expect(king).toContain('data-skin="western"');
     expect(king).toContain('data-detail="king-cross"');
     expect(queen).toContain('data-detail="queen-jewel"');
@@ -52,6 +53,18 @@ describe("PieceIcon", () => {
     expect(westernWarm).toContain('data-skin="makruk"');
   });
 
+  test("adds localized piece metadata to SVG and native pieces", () => {
+    const japanesePawnName = "\u6b69";
+    const chineseKingName = "\u738b";
+    const shogiPawn = renderToStaticMarkup(<PieceIcon code="p" owner="sente" variantKey="shogi" locale="ja" />);
+    const chineseKing = renderToStaticMarkup(<PieceIcon code="k" owner="white" variantKey="classic" locale="zh-CN" />);
+
+    expect(shogiPawn).toContain(`title="${japanesePawnName}"`);
+    expect(shogiPawn).toContain(`data-piece-label="${japanesePawnName}"`);
+    expect(chineseKing).toContain(`<title>${chineseKingName}</title>`);
+    expect(chineseKing).toContain(`data-piece-label="${chineseKingName}"`);
+  });
+
   test("renders draughts men and kings as checker discs", () => {
     const man = renderToStaticMarkup(<PieceIcon code="p" owner="white" variantKey="english-draughts" />);
     const king = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="english-draughts" promoted />);
@@ -72,6 +85,7 @@ describe("PieceIcon", () => {
     const blackStone = renderToStaticMarkup(<PieceIcon code="p" owner="black" variantKey="konane" />);
 
     expect(whiteStone).toContain('data-piece="stone"');
+    expect(whiteStone).toContain('data-piece-label="Stone"');
     expect(whiteStone).toContain('data-skin="stone"');
     expect(blackStone).toContain('data-piece="stone"');
     expect(whiteStone).toContain('aria-label="Stone"');
