@@ -3,9 +3,25 @@ import { notFound } from "next/navigation";
 import { GameBoard } from "@/components/board/game-board";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { createPageMetadata } from "@/lib/metadata/page-metadata";
 import { parseBotDifficulty, parsePlayMode, parseQueryFlag, parseTimeControl, safeDecodeRouteSegment } from "@/lib/routing/params";
 import { getVariantRuleSummary } from "@/lib/variants/rules-atlas";
 import { getVariant } from "@/lib/variants";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string; gameId: string }> }) {
+  const { locale: rawLocale, gameId } = await params;
+  const locale = normalizeLocale(rawLocale);
+  const t = createTranslator(locale);
+  const decodedGameId = safeDecodeRouteSegment(gameId);
+  if (!decodedGameId) return createPageMetadata(locale, t("play.yourMove"));
+
+  try {
+    const variant = getVariant(decodedGameId);
+    return createPageMetadata(locale, t(variant.nameKey));
+  } catch {
+    return createPageMetadata(locale, t("play.yourMove"));
+  }
+}
 
 export default async function PlayPage({
   params,

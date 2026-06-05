@@ -5,8 +5,16 @@ import { InfoHint } from "@/components/ui/info-hint";
 import { getRuntimeRecentHistory, type HistoryResultFilter } from "@/lib/history/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { createPageMetadata } from "@/lib/metadata/page-metadata";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: rawLocale } = await params;
+  const locale = normalizeLocale(rawLocale);
+  const t = createTranslator(locale);
+  return createPageMetadata(locale, t("history.title"), t("history.subtitle"));
+}
 
 export default async function HistoryPage({
   params,

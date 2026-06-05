@@ -12,9 +12,18 @@ import { gameFamilies } from "@/lib/catalog";
 import { getRuntimeCatalogEntry } from "@/lib/catalog/runtime";
 import { listBotTrainingReadiness } from "@/lib/bot/training";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { createPageMetadata } from "@/lib/metadata/page-metadata";
 import { findVariantRuleCompletion } from "@/lib/variants/rules-atlas";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string; gameId: string }> }) {
+  const { locale: rawLocale, gameId } = await params;
+  const locale = normalizeLocale(rawLocale);
+  const decodedGameId = safeDecodeRouteSegment(gameId);
+  const entry = decodedGameId ? await getRuntimeCatalogEntry(decodedGameId) : undefined;
+  return createPageMetadata(locale, entry ? entry.name.english : "Games & rules", entry?.shortRules[0]);
+}
 
 export default async function GameDetailPage({ params }: { params: Promise<{ locale: string; gameId: string }> }) {
   const { locale: rawLocale, gameId } = await params;

@@ -2,8 +2,16 @@ import { AuthCard } from "@/components/auth/auth-card";
 import { isLoginErrorCode, messageForLoginError } from "@/lib/auth/error-codes";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { createPageMetadata } from "@/lib/metadata/page-metadata";
 import { safeDecodeQueryValue } from "@/lib/routing/params";
 import { redirect } from "next/navigation";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: rawLocale } = await params;
+  const locale = normalizeLocale(rawLocale);
+  const t = createTranslator(locale);
+  return createPageMetadata(locale, t("auth.title"), t("auth.subtitle"));
+}
 
 export default async function LoginPage({
   params,

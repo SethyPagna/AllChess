@@ -1,11 +1,19 @@
 import { GameBoard } from "@/components/board/game-board";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { createPageMetadata } from "@/lib/metadata/page-metadata";
 import { parseBotDifficulty, parsePlayMode, parseQueryFlag, parseTimeControl } from "@/lib/routing/params";
 import { getVariant } from "@/lib/variants";
 import { getVariantRuleSummary } from "@/lib/variants/rules-atlas";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: rawLocale } = await params;
+  const locale = normalizeLocale(rawLocale);
+  const t = createTranslator(locale);
+  return createPageMetadata(locale, t("nav.play"));
+}
 
 export default async function PlaySetupPage({
   params,

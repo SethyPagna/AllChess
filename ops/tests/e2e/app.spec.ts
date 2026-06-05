@@ -282,6 +282,24 @@ test("public shortcut links redirect to accessible localized pages", async ({ pa
   await expectNoHorizontalOverflow(page);
 });
 
+test("public routes expose page-specific document titles", async ({ page }) => {
+  const routes = [
+    { path: "/en/lobby", title: "AllChess - Game lobby" },
+    { path: "/en/play", title: "AllChess - Play" },
+    { path: "/en/play/classic", title: "AllChess - Classic Chess" },
+    { path: "/en/variants", title: "AllChess - Games & rules" },
+    { path: "/en/watch", title: "AllChess - Watch rooms" },
+    { path: "/en/leaderboards", title: "AllChess - Leaderboards" },
+    { path: "/en/history", title: "AllChess - Match records" },
+    { path: "/en/settings", title: "AllChess - Preferences" }
+  ];
+
+  for (const route of routes) {
+    await page.goto(route.path);
+    await expect(page).toHaveTitle(route.title);
+  }
+});
+
 test("language menu keeps the current route", async ({ page }) => {
   await page.goto("/en/play/classic");
 

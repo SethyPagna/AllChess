@@ -13,9 +13,18 @@ import {
 import { getRuntimeAnalysisReview } from "@/lib/analysis/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { createPageMetadata } from "@/lib/metadata/page-metadata";
 import { safeDecodeRouteSegment } from "@/lib/routing/params";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string; gameId: string }> }) {
+  const { locale: rawLocale, gameId } = await params;
+  const locale = normalizeLocale(rawLocale);
+  const t = createTranslator(locale);
+  const decodedGameId = safeDecodeRouteSegment(gameId) ?? gameId;
+  return createPageMetadata(locale, `${t("analysis.title")} - ${decodedGameId}`, t("analysis.subtitle"));
+}
 
 export default async function AnalysisPage({
   params,

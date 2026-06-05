@@ -2,8 +2,15 @@ import { EmptyLeaderboardScopes, LeaderboardActions, LeaderboardFamilyList, Lead
 import { InfoHint } from "@/components/ui/info-hint";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getRuntimeLeaderboards } from "@/lib/leaderboards/runtime";
+import { createPageMetadata } from "@/lib/metadata/page-metadata";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: rawLocale } = await params;
+  const locale = normalizeLocale(rawLocale);
+  return createPageMetadata(locale, "Leaderboards", "Rated tables from real AllChess match results.");
+}
 
 export default async function LeaderboardsPage({
   params,

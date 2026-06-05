@@ -6,10 +6,18 @@ import { getCatalogStats } from "@/lib/catalog";
 import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
+import { createPageMetadata } from "@/lib/metadata/page-metadata";
 import { getRuntimeLiveStats } from "@/lib/realtime/runtime";
 import { createDefaultStats } from "@/lib/realtime/stats";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale: rawLocale } = await params;
+  const locale = normalizeLocale(rawLocale);
+  const t = createTranslator(locale);
+  return createPageMetadata(locale, t("lobby.title"));
+}
 
 const featuredGameOrder = new Map([
   ["classic", 0],
