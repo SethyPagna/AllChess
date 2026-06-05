@@ -137,6 +137,16 @@ option {
   background: var(--surface);
 }
 
+:where(.action-primary, .action-secondary) {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding-inline: 1rem;
+  line-height: 1.1;
+}
+
 .action-primary {
   border-radius: var(--radius-md);
   background: var(--accent);
@@ -151,6 +161,10 @@ option {
   background: var(--surface-raised);
   font-weight: 700;
   transition: transform var(--motion-fast), border-color var(--motion-fast), background var(--motion-fast);
+}
+
+:where(.btn-square.action-primary, .btn-square.action-secondary, .play-icon-button.action-secondary, .play-control-button.action-secondary) {
+  padding-inline: 0;
 }
 
 .action-primary:hover,
@@ -3468,18 +3482,18 @@ option {
 .lobby-action-row {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.75rem), 1fr));
-  gap: 0.5rem;
-  padding: 0.75rem;
+  gap: 0.65rem;
+  padding: clamp(0.8rem, 1.4vw, 1rem);
 }
 
 .lobby-action-button {
   display: inline-flex;
-  min-height: 2.45rem;
+  min-height: 2.75rem;
   min-width: 0;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  padding: 0.5rem 0.7rem;
+  gap: 0.55rem;
+  padding: 0.6rem 0.9rem;
   text-align: center;
   font-size: 0.84rem;
   font-weight: 950;
@@ -3608,18 +3622,18 @@ option {
 .watch-actions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
-  gap: 0.55rem;
+  gap: 0.65rem;
   width: 100%;
 }
 
 .watch-action-button {
   display: inline-flex;
-  min-height: 2.45rem;
+  min-height: 2.75rem;
   min-width: 0;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  padding: 0.5rem 0.8rem;
+  gap: 0.55rem;
+  padding: 0.6rem 0.9rem;
   text-align: center;
   font-size: 0.84rem;
   font-weight: 950;
@@ -3636,7 +3650,7 @@ option {
 .watch-room-tools button,
 .watch-filter-chip {
   display: inline-flex;
-  min-height: 2.45rem;
+  min-height: 2.65rem;
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
@@ -5393,7 +5407,7 @@ option {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.55rem;
 }
 
 .catalog-card-actions a,
@@ -5402,8 +5416,9 @@ option {
 .catalog-rules-actions a {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.48rem 0.7rem;
+  gap: 0.45rem;
+  min-height: 2.4rem;
+  padding: 0.55rem 0.85rem;
   font-size: 0.84rem;
 }
 
@@ -6302,9 +6317,9 @@ option {
 
   .lobby-action-button,
   .watch-action-button {
-    min-height: 2.35rem;
-    padding-inline: 0.45rem;
-    font-size: 0.8rem;
+    min-height: 2.65rem;
+    padding-inline: 0.7rem;
+    font-size: 0.82rem;
   }
 
   .lobby-stat-grid {

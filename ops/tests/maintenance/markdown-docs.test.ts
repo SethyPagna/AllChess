@@ -93,4 +93,11 @@ describe("markdown documentation", () => {
       expect(readme).toContain(`- ${name}: \`${version}\``);
     }
   });
+
+  test("documents the canonical workers.dev hostname without stale worker aliases", () => {
+    const readme = readFileSync(join(repoRoot, "README.md"), "utf8");
+
+    expect(readme).toContain("https://allchess.learn-app.workers.dev");
+    expect(readme).not.toContain("https://chess.learn-app.workers.dev");
+  });
 });

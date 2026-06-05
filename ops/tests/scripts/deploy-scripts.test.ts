@@ -16,9 +16,16 @@ describe("deployment scripts", () => {
   test("organized Wrangler config resolves OpenNext artifacts from the repository root", () => {
     const wranglerConfig = JSON.parse(readFileSync(join(repoRoot, "ops", "infra", "cloudflare", "wrangler.jsonc"), "utf8")) as {
       assets: { directory: string };
+      env: { production: { name: string; services: Array<{ service: string }> } };
       main: string;
+      name: string;
+      services: Array<{ service: string }>;
     };
 
+    expect(wranglerConfig.name).toBe("allchess");
+    expect(wranglerConfig.services[0]?.service).toBe("allchess");
+    expect(wranglerConfig.env.production.name).toBe("allchess");
+    expect(wranglerConfig.env.production.services[0]?.service).toBe("allchess");
     expect(wranglerConfig.main).toBe("../../../.open-next/worker.js");
     expect(wranglerConfig.assets.directory).toBe("../../../.open-next/assets");
   });
