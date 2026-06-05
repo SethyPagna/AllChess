@@ -94,6 +94,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
                 type="button"
                 className={`catalog-filter-chip focus-ring${family === item.key ? " is-active" : ""}`}
                 onClick={() => setFamily(item.key)}
+                aria-pressed={family === item.key}
                 title={item.label}
               >
                 {familyShortLabels[item.key]}
@@ -112,6 +113,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
                 type="button"
                 className={`catalog-filter-chip focus-ring${status === value ? " is-active" : ""}`}
                 onClick={() => setStatus(value as PlayabilityStatus | "all")}
+                aria-pressed={status === value}
               >
                 {label}
               </button>
@@ -123,7 +125,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
             <Bot size={15} />
           </span>
           <div className="catalog-chip-list">
-            <button type="button" className={`catalog-filter-chip focus-ring${mode === "all" ? " is-active" : ""}`} onClick={() => setMode("all")}>
+            <button type="button" className={`catalog-filter-chip focus-ring${mode === "all" ? " is-active" : ""}`} onClick={() => setMode("all")} aria-pressed={mode === "all"}>
               {catalogModeLabels.all}
             </button>
             {catalogModeKeys.map((modeKey) => (
@@ -132,6 +134,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
                 type="button"
                 className={`catalog-filter-chip focus-ring${mode === modeKey ? " is-active" : ""}`}
                 onClick={() => setMode(modeKey)}
+                aria-pressed={mode === modeKey}
               >
                 {catalogModeLabels[modeKey]}
               </button>

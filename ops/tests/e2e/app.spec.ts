@@ -169,7 +169,7 @@ test("games and rules shows compact bot training status", async ({ page }) => {
   await expect(page.getByLabel("Bot training status")).toContainText("Book & tactics");
   await expect(page.getByLabel("Bot training status")).toContainText("tactics");
   await expect(page.getByLabel("Bot training status")).toContainText("3190+ benchmark");
-  await expect(page.getByLabel("Bot training status")).toContainText("guide gated");
+  await expect(page.getByLabel("Bot training status")).toContainText("ready / 1 gated");
   await expect(page.getByRole("link", { name: "Play" }).first()).toBeVisible();
   await expect(page.locator(".catalog-status").filter({ hasText: "Ready to play" }).first()).toBeVisible();
   await page.getByRole("button", { name: /Open guide for Classic Chess/ }).click();
@@ -198,15 +198,14 @@ test("watch rooms and catalog filters land on honest real-data views", async ({ 
   await expectNoHorizontalOverflow(page);
 
   await page.goto("/en/variants?playability=learn");
-  await expect(page.getByLabel("Playability")).toHaveValue("learn");
+  await expect(page.getByLabel("Playability filter").getByRole("button", { name: "Guide first" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
   await page.goto("/en/leaderboards?scope=family:asian-chess");
   await expect(page.getByRole("heading", { name: "Leaderboards" })).toBeVisible();
   await expect(page.getByLabel("Leaderboard scope")).toBeEnabled();
-  await expect(page.getByLabel("Leaderboard scope")).toHaveValue("family:asian-chess");
-  await expect(page.getByRole("button", { name: "Update leaderboard filters" })).toBeEnabled();
+  await expect(page.getByLabel("Leaderboard scope").getByRole("button", { name: "Asian chess" })).toHaveAttribute("aria-pressed", "true");
   await expectNoHorizontalOverflow(page);
 });
 
@@ -227,7 +226,24 @@ test("legacy practice route redirects into the unified games and rules flow", as
 
   await expect(page).toHaveURL(/\/en\/variants\?playability=playable$/);
   await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
-  await expect(page.getByLabel("Playability")).toHaveValue("playable");
+  await expect(page.getByLabel("Playability filter").getByRole("button", { name: "Ready to play" })).toHaveAttribute("aria-pressed", "true");
+  await expectNoHorizontalOverflow(page);
+});
+
+test("public shortcut links redirect to accessible localized pages", async ({ page }) => {
+  await page.goto("/learn");
+  await expect(page).toHaveURL(/\/en\/variants$/);
+  await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  await page.goto("/games");
+  await expect(page).toHaveURL(/\/en\/variants$/);
+  await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  await page.goto("/chess");
+  await expect(page).toHaveURL(/\/en$/);
+  await expect(page.getByRole("heading", { name: "AllChess" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
@@ -256,7 +272,7 @@ test("language menu preserves catalog filters", async ({ page }) => {
   await Promise.all([page.waitForURL(/\/de\/variants\?playability=learn$/), german.click()]);
 
   await expect(page).toHaveURL(/\/de\/variants\?playability=learn$/);
-  await expect(page.getByLabel("Playability")).toHaveValue("learn");
+  await expect(page.getByLabel("Playability filter").getByRole("button", { name: "Guide first" })).toHaveAttribute("aria-pressed", "true");
   await expectNoHorizontalOverflow(page);
 });
 

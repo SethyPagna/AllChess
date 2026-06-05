@@ -29,7 +29,7 @@ export function NotificationCenter() {
 
   return (
     <details
-      className="notification-menu relative inline-block"
+      className="dropdown notification-menu relative inline-block"
       data-shell-menu="notifications"
       onToggle={(event) => {
         if (event.currentTarget.open) {
@@ -40,18 +40,18 @@ export function NotificationCenter() {
       <summary
         aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
         title={unreadCount ? `${unreadCount} unread notifications` : "Notifications"}
-        className="focus-ring action-secondary grid h-10 w-10 cursor-pointer list-none place-items-center text-[var(--muted)]"
+        className="btn btn-square focus-ring action-secondary grid h-10 w-10 cursor-pointer list-none place-items-center text-[var(--muted)]"
       >
         <Bell aria-hidden="true" size={17} />
         {unreadCount ? <span className="notification-dot" aria-hidden="true" /> : null}
       </summary>
-      <div className="notification-panel panel grid gap-2 p-2 shadow-xl">
+      <div className="dropdown-content notification-panel panel grid gap-2 p-2 shadow-xl">
         <div className="notification-panel-heading">
           <span>
             <strong>Notifications</strong>
             <small>{unreadCount ? `${unreadCount} unread` : "All caught up"}</small>
           </span>
-          <button type="button" className="focus-ring notification-read-button" onClick={() => setRead(true)} disabled={!unreadCount}>
+          <button type="button" className="btn focus-ring notification-read-button" onClick={() => setRead(true)} disabled={!unreadCount}>
             Mark read
           </button>
         </div>

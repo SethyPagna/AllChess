@@ -11,7 +11,6 @@ type CatalogTrainingMetricsProps = {
 };
 
 export function CatalogTrainingMetrics({ knowledge, legendBand, trainingGate }: CatalogTrainingMetricsProps) {
-  const legendStrength = legendBand.display.replace(/\s+benchmark$/i, "");
   const calibration = legendBand.calibrationStatus.replace(/-/g, " ");
 
   return (
@@ -40,8 +39,8 @@ export function CatalogTrainingMetrics({ knowledge, legendBand, trainingGate }: 
           Legend
           <InfoHint text={legendBand.basis} />
         </span>
-        <strong>{legendStrength}</strong>
-        <small>benchmark / {calibration}</small>
+        <strong>{legendBand.display}</strong>
+        <small>{calibration}</small>
       </div>
       <div>
         <span>

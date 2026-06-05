@@ -6,6 +6,7 @@
   "scripts": {
     "prepare:stockfish": "node ops/scripts/assets/prepare-stockfish.ts",
     "dev": "npm run prepare:stockfish && next dev",
+    "dev:lan": "npm run prepare:stockfish && next dev -H 0.0.0.0",
     "build": "npm run prepare:stockfish && next build --webpack",
     "start": "next start",
     "lint": "eslint . -c config/lint/eslint.config.ts",
@@ -56,6 +57,7 @@
     "@types/node": "^25.9.1",
     "@types/react": "^19.2.16",
     "@types/react-dom": "^19.2.3",
+    "daisyui": "^5.5.20",
     "esbuild": "^0.27.3",
     "eslint": "^10.4.1",
     "eslint-config-next": "^16.2.7",

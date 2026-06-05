@@ -40,8 +40,8 @@ describe("app navigation", () => {
     const markup = renderToStaticMarkup(createElement(AppSidebarNavigation, { groups, locale: "en" }));
 
     expect(markup).toContain('aria-current="page"');
-    expect(markup).toContain('class="app-nav-group is-active"');
-    expect(markup).toContain('class="app-nav-group-summary focus-ring is-active"');
+    expect(markup).toMatch(/class="[^"]*app-nav-group[^"]*collapse[^"]*is-active[^"]*"/);
+    expect(markup).toMatch(/class="[^"]*app-nav-group-summary[^"]*collapse-title[^"]*focus-ring[^"]*is-active[^"]*"/);
   });
 
   test("keeps mobile navigation grouped instead of one long undifferentiated list", () => {

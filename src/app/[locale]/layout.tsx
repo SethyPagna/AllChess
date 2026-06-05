@@ -68,8 +68,8 @@ export default async function LocaleLayout({
       <body>
         <ThemeProvider>
           <div className="app-shell">
-            <aside className="app-sidebar" aria-label="Primary navigation">
-              <Link href={`/${locale}`} className="app-brand focus-ring">
+            <aside className="card app-sidebar" aria-label="Primary navigation">
+              <Link href={`/${locale}`} className="btn btn-ghost app-brand focus-ring">
                 <span className="app-brand-mark">
                   <Crown size={22} strokeWidth={2.7} />
                 </span>
@@ -94,7 +94,7 @@ export default async function LocaleLayout({
             </aside>
             <div className="app-main">
               <MobileAutoHideHeader>
-                <Link href={`/${locale}`} className="app-mobile-brand focus-ring">
+                <Link href={`/${locale}`} className="btn btn-ghost app-mobile-brand focus-ring">
                   <span className="app-brand-mark">
                     <Crown size={20} strokeWidth={2.7} />
                   </span>
@@ -113,11 +113,11 @@ export default async function LocaleLayout({
                   </Suspense>
                   <NotificationCenter />
                 </div>
-                <details className="app-menu">
-                  <summary className="focus-ring grid h-10 w-10 cursor-pointer list-none place-items-center rounded-md border border-[var(--border)]">
+                <details className="dropdown app-menu">
+                  <summary className="btn btn-square focus-ring grid h-10 w-10 cursor-pointer list-none place-items-center rounded-md border border-[var(--border)]">
                     <Menu size={18} />
                   </summary>
-                  <div className="app-menu-panel">
+                  <div className="dropdown-content app-menu-panel">
                     <AppMobileNavigation account={{ href: profileHref, icon: "user", label: t("nav.profileHistory") }} auth={{ href: loginHref, icon: "login", label: t("nav.login") }} groups={navGroups} locale={locale} />
                   </div>
                 </details>

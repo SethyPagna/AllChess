@@ -4,6 +4,29 @@ import { join, relative, sep } from "node:path";
 import { describe, expect, test } from "vitest";
 
 const repoRoot = process.cwd();
+
+describe("public routing shortcuts", () => {
+  test("keeps common non-localized links away from 404 pages", () => {
+    const configSource = readFileSync(join(repoRoot, "next.config.mjs"), "utf8");
+
+    for (const [source, destination] of [
+      ["/chess", "/en"],
+      ["/learn", "/en/variants"],
+      ["/games", "/en/variants"],
+      ["/rules", "/en/variants"],
+      ["/play", "/en/play"],
+      ["/watch", "/en/watch"],
+      ["/leaderboards", "/en/leaderboards"],
+      ["/history", "/en/history"],
+      ["/settings", "/en/settings"],
+      ["/login", "/en/login"],
+      ["/profile", "/en/profile/player"]
+    ]) {
+      expect(configSource).toContain(`source: "${source}"`);
+      expect(configSource).toContain(`destination: "${destination}"`);
+    }
+  });
+});
 const ignoredDirectories = new Set([".git", ".next", ".open-next", ".vercel", ".wrangler", "node_modules"]);
 const ignoredRootDirectories = new Set([".next", ".open-next", ".vercel", ".wrangler", "coverage", "playwright-report", "public", "test-results"]);
 const ignoredFilePrefixes = ["public/engines/"];

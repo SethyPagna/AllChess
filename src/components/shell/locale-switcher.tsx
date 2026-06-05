@@ -16,7 +16,7 @@ export function LocaleSwitcher({ active }: { active: LocaleCode }) {
 
   return (
     <details
-      className="language-menu relative inline-block"
+      className="dropdown language-menu relative inline-block"
       data-shell-menu="language"
       onToggle={(event) => {
         if (event.currentTarget.open) {
@@ -24,15 +24,15 @@ export function LocaleSwitcher({ active }: { active: LocaleCode }) {
         }
       }}
     >
-      <summary aria-label="Languages" title="Languages" className="focus-ring action-secondary grid h-10 w-10 cursor-pointer list-none place-items-center text-[var(--muted)]">
+      <summary aria-label="Languages" title="Languages" className="btn btn-square focus-ring action-secondary grid h-10 w-10 cursor-pointer list-none place-items-center text-[var(--muted)]">
         <Languages aria-hidden="true" size={17} />
       </summary>
-      <div className="language-menu-panel panel grid gap-1 overflow-auto p-2 shadow-xl">
+      <div className="dropdown-content language-menu-panel panel grid gap-1 overflow-auto p-2 shadow-xl">
         {locales.map((locale) => (
           <Link
             key={locale}
             href={localizePath(currentPath, locale) as never}
-            className={`language-option focus-ring rounded-md px-3 py-2 text-sm ${
+            className={`language-option focus-ring btn btn-ghost rounded-md px-3 py-2 text-sm ${
               locale === active ? "is-active bg-[var(--accent)] font-bold text-black" : "text-[var(--muted)] hover:bg-[var(--surface-soft)]"
             }`}
           >

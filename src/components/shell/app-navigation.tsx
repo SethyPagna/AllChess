@@ -87,7 +87,7 @@ function NavLink({ active, href, icon, label, nested = true }: AppNavLink & { ac
     <Link
       href={href as never}
       aria-current={active ? "page" : undefined}
-      className={`app-nav-link${nested ? " app-nav-sub-link" : ""} focus-ring${active ? " is-active" : ""}`}
+      className={`btn btn-ghost app-nav-link${nested ? " app-nav-sub-link" : ""} focus-ring${active ? " is-active" : ""}`}
     >
       <Icon size={18} strokeWidth={2.5} />
       <span>{label}</span>
@@ -99,7 +99,7 @@ function AccountLink({ account, active, iconSize }: { account: AccountShortcut; 
   const Icon = iconMap[account.icon];
 
   return (
-    <Link href={account.href as never} aria-current={active ? "page" : undefined} className={`app-nav-link focus-ring${active ? " is-active" : ""}`}>
+    <Link href={account.href as never} aria-current={active ? "page" : undefined} className={`btn btn-ghost app-nav-link focus-ring${active ? " is-active" : ""}`}>
       <Icon size={iconSize} strokeWidth={2.5} />
       <span>{account.label}</span>
     </Link>
@@ -113,7 +113,7 @@ export function AppSidebarNavigation({ account, auth, groups, locale }: AppNavig
 
   return (
     <div className="app-sidebar-nav-stack">
-      <nav className="app-nav">
+      <nav className="menu app-nav">
         {groups.map((group, index) => {
           const GroupIcon = iconMap[group.icon];
           const groupActive = group.links.some((link) => isActiveHref(link.href));
@@ -124,8 +124,8 @@ export function AppSidebarNavigation({ account, auth, groups, locale }: AppNavig
           }
 
           return (
-            <details key={group.label} className={`app-nav-group${groupActive ? " is-active" : ""}`} open={index < 3 || groupActive}>
-              <summary className={`app-nav-group-summary focus-ring${groupActive ? " is-active" : ""}`}>
+            <details key={group.label} className={`app-nav-group collapse${groupActive ? " is-active" : ""}`} open={index < 3 || groupActive}>
+              <summary className={`app-nav-group-summary collapse-title focus-ring${groupActive ? " is-active" : ""}`}>
                 <GroupIcon size={18} strokeWidth={2.5} />
                 <span>{group.label}</span>
                 <ChevronDown size={15} />
@@ -143,7 +143,7 @@ export function AppSidebarNavigation({ account, auth, groups, locale }: AppNavig
         <div className="app-sidebar-bottom" aria-label="Profile and sign in">
           {account ? <AccountLink account={account} active={isActiveHref(accountRoute)} iconSize={20} /> : null}
           {auth ? (
-            <Link href={auth.href as never} aria-current={isActiveHref(authRoute) ? "page" : undefined} className={`app-nav-icon-link focus-ring${isActiveHref(authRoute) ? " is-active" : ""}`} title={auth.label} aria-label={auth.label}>
+            <Link href={auth.href as never} aria-current={isActiveHref(authRoute) ? "page" : undefined} className={`btn btn-square app-nav-icon-link focus-ring${isActiveHref(authRoute) ? " is-active" : ""}`} title={auth.label} aria-label={auth.label}>
               <LogIn size={18} strokeWidth={2.5} />
             </Link>
           ) : null}

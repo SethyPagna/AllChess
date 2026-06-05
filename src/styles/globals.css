@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "daisyui";
 
 :root {
   --background: #f4f7f5;
@@ -127,6 +128,26 @@ option {
   border-radius: 8px;
   background: var(--surface);
   font-weight: 700;
+}
+
+:where(.app-shell .btn, .language-option.btn, .notification-read-button.btn) {
+  min-height: 0;
+  border-color: var(--border);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+:where(.app-brand.btn, .app-mobile-brand.btn, .app-nav-link.btn) {
+  justify-content: flex-start;
+  height: auto;
+}
+
+.language-option.btn {
+  height: auto;
+}
+
+.notification-read-button.btn {
+  height: 2rem;
 }
 
 .app-shell {

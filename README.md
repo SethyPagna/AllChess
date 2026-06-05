@@ -92,7 +92,13 @@ npm run db:migrate:remote
 npm run cf:deploy
 ```
 
-The current workers.dev deployment URL for this Cloudflare account is `https://chess.learn-app.workers.dev`.
+The current workers.dev deployment URL for this Cloudflare account is `https://chess.learn-app.workers.dev`. Public shortcut paths such as `/chess`, `/learn`, `/games`, `/play`, and `/watch` redirect into localized app pages so shared links do not land on a 404.
+
+For same-network device testing during development, bind Next.js to all interfaces:
+
+```bash
+npm run dev:lan
+```
 
 Vercel:
 

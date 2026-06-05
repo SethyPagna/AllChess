@@ -75,11 +75,11 @@ export function LeaderboardFilterBar({
     <form className={`panel leaderboard-filter-bar ${hasComputedBoards ? "" : "is-empty"}`} aria-label="Leaderboard filters">
       <div className="leaderboard-scope-select" role="group" aria-label="Leaderboard scope" title="Choose a leaderboard scope. Empty scopes stay visible until rated games create rows.">
         <Filter size={16} />
-        <button type="submit" name="scope" value="all" className={`focus-ring leaderboard-scope-chip${filters.scope === "all" ? " is-active" : ""}`}>
+        <button type="submit" name="scope" value="all" className={`focus-ring leaderboard-scope-chip${filters.scope === "all" ? " is-active" : ""}`} aria-pressed={filters.scope === "all"}>
           All
         </button>
         {scopes.map((scope) => (
-          <button key={scope.id} type="submit" name="scope" value={scope.id} className={`focus-ring leaderboard-scope-chip${filters.scope === scope.id ? " is-active" : ""}`}>
+          <button key={scope.id} type="submit" name="scope" value={scope.id} className={`focus-ring leaderboard-scope-chip${filters.scope === scope.id ? " is-active" : ""}`} aria-pressed={filters.scope === scope.id}>
             {scope.label}
           </button>
         ))}
