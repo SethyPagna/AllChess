@@ -23,6 +23,16 @@ describe("PieceIcon", () => {
 
     expect(met).toContain('data-piece="queen"');
     expect(met).toContain('data-detail="queen-jewel"');
+    expect(met).toContain("<title>Met</title>");
+  });
+
+  test("localizes piece titles for language-specific board labels", () => {
+    const shogiPawn = renderToStaticMarkup(<PieceIcon code="p" owner="sente" variantKey="shogi" locale="ja" />);
+    const chineseKing = renderToStaticMarkup(<PieceIcon code="k" owner="white" variantKey="classic" locale="zh-CN" />);
+
+    expect(shogiPawn).toContain('aria-label="歩"');
+    expect(shogiPawn).toContain('title="歩"');
+    expect(chineseKing).toContain("<title>王</title>");
   });
 
   test("renders draughts men and kings as checker discs", () => {
@@ -46,7 +56,7 @@ describe("PieceIcon", () => {
 
     expect(whiteStone).toContain('data-piece="stone"');
     expect(blackStone).toContain('data-piece="stone"');
-    expect(whiteStone).toContain('aria-label="Kōnane stone"');
+    expect(whiteStone).toContain('aria-label="Stone"');
     expect(blackStone).toContain('data-owner="black"');
   });
 
@@ -107,6 +117,35 @@ describe("PieceIcon", () => {
     expect(card).toContain('aria-label="3 more captured pieces"');
     expect(card).toContain("+3");
     expect(card).toContain("+17");
+  });
+
+  test("renders pieces in hand as compact draggable buttons", () => {
+    const card = renderToStaticMarkup(
+      <BoardPlayerCard
+        botLevelLabel="Normal"
+        botModeActive={false}
+        botStrengthDisplay="1300-1600"
+        canUseHand
+        capturedPieces={[]}
+        handCounts={{ p: 2, b: 1 }}
+        opponentCapturedPieces={[]}
+        clock={{ color: "sente", remainingMs: 600000, incrementMs: 0 }}
+        color="sente"
+        humanColor="sente"
+        isActive
+        locale="ja"
+        placement="bottom"
+        selectedHandCode="p"
+        thinking={false}
+        timeControl="rapid"
+        variantKey="shogi"
+      />
+    );
+
+    expect(card).toContain('aria-label="Sente pieces in hand"');
+    expect(card).toContain('class="hand-piece-button focus-ring is-selected"');
+    expect(card).toContain("draggable=\"true\"");
+    expect(card).toContain(">2</span>");
   });
 
   test("keeps non-western pieces as strong native symbols", () => {

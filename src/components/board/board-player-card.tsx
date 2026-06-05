@@ -7,31 +7,42 @@ type BoardPlayerCardProps = {
   botLevelLabel: string;
   botModeActive: boolean;
   botStrengthDisplay: string;
+  canUseHand?: boolean;
   capturedPieces: Piece[];
+  handCounts?: Record<string, number>;
   opponentCapturedPieces: Piece[];
   clock?: PlayerClock;
   color: string;
   humanColor: string;
   isActive: boolean;
+  locale?: string;
+  onHandPieceClick?: (code: string) => void;
   placement: "top" | "bottom";
+  selectedHandCode?: string | null;
   thinking: boolean;
   timeControl: string;
   variantKey: string;
 };
 
 const visibleCaptureLimit = 14;
+const handPieceDragType = "application/x-allchess-hand-piece";
 
 export function BoardPlayerCard({
   botLevelLabel,
   botModeActive,
   botStrengthDisplay,
+  canUseHand = false,
   capturedPieces,
+  handCounts = {},
   opponentCapturedPieces,
   clock,
   color,
   humanColor,
   isActive,
+  locale = "en",
+  onHandPieceClick,
   placement,
+  selectedHandCode = null,
   thinking,
   timeControl,
   variantKey
@@ -41,6 +52,7 @@ export function BoardPlayerCard({
   const materialAdvantage = Math.max(0, materialValue(capturedPieces) - materialValue(opponentCapturedPieces));
   const visibleCaptures = capturedPieces.slice(0, visibleCaptureLimit);
   const hiddenCaptureCount = Math.max(0, capturedPieces.length - visibleCaptures.length);
+  const handEntries = Object.entries(handCounts).filter(([, count]) => count > 0);
 
   return (
     <div className={`board-player-card board-player-card-${placement} ${isActive ? "is-active" : ""}`} aria-label={`${colorLabel(color)} player card`}>
@@ -52,20 +64,44 @@ export function BoardPlayerCard({
         </div>
         <p>{isBot ? `${botStrengthDisplay}${thinking ? " - thinking" : ""}` : `${colorLabel(color)} side`}</p>
       </div>
-      <div className={`captured-strip ${capturedPieces.length ? "" : "is-empty"}`} aria-label={`${colorLabel(color)} captured pieces`}>
-        {visibleCaptures.length ? (
-          <>
-            {visibleCaptures.map((piece, index) => (
-              <span key={`${piece.id}-${index}`} className="captured-piece">
-                <PieceIcon code={piece.code} owner={piece.owner} variantKey={variantKey} promoted={piece.promoted} />
-              </span>
+      <div className="player-piece-rail">
+        {handEntries.length ? (
+          <div className="hand-strip" aria-label={`${colorLabel(color)} pieces in hand`}>
+            {handEntries.map(([code, count]) => (
+              <button
+                key={`${color}-${code}`}
+                type="button"
+                className={`hand-piece-button focus-ring ${selectedHandCode === code ? "is-selected" : ""}`}
+                disabled={!canUseHand}
+                draggable={canUseHand}
+                onClick={() => onHandPieceClick?.(code)}
+                onDragStart={(event) => {
+                  if (!canUseHand) return;
+                  event.dataTransfer.effectAllowed = "move";
+                  event.dataTransfer.setData(handPieceDragType, code);
+                }}
+              >
+                <PieceIcon code={code} owner={color as Piece["owner"]} variantKey={variantKey} locale={locale} />
+                <span>{count}</span>
+              </button>
             ))}
-            {hiddenCaptureCount > 0 ? <strong className="captured-overflow" aria-label={`${hiddenCaptureCount} more captured pieces`}>+{hiddenCaptureCount}</strong> : null}
-            {materialAdvantage > 0 ? <strong className="captured-material">+{formatMaterialAdvantage(materialAdvantage)}</strong> : null}
-          </>
-        ) : (
-          <span className="captured-empty">No captures</span>
-        )}
+          </div>
+        ) : null}
+        <div className={`captured-strip ${capturedPieces.length ? "" : "is-empty"}`} aria-label={`${colorLabel(color)} captured pieces`}>
+          {visibleCaptures.length ? (
+            <>
+              {visibleCaptures.map((piece, index) => (
+                <span key={`${piece.id}-${index}`} className="captured-piece">
+                  <PieceIcon code={piece.code} owner={piece.owner} variantKey={variantKey} locale={locale} promoted={piece.promoted} />
+                </span>
+              ))}
+              {hiddenCaptureCount > 0 ? <strong className="captured-overflow" aria-label={`${hiddenCaptureCount} more captured pieces`}>+{hiddenCaptureCount}</strong> : null}
+              {materialAdvantage > 0 ? <strong className="captured-material">+{formatMaterialAdvantage(materialAdvantage)}</strong> : null}
+            </>
+          ) : (
+            <span className="captured-empty">No captures</span>
+          )}
+        </div>
       </div>
     </div>
   );

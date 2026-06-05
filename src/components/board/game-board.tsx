@@ -26,7 +26,7 @@ import { analyzeMoveList, summarizeReview } from "@/lib/game/review";
 import { describeGameOutcome } from "@/lib/game/outcome";
 import type { VariantRuleSummary } from "@/lib/variants/rules-atlas";
 import { getTimeControl, type TimeControlKey } from "@/lib/game/time-controls";
-import { applyMove, createInitialState, getLegalMoves, sameSquare, serializeSquare, type GameState, type Square } from "@/lib/variants";
+import { applyMove, createInitialState, getLegalMoves, sameSquare, serializeSquare, type GameState, type Move, type Piece, type Square } from "@/lib/variants";
 import { BoardGrid } from "@/components/board/board-grid";
 import { BoardPlayerCard } from "@/components/board/board-player-card";
 import { GameGuideModal } from "@/components/board/game-guide-modal";
@@ -72,6 +72,15 @@ function unavailableModeSupport(mode: PlayMode): CatalogModeSupport {
   };
 }
 
+function createHandDropPiece(owner: Piece["owner"], code: string): Piece {
+  return {
+    id: `${owner}-${code}-hand`,
+    code,
+    owner,
+    labelKey: `piece.${code}`
+  };
+}
+
 async function requestRuntimeBotMove(...args: Parameters<typeof import("@/lib/bot/runtime").requestBotMove>) {
   const { requestBotMove } = await import("@/lib/bot/runtime");
   return requestBotMove(...args);
@@ -107,6 +116,7 @@ export function GameBoard({
   const [history, setHistory] = useState<GameState[]>([]);
   const [future, setFuture] = useState<GameState[]>([]);
   const [selected, setSelected] = useState<Square | null>(null);
+  const [selectedHandCode, setSelectedHandCode] = useState<string | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [playMode, setPlayMode] = useState<PlayMode>(() => resolveSupportedPlayMode(variantKey, initialPlayMode ?? (initialBotMode === "opponent" ? "bot" : "offline")));
   const [botDifficulty, setBotDifficulty] = useState<BotDifficultyKey>(initialBotDifficulty);
@@ -135,7 +145,8 @@ export function GameBoard({
   const displayState = timeline[Math.min(displayPly, timeline.length - 1)] ?? state;
   const activeReviewMove = displayPly > 0 ? reviewMoves[displayPly - 1] : null;
   const isReviewing = reviewPly !== null;
-  const legalMoves = useMemo(() => (selected ? getLegalMoves(state, selected) : []), [selected, state]);
+  const selectedHandPiece = useMemo(() => (selectedHandCode ? createHandDropPiece(state.turn, selectedHandCode) : null), [selectedHandCode, state.turn]);
+  const legalMoves = useMemo(() => (selected ? getLegalMoves(state, selected) : selectedHandPiece ? getLegalMoves(state, { drop: selectedHandPiece }) : []), [selected, selectedHandPiece, state]);
   const legalTargets = useMemo(() => new Set(legalMoves.map((move) => serializeSquare(move.to))), [legalMoves]);
   const botColor = state.clocks.find((clock) => clock.color !== humanColor)?.color ?? state.clocks[1]?.color ?? "black";
   const rows = displayState.board.length;
@@ -147,8 +158,8 @@ export function GameBoard({
   const botResponseBudget = Math.min(botLevel.moveTimeMs, MAX_BOT_REPLY_MS - 180);
   const outcome = useMemo(() => describeGameOutcome(state, humanColor), [humanColor, state]);
   const outcomeKey = state.status === "completed" ? `${state.moves.length}:${state.result ?? ""}:${state.outcomeReason ?? ""}` : null;
-  const firstColor = state.clocks[0]?.color ?? "white";
-  const secondColor = state.clocks[1]?.color ?? "black";
+  const firstColor = (state.clocks[0]?.color ?? "white") as Piece["owner"];
+  const secondColor = (state.clocks[1]?.color ?? "black") as Piece["owner"];
   const catalogEntry = useMemo(() => getGameCatalogEntry(variantKey), [variantKey]);
   const modeSupport = useMemo(
     () => ({
@@ -196,24 +207,91 @@ export function GameBoard({
     [state.captured]
   );
 
-  function playerCard(color: string, placement: "top" | "bottom") {
+  function playerCard(color: Piece["owner"], placement: "top" | "bottom") {
+    const handCounts = state.hands?.[color] ?? {};
+    const canUseHand = canHumanMove(color) && Object.values(handCounts).some((count) => count > 0);
     return (
       <BoardPlayerCard
         botLevelLabel={botLevel.label}
         botModeActive={color === botColor && botMode !== "human"}
         botStrengthDisplay={botStrength.display}
+        canUseHand={canUseHand}
         capturedPieces={capturedBy(color)}
+        handCounts={handCounts}
         opponentCapturedPieces={state.captured.filter((piece) => piece.owner === color)}
         clock={state.clocks.find((entry) => entry.color === color)}
         color={color}
         humanColor={humanColor}
         isActive={state.turn === color}
+        locale={locale}
+        onHandPieceClick={(code) => chooseHandPiece(color, code)}
         placement={placement}
+        selectedHandCode={color === state.turn ? selectedHandCode : null}
         thinking={thinking.status === "thinking"}
         timeControl={timeControl}
         variantKey={displayState.variantKey}
       />
     );
+  }
+
+  function canHumanMove(color: Piece["owner"] = state.turn) {
+    return (
+      gameStarted &&
+      state.status === "active" &&
+      !isReviewing &&
+      !isThinking &&
+      !isOnlineMode &&
+      !isSpectating &&
+      color === state.turn &&
+      botMode !== "both" &&
+      !(botMode === "opponent" && state.turn !== humanColor)
+    );
+  }
+
+  function commitPlayerMove(move: Move) {
+    setHistory((current) => [...current, state]);
+    setFuture([]);
+    setState((current) => applyMove(current, move));
+    setSuggestedMove(null);
+    setNotice(null);
+    setReviewPly(null);
+    setReviewPlaying(false);
+    setSelected(null);
+    setSelectedHandCode(null);
+  }
+
+  function chooseHandPiece(color: Piece["owner"], code: string) {
+    if (!canHumanMove(color)) return;
+    setSelected(null);
+    setSelectedHandCode((current) => (current === code ? null : code));
+    setNotice(null);
+  }
+
+  function dropHandPiece(code: string, target: Square) {
+    if (!canHumanMove()) return false;
+    const dropPiece = createHandDropPiece(state.turn, code);
+    const move = getLegalMoves(state, { drop: dropPiece }).find((candidate) => sameSquare(candidate.to, target));
+    if (!move) {
+      setSelected(null);
+      setSelectedHandCode(code);
+      setNotice("That drop is not legal for this piece.");
+      return false;
+    }
+    commitPlayerMove(move);
+    return true;
+  }
+
+  function dragBoardMove(from: Square, to: Square) {
+    if (!canHumanMove()) return false;
+    const move = getLegalMoves(state, from).find((candidate) => sameSquare(candidate.to, to));
+    if (!move) {
+      setSelected(from);
+      setSelectedHandCode(null);
+      setNotice("That move is not legal.");
+      return false;
+    }
+    commitPlayerMove(move);
+    return true;
   }
 
   function choose(square: Square) {
@@ -241,22 +319,25 @@ export function GameBoard({
       setNotice(botMode === "both" ? "Both bots are controlling the board." : "Bot is to move. You can change sides or cancel bot mode.");
       return;
     }
+    if (selectedHandPiece) {
+      const move = legalMoves.find((candidate) => sameSquare(candidate.to, square));
+      if (move) {
+        commitPlayerMove(move);
+      } else {
+        setNotice("That drop is not legal for this piece.");
+      }
+      return;
+    }
     if (selected && legalTargets.has(serializeSquare(square))) {
       const move = legalMoves.find((candidate) => sameSquare(candidate.to, square));
       if (move) {
-        setHistory((current) => [...current, state]);
-        setFuture([]);
-        setState((current) => applyMove(current, move));
-        setSuggestedMove(null);
-        setNotice(null);
-        setReviewPly(null);
-        setReviewPlaying(false);
+        commitPlayerMove(move);
       }
-      setSelected(null);
       return;
     }
 
     const cell = state.board[square.row]?.[square.col];
+    setSelectedHandCode(null);
     setSelected(cell?.piece?.owner === state.turn ? square : null);
   }
 
@@ -287,6 +368,7 @@ export function GameBoard({
       setSuggestedMove(null);
       setNotice(source === "auto" ? "Bot replied automatically." : "Bot played the current side.");
       setSelected(null);
+      setSelectedHandCode(null);
       setReviewPly(null);
       setReviewPlaying(false);
     },
@@ -324,6 +406,7 @@ export function GameBoard({
         depthReached: 0
       });
       setSelected(quickMove.from);
+      setSelectedHandCode(null);
       setNotice(null);
       return;
     }
@@ -354,6 +437,7 @@ export function GameBoard({
       depthReached: result.depthReached
     });
     setSelected(result.move.from);
+    setSelectedHandCode(null);
     setNotice(null);
   }
 
@@ -369,6 +453,7 @@ export function GameBoard({
     setFuture([]);
     setState((current) => applyMove(current, move));
     setSelected(null);
+    setSelectedHandCode(null);
     setSuggestedMove(null);
     setLastBotResult(null);
     setNotice("Suggestion applied.");
@@ -400,6 +485,7 @@ export function GameBoard({
     setFuture([]);
     setThinking({ status: "idle", label: "" });
     setSelected(null);
+    setSelectedHandCode(null);
     setSuggestedMove(null);
     setShowOutcome(true);
     setNotice("Game ended by agreed draw.");
@@ -420,6 +506,7 @@ export function GameBoard({
     setFuture([]);
     setThinking({ status: "idle", label: "" });
     setSelected(null);
+    setSelectedHandCode(null);
     setSuggestedMove(null);
     setShowOutcome(true);
     setNotice("Resignation recorded.");
@@ -441,6 +528,7 @@ export function GameBoard({
     setFuture(next.future);
     setState(next.present);
     setSelected(null);
+    setSelectedHandCode(null);
     setSuggestedMove(null);
     setLastBotResult(null);
     setNotice(null);
@@ -464,6 +552,7 @@ export function GameBoard({
     setFuture(next.future);
     setState(next.present);
     setSelected(null);
+    setSelectedHandCode(null);
     setSuggestedMove(null);
     setLastBotResult(null);
     setNotice(null);
@@ -483,6 +572,7 @@ export function GameBoard({
     setHumanColor(pickHumanColor(nextState, seatChoice));
     setGameStarted(false);
     setSelected(null);
+    setSelectedHandCode(null);
     setSuggestedMove(null);
     setLastBotResult(null);
     setNotice(null);
@@ -506,6 +596,7 @@ export function GameBoard({
     setHumanColor(pickHumanColor(nextState, seatChoice));
     setGameStarted(false);
     setSelected(null);
+    setSelectedHandCode(null);
     setSuggestedMove(null);
     setLastBotResult(null);
     setNotice(null);
@@ -533,6 +624,8 @@ export function GameBoard({
     setHumanColor(nextColor);
     setBotMode(isBotMode ? "opponent" : "human");
     setBoardOrientation("auto");
+    setSelected(null);
+    setSelectedHandCode(null);
     setLastBotResult(null);
     setGameStarted(true);
     setState((current) => (isOnlineMode || isSpectating ? { ...current, status: "waiting" } : { ...current, status: "active" }));
@@ -553,6 +646,8 @@ export function GameBoard({
     }
     setPlayMode(nextMode);
     setOpponentQuery("");
+    setSelected(null);
+    setSelectedHandCode(null);
     if (nextMode !== "bot") {
       setBotMode("human");
       setLastBotResult(null);
@@ -578,6 +673,7 @@ export function GameBoard({
     setReviewPly(0);
     setReviewPlaying(false);
     setSelected(null);
+    setSelectedHandCode(null);
     setSuggestedMove(null);
     setNotice("Review mode opened. Use playback controls to inspect each position.");
   }
@@ -585,6 +681,7 @@ export function GameBoard({
   function jumpToLive() {
     setReviewPly(null);
     setReviewPlaying(false);
+    setSelectedHandCode(null);
     setNotice("Back to live board.");
   }
 
@@ -598,6 +695,7 @@ export function GameBoard({
     setReviewPly(Math.max(0, Math.min(nextPly, timeline.length - 1)));
     setReviewPlaying(false);
     setSelected(null);
+    setSelectedHandCode(null);
   }
 
   useEffect(() => {
@@ -659,7 +757,7 @@ export function GameBoard({
         {playerCard(topPlayerColor, "top")}
         <div className="board-shell" data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
-            <BoardGrid cols={cols} files={files} legalTargets={legalTargets} onChoose={choose} orientedRows={orientedRows} rows={rows} selected={selected} suggestedMove={suggestedMove} variantKey={displayState.variantKey} />
+            <BoardGrid cols={cols} files={files} legalTargets={legalTargets} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} rows={rows} selected={selected} suggestedMove={suggestedMove} variantKey={displayState.variantKey} />
             {!gameStarted ? (
               <div className="pregame-board-overlay" role="status">
                 <strong>Choose setup first</strong>
