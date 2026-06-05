@@ -160,7 +160,7 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     variantKey: "makruk",
     sourceLinks: [{ name: "GNU XBoard Makruk rules", url: "https://www.gnu.org/software/xboard/whats_new/rules/Makruk.html" }],
     numberedBasics: [
-      "Thai chess uses chess-like pieces with different queen/bishop/pawn behavior.",
+      "Thai Makruk uses chess-like pieces with different queen/bishop/pawn behavior.",
       "Pawns begin advanced and promote differently from western chess.",
       "No castling.",
       "Checkmate wins; Makruk counting/draw rules must be supported in rules mode."

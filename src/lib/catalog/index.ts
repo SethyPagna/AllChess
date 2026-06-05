@@ -33,7 +33,7 @@ export type {
 
 export const gameFamilies: Array<{ key: GameFamilyKey; label: string; description: string }> = [
   { key: "chess-family", label: "Chess family", description: "Chaturanga descendants, western chess variants, and royal objective games." },
-  { key: "asian-chess", label: "Asian chess systems", description: "Shogi, Xiangqi, Janggi, Makruk, Jungle, and regional relatives." },
+  { key: "asian-chess", label: "Asian chess systems", description: "Shogi, Xiangqi, Janggi, Thai Makruk, Khmer Ouk Chaktrang, Jungle, and regional relatives." },
   { key: "draughts", label: "Draughts and checkers", description: "Jump-capture games with men, kings, and compulsory capture variants." },
   { key: "mancala", label: "Mancala", description: "Sowing and capture games with pits, seeds, and stores." },
   { key: "go-family", label: "Go, Gomoku, and territory", description: "Stone-placement games focused on territory, connections, and patterns." },
@@ -85,7 +85,7 @@ const localizedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
   shogi: { english: "Shogi", native: "将棋", romanization: "Shōgi" },
   "mini-shogi": { english: "Mini Shogi", native: "五五将棋", romanization: "Gogo Shōgi" },
   janggi: { english: "Janggi", native: "장기", romanization: "Janggi" },
-  makruk: { english: "Makruk", native: "หมากรุก", romanization: "Makruk" },
+  makruk: { english: "Thai Makruk", native: "หมากรุก", romanization: "Makruk" },
   jungle: { english: "Jungle", native: "鬥獸棋", romanization: "Dòu Shòu Qí", short: "Jungle / Dou Shou Qi" },
   "english-draughts": { english: "English Draughts", short: "Checkers" },
   "international-draughts": { english: "International Draughts", short: "10x10 Draughts" },
@@ -309,16 +309,16 @@ const learningCatalogEntries: GameCatalogEntry[] = [
   catalogEntry({
     id: "ouk-chaktrang",
     name: { english: "Ouk Chaktrang", native: "អុកចត្រង្គ", romanization: "Ouk Chaktrang" },
-    aliases: ["cambodian-chess", "ouk"],
+    aliases: ["khmer-chess", "cambodian-chess", "ouk"],
     family: "asian-chess",
-    region: ["Cambodia"],
-    board: { kind: "square-grid", rows: 8, cols: 8, description: "Cambodian chess family board." },
+    region: ["Khmer", "Cambodia"],
+    board: { kind: "square-grid", rows: 8, cols: 8, description: "Khmer chess family board." },
     piecePresentation: "makruk-carved",
     playability: "learn",
     rulesAdapter: "planned-rules-engine",
     botAdapter: "none",
     ruleSourceLinks: [{ name: "Cambodian Chess Federation", url: "https://www.cambodianchess.com/" }],
-    shortRules: ["Makruk-related movement with Cambodian opening rules.", "Named pieces need Khmer and romanized presentation.", "Counting and tournament profile must be explicit."],
+    shortRules: ["Khmer Ouk Chaktrang movement with local opening rules.", "Named pieces need Khmer and romanized presentation.", "Counting and tournament profile must be explicit."],
     winConditions: ["Checkmate", "Counting decision in selected profile"]
   }),
   catalogEntry({
@@ -729,7 +729,7 @@ export function displayPiecePresentation(entry: GameCatalogEntry) {
     "staunton-svg": "Western chess pieces",
     "shogi-koma": "Native shogi pieces",
     "xiangqi-disk": "Chinese chess disks",
-    "makruk-carved": "Thai chess pieces",
+    "makruk-carved": "Regional carved chess pieces",
     "jungle-animals": "Animal rank pieces",
     "draughts-stacks": "Stacking checkers",
     "mancala-seeds": "Seeds and pits",

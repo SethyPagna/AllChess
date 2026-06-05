@@ -51,6 +51,7 @@ describe("rules atlas", () => {
     expect(getVariantRuleSummary("janggi").completion.remainingGates).not.toEqual(expect.arrayContaining([expect.stringContaining("Facing-general")]));
     expect(getVariantRuleSummary("janggi").completion.remainingGates).not.toEqual(expect.arrayContaining([expect.stringContaining("cannon screens")]));
     expect(getVariantRuleSummary("makruk").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Native Met")]));
+    expect(getVariantRuleSummary("makruk").numberedBasics[0]).toContain("Thai Makruk");
     expect(getVariantRuleSummary("makruk").completion.status).toBe("verified-playable");
     expect(getVariantRuleSummary("makruk").completion.remainingGates).toEqual([]);
     expect(getVariantRuleSummary("makruk").completion.remainingGates).not.toEqual(expect.arrayContaining([expect.stringContaining("promotion fixtures")]));

@@ -158,7 +158,7 @@ export const variantCatalog: VariantDefinition[] = [
     supportsPromotion: true,
     supportsCastling: false,
     supportsCheck: true,
-    objective: "Checkmate with Thai chess movement and promotion rules.",
+    objective: "Checkmate with Thai Makruk movement and promotion rules.",
     setup: ["rnsmksnr", "........", "pppppppp", "........", "........", "PPPPPPPP", "........", "RNSMKSNR"],
     aliases: ["thai-chess"]
   },

@@ -108,7 +108,7 @@ const en = {
   "variant.shogi": "Shogi",
   "variant.mini-shogi": "Mini Shogi",
   "variant.janggi": "Janggi",
-  "variant.makruk": "Makruk",
+  "variant.makruk": "Thai Makruk",
   "variant.jungle": "Jungle Chess",
   "variant.english-draughts": "English Draughts",
   "variant.international-draughts": "International Draughts",

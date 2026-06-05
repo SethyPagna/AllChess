@@ -8,6 +8,7 @@ import { GET as rulesGet } from "@/app/api/rules/[variantKey]/route";
 import {
   displayGameName,
   displayModeReadiness,
+  displayPiecePresentation,
   displayReleaseReadiness,
   gameCatalog,
   gameFamilies,
@@ -103,7 +104,9 @@ describe("universal game catalog", () => {
       family: "regional",
       piecePresentation: "go-stones"
     });
+    expect(getGameCatalogEntry("makruk")).toMatchObject({ name: { english: "Thai Makruk", romanization: "Makruk" } });
     expect(getGameCatalogEntry("racing-kings")).toMatchObject({ playability: "playable", botAdapter: "internal-search" });
+    expect(displayPiecePresentation(getGameCatalogEntry("makruk")!)).toBe("Regional carved chess pieces");
     expect(displayReleaseReadiness(getGameCatalogEntry("classic")!)).toBe("Verified ready");
     expect(displayReleaseReadiness(getGameCatalogEntry("shogi")!)).toBe("Verified ready");
     expect(getCatalogReleaseReadiness(getGameCatalogEntry("classic")!)).toMatchObject({ status: "verified-ready", gateComplete: true, blockers: [] });
@@ -175,6 +178,12 @@ describe("universal game catalog", () => {
     expect(getGameCatalogEntry("backgammon")).toMatchObject({ family: "tables", piecePresentation: "backgammon-checkers" });
     expect(getGameCatalogEntry("hnefatafl")).toMatchObject({ family: "tafl", piecePresentation: "tafl-runes" });
     expect(getGameCatalogEntry("nine-mens-morris")).toMatchObject({ family: "mill", piecePresentation: "mill-stones" });
+    expect(getGameCatalogEntry("ouk-chaktrang")).toMatchObject({
+      aliases: expect.arrayContaining(["khmer-chess"]),
+      board: { description: "Khmer chess family board." },
+      region: expect.arrayContaining(["Khmer"])
+    });
+    expect(getGameCatalogEntry("ouk-chaktrang")?.shortRules[0]).toContain("Khmer Ouk Chaktrang");
   });
 
   test("searches by English, native, romanized, and alias names", () => {

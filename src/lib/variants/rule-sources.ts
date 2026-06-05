@@ -36,7 +36,7 @@ export const ruleSources = {
     {
       name: "GNU XBoard Makruk rules",
       url: "https://www.gnu.org/software/xboard/whats_new/rules/Makruk.html",
-      scope: ["Thai chess piece movement", "promotion"]
+      scope: ["Thai Makruk piece movement", "promotion"]
     }
   ],
   jungle: [
