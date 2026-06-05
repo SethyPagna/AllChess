@@ -12,6 +12,7 @@ import {
   listBotKnowledgeSummary,
   listBotModelManifests,
   listBotTrainingChecklists,
+  listBotTrainingReadiness,
   listBotToolManifests,
   listTrainingDataManifests,
   lookupBotKnowledge
@@ -747,6 +748,7 @@ describe("bot difficulty ladder", () => {
 
   test("bot model manifests describe D1/R2 training artifacts", () => {
     const manifests = listBotModelManifests();
+    const summary = listBotKnowledgeSummary();
 
     expect(manifests).toEqual(
       expect.arrayContaining([
@@ -759,6 +761,8 @@ describe("bot difficulty ladder", () => {
       ])
     );
     expect(manifests.find((manifest) => manifest.variantKey === "classic")?.positionCount).toBeGreaterThan(0);
+    expect(manifests.find((manifest) => manifest.variantKey === "all-playable")?.positionCount).toBe(summary.generatedPositions);
+    expect(summary.generatedPositions).toBeGreaterThan(10064);
   });
 
   test("local data generation exposes engine labels separately from runtime cache entries", () => {
@@ -766,8 +770,9 @@ describe("bot difficulty ladder", () => {
     const labels = listBotEngineLabels("classic");
 
     expect(summary.engineLabels).toBeGreaterThan(0);
+    expect(summary.engineLabels).toBeGreaterThan(10064);
     expect(summary.entries).toBeGreaterThanOrEqual(9000);
-    expect(summary.openingEntries).toBeGreaterThanOrEqual(60);
+    expect(summary.openingEntries).toBeGreaterThan(80);
     expect(summary.tacticEntries).toBeGreaterThanOrEqual(9000);
     expect(labels.length).toBeGreaterThan(0);
     expect(labels[0]).toEqual(
@@ -776,6 +781,21 @@ describe("bot difficulty ladder", () => {
         moveUci: expect.any(String),
         legalValidation: "runtime",
         benchmarkVersion: "allchess-local-knowledge-v1"
+      })
+    );
+  });
+
+  test("training readiness reports per-variant indexed cache positions", () => {
+    const shogiReadiness = listBotTrainingReadiness("shogi")[0];
+    const shogiPositionCount = new Set(listBotKnowledge("shogi").map((entry) => entry.boardSignature || entry.positionKey || entry.id)).size;
+
+    expect(shogiPositionCount).toBeGreaterThanOrEqual(3);
+    expect(shogiReadiness).toEqual(
+      expect.objectContaining({
+        variantKey: "shogi",
+        coverageStatus: "active",
+        indexedPositions: shogiPositionCount,
+        runtimePath: "knowledge-cache"
       })
     );
   });

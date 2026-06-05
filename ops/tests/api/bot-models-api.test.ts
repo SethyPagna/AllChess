@@ -54,6 +54,9 @@ describe("bot models API", () => {
         generatedPositions: expect.any(Number)
       })
     );
+    expect(body.trainingSummary.generatedPositions).toBeGreaterThan(10064);
+    expect(body.trainingSummary.openingEntries).toBeGreaterThan(80);
+    expect(body.trainingSummary.engineLabels).toBeGreaterThan(10064);
     expect(body.readiness).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -70,6 +73,12 @@ describe("bot models API", () => {
           coverageStatus: "active",
           runtimePath: "knowledge-cache",
           badgeLabel: "Cache ready"
+        }),
+        expect.objectContaining({
+          variantKey: "shogi",
+          coverageStatus: "active",
+          indexedPositions: 3,
+          runtimePath: "knowledge-cache"
         })
       ])
     );

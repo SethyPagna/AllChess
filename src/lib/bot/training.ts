@@ -818,18 +818,16 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
 const generated = generatedKnowledge as GeneratedBotKnowledgeFile;
 const generatedKnowledgeEntries = generated.entries;
 const generatedEngineLabels = generated.engineLabels ?? [];
-const knowledgeEntries: BotKnowledgeEntry[] = [...curatedKnowledgeEntries, ...curatedLineSeedEntries, ...generatedKnowledgeEntries];
-const curatedEngineLabels = curatedKnowledgeEntries.map(knowledgeEntryToEngineLabel);
+const curatedRuntimeKnowledgeEntries = [...curatedKnowledgeEntries, ...curatedLineSeedEntries];
+const knowledgeEntries: BotKnowledgeEntry[] = [...curatedRuntimeKnowledgeEntries, ...generatedKnowledgeEntries];
+const curatedEngineLabels = curatedRuntimeKnowledgeEntries.map(knowledgeEntryToEngineLabel);
 const runtimeEngineLabels = generatedEngineLabels.length ? [...generatedEngineLabels, ...curatedEngineLabels] : [...generatedKnowledgeEntries.map(knowledgeEntryToEngineLabel), ...curatedEngineLabels];
 const knowledgeIndex = createKnowledgeIndex(knowledgeEntries);
 const knowledgeCountsByVariant = countKnowledgeByVariant(knowledgeEntries);
 const engineLabelCountsByVariant = countEngineLabelsByVariant(runtimeEngineLabels);
-const classicPositionCount = new Set(
-  generatedKnowledgeEntries.filter((entry) => entry.variantKey === "classic").map((entry) => entry.boardSignature || entry.positionKey || entry.id)
-).size;
-const totalGeneratedPositionCount = new Set(
-  generatedKnowledgeEntries.map((entry) => `${entry.variantKey}|${entry.boardSignature || entry.positionKey || entry.id}`)
-).size;
+const positionCountsByVariant = countPositionsByVariant(knowledgeEntries);
+const classicPositionCount = positionCountsByVariant.get("classic") ?? 0;
+const totalRuntimePositionCount = countUniquePositions(knowledgeEntries);
 const localBenchmarkVersion = generatedKnowledgeEntries[0]?.benchmarkVersion ?? generatedEngineLabels[0]?.benchmarkVersion ?? "allchess-local-knowledge-v1";
 
 function createCuratedLineSeedEntries(specs: CuratedLineSeedSpec[]): BotKnowledgeEntry[] {
@@ -893,10 +891,10 @@ const modelManifests: BotModelManifest[] = [
     variantKey: "all-playable",
     tier: "legend",
     version: "universal-tactics-v1",
-    status: totalGeneratedPositionCount > 0 ? "active" : "planned",
+    status: totalRuntimePositionCount > 0 ? "active" : "planned",
     storage: "r2",
     objectKey: "bot-models/universal/tactics-v1/manifest.json",
-    positionCount: totalGeneratedPositionCount,
+    positionCount: totalRuntimePositionCount,
     benchmarkVersion: localBenchmarkVersion,
     sourceManifestIds: ["engine-generated-tactics-v1", "opt-in-user-games-v1"],
     createdAt: "2026-05-14T00:00:00.000Z"
@@ -930,6 +928,9 @@ export function listBotEngineLabels(variantKey?: string) {
 }
 
 export function listBotKnowledgeSummary() {
+  const runtimeOpeningEntries = knowledgeEntries.filter((entry) => entry.source === "opening-book").length;
+  const runtimeTacticEntries = knowledgeEntries.filter((entry) => entry.source === "tactic-cache").length;
+
   return {
     version: generated.version ?? "allchess-local-knowledge-v1",
     generatedAt: generated.generatedAt,
@@ -937,18 +938,18 @@ export function listBotKnowledgeSummary() {
     toolsDiscovered: generated.summary?.toolsDiscovered ?? 0,
     entries: knowledgeEntries.length,
     generatedEntries: generatedKnowledgeEntries.length,
-    openingEntries: generated.summary?.openingEntries ?? generatedKnowledgeEntries.filter((entry) => entry.source === "opening-book").length,
-    tacticEntries: generated.summary?.tacticEntries ?? generatedKnowledgeEntries.filter((entry) => entry.source === "tactic-cache").length,
-    engineLabels: generated.summary?.engineLabels ?? generatedEngineLabels.length,
+    openingEntries: runtimeOpeningEntries,
+    tacticEntries: runtimeTacticEntries,
+    engineLabels: runtimeEngineLabels.length,
     sampledBytesPerCompressedFile: generated.summary?.sampledBytesPerCompressedFile ?? 0,
     scannedRecords: generated.summary?.scannedRecords ?? (generated.manifests ?? []).reduce((total, manifest) => total + Number(manifest.sampledRecords ?? 0), 0),
-    generatedPositions: generated.summary?.generatedPositions ?? totalGeneratedPositionCount
+    generatedPositions: totalRuntimePositionCount
   };
 }
 
 export function listTrainingRunManifests(): TrainingRunManifest[] {
   const scannedRecords = (generated.manifests ?? []).reduce((total, manifest) => total + Number(manifest.sampledRecords ?? 0), 0);
-  const generatedPositions = totalGeneratedPositionCount;
+  const generatedPositions = totalRuntimePositionCount;
   const variants = [
     ...new Set([
       ...knowledgeEntries.map((entry) => entry.variantKey),
@@ -1119,7 +1120,7 @@ export function listBotTrainingChecklists(variantKey?: string): GameBotTrainingC
 
 export function listBotTrainingReadiness(variantKey?: string): BotTrainingReadiness[] {
   return listBotTrainingChecklists(variantKey).map((checklist) => {
-    const indexedPositions = knowledgeIndex.byPosition.size + knowledgeIndex.byBoardSignature.size;
+    const indexedPositions = positionCountsByVariant.get(checklist.variantKey) ?? 0;
     const runtimePath = runtimePathForChecklist(checklist);
     const topTier = checklist.difficultyTiers[checklist.difficultyTiers.length - 1]?.tier ?? "legend";
     return {
@@ -1378,6 +1379,24 @@ function countEngineLabelsByVariant(labels: EngineLabel[]) {
     counts.set(variantKey, (counts.get(variantKey) ?? 0) + 1);
   }
   return counts;
+}
+
+function positionIdentityForEntry(entry: BotKnowledgeEntry) {
+  return entry.boardSignature || entry.positionKey || entry.id;
+}
+
+function countUniquePositions(entries: BotKnowledgeEntry[]) {
+  return new Set(entries.map((entry) => `${entry.variantKey}|${positionIdentityForEntry(entry)}`)).size;
+}
+
+function countPositionsByVariant(entries: BotKnowledgeEntry[]) {
+  const positionsByVariant = new Map<string, Set<string>>();
+  for (const entry of entries) {
+    const positions = positionsByVariant.get(entry.variantKey) ?? new Set<string>();
+    positions.add(positionIdentityForEntry(entry));
+    positionsByVariant.set(entry.variantKey, positions);
+  }
+  return new Map([...positionsByVariant.entries()].map(([variantKey, positions]) => [variantKey, positions.size]));
 }
 
 function runtimePathForChecklist(checklist: GameBotTrainingChecklist): BotTrainingReadiness["runtimePath"] {
