@@ -19,6 +19,8 @@ type BoardPlayerCardProps = {
   variantKey: string;
 };
 
+const visibleCaptureLimit = 14;
+
 export function BoardPlayerCard({
   botLevelLabel,
   botModeActive,
@@ -37,7 +39,8 @@ export function BoardPlayerCard({
   const isHuman = color === humanColor;
   const isBot = botModeActive;
   const materialAdvantage = Math.max(0, materialValue(capturedPieces) - materialValue(opponentCapturedPieces));
-  const visibleCaptures = capturedPieces.slice(0, 14);
+  const visibleCaptures = capturedPieces.slice(0, visibleCaptureLimit);
+  const hiddenCaptureCount = Math.max(0, capturedPieces.length - visibleCaptures.length);
 
   return (
     <div className={`board-player-card board-player-card-${placement} ${isActive ? "is-active" : ""}`} aria-label={`${colorLabel(color)} player card`}>
@@ -57,6 +60,7 @@ export function BoardPlayerCard({
                 <PieceIcon code={piece.code} owner={piece.owner} variantKey={variantKey} promoted={piece.promoted} />
               </span>
             ))}
+            {hiddenCaptureCount > 0 ? <strong className="captured-overflow" aria-label={`${hiddenCaptureCount} more captured pieces`}>+{hiddenCaptureCount}</strong> : null}
             {materialAdvantage > 0 ? <strong className="captured-material">+{formatMaterialAdvantage(materialAdvantage)}</strong> : null}
           </>
         ) : (

@@ -1134,6 +1134,19 @@ option {
   white-space: nowrap;
 }
 
+.captured-overflow {
+  flex: 0 0 auto;
+  margin-left: 0.24rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  padding: 0.18rem 0.32rem;
+  font-size: 0.68rem;
+  font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .captured-empty {
   color: var(--muted);
   font-size: 0.7rem;

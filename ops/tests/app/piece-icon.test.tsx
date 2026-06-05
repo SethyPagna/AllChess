@@ -77,6 +77,38 @@ describe("PieceIcon", () => {
     expect(card).toContain("+7");
   });
 
+  test("summarizes hidden captured pieces when the stack is full", () => {
+    const capturedPieces = Array.from({ length: 17 }, (_, index) => ({
+      id: `black-pawn-${index}`,
+      code: "p",
+      owner: "black" as const,
+      labelKey: "chess.pawn"
+    }));
+    const card = renderToStaticMarkup(
+      <BoardPlayerCard
+        botLevelLabel="Normal"
+        botModeActive={false}
+        botStrengthDisplay="1300-1600"
+        capturedPieces={capturedPieces}
+        opponentCapturedPieces={[]}
+        clock={{ color: "white", remainingMs: 600000, incrementMs: 0 }}
+        color="white"
+        humanColor="white"
+        isActive
+        placement="bottom"
+        thinking={false}
+        timeControl="rapid"
+        variantKey="classic"
+      />
+    );
+
+    expect(card.match(/class="captured-piece"/g)).toHaveLength(14);
+    expect(card).toContain('class="captured-overflow"');
+    expect(card).toContain('aria-label="3 more captured pieces"');
+    expect(card).toContain("+3");
+    expect(card).toContain("+17");
+  });
+
   test("keeps non-western pieces as strong native symbols", () => {
     const redGeneral = renderToStaticMarkup(<PieceIcon code="g" owner="red" variantKey="xiangqi" />);
     const blackGeneral = renderToStaticMarkup(<PieceIcon code="g" owner="black" variantKey="xiangqi" />);
