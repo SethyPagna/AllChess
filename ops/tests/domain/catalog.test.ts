@@ -212,7 +212,13 @@ describe("universal game catalog", () => {
 
     const botFilteredCatalog = await catalogGet(new Request("http://allchess.test/api/catalog?mode=bot&q=shogi"));
     await expect(botFilteredCatalog.json()).resolves.toMatchObject({
-      entries: expect.arrayContaining([expect.objectContaining({ id: "shogi" }), expect.objectContaining({ id: "mini-shogi" })])
+      entries: expect.arrayContaining([
+        expect.objectContaining({
+          id: "shogi",
+          modeSupport: expect.arrayContaining([expect.objectContaining({ enabled: true, level: "verified", mode: "bot" })])
+        }),
+        expect.objectContaining({ id: "mini-shogi" })
+      ])
     });
 
     const onlineFilteredCatalog = await catalogGet(new Request("http://allchess.test/api/catalog?mode=online&q=oware"));

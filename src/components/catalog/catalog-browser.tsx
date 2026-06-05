@@ -4,18 +4,16 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { BookOpen, Bot, Filter, Play, RotateCcw, Search, X } from "lucide-react";
 
+import { CatalogModeGrid, CatalogModeStrip, catalogModeKeys, catalogModeLabels } from "@/components/catalog/catalog-mode-support";
 import {
   displayBotReadiness,
   displayGameName,
-  displayModeReadiness,
   displayPiecePresentation,
   displayPlayabilityStatus,
   displayReleaseReadiness,
   displayRulesReadiness,
   gameFamilies,
   getCatalogModeSupport,
-  getCatalogSupportedModes,
-  type CatalogModeSupport,
   type CatalogPlayMode,
   type GameCatalogEntry,
   type GameFamilyKey,
@@ -51,17 +49,6 @@ const familyShortLabels: Record<GameFamilyKey | "all", string> = {
   race: "Race",
   mill: "Mill",
   regional: "Regional"
-};
-
-const catalogModeKeys = ["online", "bot", "offline", "room", "spectate"] as const;
-
-const modeLabels: Record<CatalogPlayMode | "all", string> = {
-  all: "All modes",
-  online: "Online",
-  bot: "Bot",
-  offline: "Local",
-  room: "Room",
-  spectate: "Watch"
 };
 
 export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "all", initialStatus = "all", locale }: CatalogBrowserProps) {
@@ -137,7 +124,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
           </span>
           <div className="catalog-chip-list">
             <button type="button" className={`catalog-filter-chip focus-ring${mode === "all" ? " is-active" : ""}`} onClick={() => setMode("all")}>
-              {modeLabels.all}
+              {catalogModeLabels.all}
             </button>
             {catalogModeKeys.map((modeKey) => (
               <button
@@ -146,7 +133,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
                 className={`catalog-filter-chip focus-ring${mode === modeKey ? " is-active" : ""}`}
                 onClick={() => setMode(modeKey)}
               >
-                {modeLabels[modeKey]}
+                {catalogModeLabels[modeKey]}
               </button>
             ))}
           </div>
@@ -182,7 +169,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
               </button>
             </div>
             <p className="catalog-card-summary">{entry.shortRules[0] ?? entry.winConditions[0]}</p>
-            <ModeSupportStrip entry={entry} />
+            <CatalogModeStrip entry={entry} />
             <div className="catalog-card-actions">
               {entry.playability === "playable" && entry.variantKey ? (
                 <Link href={playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) as never} className="action-primary focus-ring">
@@ -224,28 +211,6 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
         </div>
       ) : null}
     </section>
-  );
-}
-
-function ModeSupportStrip({ entry }: { entry: GameCatalogEntry }) {
-  const supportedModes = getCatalogSupportedModes(entry);
-  const compactModes = supportedModes.length ? supportedModes : [getCatalogModeSupport(entry, "spectate")];
-
-  return (
-    <div className="catalog-mode-strip" aria-label={`${displayGameName(entry)} mode support`}>
-      {compactModes.slice(0, 5).map((support) => (
-        <ModeSupportChip key={support.mode} entry={entry} support={support} />
-      ))}
-    </div>
-  );
-}
-
-function ModeSupportChip({ entry, support }: { entry: GameCatalogEntry; support: CatalogModeSupport }) {
-  return (
-    <span className="catalog-mode-chip" data-level={support.level} title={support.reason}>
-      {modeLabels[support.mode]}
-      <small>{displayModeReadiness(entry, support.mode)}</small>
-    </span>
   );
 }
 
@@ -314,18 +279,7 @@ export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCata
           </details>
           <details open>
             <summary>Modes</summary>
-            <div className="catalog-mode-grid">
-              {catalogModeKeys.map((modeKey) => {
-                const support = getCatalogModeSupport(entry, modeKey);
-                return (
-                  <div key={modeKey} className="catalog-mode-row" data-enabled={support.enabled}>
-                    <strong>{modeLabels[modeKey]}</strong>
-                    <span>{displayModeReadiness(entry, modeKey)}</span>
-                    <p>{support.reason}</p>
-                  </div>
-                );
-              })}
-            </div>
+            <CatalogModeGrid entry={entry} />
           </details>
           <details>
             <summary>Sources</summary>

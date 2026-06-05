@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 
+import { CatalogModeGrid } from "@/components/catalog/catalog-mode-support";
 import { GameDetailGate } from "@/components/games/game-detail-gate";
 import { GameDetailHero } from "@/components/games/game-detail-hero";
 import { GameDetailRuleSections } from "@/components/games/game-detail-rule-sections";
@@ -37,6 +38,10 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
         <GameDetailGate primaryGap={readiness?.primaryGap ?? completion?.remainingGates[0]} />
       ) : null}
       <div className="game-detail-grid">
+        <article className="panel game-detail-section game-detail-mode-panel">
+          <h2>Modes</h2>
+          <CatalogModeGrid entry={entry} />
+        </article>
         <GameDetailRuleSections completion={completion} entry={entry} />
         <GameDetailSources sources={entry.ruleSourceLinks} />
       </div>

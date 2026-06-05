@@ -31,6 +31,8 @@ export type {
   RulesEngineAdapter
 } from "./types";
 
+export const catalogPlayModes = ["online", "bot", "offline", "room", "spectate"] as const satisfies readonly CatalogPlayMode[];
+
 export const gameFamilies: Array<{ key: GameFamilyKey; label: string; description: string }> = [
   { key: "chess-family", label: "Chess family", description: "Chaturanga descendants, western chess variants, and royal objective games." },
   { key: "asian-chess", label: "Asian chess systems", description: "Shogi, Xiangqi, Janggi, Thai Makruk, Khmer Ouk Chaktrang, Jungle, and regional relatives." },
@@ -698,7 +700,7 @@ export function getCatalogModeSupport(entry: GameCatalogEntry, mode: CatalogPlay
 }
 
 export function getCatalogSupportedModes(entry: GameCatalogEntry) {
-  return (["online", "bot", "offline", "room", "spectate"] as const)
+  return catalogPlayModes
     .map((mode) => getCatalogModeSupport(entry, mode))
     .filter((support) => support.enabled);
 }
@@ -785,6 +787,7 @@ export function getCatalogReleaseReadiness(entry: GameCatalogEntry) {
 export function serializeCatalogEntry(entry: GameCatalogEntry) {
   return {
     ...entry,
+    modeSupport: catalogPlayModes.map((mode) => getCatalogModeSupport(entry, mode)),
     releaseReadiness: getCatalogReleaseReadiness(entry)
   };
 }
