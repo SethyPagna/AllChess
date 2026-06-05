@@ -19,7 +19,7 @@ export function MatchResultOverlay({ outcome, showModal, onClose, onPlayAgain, o
       </div>
       {outcome.celebrate ? <div className="win-celebration" aria-hidden="true" /> : null}
       {showModal ? (
-        <div className={`match-result-modal match-result-${outcome.result}`} role="dialog" aria-label="Match over" aria-modal="false">
+        <div className={`match-result-modal match-result-${outcome.result}`} role="dialog" aria-label="Match over" aria-modal="true">
           <button type="button" className="match-result-close focus-ring" aria-label="Close match result" title="Close this result panel and view the board." onClick={onClose}>
             <X size={16} />
           </button>

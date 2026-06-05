@@ -198,8 +198,12 @@ test("watch rooms and catalog filters land on honest real-data views", async ({ 
   await expectNoHorizontalOverflow(page);
 
   await page.goto("/en/variants?playability=learn");
-  await page.getByRole("button", { name: /Filters/ }).click();
+  const filtersButton = page.getByRole("button", { name: /Filters/ });
+  await filtersButton.click();
   await expect(page.getByLabel("Playability filter")).toHaveValue("learn");
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Catalog filters" })).toHaveCount(0);
+  await expect(filtersButton).toBeFocused();
   await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 

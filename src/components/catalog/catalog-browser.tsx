@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BookOpen, Bot, ChevronDown, Filter, Play, RotateCcw, Search, X } from "lucide-react";
 
 import { CatalogModeGrid, CatalogModeStrip, catalogModeKeys, catalogModeLabels } from "@/components/catalog/catalog-mode-support";
@@ -58,6 +58,8 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
   const [status, setStatus] = useState<PlayabilityStatus | "all">(initialStatus);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<GameCatalogEntry | null>(null);
+  const filterPopoverRef = useRef<HTMLDivElement>(null);
+  const filterTriggerRef = useRef<HTMLButtonElement>(null);
 
   const filtered = useMemo(() => {
     const normalized = normalize(query);
@@ -74,6 +76,39 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
   const hasFilters = Boolean(query) || family !== "all" || mode !== "all" || status !== "all";
   const filterCount = [family !== "all", mode !== "all", status !== "all"].filter(Boolean).length;
 
+  useEffect(() => {
+    if (!filtersOpen) return;
+
+    function closeFilters({ restoreFocus }: { restoreFocus: boolean }) {
+      setFiltersOpen(false);
+      if (restoreFocus) {
+        filterTriggerRef.current?.focus();
+      }
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target;
+      if (target instanceof Node && !filterPopoverRef.current?.contains(target)) {
+        closeFilters({ restoreFocus: false });
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeFilters({ restoreFocus: true });
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown, true);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [filtersOpen]);
+
   return (
     <section className="catalog-browser">
       <div className="catalog-toolbar panel">
@@ -82,8 +117,9 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
           <span className="sr-only">Search games</span>
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search games" />
         </label>
-        <div className={`catalog-filter-popover${filtersOpen ? " is-open" : ""}`}>
+        <div ref={filterPopoverRef} className={`catalog-filter-popover${filtersOpen ? " is-open" : ""}`}>
           <button
+            ref={filterTriggerRef}
             type="button"
             className="catalog-filter-trigger focus-ring"
             aria-expanded={filtersOpen}
@@ -95,7 +131,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
             {filterCount ? <span className="catalog-filter-count">{filterCount}</span> : null}
           </button>
           {filtersOpen ? (
-            <div id="catalog-filter-panel" className="catalog-filter-panel" role="dialog" aria-label="Catalog filters">
+            <div id="catalog-filter-panel" className="catalog-filter-panel" role="dialog" aria-modal="false" aria-label="Catalog filters">
               <div className="catalog-filter-panel-head">
                 <strong>Filters</strong>
                 <div>
