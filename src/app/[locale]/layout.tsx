@@ -114,8 +114,8 @@ export default async function LocaleLayout({
                   <NotificationCenter />
                 </div>
                 <details className="dropdown app-menu">
-                  <summary className="btn btn-square focus-ring action-secondary grid h-10 w-10 cursor-pointer list-none place-items-center">
-                    <Menu size={18} />
+                  <summary className="btn btn-square focus-ring action-secondary grid h-10 w-10 cursor-pointer list-none place-items-center" aria-label="Open navigation menu" title="Open navigation menu">
+                    <Menu aria-hidden="true" size={18} />
                   </summary>
                   <div className="dropdown-content app-menu-panel">
                     <AppMobileNavigation account={{ href: profileHref, icon: "user", label: t("nav.profileHistory") }} auth={{ href: loginHref, icon: "login", label: t("nav.login") }} groups={navGroups} locale={locale} />

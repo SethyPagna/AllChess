@@ -25,6 +25,27 @@ async function expectHorizontallyWithinViewport(page: Page, locator: Locator) {
   expect(Math.ceil(box!.x + box!.width)).toBeLessThanOrEqual(viewport!.width);
 }
 
+async function expectNoVisibleUnnamedControls(page: Page) {
+  const unnamed = await page.evaluate(() => {
+    function isVisible(element: Element) {
+      const rect = element.getBoundingClientRect();
+      const style = getComputedStyle(element);
+      return rect.width > 0 && rect.height > 0 && style.visibility !== "hidden" && style.display !== "none";
+    }
+
+    function accessibleName(element: Element) {
+      return (element.getAttribute("aria-label") || element.getAttribute("title") || element.textContent || element.getAttribute("placeholder") || "").replace(/\s+/g, " ").trim();
+    }
+
+    return Array.from(document.querySelectorAll("button, a[href], summary, input, select, textarea"))
+      .filter(isVisible)
+      .filter((element) => !accessibleName(element))
+      .map((element) => element.outerHTML.slice(0, 160));
+  });
+
+  expect(unnamed).toEqual([]);
+}
+
 test("localized game hub can open variants and a playable board", async ({ page }) => {
   await page.goto("/en");
   await expect(page.getByRole("heading", { name: "AllChess" })).toBeVisible();
@@ -151,6 +172,8 @@ test("mobile shell language, notifications, and board controls stay in bounds", 
   await page.goto("/en/play/classic");
 
   await expect(page.getByRole("heading", { name: "Classic Chess" })).toBeVisible();
+  await expect(page.getByLabel("Open navigation menu")).toBeVisible();
+  await expectNoVisibleUnnamedControls(page);
   await expectNoHorizontalOverflow(page);
 
   const mobileHeader = page.locator(".app-mobile-header");
