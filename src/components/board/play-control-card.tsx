@@ -1,4 +1,4 @@
-import { Bot, Flag, FlipHorizontal2, Handshake, Lightbulb, Palette, PauseCircle, PlayCircle, Redo2, RotateCcw, SlidersHorizontal, Undo2 } from "lucide-react";
+import { Bot, Flag, FlipHorizontal2, Handshake, Lightbulb, PauseCircle, PlayCircle, Redo2, RotateCcw, SlidersHorizontal, Undo2 } from "lucide-react";
 
 import type { PieceSkinOption, PieceSkinPreference } from "@/components/board/piece-icon";
 
@@ -102,18 +102,33 @@ export function PlayControlCard({
             <button type="button" title="Reset the game with the current setup." onClick={onReset} className="focus-ring action-secondary play-icon-button" aria-label="Reset">
               <RotateCcw size={15} />
             </button>
-            <label className="play-skin-select" title="Change piece skin for this game.">
-              <Palette size={14} />
-              <span className="sr-only">Piece skin</span>
-              <select aria-label="Piece skin" value={pieceSkin} onChange={(event) => onPieceSkinChange(event.target.value as PieceSkinPreference)}>
-                {pieceSkinOptions.map((option) => (
-                  <option key={option.key} value={option.key}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
           </div>
+        </section>
+        <section className="play-control-section" aria-label="Piece appearance">
+          <div className="play-control-group-label">
+            <span>Look</span>
+            <small>Piece skin</small>
+          </div>
+          <div className="play-skin-rail" role="radiogroup" aria-label="Piece skin">
+            {pieceSkinOptions.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                role="radio"
+                aria-checked={pieceSkin === option.key}
+                title={`Use ${option.label} piece skin`}
+                onClick={() => onPieceSkinChange(option.key)}
+                className={`focus-ring play-skin-chip ${pieceSkin === option.key ? "is-selected" : ""}`}
+                data-skin-option={option.key}
+              >
+                <span className="play-skin-swatch" aria-hidden="true" />
+                <span>{option.label}</span>
+              </button>
+            ))}
+          </div>
+          <span className="sr-only" aria-live="polite">
+            Selected piece skin: {pieceSkinOptions.find((option) => option.key === pieceSkin)?.label ?? "Auto"}
+          </span>
         </section>
         <section className="play-control-section" aria-label="Match controls">
           <div className="play-control-group-label">

@@ -372,6 +372,10 @@ test("drop-variant hand rails stay compact on Mini Shogi", async ({ page }) => {
   await expect(playerCard.locator(".hand-tray")).toHaveAttribute("data-skin", "mini-wedge");
   await expect(playerCard.locator(".hand-tray-status")).toContainText("Hand");
   await expect(playerCard.locator(".hand-empty-pill")).toHaveText("0");
+  await page.getByRole("button", { name: "Status" }).click();
+  await page.getByRole("radio", { name: /Tile/ }).click();
+  await expect(page.getByRole("radio", { name: /Tile/ })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByLabel("Game board").locator(".piece-icon").first()).toHaveAttribute("data-skin", "tile");
   await expectNoHorizontalOverflow(page);
   expect(runtimeErrors).toEqual([]);
 });

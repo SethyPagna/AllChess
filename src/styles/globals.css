@@ -3108,32 +3108,84 @@ option {
   white-space: nowrap;
 }
 
-.play-skin-select {
-  display: inline-grid;
-  grid-template-columns: auto minmax(4.8rem, 1fr);
+.play-skin-rail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(5.4rem, 1fr));
+  gap: 0.36rem;
+  min-width: 0;
+}
+
+.play-skin-chip {
+  display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
-  width: 100%;
-  min-height: 2.36rem;
+  justify-content: flex-start;
+  gap: 0.36rem;
+  min-width: 0;
+  min-height: 2.18rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--foreground);
-  padding: 0 0.35rem;
-}
-
-.play-skin-select svg {
-  color: var(--accent);
-}
-
-.play-skin-select select {
-  width: 100%;
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
+  padding: 0.34rem 0.48rem;
   font-size: 0.68rem;
   font-weight: 950;
+  line-height: 1;
+  transition: background var(--motion-fast), border-color var(--motion-fast), color var(--motion-fast), transform var(--motion-fast);
+}
+
+.play-skin-chip:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  transform: translateY(-1px);
+}
+
+.play-skin-chip.is-selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-raised));
+  color: var(--accent-strong);
+}
+
+.play-skin-chip > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.play-skin-swatch {
+  width: 0.86rem;
+  height: 0.86rem;
+  flex: 0 0 auto;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, var(--foreground));
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--accent) 0 48%, var(--surface-raised) 48% 100%);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--surface) 54%, transparent);
+}
+
+.play-skin-chip[data-skin-option="wedge"] .play-skin-swatch,
+.play-skin-chip[data-skin-option="mini-wedge"] .play-skin-swatch {
+  border-radius: 0.22rem;
+  background: linear-gradient(135deg, #d9b878 0 52%, #7b4f21 52% 100%);
+}
+
+.play-skin-chip[data-skin-option="tile"] .play-skin-swatch {
+  border-radius: 0.18rem;
+  background: linear-gradient(135deg, #edf4da 0 48%, #5f7d43 48% 100%);
+}
+
+.play-skin-chip[data-skin-option="disc"] .play-skin-swatch {
+  background: radial-gradient(circle at 45% 40%, #f3deac 0 42%, #a85932 44% 100%);
+}
+
+.play-skin-chip[data-skin-option="makruk"] .play-skin-swatch {
+  background: linear-gradient(135deg, #f2d19d 0 46%, #6f3f20 46% 100%);
+}
+
+.play-skin-chip[data-skin-option="checker"] .play-skin-swatch {
+  background: linear-gradient(#f6f1df 0 46%, #1f2420 46% 100%);
+}
+
+.play-skin-chip[data-skin-option="stone"] .play-skin-swatch {
+  background: radial-gradient(circle at 38% 34%, #faf9ef 0 38%, #2c302c 42% 100%);
 }
 
 .play-control-button svg,
