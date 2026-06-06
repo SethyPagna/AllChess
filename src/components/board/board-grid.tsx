@@ -86,26 +86,6 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
     );
   }
 
-  function handleMouseDragStart(origin: Square) {
-    pointerDragSquareRef.current = origin;
-    setPointerDragSquare(origin);
-    window.addEventListener(
-      "mouseup",
-      (event) => {
-        const targetElement = document.elementFromPoint(event.clientX, event.clientY);
-        const targetSquareName = targetElement instanceof HTMLElement ? targetElement.closest<HTMLElement>("[data-square]")?.dataset.square : undefined;
-        const target = targetSquareName ? squareFromBoardName(targetSquareName, files, rows) : null;
-        if (!pointerDragSquareRef.current || !sameSquare(pointerDragSquareRef.current, origin)) return;
-        pointerDragSquareRef.current = null;
-        setPointerDragSquare(null);
-        if (!target || sameSquare(origin, target)) return;
-        const moved = onDragMove?.(origin, target) ?? false;
-        if (!moved) flashInvalid(target);
-      },
-      { once: true }
-    );
-  }
-
   function squareFromEventTarget(target: EventTarget | null) {
     const squareName = target instanceof HTMLElement ? target.closest<HTMLElement>("[data-square]")?.dataset.square : undefined;
     return squareName ? squareFromBoardName(squareName, files, rows) : null;
@@ -167,14 +147,8 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
       className="board-grid relative overflow-hidden rounded-lg border border-[var(--border)] shadow-2xl"
       style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
       aria-label="Game board"
-      onMouseDownCapture={(event) => {
-        const square = squareFromEventTarget(event.target);
-        if (square && hasPieceAt(square)) handleMouseDragStart(square);
-      }}
-      onMouseUpCapture={(event) => {
-        finishPointerDrag(squareFromPoint(event.clientX, event.clientY));
-      }}
       onPointerDownCapture={(event) => {
+        if (event.button !== 0) return;
         const square = squareFromEventTarget(event.target);
         if (square && hasPieceAt(square)) handlePointerDragStart(square);
       }}
