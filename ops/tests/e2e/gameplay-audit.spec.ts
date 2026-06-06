@@ -298,6 +298,37 @@ test("spectate mode is read-only after start", async ({ page }) => {
   expect(runtimeErrors).toEqual([]);
 });
 
+test("play chat keeps player and public rooms separate", async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
+  });
+
+  await page.goto("/en/play/classic");
+  const chat = page.getByLabel("Classic Chess chat room");
+  await expect(chat).toBeVisible();
+  await expect(chat.getByText("Private 1v1 room")).toBeVisible();
+
+  await chat.getByPlaceholder("Message player room").fill("Good game");
+  await chat.getByRole("button", { name: "Send players chat message" }).click();
+  await expect(chat.getByText("Good game")).toBeVisible();
+
+  await chat.getByRole("tab", { name: /Public/ }).click();
+  await expect(chat.getByText("Spectator room")).toBeVisible();
+  await expect(chat.getByText("Good game")).toHaveCount(0);
+  await chat.getByPlaceholder("Message public room").fill("Watching here");
+  await chat.getByRole("button", { name: "Send public chat message" }).click();
+  await expect(chat.getByText("Watching here")).toBeVisible();
+
+  await page.locator(".play-title-actions").getByRole("button", { name: "Watch" }).click();
+  const spectatorChat = page.getByLabel("Classic Chess chat room");
+  await expect(spectatorChat.getByRole("tab", { name: /Players/ })).toBeDisabled();
+  await expect(spectatorChat.getByText("Spectator room")).toBeVisible();
+  await expect(spectatorChat.getByPlaceholder("Message public room")).toBeVisible();
+  expect(runtimeErrors).toEqual([]);
+});
+
 test("resign result can be dismissed and reset to setup cleanly", async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
