@@ -154,7 +154,31 @@ export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, 
           const isDarkPiece = cell.piece?.owner === "black" || cell.piece?.owner === "blue" || cell.piece?.owner === "gote";
           const name = squareName(cell.square, files, rows);
           const label = cell.piece ? getPieceDisplayName(cell.piece.code, variantKey, locale, cell.piece.promoted) : null;
-          const squareLabel = cell.piece && label ? `${name} ${cell.piece.owner} ${label}` : name;
+          const squareState = isInvalidDrop
+            ? "invalid-drop"
+            : isSuggestedFrom
+              ? "suggested-from"
+              : isSuggestedTo
+                ? "suggested-to"
+                : isLegal
+                  ? "legal-target"
+                  : isSelected
+                    ? "selected"
+                    : "idle";
+          const squareStatusLabel =
+            squareState === "invalid-drop"
+              ? "Invalid drop"
+              : squareState === "suggested-from"
+                ? "Suggested move starts here"
+                : squareState === "suggested-to"
+                  ? "Suggested move target"
+                  : squareState === "legal-target"
+                    ? "Legal move target"
+                    : squareState === "selected"
+                      ? "Selected square"
+                      : null;
+          const baseSquareLabel = cell.piece && label ? `${name} ${cell.piece.owner} ${label}` : name;
+          const squareLabel = squareStatusLabel ? `${baseSquareLabel} - ${squareStatusLabel}` : baseSquareLabel;
 
           return (
             <button
@@ -171,7 +195,9 @@ export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, 
               title={squareLabel}
               data-square={name}
               data-coordinate={name}
+              data-legal-target={isLegal ? "true" : undefined}
               data-piece-label={label ?? undefined}
+              data-square-state={squareState === "idle" ? undefined : squareState}
               data-dragging={(draggingSquare && sameSquare(draggingSquare, cell.square)) || (pointerDragSquare && sameSquare(pointerDragSquare, cell.square)) ? "true" : undefined}
               data-invalid-drop={isInvalidDrop ? "true" : undefined}
               data-tone={dark ? "dark" : "light"}

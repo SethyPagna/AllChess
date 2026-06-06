@@ -2,21 +2,29 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vitest";
 
 import { BoardGrid } from "@/components/board/board-grid";
-import type { BoardCell } from "@/lib/variants";
+import type { BoardCell, Square } from "@/lib/variants";
 
-function renderGrid(orientedRows: BoardCell[][], variantKey = "classic", locale = "en") {
+type RenderGridOptions = {
+  legalTargets?: ReadonlySet<string>;
+  locale?: string;
+  selected?: Square | null;
+  suggestedMove?: { from: Square; to: Square } | null;
+  variantKey?: string;
+};
+
+function renderGrid(orientedRows: BoardCell[][], options: RenderGridOptions = {}) {
   return renderToStaticMarkup(
     <BoardGrid
       cols={orientedRows[0]?.length ?? 0}
       files={["a", "b"]}
-      legalTargets={new Set()}
-      locale={locale}
+      legalTargets={options.legalTargets ?? new Set()}
+      locale={options.locale ?? "en"}
       onChoose={() => undefined}
       orientedRows={orientedRows}
       rows={orientedRows.length}
-      selected={null}
-      suggestedMove={null}
-      variantKey={variantKey}
+      selected={options.selected ?? null}
+      suggestedMove={options.suggestedMove ?? null}
+      variantKey={options.variantKey ?? "classic"}
     />
   );
 }
@@ -55,12 +63,43 @@ describe("BoardGrid", () => {
           { square: { row: 1, col: 1 }, piece: null }
         ]
       ],
-      "shogi",
-      "ja"
+      { locale: "ja", variantKey: "shogi" }
     );
 
     expect(markup).toContain(`aria-label="a1 sente ${pawnName}"`);
     expect(markup).toContain(`title="a1 sente ${pawnName}"`);
     expect(markup).toContain(`data-piece-label="${pawnName}"`);
+  });
+
+  test("describes legal, selected, and suggested target states", () => {
+    const rows: BoardCell[][] = [
+      [
+        { square: { row: 0, col: 0 }, piece: null },
+        { square: { row: 0, col: 1 }, piece: null }
+      ],
+      [
+        { square: { row: 1, col: 0 }, piece: { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" } },
+        { square: { row: 1, col: 1 }, piece: null }
+      ]
+    ];
+
+    const selectedMarkup = renderGrid(rows, { selected: { row: 1, col: 0 } });
+    const legalMarkup = renderGrid(rows, { legalTargets: new Set(["0:1"]) });
+    const suggestedMarkup = renderGrid(rows, {
+      suggestedMove: {
+        from: { row: 1, col: 0 },
+        to: { row: 0, col: 1 }
+      }
+    });
+
+    expect(selectedMarkup).toContain('aria-label="a1 white King - Selected square"');
+    expect(selectedMarkup).toContain('data-square-state="selected"');
+    expect(legalMarkup).toContain('aria-label="b2 - Legal move target"');
+    expect(legalMarkup).toContain('data-legal-target="true"');
+    expect(legalMarkup).toContain('data-square-state="legal-target"');
+    expect(suggestedMarkup).toContain('aria-label="a1 white King - Suggested move starts here"');
+    expect(suggestedMarkup).toContain('data-square-state="suggested-from"');
+    expect(suggestedMarkup).toContain('aria-label="b2 - Suggested move target"');
+    expect(suggestedMarkup).toContain('data-square-state="suggested-to"');
   });
 });
