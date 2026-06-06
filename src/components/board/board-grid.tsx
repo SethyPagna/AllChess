@@ -31,6 +31,7 @@ type BoardGridProps = {
 };
 
 const handPieceDragType = "application/x-allchess-hand-piece";
+const maxPlanningArrows = 32;
 
 export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move", locale = "en", onChoose, onDragMove, onDropHandPiece, orientedRows, pieceSkin = "default", rows, selected, suggestedMove, variantKey }: BoardGridProps) {
   const [draggingSquare, setDraggingSquare] = useState<Square | null>(null);
@@ -121,6 +122,11 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
       setPlanningArrows([]);
       return;
     }
+    if (event.altKey) {
+      setPlanningOrigin(null);
+      setPlanningArrows((current) => current.filter((arrow) => !sameSquare(arrow.from, square) && !sameSquare(arrow.to, square)));
+      return;
+    }
     if (!planningOrigin) {
       setPlanningOrigin(square);
       return;
@@ -129,7 +135,12 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
       setPlanningOrigin(null);
       return;
     }
-    setPlanningArrows((current) => [...current, { from: planningOrigin, to: square }].slice(-12));
+    const nextArrow = { from: planningOrigin, to: square };
+    setPlanningArrows((current) => {
+      const existingIndex = current.findIndex((arrow) => sameSquare(arrow.from, nextArrow.from) && sameSquare(arrow.to, nextArrow.to));
+      if (existingIndex >= 0) return current.filter((_, index) => index !== existingIndex);
+      return [...current, nextArrow].slice(-maxPlanningArrows);
+    });
     setPlanningOrigin(null);
   }
 
@@ -166,7 +177,16 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
           const from = visualCenter(arrow.from);
           const to = visualCenter(arrow.to);
           if (!from || !to) return null;
-          return <line key={`${serializeSquare(arrow.from)}-${serializeSquare(arrow.to)}-${index}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y} />;
+          return (
+            <line
+              key={`${serializeSquare(arrow.from)}-${serializeSquare(arrow.to)}-${index}`}
+              data-planning-arrow={`${squareName(arrow.from, files, rows)}-${squareName(arrow.to, files, rows)}`}
+              x1={from.x}
+              y1={from.y}
+              x2={to.x}
+              y2={to.y}
+            />
+          );
         })}
       </svg>
       {orientedRows.map((row, visualRow) =>

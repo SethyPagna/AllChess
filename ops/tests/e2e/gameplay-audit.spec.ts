@@ -396,3 +396,36 @@ test("piece hover tooltips use localized piece names", async ({ page }) => {
   expect(tooltipContent).toBe('"\u6b69"');
   expect(runtimeErrors).toEqual([]);
 });
+
+test("right-click planning arrows toggle and clear cleanly", async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
+  });
+
+  await page.goto("/en/play/classic");
+  const board = page.getByLabel("Game board");
+  await expect(board).toBeVisible();
+  await page.getByRole("button", { name: "Start Game" }).click();
+  await expect(page.getByText("Choose setup first")).toHaveCount(0);
+
+  await board.locator('[data-coordinate="e2"]').click({ button: "right" });
+  await board.locator('[data-coordinate="e4"]').click({ button: "right" });
+  await expect(board.locator('[data-planning-arrow="e2-e4"]')).toHaveCount(1);
+
+  await board.locator('[data-coordinate="e2"]').click({ button: "right" });
+  await board.locator('[data-coordinate="e4"]').click({ button: "right" });
+  await expect(board.locator('[data-planning-arrow="e2-e4"]')).toHaveCount(0);
+
+  await board.locator('[data-coordinate="g1"]').click({ button: "right" });
+  await board.locator('[data-coordinate="f3"]').click({ button: "right" });
+  await board.locator('[data-coordinate="b1"]').click({ button: "right" });
+  await board.locator('[data-coordinate="c3"]').click({ button: "right" });
+  await expect(board.locator(".board-planning-layer line")).toHaveCount(2);
+
+  await board.locator('[data-coordinate="g1"]').click({ button: "right", modifiers: ["Alt"] });
+  await expect(board.locator('[data-planning-arrow="g1-f3"]')).toHaveCount(0);
+  await expect(board.locator('[data-planning-arrow="b1-c3"]')).toHaveCount(1);
+  expect(runtimeErrors).toEqual([]);
+});
