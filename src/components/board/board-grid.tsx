@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type DragEvent } from "react";
+import { useRef, useState, type DragEvent, type MouseEvent } from "react";
 
 import { PieceIcon, getPieceDisplayName, type PieceSkinPreference } from "@/components/board/piece-icon";
 import { squareName } from "@/components/board/game-board-utils";
@@ -34,6 +34,8 @@ export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, 
   const [pointerDragSquare, setPointerDragSquare] = useState<Square | null>(null);
   const pointerDragSquareRef = useRef<Square | null>(null);
   const [invalidDrop, setInvalidDrop] = useState<Square | null>(null);
+  const [planningOrigin, setPlanningOrigin] = useState<Square | null>(null);
+  const [planningArrows, setPlanningArrows] = useState<SuggestedBoardMove[]>([]);
 
   function flashInvalid(square: Square) {
     setInvalidDrop(square);
@@ -47,6 +49,7 @@ export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, 
     }
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("application/x-allchess-square", serializeSquare(cell.square));
+    setTransparentDragImage(event);
     setDraggingSquare(cell.square);
     onChoose(cell.square);
   }
@@ -114,6 +117,39 @@ export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, 
     return orientedRows.some((row) => row.some((cell) => sameSquare(cell.square, square) && Boolean(cell.piece)));
   }
 
+  function visualCenter(square: Square) {
+    for (let visualRow = 0; visualRow < orientedRows.length; visualRow += 1) {
+      const visualCol = orientedRows[visualRow]?.findIndex((cell) => sameSquare(cell.square, square)) ?? -1;
+      if (visualCol >= 0) {
+        return {
+          x: ((visualCol + 0.5) / cols) * 100,
+          y: ((visualRow + 0.5) / rows) * 100
+        };
+      }
+    }
+    return null;
+  }
+
+  function handlePlanningMark(event: MouseEvent<HTMLButtonElement>, square: Square) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.shiftKey) {
+      setPlanningOrigin(null);
+      setPlanningArrows([]);
+      return;
+    }
+    if (!planningOrigin) {
+      setPlanningOrigin(square);
+      return;
+    }
+    if (sameSquare(planningOrigin, square)) {
+      setPlanningOrigin(null);
+      return;
+    }
+    setPlanningArrows((current) => [...current, { from: planningOrigin, to: square }].slice(-12));
+    setPlanningOrigin(null);
+  }
+
   function finishPointerDrag(target: Square | null) {
     const origin = pointerDragSquareRef.current;
     pointerDragSquareRef.current = null;
@@ -125,7 +161,7 @@ export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, 
 
   return (
     <div
-      className="board-grid overflow-hidden rounded-lg border border-[var(--border)] shadow-2xl"
+      className="board-grid relative overflow-hidden rounded-lg border border-[var(--border)] shadow-2xl"
       style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
       aria-label="Game board"
       onMouseDownCapture={(event) => {
@@ -143,6 +179,19 @@ export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, 
         finishPointerDrag(squareFromPoint(event.clientX, event.clientY));
       }}
     >
+      <svg className="board-planning-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <marker id="board-planning-arrow" markerHeight="5" markerWidth="5" orient="auto-start-reverse" refX="4" refY="2.5">
+            <path d="M0,0 L5,2.5 L0,5 Z" />
+          </marker>
+        </defs>
+        {planningArrows.map((arrow, index) => {
+          const from = visualCenter(arrow.from);
+          const to = visualCenter(arrow.to);
+          if (!from || !to) return null;
+          return <line key={`${serializeSquare(arrow.from)}-${serializeSquare(arrow.to)}-${index}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y} />;
+        })}
+      </svg>
       {orientedRows.map((row, visualRow) =>
         row.map((cell, visualCol) => {
           const isSelected = selected && sameSquare(selected, cell.square);
@@ -190,6 +239,7 @@ export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, 
               onDragEnd={() => setDraggingSquare(null)}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => handleDrop(event, cell.square)}
+              onContextMenu={(event) => handlePlanningMark(event, cell.square)}
               className="board-square focus-ring relative grid place-items-center overflow-hidden font-black"
               aria-label={squareLabel}
               title={squareLabel}
@@ -200,6 +250,7 @@ export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, 
               data-square-state={squareState === "idle" ? undefined : squareState}
               data-dragging={(draggingSquare && sameSquare(draggingSquare, cell.square)) || (pointerDragSquare && sameSquare(pointerDragSquare, cell.square)) ? "true" : undefined}
               data-invalid-drop={isInvalidDrop ? "true" : undefined}
+              data-planning-origin={planningOrigin && sameSquare(planningOrigin, cell.square) ? "true" : undefined}
               data-tone={dark ? "dark" : "light"}
               data-suggested={isSuggestedFrom ? "from" : isSuggestedTo ? "to" : undefined}
               style={{
@@ -242,4 +293,18 @@ function squareFromSerialized(value: string): Square | null {
   const col = Number(colValue);
   if (!Number.isInteger(row) || !Number.isInteger(col)) return null;
   return { row, col };
+}
+
+function setTransparentDragImage(event: DragEvent<HTMLButtonElement>) {
+  const dragImage = document.createElement("span");
+  dragImage.style.position = "fixed";
+  dragImage.style.top = "0";
+  dragImage.style.left = "0";
+  dragImage.style.width = "1px";
+  dragImage.style.height = "1px";
+  dragImage.style.opacity = "0";
+  dragImage.style.pointerEvents = "none";
+  document.body.appendChild(dragImage);
+  event.dataTransfer.setDragImage(dragImage, 0, 0);
+  window.setTimeout(() => dragImage.remove(), 0);
 }

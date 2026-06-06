@@ -102,4 +102,20 @@ describe("BoardGrid", () => {
     expect(suggestedMarkup).toContain('aria-label="b2 - Suggested move target"');
     expect(suggestedMarkup).toContain('data-square-state="suggested-to"');
   });
+
+  test("renders a planning layer for right-click arrows", () => {
+    const markup = renderGrid([
+      [
+        { square: { row: 0, col: 0 }, piece: null },
+        { square: { row: 0, col: 1 }, piece: null }
+      ],
+      [
+        { square: { row: 1, col: 0 }, piece: null },
+        { square: { row: 1, col: 1 }, piece: null }
+      ]
+    ]);
+
+    expect(markup).toContain('class="board-planning-layer"');
+    expect(markup).toContain('id="board-planning-arrow"');
+  });
 });

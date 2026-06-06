@@ -33,6 +33,7 @@ import { GameGuideModal } from "@/components/board/game-guide-modal";
 import { MatchResultOverlay } from "@/components/board/match-result-overlay";
 import { getPieceSkinOptions, type PieceSkinPreference } from "@/components/board/piece-icon";
 import { PlayActiveSetupCard } from "@/components/board/play-active-setup-card";
+import { PlayChatPanel } from "@/components/board/play-chat-panel";
 import { PlayControlCard } from "@/components/board/play-control-card";
 import { PlayMatchHeader } from "@/components/board/play-match-header";
 import { PlayPregameSetupCard } from "@/components/board/play-pregame-setup-card";
@@ -774,7 +775,7 @@ export function GameBoard({
     <div className="game-board-layout grid gap-4">
       <div className="board-column grid gap-3">
         {playerCard(topPlayerColor, "top")}
-        <div className="board-shell" data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
+        <div className="board-shell" data-variant={displayState.variantKey} data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
             <BoardGrid cols={cols} files={files} legalTargets={legalTargets} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} variantKey={displayState.variantKey} />
             {!gameStarted ? (
@@ -1031,6 +1032,7 @@ export function GameBoard({
             </div>
           ) : null}
         </div>
+        <PlayChatPanel key={playMode} gameStarted={gameStarted} isSpectating={isSpectating} playMode={playMode} title={title} />
       </aside>
       <GameGuideModal show={showRules} rulesSummary={rulesSummary} onClose={() => setShowRules(false)} />
     </div>
