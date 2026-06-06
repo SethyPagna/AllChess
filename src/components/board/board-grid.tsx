@@ -154,6 +154,7 @@ export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, 
           const isDarkPiece = cell.piece?.owner === "black" || cell.piece?.owner === "blue" || cell.piece?.owner === "gote";
           const name = squareName(cell.square, files, rows);
           const label = cell.piece ? getPieceDisplayName(cell.piece.code, variantKey, locale, cell.piece.promoted) : null;
+          const squareLabel = cell.piece && label ? `${name} ${cell.piece.owner} ${label}` : name;
 
           return (
             <button
@@ -166,8 +167,11 @@ export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, 
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => handleDrop(event, cell.square)}
               className="board-square focus-ring relative grid place-items-center overflow-hidden font-black"
-              aria-label={cell.piece ? `${name} ${cell.piece.owner} ${label}` : name}
+              aria-label={squareLabel}
+              title={squareLabel}
               data-square={name}
+              data-coordinate={name}
+              data-piece-label={label ?? undefined}
               data-dragging={(draggingSquare && sameSquare(draggingSquare, cell.square)) || (pointerDragSquare && sameSquare(pointerDragSquare, cell.square)) ? "true" : undefined}
               data-invalid-drop={isInvalidDrop ? "true" : undefined}
               data-tone={dark ? "dark" : "light"}
