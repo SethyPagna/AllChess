@@ -7,7 +7,7 @@ import { createDefaultStats } from "@/lib/realtime/stats";
 import { timeControls } from "@/lib/game/time-controls";
 import { applyBotMoveAfterThinking, settleBotThinkingSnapshot } from "@/lib/game/bot-clock";
 import { formatClock, settleTurnClockElapsed, tickGameClock } from "@/lib/game/clocks";
-import { pushTimeline, redoTimeline, undoTimeline } from "@/lib/game/history";
+import { pushTimeline, redoTimeline, redoTimelineUntil, undoTimeline, undoTimelineUntil } from "@/lib/game/history";
 import { createInitialState } from "@/lib/variants";
 import { localizePath } from "@/lib/i18n/navigation";
 
@@ -127,6 +127,22 @@ describe("local game history", () => {
     const branched = pushTimeline(undone?.past ?? [], undone?.present ?? start, branch);
     expect(branched.present.id).toBe("timeline-branch");
     expect(branched.future).toEqual([]);
+  });
+
+  test("can undo and redo across bot replies back to the player's turn", () => {
+    type TurnState = { id: string; turn: "white" | "black" };
+    const start: TurnState = { id: "start", turn: "white" };
+    const afterHuman: TurnState = { id: "after-human", turn: "black" };
+    const afterBot: TurnState = { id: "after-bot", turn: "white" };
+    const isWhiteTurn = (state: TurnState) => state.turn === "white";
+
+    const undone = undoTimelineUntil([start, afterHuman], afterBot, [], isWhiteTurn);
+    expect(undone?.present.id).toBe("start");
+    expect(undone?.future.map((state) => state.id)).toEqual(["after-human", "after-bot"]);
+
+    const redone = redoTimelineUntil(undone?.past ?? [], undone?.present ?? start, undone?.future ?? [], isWhiteTurn);
+    expect(redone?.present.id).toBe("after-bot");
+    expect(redone?.past.map((state) => state.id)).toEqual(["start", "after-human"]);
   });
 });
 

@@ -21,7 +21,7 @@ import type { BotMoveResult } from "@/lib/bot/runtime";
 import { getCatalogModeSupport, getGameCatalogEntry, type CatalogModeSupport } from "@/lib/catalog";
 import { applyBotMoveAfterThinking, settleBotThinkingSnapshot } from "@/lib/game/bot-clock";
 import { tickGameClock } from "@/lib/game/clocks";
-import { redoTimeline, undoTimeline, type TimelineState } from "@/lib/game/history";
+import { redoTimeline, redoTimelineUntil, undoTimeline, undoTimelineUntil } from "@/lib/game/history";
 import { analyzeMoveList, summarizeReview } from "@/lib/game/review";
 import { describeGameOutcome } from "@/lib/game/outcome";
 import type { VariantRuleSummary } from "@/lib/variants/rules-atlas";
@@ -580,16 +580,10 @@ export function GameBoard({
 
   function undo() {
     const shouldStepPlayerTurn = isBotMode && botMode === "opponent";
-    const initial = undoTimeline(history, state, future);
-    if (!initial) return;
-    let next: TimelineState<GameState> = initial;
-    if (shouldStepPlayerTurn) {
-      while (next.present.turn !== humanColor) {
-        const stepped = undoTimeline(next.past, next.present, next.future);
-        if (!stepped) break;
-        next = stepped;
-      }
-    }
+    const next = shouldStepPlayerTurn
+      ? undoTimelineUntil(history, state, future, (candidate) => candidate.turn === humanColor)
+      : undoTimeline(history, state, future);
+    if (!next) return;
     setHistory(next.past);
     setFuture(next.future);
     setState(next.present);
@@ -605,16 +599,10 @@ export function GameBoard({
 
   function redo() {
     const shouldStepPlayerTurn = isBotMode && botMode === "opponent";
-    const initial = redoTimeline(history, state, future);
-    if (!initial) return;
-    let next: TimelineState<GameState> = initial;
-    if (shouldStepPlayerTurn) {
-      while (next.present.turn !== humanColor) {
-        const stepped = redoTimeline(next.past, next.present, next.future);
-        if (!stepped) break;
-        next = stepped;
-      }
-    }
+    const next = shouldStepPlayerTurn
+      ? redoTimelineUntil(history, state, future, (candidate) => candidate.turn === humanColor)
+      : redoTimeline(history, state, future);
+    if (!next) return;
     setHistory(next.past);
     setFuture(next.future);
     setState(next.present);
