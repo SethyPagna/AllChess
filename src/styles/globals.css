@@ -2705,6 +2705,75 @@ option {
   transform: translateY(-1px);
 }
 
+.drop-selection-card {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(0.55rem, 3vw, 1rem);
+  z-index: 22;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: min(19rem, calc(100% - 1.4rem));
+  max-width: calc(100% - 1.4rem);
+  transform: translateX(-50%);
+  border: 1px solid color-mix(in srgb, var(--info) 58%, var(--border));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--surface-raised) 94%, transparent);
+  box-shadow: 0 0.9rem 2.2rem rgb(0 0 0 / 20%);
+  padding: 0.48rem;
+}
+
+.drop-selection-card > span {
+  display: grid;
+  min-width: 0;
+  gap: 0.16rem;
+}
+
+.drop-selection-card strong,
+.drop-selection-card small {
+  min-width: 0;
+  overflow: hidden;
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drop-selection-card strong {
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+.drop-selection-card small {
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 850;
+}
+
+.drop-selection-card button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  min-width: 0;
+  min-height: 2.15rem;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--danger));
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--foreground);
+  padding: 0.36rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 950;
+  transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.drop-selection-card button:hover {
+  border-color: color-mix(in srgb, var(--danger) 64%, var(--border));
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+  transform: translateY(-1px);
+}
+
 .play-section-label {
   margin: 0 0 -0.55rem;
   color: var(--muted);

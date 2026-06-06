@@ -13,6 +13,7 @@ import {
   Sparkles,
   Swords,
   Undo2,
+  X,
 } from "lucide-react";
 
 import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/lib/bot/config";
@@ -71,6 +72,27 @@ type PendingPromotion = {
   promoteMove: Move;
   pieceLabel: string;
 };
+
+type DropSelectionHintProps = {
+  legalTargetCount: number;
+  onCancel: () => void;
+  pieceLabel: string;
+};
+
+export function DropSelectionHint({ legalTargetCount, onCancel, pieceLabel }: DropSelectionHintProps) {
+  return (
+    <div className="drop-selection-card" role="status" aria-label={`Dropping ${pieceLabel}`}>
+      <span>
+        <strong>Drop {pieceLabel}</strong>
+        <small>{legalTargetCount ? `${legalTargetCount} legal ${legalTargetCount === 1 ? "square" : "squares"}` : "No legal squares"}</small>
+      </span>
+      <button type="button" className="focus-ring" aria-label={`Cancel ${pieceLabel} drop`} onClick={onCancel}>
+        <X size={14} />
+        <span>Cancel</span>
+      </button>
+    </div>
+  );
+}
 
 function resolveSupportedPlayMode(variantKey: string, requestedMode: PlayMode): PlayMode {
   const entry = getGameCatalogEntry(variantKey);
@@ -166,6 +188,7 @@ export function GameBoard({
   const selectedHandPiece = useMemo(() => (selectedHandCode ? createHandDropPiece(state.turn, selectedHandCode) : null), [selectedHandCode, state.turn]);
   const legalMoves = useMemo(() => (selected ? getLegalMoves(state, selected) : selectedHandPiece ? getLegalMoves(state, { drop: selectedHandPiece }) : []), [selected, selectedHandPiece, state]);
   const legalTargets = useMemo(() => new Set(legalMoves.map((move) => serializeSquare(move.to))), [legalMoves]);
+  const selectedHandLabel = selectedHandCode ? getPieceDisplayName(selectedHandCode, variantKey, locale) : null;
   const botColor = state.clocks.find((clock) => clock.color !== humanColor)?.color ?? state.clocks[1]?.color ?? "black";
   const rows = displayState.board.length;
   const cols = displayState.board[0]?.length ?? 8;
@@ -311,6 +334,11 @@ export function GameBoard({
     setSelectedHandCode((current) => (current === code ? null : code));
     setNotice(null);
     setPendingPromotion(null);
+  }
+
+  function cancelHandDrop() {
+    setSelectedHandCode(null);
+    setNotice(null);
   }
 
   function dropHandPiece(code: string, target: Square) {
@@ -815,6 +843,7 @@ export function GameBoard({
         <div className="board-shell" data-variant={displayState.variantKey} data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
             <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} variantKey={displayState.variantKey} />
+            {selectedHandLabel ? <DropSelectionHint legalTargetCount={legalTargets.size} onCancel={cancelHandDrop} pieceLabel={selectedHandLabel} /> : null}
             {pendingPromotion ? (
               <div className="promotion-choice-card" role="dialog" aria-label={`${pendingPromotion.pieceLabel} promotion choice`}>
                 <strong>{pendingPromotion.pieceLabel}</strong>
