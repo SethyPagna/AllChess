@@ -224,6 +224,24 @@ option {
   height: 2rem;
 }
 
+.shell-icon-control.btn,
+.shell-icon-control {
+  position: relative;
+  display: grid;
+  width: 2.65rem;
+  height: 2.65rem;
+  min-height: 2.65rem;
+  place-items: center;
+  border-radius: 10px;
+  padding: 0;
+  line-height: 1;
+  transition: background var(--motion-fast), border-color var(--motion-fast), color var(--motion-fast), transform var(--motion-fast), box-shadow var(--motion-fast);
+}
+
+.shell-icon-control svg {
+  display: block;
+}
+
 .app-shell {
   display: grid;
   min-height: 100vh;
@@ -422,8 +440,8 @@ option {
 
 .app-responsive-tools {
   display: grid;
-  grid-template-columns: repeat(3, 2.55rem);
-  gap: 0.55rem;
+  grid-template-columns: repeat(3, 2.65rem);
+  gap: 0.6rem;
   justify-content: start;
   align-items: center;
   align-self: end;
@@ -435,9 +453,9 @@ option {
 .app-responsive-tools summary,
 .app-mobile-tools button,
 .app-mobile-tools summary {
-  width: 2.55rem;
-  height: 2.55rem;
-  border-radius: 9px;
+  width: 2.65rem;
+  height: 2.65rem;
+  border-radius: 10px;
   padding: 0;
 }
 
@@ -460,12 +478,23 @@ option {
   content: none;
 }
 
+.app-menu summary::before,
+.app-menu summary::after,
+.language-menu summary::before,
+.language-menu summary::after,
+.notification-menu summary::before,
+.notification-menu summary::after {
+  display: none;
+  content: none;
+}
+
 .app-menu summary,
 .language-menu summary,
 .notification-menu summary {
   list-style: none;
   appearance: none;
   -webkit-appearance: none;
+  list-style-image: none;
 }
 
 .app-menu summary {
@@ -6411,6 +6440,7 @@ option {
 
   .app-mobile-tools {
     display: flex;
+    gap: 0.35rem;
   }
 
   .app-mobile-tools .language-menu-panel,
@@ -7030,6 +7060,36 @@ option {
 
   .play-quick-card small {
     grid-column: 2;
+  }
+}
+
+@media (max-width: 380px) {
+  .app-mobile-header {
+    gap: 0.35rem;
+    padding-inline: 0.55rem;
+  }
+
+  .app-mobile-brand .app-brand-mark {
+    width: 1.9rem;
+    height: 1.9rem;
+  }
+
+  .app-mobile-brand > span:last-child {
+    max-width: 5.5rem;
+  }
+
+  .app-mobile-tools {
+    gap: 0.25rem;
+  }
+
+  .app-mobile-tools .shell-icon-control,
+  .app-mobile-tools button,
+  .app-mobile-tools summary,
+  .app-menu summary {
+    width: 2.45rem;
+    height: 2.45rem;
+    min-height: 2.45rem;
+    border-radius: 9px;
   }
 }
 

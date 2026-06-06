@@ -17,6 +17,7 @@ describe("shell controls", () => {
 
     expect(markup).toContain('aria-label="Languages"');
     expect(markup).toContain('data-shell-menu="language"');
+    expect(markup).toContain("shell-icon-control");
     expect(markup).toContain("English");
     expect(markup).toContain("Français");
     expect(markup).toContain("简体中文");
@@ -28,6 +29,7 @@ describe("shell controls", () => {
 
     expect(markup).toContain('aria-label="Notifications, 3 unread"');
     expect(markup).toContain('data-shell-menu="notifications"');
+    expect(markup).toContain("shell-icon-control");
     expect(markup).toContain("Match ready");
     expect(markup).toContain("Review complete");
     expect(markup).toContain("Real alerts only");

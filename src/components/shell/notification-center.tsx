@@ -40,7 +40,7 @@ export function NotificationCenter() {
       <summary
         aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
         title={unreadCount ? `${unreadCount} unread notifications` : "Notifications"}
-        className="btn btn-square focus-ring action-secondary grid h-10 w-10 cursor-pointer list-none place-items-center text-[var(--muted)]"
+        className="btn btn-square focus-ring action-secondary shell-icon-control cursor-pointer text-[var(--muted)]"
       >
         <Bell aria-hidden="true" size={17} />
         {unreadCount ? <span className="notification-dot" aria-hidden="true" /> : null}

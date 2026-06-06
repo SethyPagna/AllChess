@@ -24,7 +24,7 @@ export function LocaleSwitcher({ active }: { active: LocaleCode }) {
         }
       }}
     >
-      <summary aria-label="Languages" title="Languages" className="btn btn-square focus-ring action-secondary grid h-10 w-10 cursor-pointer list-none place-items-center text-[var(--muted)]">
+      <summary aria-label="Languages" title="Languages" className="btn btn-square focus-ring action-secondary shell-icon-control cursor-pointer text-[var(--muted)]">
         <Languages aria-hidden="true" size={17} />
       </summary>
       <div className="dropdown-content language-menu-panel panel grid gap-1 overflow-auto p-2 shadow-xl">

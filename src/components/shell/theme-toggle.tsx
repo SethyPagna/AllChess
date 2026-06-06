@@ -25,7 +25,7 @@ export function ThemeToggle({ labels }: { labels: Record<"light" | "dark" | "sys
       aria-label={label}
       title={label}
       onClick={() => setTheme(nextTheme)}
-      className="btn btn-square focus-ring action-secondary grid h-10 w-10 place-items-center text-[var(--muted)]"
+      className="btn btn-square focus-ring action-secondary shell-icon-control text-[var(--muted)]"
     >
       <Icon aria-hidden="true" size={17} />
     </button>
