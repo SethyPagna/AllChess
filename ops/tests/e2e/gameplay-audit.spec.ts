@@ -403,12 +403,15 @@ test("drop-variant hand rails stay compact on Mini Shogi", async ({ page }) => {
   await expect(playerCard.locator(".hand-tray")).toHaveAttribute("data-skin", "mini-wedge");
   await expect(playerCard.locator(".hand-tray-status")).toContainText("Hand");
   await expect(playerCard.locator(".hand-empty-pill")).toHaveText("0");
+  const board = page.getByLabel("Game board");
+  await expect(board.locator('[data-terrain="promotion-zone"]')).toHaveCount(10);
+  await expect(board.locator('[data-coordinate="a5"]')).toHaveAttribute("data-terrain", "promotion-zone");
+  await expect(board.locator('[data-coordinate="a5"]')).toHaveAttribute("aria-label", /Promotion zone/);
   await page.getByRole("button", { name: "Status" }).click();
   await page.getByRole("radio", { name: /Tile/ }).click();
   await expect(page.getByRole("radio", { name: /Tile/ })).toHaveAttribute("aria-checked", "true");
   await expect(page.getByLabel("Game board").locator(".piece-icon").first()).toHaveAttribute("data-skin", "tile");
 
-  const board = page.getByLabel("Game board");
   await page.getByRole("button", { name: "Setup" }).click();
   await page.getByRole("button", { name: "Start Game" }).click();
   await board.locator('[data-coordinate="e1"]').click();

@@ -200,6 +200,7 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
           const isDarkPiece = cell.piece?.owner === "black" || cell.piece?.owner === "blue" || cell.piece?.owner === "gote";
           const name = squareName(cell.square, files, rows);
           const label = cell.piece ? getPieceDisplayName(cell.piece.code, variantKey, locale, cell.piece.promoted) : null;
+          const terrainLabel = labelTerrain(cell.terrain);
           const squareState = isInvalidDrop
             ? "invalid-drop"
             : isSuggestedFrom
@@ -228,7 +229,8 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
                       ? "Selected square"
                       : null;
           const baseSquareLabel = cell.piece && label ? `${name} ${cell.piece.owner} ${label}` : name;
-          const squareLabel = squareStatusLabel ? `${baseSquareLabel} - ${squareStatusLabel}` : baseSquareLabel;
+          const terrainSquareLabel = terrainLabel ? `${baseSquareLabel} - ${terrainLabel}` : baseSquareLabel;
+          const squareLabel = squareStatusLabel ? `${terrainSquareLabel} - ${squareStatusLabel}` : terrainSquareLabel;
 
           return (
             <button
@@ -246,6 +248,7 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
               title={squareLabel}
               data-square={name}
               data-coordinate={name}
+              data-terrain={cell.terrain && cell.terrain !== "land" ? cell.terrain : undefined}
               data-legal-target={isLegal ? legalTargetMode : undefined}
               data-piece-label={label ?? undefined}
               data-square-state={squareState === "idle" ? undefined : squareState}
@@ -296,6 +299,16 @@ function squareFromSerialized(value: string): Square | null {
   const col = Number(colValue);
   if (!Number.isInteger(row) || !Number.isInteger(col)) return null;
   return { row, col };
+}
+
+function labelTerrain(terrain: BoardCell["terrain"]) {
+  if (terrain === "promotion-zone") return "Promotion zone";
+  if (terrain === "palace") return "Palace";
+  if (terrain === "river") return "River";
+  if (terrain === "den") return "Den";
+  if (terrain === "trap") return "Trap";
+  if (terrain === "camp") return "Camp";
+  return null;
 }
 
 function setTransparentDragImage(event: DragEvent<HTMLButtonElement>) {
