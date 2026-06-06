@@ -159,7 +159,7 @@ export function chooseBotMoveSafe(
   if (difficulty.skill >= 18) {
     const decisivePromotion = legalMoves.find((move) => {
       const piece = state.board[move.from.row]?.[move.from.col]?.piece;
-      return piece?.code === "p" && (move.to.row === 0 || move.to.row === state.board.length - 1);
+      return move.promotion === true || (piece?.code === "p" && (move.to.row === 0 || move.to.row === state.board.length - 1));
     });
     if (decisivePromotion) {
       return {
@@ -746,7 +746,7 @@ function staticMoveScore(state: GameState, move: Move) {
   const captureScore = target?.piece ? (pieceValues[target.piece.code] ?? 100) * 10 - (moving ? (pieceValues[moving.code] ?? 100) : 0) / 8 : 0;
   const developmentScore = moving && ["n", "b", "h", "e", "a", "g"].includes(moving.code) ? 20 : 0;
   const centerScore = Math.max(0, 12 - centerDistance * 2);
-  const promotionScore = moving?.code === "p" && (move.to.row === 0 || move.to.row === state.board.length - 1) ? 760 : 0;
+  const promotionScore = move.promotion ? 860 : moving?.code === "p" && (move.to.row === 0 || move.to.row === state.board.length - 1) ? 760 : 0;
   const castlingScore = moving?.code === "k" && Math.abs(move.to.col - move.from.col) === 2 ? 90 : 0;
 
   return captureScore + promotionScore + castlingScore + developmentScore + centerScore;

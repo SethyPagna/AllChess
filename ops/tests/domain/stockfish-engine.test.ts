@@ -19,6 +19,42 @@ describe("Stockfish engine adapter", () => {
     expect(uciToLegalMove(state, "e2e4")).toMatchObject(move);
   });
 
+  test("preserves western promotion suffixes from UCI best moves", () => {
+    let state = createInitialState("classic", "uci-promotion");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "white"
+    };
+    state.board[1][0].piece = { id: "white-pawn", code: "p", owner: "white", labelKey: "chess.pawn" };
+    state.board[7][7].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    state.board[0][7].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+
+    const move = uciToLegalMove(state, "a7a8q");
+
+    expect(move).toMatchObject({ from: { row: 1, col: 0 }, to: { row: 0, col: 0 }, promotion: true });
+    expect(move ? moveToUci(state, move) : null).toBe("a7a8q");
+  });
+
+  test("selects the promoted Shogi-family branch when a suffix is present", () => {
+    let state = createInitialState("mini-shogi", "uci-shogi-promotion");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "sente"
+    };
+    state.board[1][1].piece = { id: "sente-silver", code: "s", owner: "sente", labelKey: "shogi.silver" };
+    state.board[4][4].piece = { id: "sente-king", code: "k", owner: "sente", labelKey: "shogi.king" };
+    state.board[0][4].piece = { id: "gote-king", code: "k", owner: "gote", labelKey: "shogi.king" };
+
+    const keepMove = uciToLegalMove(state, "b4a5");
+    const promoteMove = uciToLegalMove(state, "b4a5q");
+
+    expect(keepMove).toMatchObject({ from: { row: 1, col: 1 }, to: { row: 0, col: 0 } });
+    expect(keepMove?.promotion).not.toBe(true);
+    expect(promoteMove).toMatchObject({ from: { row: 1, col: 1 }, to: { row: 0, col: 0 }, promotion: true });
+  });
+
   test("maps difficulties to distinct UCI strength and time settings", () => {
     const easy = getStockfishDifficultyConfig("easy");
     const legend = getStockfishDifficultyConfig("legend");

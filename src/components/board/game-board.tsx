@@ -60,6 +60,7 @@ type ThinkingState = {
 type SuggestedMove = {
   from: Square;
   to: Square;
+  promotion?: boolean;
   notation: string;
   score: number | null;
   depthReached: number;
@@ -461,7 +462,8 @@ export function GameBoard({
       setSuggestedMove({
         from: quickMove.from,
         to: quickMove.to,
-        notation: formatMove(quickMove.from, quickMove.to, files, rows),
+        promotion: quickMove.promotion,
+        notation: formatMove(quickMove, files, rows),
         score: null,
         depthReached: 0
       });
@@ -492,7 +494,8 @@ export function GameBoard({
     setSuggestedMove({
       from: result.move.from,
       to: result.move.to,
-      notation: formatMove(result.move.from, result.move.to, files, rows),
+      promotion: result.move.promotion,
+      notation: formatMove(result.move, files, rows),
       score: result.score,
       depthReached: result.depthReached
     });
@@ -503,7 +506,7 @@ export function GameBoard({
 
   function applySuggestion() {
     if (!suggestedMove) return;
-    const move = getLegalMoves(state, suggestedMove.from).find((candidate) => sameSquare(candidate.to, suggestedMove.to));
+    const move = getLegalMoves(state, suggestedMove.from).find((candidate) => matchesSuggestedMove(candidate, suggestedMove));
     if (!move) {
       setNotice("That suggestion is no longer legal.");
       setSuggestedMove(null);
@@ -1096,4 +1099,10 @@ export function GameBoard({
       <GameGuideModal show={showRules} rulesSummary={rulesSummary} onClose={() => setShowRules(false)} />
     </div>
   );
+}
+
+function matchesSuggestedMove(candidate: Move, suggestedMove: SuggestedMove) {
+  if (!sameSquare(candidate.to, suggestedMove.to)) return false;
+  if (suggestedMove.promotion === undefined) return true;
+  return Boolean(candidate.promotion) === suggestedMove.promotion;
 }

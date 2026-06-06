@@ -1,4 +1,4 @@
-import { getLegalMoves, type GameState, type Move } from "@/lib/variants";
+import { getLegalMoves, getVariant, type GameState, type Move } from "@/lib/variants";
 import { getBotStrengthBand, type BotTierKey } from "@/lib/bot/strength";
 
 export type BotEngineMode = "auto" | "stockfish" | "internal";
@@ -147,10 +147,18 @@ export function moveToUci(state: GameState, move: Move) {
 }
 
 export function uciToLegalMove(state: GameState, uci: string) {
+  if (uci.length < 4) return null;
   const from = uciSquareToSquare(state, uci.slice(0, 2));
   const to = uciSquareToSquare(state, uci.slice(2, 4));
   if (!from || !to) return null;
-  return getLegalMoves(state, from).find((move) => move.to.row === to.row && move.to.col === to.col) ?? null;
+  const promotionRequested = uci.length > 4;
+  const candidates = getLegalMoves(state, from).filter((move) => move.to.row === to.row && move.to.col === to.col);
+  if (!candidates.length) return null;
+  if (!promotionRequested) return candidates.find((move) => move.promotion !== true) ?? candidates[0] ?? null;
+  const explicitPromotion = candidates.find((move) => move.promotion === true);
+  if (explicitPromotion) return explicitPromotion;
+  const baseMove = candidates.find((move) => move.promotion !== true) ?? candidates[0];
+  return baseMove && canRequestUciPromotion(state, baseMove) ? { ...baseMove, promotion: true } : null;
 }
 
 function squareToUci(state: GameState, square: { row: number; col: number }) {
@@ -164,6 +172,17 @@ function uciSquareToSquare(state: GameState, value: string) {
   if (!Number.isInteger(file) || !Number.isInteger(rank)) return null;
   if (row < 0 || row >= state.board.length || file < 0 || file >= (state.board[0]?.length ?? 0)) return null;
   return { row, col: file };
+}
+
+function canRequestUciPromotion(state: GameState, move: Move) {
+  const piece = state.board[move.from.row]?.[move.from.col]?.piece;
+  if (!piece || piece.promoted) return false;
+  const variant = getVariant(state.variantKey);
+  if (!variant.supportsPromotion) return false;
+  if (state.variantKey === "shogi" || state.variantKey === "mini-shogi") return ["p", "l", "n", "s", "b", "r"].includes(piece.code);
+  if (variant.family === "western") return piece.code === "p" && (move.to.row === 0 || move.to.row === state.board.length - 1);
+  if (variant.key === "makruk") return piece.code === "p" && (piece.owner === "white" ? move.to.row <= 2 : move.to.row >= variant.board.rows - 3);
+  return false;
 }
 
 function canUseStockfishRuntime() {

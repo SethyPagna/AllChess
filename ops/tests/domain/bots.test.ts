@@ -193,6 +193,25 @@ describe("bot difficulty ladder", () => {
     expect(chooseBotMove(state, "legend")).toMatchObject({ from: { row: 1, col: 0 }, to: { row: 0, col: 0 } });
   });
 
+  test("legend difficulty prefers explicit Mini Shogi promotion choices", () => {
+    let state = createInitialState("mini-shogi", "bot-mini-shogi-promotion");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "sente"
+    };
+    state.board[1][1].piece = { id: "sente-silver", code: "s", owner: "sente", labelKey: "shogi.silver" };
+    state.board[0][1].piece = { id: "sente-blocker-left", code: "p", owner: "sente", labelKey: "shogi.pawn" };
+    state.board[0][2].piece = { id: "sente-blocker-right", code: "p", owner: "sente", labelKey: "shogi.pawn" };
+    state.board[4][4].piece = { id: "sente-king", code: "k", owner: "sente", labelKey: "shogi.king" };
+    state.board[0][4].piece = { id: "gote-king", code: "k", owner: "gote", labelKey: "shogi.king" };
+
+    const result = chooseBotMoveSafe(state, "legend", { engine: "internal", maxSearchTimeMs: 50 });
+
+    expect(result.reason).toBe("ok");
+    expect(result.move).toMatchObject({ from: { row: 1, col: 1 }, to: { row: 0, col: 0 }, promotion: true });
+  });
+
   test("safe bot move returns a completed state instead of throwing when no legal moves exist", () => {
     const state = createInitialState("classic", "no-moves");
     const blocked = {
