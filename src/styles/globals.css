@@ -1795,6 +1795,7 @@ option {
 
 .board-square {
   display: grid;
+  position: relative;
   place-items: center;
   min-width: 0;
   min-height: 0;
@@ -1803,6 +1804,41 @@ option {
   aspect-ratio: 1;
   font-size: calc((var(--board-fixed-size) / var(--board-cols)) * 0.82);
   transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.board-square[data-piece-label]::after {
+  position: absolute;
+  left: 50%;
+  bottom: 0.2rem;
+  z-index: 12;
+  max-width: calc(100% - 0.35rem);
+  transform: translate(-50%, 0.18rem) scale(0.98);
+  border: 1px solid color-mix(in srgb, var(--border) 72%, var(--accent));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-raised) 94%, transparent);
+  box-shadow: 0 0.35rem 0.9rem rgb(0 0 0 / 18%);
+  color: var(--foreground);
+  content: attr(data-piece-label);
+  font-size: clamp(0.58rem, calc((var(--board-fixed-size) / var(--board-cols)) * 0.12), 0.78rem);
+  font-weight: 950;
+  line-height: 1;
+  opacity: 0;
+  overflow: hidden;
+  padding: 0.18rem 0.34rem;
+  pointer-events: none;
+  text-align: center;
+  text-overflow: ellipsis;
+  transition: opacity 140ms ease, transform 140ms ease;
+  white-space: nowrap;
+}
+
+.board-square[data-piece-label]:is(:hover, :focus-visible)::after {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.board-square[data-piece-label]:is(:hover, :focus-visible) {
+  z-index: 6;
 }
 
 .board-shell[data-variant="mini-shogi"] .board-square {

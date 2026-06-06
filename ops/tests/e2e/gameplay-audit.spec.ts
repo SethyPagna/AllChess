@@ -379,3 +379,20 @@ test("drop-variant hand rails stay compact on Mini Shogi", async ({ page }) => {
   await expectNoHorizontalOverflow(page);
   expect(runtimeErrors).toEqual([]);
 });
+
+test("piece hover tooltips use localized piece names", async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
+  });
+
+  await page.goto("/ja/play/shogi");
+  const pawnSquare = page.getByLabel(/sente \u6b69/).first();
+  await expect(pawnSquare).toBeVisible();
+  await pawnSquare.hover();
+  const tooltipContent = await pawnSquare.evaluate((element) => getComputedStyle(element, "::after").content);
+
+  expect(tooltipContent).toBe('"\u6b69"');
+  expect(runtimeErrors).toEqual([]);
+});
