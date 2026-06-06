@@ -1073,6 +1073,30 @@ describe("variant engine", () => {
     const promoted = applyMove(state, { from: { row: 1, col: 0 }, to: { row: 0, col: 0 }, promotion: true });
 
     expect(promoted.board[0][0].piece).toMatchObject({ code: "p", owner: "sente", promoted: true });
+    expect(getLegalMoves(state, { row: 1, col: 0 })).toContainEqual(expect.objectContaining({ to: { row: 0, col: 0 }, promotion: true }));
+    expect(getLegalMoves(state, { row: 1, col: 0 })).not.toContainEqual(expect.objectContaining({ to: { row: 0, col: 0 }, promotion: false }));
+
+    const forced = applyMove(state, { from: { row: 1, col: 0 }, to: { row: 0, col: 0 } });
+    expect(forced.board[0][0].piece).toMatchObject({ code: "p", owner: "sente", promoted: true });
+  });
+
+  test("mini shogi offers optional promotion for promotable pieces entering the zone", () => {
+    let state = createInitialState("mini-shogi", "mini-shogi-optional-promotion");
+    state = {
+      ...state,
+      board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "sente"
+    };
+    state.board[1][1].piece = { id: "sente-silver", code: "s", owner: "sente", labelKey: "chess.pawn" };
+    state.board[4][0].piece = { id: "sente-king", code: "k", owner: "sente", labelKey: "chess.king" };
+    state.board[0][4].piece = { id: "gote-king", code: "k", owner: "gote", labelKey: "chess.king" };
+
+    const promotionMoves = getLegalMoves(state, { row: 1, col: 1 }).filter((move) => move.to.row === 0 && move.to.col === 0);
+
+    expect(promotionMoves).toHaveLength(2);
+    expect(promotionMoves).toEqual(expect.arrayContaining([expect.objectContaining({ promotion: true }), expect.not.objectContaining({ promotion: true })]));
+    expect(applyMove(state, { from: { row: 1, col: 1 }, to: { row: 0, col: 0 }, promotion: false }).board[0][0].piece).toMatchObject({ code: "s", promoted: undefined });
+    expect(applyMove(state, { from: { row: 1, col: 1 }, to: { row: 0, col: 0 }, promotion: true }).board[0][0].piece).toMatchObject({ code: "s", promoted: true });
   });
 
   test("shogi forbids pawn-drop mate but allows answerable pawn drops", () => {

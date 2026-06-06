@@ -31,7 +31,7 @@ import { BoardGrid } from "@/components/board/board-grid";
 import { BoardPlayerCard } from "@/components/board/board-player-card";
 import { GameGuideModal } from "@/components/board/game-guide-modal";
 import { MatchResultOverlay } from "@/components/board/match-result-overlay";
-import { getPieceSkinOptions, type PieceSkinPreference } from "@/components/board/piece-icon";
+import { getPieceDisplayName, getPieceSkinOptions, type PieceSkinPreference } from "@/components/board/piece-icon";
 import { PlayActiveSetupCard } from "@/components/board/play-active-setup-card";
 import { PlayChatPanel } from "@/components/board/play-chat-panel";
 import { PlayControlCard } from "@/components/board/play-control-card";
@@ -63,6 +63,12 @@ type SuggestedMove = {
   notation: string;
   score: number | null;
   depthReached: number;
+};
+
+type PendingPromotion = {
+  keepMove: Move;
+  promoteMove: Move;
+  pieceLabel: string;
 };
 
 function resolveSupportedPlayMode(variantKey: string, requestedMode: PlayMode): PlayMode {
@@ -144,6 +150,7 @@ export function GameBoard({
   const [reviewPly, setReviewPly] = useState<number | null>(null);
   const [reviewPlaying, setReviewPlaying] = useState(false);
   const [opponentQuery, setOpponentQuery] = useState("");
+  const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
   const activeBotRequestRef = useRef<string | null>(null);
   const resolvedRandomSeatRef = useRef(false);
   const outcomeModalKeyRef = useRef<string | null>(null);
@@ -278,6 +285,23 @@ export function GameBoard({
     setReviewPlaying(false);
     setSelected(null);
     setSelectedHandCode(null);
+    setPendingPromotion(null);
+  }
+
+  function commitMoveChoice(candidates: Move[], piece?: Piece | null) {
+    const promoteMove = candidates.find((candidate) => candidate.promotion === true);
+    const keepMove = candidates.find((candidate) => candidate.promotion !== true);
+    if (promoteMove && keepMove && piece) {
+      setPendingPromotion({
+        keepMove,
+        promoteMove,
+        pieceLabel: getPieceDisplayName(piece.code, variantKey, locale, piece.promoted)
+      });
+      setNotice(null);
+      return true;
+    }
+    commitPlayerMove(promoteMove ?? keepMove ?? candidates[0]);
+    return true;
   }
 
   function chooseHandPiece(color: Piece["owner"], code: string) {
@@ -285,6 +309,7 @@ export function GameBoard({
     setSelected(null);
     setSelectedHandCode((current) => (current === code ? null : code));
     setNotice(null);
+    setPendingPromotion(null);
   }
 
   function dropHandPiece(code: string, target: Square) {
@@ -303,14 +328,16 @@ export function GameBoard({
 
   function dragBoardMove(from: Square, to: Square) {
     if (!canHumanMove()) return false;
-    const move = getLegalMoves(state, from).find((candidate) => sameSquare(candidate.to, to));
-    if (!move) {
+    const candidates = getLegalMoves(state, from).filter((candidate) => sameSquare(candidate.to, to));
+    if (!candidates.length) {
       setSelected(from);
       setSelectedHandCode(null);
+      setPendingPromotion(null);
       setNotice("That move is not legal.");
       return false;
     }
-    commitPlayerMove(move);
+    const piece = state.board[from.row]?.[from.col]?.piece ?? null;
+    commitMoveChoice(candidates, piece);
     return true;
   }
 
@@ -318,25 +345,30 @@ export function GameBoard({
     if (!gameStarted) {
       setNotice("Choose a mode and press Start Game first.");
       setPanelTab("setup");
+      setPendingPromotion(null);
       return;
     }
     if (isReviewing) {
       setNotice("Review mode is showing a saved position. Jump to live to keep playing.");
+      setPendingPromotion(null);
       return;
     }
     if (isOnlineMode) {
       setNotice("Searching for opponent. Board moves unlock after a live opponent is paired.");
       setPanelTab("status");
+      setPendingPromotion(null);
       return;
     }
     if (isSpectating) {
       setNotice("Spectate mode is read-only. Choose a playable mode to move pieces.");
       setPanelTab("status");
+      setPendingPromotion(null);
       return;
     }
     if (state.status === "completed" || thinking.status === "thinking") return;
     if (botMode === "both" || (botMode === "opponent" && state.turn !== humanColor)) {
       setNotice(botMode === "both" ? "Both bots are controlling the board." : "Bot is to move. You can change sides or cancel bot mode.");
+      setPendingPromotion(null);
       return;
     }
     if (selectedHandPiece) {
@@ -349,16 +381,23 @@ export function GameBoard({
       return;
     }
     if (selected && legalTargets.has(serializeSquare(square))) {
-      const move = legalMoves.find((candidate) => sameSquare(candidate.to, square));
-      if (move) {
-        commitPlayerMove(move);
+      const candidates = legalMoves.filter((candidate) => sameSquare(candidate.to, square));
+      if (candidates.length) {
+        const piece = state.board[selected.row]?.[selected.col]?.piece ?? null;
+        commitMoveChoice(candidates, piece);
       }
       return;
     }
 
     const cell = state.board[square.row]?.[square.col];
+    setPendingPromotion(null);
     setSelectedHandCode(null);
     setSelected(cell?.piece?.owner === state.turn ? square : null);
+  }
+
+  function choosePromotion(promote: boolean) {
+    if (!pendingPromotion) return;
+    commitPlayerMove(promote ? pendingPromotion.promoteMove : pendingPromotion.keepMove);
   }
 
   const finishBotRequest = useCallback(
@@ -389,6 +428,7 @@ export function GameBoard({
       setNotice(source === "auto" ? "Bot replied automatically." : "Bot played the current side.");
       setSelected(null);
       setSelectedHandCode(null);
+      setPendingPromotion(null);
       setReviewPly(null);
       setReviewPlaying(false);
     },
@@ -474,6 +514,7 @@ export function GameBoard({
     setState((current) => applyMove(current, move));
     setSelected(null);
     setSelectedHandCode(null);
+    setPendingPromotion(null);
     setSuggestedMove(null);
     setLastBotResult(null);
     setNotice("Suggestion applied.");
@@ -506,6 +547,7 @@ export function GameBoard({
     setThinking({ status: "idle", label: "" });
     setSelected(null);
     setSelectedHandCode(null);
+    setPendingPromotion(null);
     setSuggestedMove(null);
     setShowOutcome(true);
     setNotice("Game ended by agreed draw.");
@@ -527,6 +569,7 @@ export function GameBoard({
     setThinking({ status: "idle", label: "" });
     setSelected(null);
     setSelectedHandCode(null);
+    setPendingPromotion(null);
     setSuggestedMove(null);
     setShowOutcome(true);
     setNotice("Resignation recorded.");
@@ -549,6 +592,7 @@ export function GameBoard({
     setState(next.present);
     setSelected(null);
     setSelectedHandCode(null);
+    setPendingPromotion(null);
     setSuggestedMove(null);
     setLastBotResult(null);
     setNotice(null);
@@ -573,6 +617,7 @@ export function GameBoard({
     setState(next.present);
     setSelected(null);
     setSelectedHandCode(null);
+    setPendingPromotion(null);
     setSuggestedMove(null);
     setLastBotResult(null);
     setNotice(null);
@@ -593,6 +638,7 @@ export function GameBoard({
     setGameStarted(false);
     setSelected(null);
     setSelectedHandCode(null);
+    setPendingPromotion(null);
     setSuggestedMove(null);
     setLastBotResult(null);
     setNotice(null);
@@ -778,6 +824,19 @@ export function GameBoard({
         <div className="board-shell" data-variant={displayState.variantKey} data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
             <BoardGrid cols={cols} files={files} legalTargets={legalTargets} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} variantKey={displayState.variantKey} />
+            {pendingPromotion ? (
+              <div className="promotion-choice-card" role="dialog" aria-label={`${pendingPromotion.pieceLabel} promotion choice`}>
+                <strong>{pendingPromotion.pieceLabel}</strong>
+                <div>
+                  <button type="button" className="focus-ring" onClick={() => choosePromotion(true)}>
+                    Promote
+                  </button>
+                  <button type="button" className="focus-ring" onClick={() => choosePromotion(false)}>
+                    Keep
+                  </button>
+                </div>
+              </div>
+            ) : null}
             {!gameStarted ? (
               <div className="pregame-board-overlay" role="status">
                 <strong>Choose setup first</strong>

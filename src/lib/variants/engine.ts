@@ -123,13 +123,17 @@ export function getLegalMoves(state: GameState, fromOrHand: Square | { drop: Pie
       ? [...getPseudoLegalMoves(state, from), ...castlingMoves(state, from, cell.piece)]
       : getPseudoLegalMoves(state, from);
 
-  const legalMoves = pseudoMoves.filter((move) => {
+  let legalMoves = pseudoMoves.filter((move) => {
     const target = cellAt(state, move.to)?.piece;
     if (variant.supportsCheck && target && isRoyal(target)) return false;
     if (!variant.supportsCheck) return true;
     if (variant.key === "racing-kings" && wouldGiveRoyalCheck(state, move, cell.piece!.owner)) return false;
     return !wouldLeaveRoyalInCheck(state, move, cell.piece!.owner);
   });
+
+  if (isShogiFamily(variant.key)) {
+    legalMoves = withShogiPromotionChoices(variant, cell.piece, from, legalMoves);
+  }
 
   if (variant.key === "antichess" && hasAnyCaptureMove(state, state.turn)) {
     return legalMoves.filter((move) => isCaptureMove(state, move));
@@ -1011,18 +1015,18 @@ export function applyMove(state: GameState, move: Move): GameState {
     throw new Error("errors.gameCompleted");
   }
 
+  const variant = getVariant(state.variantKey);
   const legal = move.kind === "pass"
     ? isLegalPassMove(state)
     : move.kind === "drop" && move.drop
       ? getLegalMoves(state, { drop: move.drop }).some((candidate) => sameSquare(candidate.to, move.to))
-      : getLegalMoves(state, move.from).some((candidate) => sameSquare(candidate.to, move.to));
+      : getLegalMoves(state, move.from).some((candidate) => matchesMoveRequest(variant, candidate, move));
   if (!legal) {
     throw new Error("errors.invalidMove");
   }
 
   const next: GameState = structuredClone(state);
   const toCell = move.kind === "pass" ? null : cellAt(next, move.to);
-  const variant = getVariant(state.variantKey);
   if (move.kind !== "pass" && !toCell) throw new Error("errors.invalidMove");
 
   let movingPiece: Piece;
@@ -1774,10 +1778,14 @@ function hasMovedFrom(state: GameState, square: Square) {
 }
 
 function shouldPromote(variant: VariantDefinition, piece: Piece, to: Square, requested?: boolean) {
-  if (!variant.supportsPromotion || piece.code !== "p") return false;
+  if (!variant.supportsPromotion) return false;
   if (isDraughtsVariant(variant.key)) {
     return shouldCrownDraughtsMan(variant, piece, to);
   }
+  if (isShogiFamily(variant.key)) {
+    return mustPromoteShogiPiece(piece, to, variant.board.rows) || Boolean(requested && canPromoteShogiPiece(piece));
+  }
+  if (piece.code !== "p") return false;
   if (variant.key === "makruk") {
     return piece.owner === "white" ? to.row <= 2 : to.row >= variant.board.rows - 3;
   }
@@ -1789,6 +1797,50 @@ function shouldPromote(variant: VariantDefinition, piece: Piece, to: Square, req
 
 function isShogiFamily(variantKey: string) {
   return variantKey === "shogi" || variantKey === "mini-shogi";
+}
+
+function withShogiPromotionChoices(variant: VariantDefinition, piece: Piece, from: Square, moves: Move[]): Move[] {
+  if (!canPromoteShogiPiece(piece)) return moves;
+  const promotionMoves: Move[] = [];
+  for (const move of moves) {
+    if (!isShogiPromotionMove(variant, piece, from, move.to)) {
+      promotionMoves.push(move);
+    } else if (mustPromoteShogiPiece(piece, move.to, variant.board.rows)) {
+      promotionMoves.push({ ...move, promotion: true });
+    } else {
+      promotionMoves.push(move, { ...move, promotion: true });
+    }
+  }
+  return promotionMoves;
+}
+
+function canPromoteShogiPiece(piece: Piece) {
+  return !piece.promoted && ["p", "l", "n", "s", "b", "r"].includes(piece.code);
+}
+
+function isShogiPromotionMove(variant: VariantDefinition, piece: Piece, from: Square, to: Square) {
+  return isShogiPromotionSquare(variant, piece.owner, from) || isShogiPromotionSquare(variant, piece.owner, to);
+}
+
+function isShogiPromotionSquare(variant: VariantDefinition, owner: PlayerColor, square: Square) {
+  const zoneRanks = variant.key === "mini-shogi" ? 1 : 3;
+  return owner === "sente" ? square.row < zoneRanks : square.row >= variant.board.rows - zoneRanks;
+}
+
+function mustPromoteShogiPiece(piece: Piece, to: Square, boardRows: number) {
+  const lastRank = piece.owner === "sente" ? 0 : boardRows - 1;
+  const penultimateRank = piece.owner === "sente" ? 1 : boardRows - 2;
+  if (["p", "l"].includes(piece.code)) return to.row === lastRank;
+  if (piece.code === "n") return piece.owner === "sente" ? to.row <= penultimateRank : to.row >= penultimateRank;
+  return false;
+}
+
+function matchesMoveRequest(variant: VariantDefinition, candidate: Move, requested: Move) {
+  if (!sameSquare(candidate.to, requested.to)) return false;
+  if (!isShogiFamily(variant.key)) return true;
+  if (requested.promotion === true) return candidate.promotion === true;
+  if (requested.promotion === false) return candidate.promotion !== true;
+  return true;
 }
 
 function promotionCodeFor(variant: VariantDefinition, piece: Piece) {

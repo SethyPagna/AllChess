@@ -1194,6 +1194,15 @@ option {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
+.hand-piece-button[data-hand-state="ready"]:hover {
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--border));
+  transform: translateY(-1px);
+}
+
+.hand-piece-button[data-hand-state="selected"] {
+  cursor: grabbing;
+}
+
 .hand-piece-button .piece-symbol,
 .hand-piece-button .piece-svg,
 .hand-piece-button .native-piece-symbol {
@@ -2501,6 +2510,62 @@ option {
   color: var(--foreground);
   font-size: 0.78rem;
   font-weight: 950;
+}
+
+.promotion-choice-card {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(0.55rem, 3vw, 1rem);
+  z-index: 24;
+  display: grid;
+  min-width: min(16rem, calc(100% - 1.4rem));
+  max-width: calc(100% - 1.4rem);
+  transform: translateX(-50%);
+  gap: 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 58%, var(--border));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--surface-raised) 94%, transparent);
+  box-shadow: 0 0.9rem 2.2rem rgb(0 0 0 / 24%);
+  padding: 0.58rem;
+}
+
+.promotion-choice-card strong {
+  overflow: hidden;
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 950;
+  line-height: 1;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.promotion-choice-card div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.38rem;
+}
+
+.promotion-choice-card button {
+  min-width: 0;
+  min-height: 2.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 950;
+  transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.promotion-choice-card button:first-child {
+  border-color: color-mix(in srgb, var(--accent) 64%, var(--border));
+  background: var(--accent);
+  color: #06130d;
+}
+
+.promotion-choice-card button:hover {
+  transform: translateY(-1px);
 }
 
 .play-section-label {
