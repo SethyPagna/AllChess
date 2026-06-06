@@ -115,7 +115,12 @@ describe("PieceIcon", () => {
     );
 
     expect(card).toContain('class="captured-piece"');
+    expect(card).toContain('data-capture-index="1"');
+    expect(card).toContain('title="Captured Pawn"');
+    expect(card).toContain('aria-label="White captured pieces. Material advantage plus 7"');
+    expect(card).toContain('data-material-advantage="7"');
     expect(card).toContain('class="captured-material"');
+    expect(card).toContain('aria-label="Material advantage plus 7"');
     expect(card).toContain("+7");
   });
 

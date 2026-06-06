@@ -1100,7 +1100,9 @@ option {
   gap: 0;
   min-width: 5.75rem;
   min-height: 1.65rem;
+  padding-left: 0.42rem;
   overflow: hidden;
+  isolation: isolate;
 }
 
 .player-piece-rail {
@@ -1213,14 +1215,16 @@ option {
 
 .captured-piece {
   display: grid;
+  position: relative;
   width: 1.22rem;
   height: 1.22rem;
   place-items: center;
   flex: 0 0 auto;
+  filter: drop-shadow(0 0.05rem 0.05rem rgb(0 0 0 / 20%));
 }
 
 .captured-piece + .captured-piece {
-  margin-left: -0.58rem;
+  margin-left: -0.7rem;
 }
 
 .captured-piece .piece-symbol,
@@ -1234,9 +1238,13 @@ option {
 
 .captured-material {
   flex: 0 0 auto;
-  margin-left: 0.38rem;
-  color: var(--foreground);
-  font-size: 0.82rem;
+  margin-left: 0.46rem;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, var(--accent));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-raised) 86%, var(--accent-soft));
+  color: var(--accent-strong);
+  padding: 0.16rem 0.36rem;
+  font-size: 0.72rem;
   font-weight: 950;
   line-height: 1;
   white-space: nowrap;
@@ -1768,17 +1776,22 @@ option {
 .board-coordinate {
   position: absolute;
   z-index: 8;
-  background: transparent;
+  border: 1px solid rgb(255 255 255 / 32%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 42%);
   color: #274f1b;
   font-size: clamp(0.78rem, calc((var(--board-fixed-size) / var(--board-cols)) * 0.18), 1.12rem);
   font-weight: 950;
   line-height: 1;
+  padding: 0.02rem 0.18rem;
   pointer-events: none;
   text-align: center;
-  text-shadow: 0 1px 0 rgb(255 255 255 / 52%);
+  text-shadow: 0 1px 0 rgb(255 255 255 / 64%);
 }
 
 .board-square[data-tone="dark"] .board-coordinate {
+  border-color: rgb(0 0 0 / 18%);
+  background: rgb(0 0 0 / 24%);
   color: #fff8c7;
   text-shadow: 0 1px 1px rgb(0 0 0 / 32%);
 }

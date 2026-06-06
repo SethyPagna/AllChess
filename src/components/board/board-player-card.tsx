@@ -58,6 +58,7 @@ export function BoardPlayerCard({
   const materialAdvantage = Math.max(0, materialValue(capturedPieces) - materialValue(opponentCapturedPieces));
   const visibleCaptures = capturedPieces.slice(0, visibleCaptureLimit);
   const hiddenCaptureCount = Math.max(0, capturedPieces.length - visibleCaptures.length);
+  const materialLabel = materialAdvantage > 0 ? `Material advantage plus ${formatMaterialAdvantage(materialAdvantage)}` : "No material advantage";
   const handEntries = Object.entries(handCounts).filter(([, count]) => count > 0);
   const resolvedPieceSkin = resolvePieceSkin(variantKey, pieceSkin);
   const handLabel = variantKey === "crazyhouse" ? "Pocket" : "Hand";
@@ -110,16 +111,16 @@ export function BoardPlayerCard({
             }) : <span className="hand-empty-pill" title={`${handLabel} is empty. Captured pieces will appear here.`}>{handLabel} 0</span>}
           </div>
         ) : null}
-        <div className={`captured-strip ${capturedPieces.length ? "" : "is-empty"}`} aria-label={`${colorLabel(color)} captured pieces`}>
+        <div className={`captured-strip ${capturedPieces.length ? "" : "is-empty"}`} aria-label={`${colorLabel(color)} captured pieces. ${materialLabel}`} data-material-advantage={materialAdvantage > 0 ? formatMaterialAdvantage(materialAdvantage) : undefined}>
           {visibleCaptures.length ? (
             <>
               {visibleCaptures.map((piece, index) => (
-                <span key={`${piece.id}-${index}`} className="captured-piece">
+                <span key={`${piece.id}-${index}`} className="captured-piece" data-capture-index={index} style={{ zIndex: index + 1 }} title={`Captured ${getPieceDisplayName(piece.code, variantKey, locale, piece.promoted)}`}>
                   <PieceIcon code={piece.code} owner={piece.owner} pieceSkin={pieceSkin} variantKey={variantKey} locale={locale} promoted={piece.promoted} />
                 </span>
               ))}
               {hiddenCaptureCount > 0 ? <strong className="captured-overflow" aria-label={`${hiddenCaptureCount} more captured pieces`}>+{hiddenCaptureCount}</strong> : null}
-              {materialAdvantage > 0 ? <strong className="captured-material">+{formatMaterialAdvantage(materialAdvantage)}</strong> : null}
+              {materialAdvantage > 0 ? <strong className="captured-material" aria-label={materialLabel} title={materialLabel}>+{formatMaterialAdvantage(materialAdvantage)}</strong> : null}
             </>
           ) : (
             <span className="captured-empty">No captures</span>

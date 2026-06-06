@@ -69,15 +69,15 @@ export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, 
     window.addEventListener(
       "pointerup",
       (event) => {
-      const targetElement = document.elementFromPoint(event.clientX, event.clientY);
-      const targetSquareName = targetElement instanceof HTMLElement ? targetElement.closest<HTMLElement>("[data-square]")?.dataset.square : undefined;
-      const target = targetSquareName ? squareFromBoardName(targetSquareName, files, rows) : null;
-      if (!pointerDragSquareRef.current || !sameSquare(pointerDragSquareRef.current, origin)) return;
-      pointerDragSquareRef.current = null;
-      setPointerDragSquare(null);
-      if (!target || sameSquare(origin, target)) return;
-      const moved = onDragMove?.(origin, target) ?? false;
-      if (!moved) flashInvalid(target);
+        const targetElement = document.elementFromPoint(event.clientX, event.clientY);
+        const targetSquareName = targetElement instanceof HTMLElement ? targetElement.closest<HTMLElement>("[data-square]")?.dataset.square : undefined;
+        const target = targetSquareName ? squareFromBoardName(targetSquareName, files, rows) : null;
+        if (!pointerDragSquareRef.current || !sameSquare(pointerDragSquareRef.current, origin)) return;
+        pointerDragSquareRef.current = null;
+        setPointerDragSquare(null);
+        if (!target || sameSquare(origin, target)) return;
+        const moved = onDragMove?.(origin, target) ?? false;
+        if (!moved) flashInvalid(target);
       },
       { once: true }
     );

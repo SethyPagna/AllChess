@@ -46,6 +46,8 @@ describe("BoardGrid", () => {
     expect(markup).toContain('title="a1 white King"');
     expect(markup).toContain('data-coordinate="a1"');
     expect(markup).toContain('data-piece-label="King"');
+    expect(markup).toContain('class="board-coordinate board-rank"');
+    expect(markup).toContain('class="board-coordinate board-file"');
     expect(markup).toContain('aria-label="b1"');
     expect(markup).not.toContain('data-piece-label=""');
   });
