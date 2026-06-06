@@ -534,6 +534,37 @@ describe("bot difficulty ladder", () => {
     }
   });
 
+  test("expanded variant cache keeps richer reply positions for drop and objective games", () => {
+    const minimumLinePositions: Record<string, number> = {
+      crazyhouse: 6,
+      shogi: 5,
+      "mini-shogi": 5,
+      janggi: 4,
+      jungle: 4,
+      "english-draughts": 4,
+      "international-draughts": 4,
+      "turkish-draughts": 4,
+      "racing-kings": 4,
+      makruk: 5
+    };
+
+    for (const [variantKey, minimumPositions] of Object.entries(minimumLinePositions)) {
+      const linePositions = new Set(
+        listBotKnowledge(variantKey)
+          .filter((entry) => entry.benchmarkVersion === "allchess-variant-line-cache-v1")
+          .map((entry) => entry.positionKey)
+      );
+
+      expect(linePositions.size).toBeGreaterThanOrEqual(minimumPositions);
+    }
+  });
+
+  test("expanded opening cache includes alternate legal starts for drop-heavy variants", () => {
+    expect(listBotKnowledge("crazyhouse").map((entry) => entry.moveUci)).toEqual(expect.arrayContaining(["b1c3", "e7e5", "g1f3"]));
+    expect(listBotKnowledge("shogi").map((entry) => entry.moveUci)).toEqual(expect.arrayContaining(["f3f4", "g7g6", "e4e5"]));
+    expect(listBotKnowledge("mini-shogi").map((entry) => entry.moveUci)).toEqual(expect.arrayContaining(["a1b2", "b1b2", "c5c4"]));
+  });
+
   test("racing kings has a legal cache-first race seed", async () => {
     const state = createInitialState("racing-kings", "racing-kings-seed");
     const hit = lookupBotKnowledge(state, "easy");
@@ -787,7 +818,7 @@ describe("bot difficulty ladder", () => {
     expect(summary.engineLabels).toBeGreaterThan(0);
     expect(summary.engineLabels).toBeGreaterThan(10064);
     expect(summary.entries).toBeGreaterThanOrEqual(9000);
-    expect(summary.openingEntries).toBeGreaterThan(80);
+    expect(summary.openingEntries).toBeGreaterThan(110);
     expect(summary.tacticEntries).toBeGreaterThanOrEqual(9000);
     expect(labels.length).toBeGreaterThan(0);
     expect(labels[0]).toEqual(

@@ -737,6 +737,20 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
     risk: "If the opponent creates early pockets, the bot must stop following quiet-cache assumptions."
   },
   {
+    variantKey: "crazyhouse",
+    line: ["b1c3", "e7e5"],
+    family: "drop-aware knight center",
+    plan: "Cache a knight-first Crazyhouse start and a central reply so the bot can develop before pockets appear.",
+    risk: "If early captures create hand pieces, drop legality and king safety must override this quiet line."
+  },
+  {
+    variantKey: "crazyhouse",
+    line: ["e2e4", "e7e5", "g1f3"],
+    family: "drop-aware open game",
+    plan: "Extend the central Crazyhouse line through first knight development before tactical pockets exist.",
+    risk: "Open files can become drop-check targets, so cached play stops as soon as captures or checks change the board."
+  },
+  {
     variantKey: "shatranj",
     line: ["e2e3", "g8f6"],
     family: "historical development",
@@ -807,6 +821,20 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
     risk: "Edge space is useful only if later drops remain legal and coordinated."
   },
   {
+    variantKey: "shogi",
+    line: ["f3f4", "c9d8"],
+    family: "drop-aware right-silver file",
+    plan: "Cache another Sente pawn-file start while Gote keeps compact gold coverage.",
+    risk: "Shogi drops and promotion zones can overturn quiet opening assumptions after the first contact."
+  },
+  {
+    variantKey: "shogi",
+    line: ["e3e4", "g7g6", "e4e5"],
+    family: "drop-aware central advance",
+    plan: "Extend the central Shogi pawn line one more ply after an alternate Gote pawn reply.",
+    risk: "The advanced pawn creates promotion pressure, so cache use still requires full legal validation."
+  },
+  {
     variantKey: "mini-shogi",
     line: ["a2a3", "c5c4"],
     family: "compact-board shogi",
@@ -835,6 +863,20 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
     risk: "Rook lifts are risky on 5x5 boards, so search takes over as soon as threats or drops appear."
   },
   {
+    variantKey: "mini-shogi",
+    line: ["a1b2", "c5c4"],
+    family: "compact-board gold route",
+    plan: "Cache a gold-general development route and central Gote reply for the tight 5x5 board.",
+    risk: "A single tempo can create drop or promotion tactics, so the line remains lookup-validated."
+  },
+  {
+    variantKey: "mini-shogi",
+    line: ["b1b2", "c5c4"],
+    family: "compact-board king route",
+    plan: "Add a king-space Mini Shogi line that keeps the center contested without assuming captures.",
+    risk: "King movement on the compact board is fragile, so search takes over after any contact."
+  },
+  {
     variantKey: "janggi",
     line: ["e4e5", "b10c8"],
     family: "palace pressure",
@@ -847,6 +889,13 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
     family: "palace flank pressure",
     plan: "Cache a second Janggi soldier lane while preserving horse development and cannon screens.",
     risk: "Facing generals and palace geometry must override any stale cached reply."
+  },
+  {
+    variantKey: "janggi",
+    line: ["g4g5", "b10c8"],
+    family: "palace wing pressure",
+    plan: "Add a right-side Janggi soldier lane with the same compact horse reply.",
+    risk: "Palace geometry, cannon screens, and facing-general constraints still decide whether the cache is usable."
   },
   {
     variantKey: "jungle",
@@ -863,6 +912,13 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
     risk: "River jumps and trap squares can change captures, so cached animal moves remain board-specific."
   },
   {
+    variantKey: "jungle",
+    line: ["a3a4", "a7a6"],
+    family: "trap-lane pressure",
+    plan: "Cache a trap-lane animal advance and matching reply for den-pressure variety.",
+    risk: "Trap squares can invert capture strength, so every cached animal move remains position-specific."
+  },
+  {
     variantKey: "english-draughts",
     line: ["a3b4", "b6a5"],
     family: "compulsory capture",
@@ -875,6 +931,13 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
     family: "compulsory capture center",
     plan: "Cache a second English Draughts development path through a central dark square.",
     risk: "A forced jump must always override the quiet cached development move."
+  },
+  {
+    variantKey: "english-draughts",
+    line: ["e3f4", "b6c5"],
+    family: "compulsory capture right wing",
+    plan: "Add a right-wing checker development pair while preserving mandatory jump priority.",
+    risk: "Any created jump sequence must replace the cached quiet plan immediately."
   },
   {
     variantKey: "international-draughts",
@@ -891,6 +954,13 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
     risk: "Maximum-capture comparison must still outrank every cached quiet move."
   },
   {
+    variantKey: "international-draughts",
+    line: ["f4e5", "c7d6"],
+    family: "maximum-capture contact",
+    plan: "Cache a contact-heavy 10x10 start that quickly reaches a forced-capture decision point.",
+    risk: "After contact, maximum-capture validation decides the continuation before any book preference."
+  },
+  {
     variantKey: "turkish-draughts",
     line: ["a3a4", "a6a5"],
     family: "orthogonal draughts",
@@ -903,6 +973,13 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
     family: "orthogonal draughts center",
     plan: "Cache a second Turkish Draughts file advance while keeping orthogonal jump chains explicit.",
     risk: "Maximum orthogonal captures still decide the move before any cached quiet line."
+  },
+  {
+    variantKey: "turkish-draughts",
+    line: ["c3c4", "c6c5"],
+    family: "orthogonal draughts contact",
+    plan: "Add a central Turkish Draughts file pair that reaches orthogonal contact quickly.",
+    risk: "Once adjacent files collide, maximum orthogonal capture chains override cached play."
   },
   {
     variantKey: "konane",
@@ -989,6 +1066,20 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
     risk: "The no-check rule and finish-line tempo decide whether the cached move is usable."
   },
   {
+    variantKey: "racing-kings",
+    line: ["f2e3", "a2a3"],
+    family: "king race diagonal escort",
+    plan: "Cache a diagonal escort move and a quiet reply that preserve the no-check race shape.",
+    risk: "Any move that gives check remains illegal, so every cached race tempo is revalidated."
+  },
+  {
+    variantKey: "racing-kings",
+    line: ["g2g3", "d1e3"],
+    family: "king race rook escort",
+    plan: "Extend the rook-file Racing Kings start with a legal escort reply for faster second-ply lookup.",
+    risk: "Finish-line tempo and no-check constraints can outweigh material or development."
+  },
+  {
     variantKey: "makruk",
     line: ["e3e4", "e6e5"],
     family: "Thai Makruk center",
@@ -1008,6 +1099,13 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
     family: "Thai Makruk wing center",
     plan: "Add a third Thai Makruk pawn-file start to broaden opening coverage while staying in native one-step movement.",
     risk: "If the opponent changes files or opens piece contact early, legal search takes over from the cache."
+  },
+  {
+    variantKey: "makruk",
+    line: ["f3f4", "f6f5"],
+    family: "Thai Makruk kingside center",
+    plan: "Add a fourth Thai Makruk pawn-file start with a mirrored one-step response.",
+    risk: "Makruk counting and promotion rules still override cached quiet development when material changes."
   }
 ]);
 

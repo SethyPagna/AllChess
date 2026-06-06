@@ -55,7 +55,7 @@ describe("bot models API", () => {
       })
     );
     expect(body.trainingSummary.generatedPositions).toBeGreaterThan(10064);
-    expect(body.trainingSummary.openingEntries).toBeGreaterThan(80);
+    expect(body.trainingSummary.openingEntries).toBeGreaterThan(110);
     expect(body.trainingSummary.engineLabels).toBeGreaterThan(10064);
     expect(body.readiness).toEqual(
       expect.arrayContaining([
@@ -75,15 +75,21 @@ describe("bot models API", () => {
           badgeLabel: "Cache ready"
         }),
         expect.objectContaining({
+          variantKey: "crazyhouse",
+          coverageStatus: "active",
+          indexedPositions: 7,
+          runtimePath: "knowledge-cache"
+        }),
+        expect.objectContaining({
           variantKey: "shogi",
           coverageStatus: "active",
-          indexedPositions: 4,
+          indexedPositions: 6,
           runtimePath: "knowledge-cache"
         }),
         expect.objectContaining({
           variantKey: "makruk",
           coverageStatus: "active",
-          indexedPositions: 4,
+          indexedPositions: 5,
           runtimePath: "knowledge-cache"
         })
       ])
