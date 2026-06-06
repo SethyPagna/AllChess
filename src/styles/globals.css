@@ -2666,11 +2666,28 @@ option {
   padding: 0.58rem;
 }
 
+.promotion-choice-card > span {
+  display: grid;
+  min-width: 0;
+  gap: 0.16rem;
+}
+
 .promotion-choice-card strong {
   overflow: hidden;
   color: var(--foreground);
   font-size: 0.78rem;
   font-weight: 950;
+  line-height: 1;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.promotion-choice-card small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 850;
   line-height: 1;
   text-align: center;
   text-overflow: ellipsis;
@@ -2692,6 +2709,9 @@ option {
   color: var(--foreground);
   font-size: 0.78rem;
   font-weight: 950;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  padding: 0.38rem 0.5rem;
   transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
 }
 

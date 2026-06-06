@@ -423,6 +423,21 @@ test("drop-variant hand rails stay compact on Mini Shogi", async ({ page }) => {
   await expect(dropHint).toContainText(/legal squares/);
   await dropHint.getByRole("button", { name: "Cancel Pawn drop" }).click();
   await expect(dropHint).toHaveCount(0);
+
+  await page.getByLabel("Board controls").getByRole("button", { name: "Reset" }).click();
+  await page.getByRole("button", { name: "Start Game" }).click();
+  await board.locator('[data-coordinate="d1"]').click();
+  await board.locator('[data-coordinate="b3"]').click();
+  await board.locator('[data-coordinate="d5"]').click();
+  await board.locator('[data-coordinate="d4"]').click();
+  await board.locator('[data-coordinate="b3"]').click();
+  await board.locator('[data-coordinate="d5"]').click();
+  const promotionDialog = page.getByRole("dialog", { name: "Bishop promotion choice" });
+  await expect(promotionDialog).toBeVisible();
+  await expect(promotionDialog.getByRole("button", { name: "Promote to Promoted Bishop" })).toBeVisible();
+  await expect(promotionDialog.getByRole("button", { name: "Keep Bishop" })).toBeVisible();
+  await promotionDialog.getByRole("button", { name: "Keep Bishop" }).click();
+  await expect(promotionDialog).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
   expect(runtimeErrors).toEqual([]);
 });

@@ -71,6 +71,7 @@ type PendingPromotion = {
   keepMove: Move;
   promoteMove: Move;
   pieceLabel: string;
+  promotedPieceLabel: string;
 };
 
 type DropSelectionHintProps = {
@@ -90,6 +91,31 @@ export function DropSelectionHint({ legalTargetCount, onCancel, pieceLabel }: Dr
         <X size={14} />
         <span>Cancel</span>
       </button>
+    </div>
+  );
+}
+
+type PromotionChoiceCardProps = {
+  onChoose: (promote: boolean) => void;
+  pieceLabel: string;
+  promotedPieceLabel: string;
+};
+
+export function PromotionChoiceCard({ onChoose, pieceLabel, promotedPieceLabel }: PromotionChoiceCardProps) {
+  return (
+    <div className="promotion-choice-card" role="dialog" aria-label={`${pieceLabel} promotion choice`}>
+      <span>
+        <strong>{pieceLabel}</strong>
+        <small>Choose promotion</small>
+      </span>
+      <div>
+        <button type="button" className="focus-ring" aria-label={`Promote to ${promotedPieceLabel}`} onClick={() => onChoose(true)}>
+          Promote to {promotedPieceLabel}
+        </button>
+        <button type="button" className="focus-ring" aria-label={`Keep ${pieceLabel}`} onClick={() => onChoose(false)}>
+          Keep {pieceLabel}
+        </button>
+      </div>
     </div>
   );
 }
@@ -319,7 +345,8 @@ export function GameBoard({
       setPendingPromotion({
         keepMove,
         promoteMove,
-        pieceLabel: getPieceDisplayName(piece.code, variantKey, locale, piece.promoted)
+        pieceLabel: getPieceDisplayName(piece.code, variantKey, locale, piece.promoted),
+        promotedPieceLabel: getPieceDisplayName(piece.code, variantKey, locale, true)
       });
       setNotice(null);
       return true;
@@ -845,17 +872,7 @@ export function GameBoard({
             <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} variantKey={displayState.variantKey} />
             {selectedHandLabel ? <DropSelectionHint legalTargetCount={legalTargets.size} onCancel={cancelHandDrop} pieceLabel={selectedHandLabel} /> : null}
             {pendingPromotion ? (
-              <div className="promotion-choice-card" role="dialog" aria-label={`${pendingPromotion.pieceLabel} promotion choice`}>
-                <strong>{pendingPromotion.pieceLabel}</strong>
-                <div>
-                  <button type="button" className="focus-ring" onClick={() => choosePromotion(true)}>
-                    Promote
-                  </button>
-                  <button type="button" className="focus-ring" onClick={() => choosePromotion(false)}>
-                    Keep
-                  </button>
-                </div>
-              </div>
+              <PromotionChoiceCard onChoose={choosePromotion} pieceLabel={pendingPromotion.pieceLabel} promotedPieceLabel={pendingPromotion.promotedPieceLabel} />
             ) : null}
             {!gameStarted ? (
               <div className="pregame-board-overlay" role="status">
