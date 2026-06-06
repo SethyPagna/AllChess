@@ -182,6 +182,8 @@ describe("PieceIcon", () => {
     );
 
     expect(card).toContain('aria-label="Sente hand pieces"');
+    expect(card).toContain('class="hand-tray"');
+    expect(card).toContain('aria-label="Sente hand: Drop \u6b69"');
     expect(card).toContain('aria-label="Drop \u6b69, 2 in hand"');
     expect(card).toContain('class="hand-piece-button focus-ring is-selected"');
     expect(card).toContain('data-hand-state="selected"');
@@ -233,10 +235,12 @@ describe("PieceIcon", () => {
     );
 
     expect(shogiCard).toContain('aria-label="Sente hand empty"');
+    expect(shogiCard).toContain('aria-label="Sente hand: 0"');
     expect(shogiCard).toContain('class="hand-empty-pill"');
-    expect(shogiCard).toContain(">Hand 0</span>");
+    expect(shogiCard).toContain('aria-hidden="true"');
+    expect(shogiCard).toContain(">0</span>");
     expect(crazyhouseCard).toContain('aria-label="White pocket empty"');
-    expect(crazyhouseCard).toContain(">Pocket 0</span>");
+    expect(crazyhouseCard).toContain('aria-label="White pocket: 0"');
   });
 
   test("keeps non-western pieces as strong native symbols", () => {

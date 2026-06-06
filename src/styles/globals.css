@@ -1141,11 +1141,68 @@ option {
   min-width: 6rem;
 }
 
+.hand-tray {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  justify-items: end;
+  gap: 0.28rem;
+  max-width: 100%;
+}
+
+.hand-tray-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.24rem;
+  min-width: 0;
+  max-width: 7.2rem;
+  min-height: 1.45rem;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, var(--accent));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-raised) 84%, var(--accent-soft));
+  color: var(--foreground);
+  padding: 0.12rem 0.4rem;
+  font-size: 0.64rem;
+  font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.hand-tray-status strong,
+.hand-tray-status span {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hand-tray-status strong {
+  color: var(--muted);
+  text-transform: uppercase;
+}
+
+.hand-tray-status span {
+  color: var(--accent-strong);
+}
+
+.hand-tray[data-hand-state="selected"] .hand-tray-status,
+.hand-tray[data-hand-state="ready"] .hand-tray-status {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-raised));
+}
+
+.hand-tray[data-skin="wedge"] .hand-tray-status,
+.hand-tray[data-skin="mini-wedge"] .hand-tray-status {
+  border-radius: 0.45rem;
+  background: color-mix(in srgb, #d9b878 42%, var(--surface-raised));
+}
+
 .hand-strip {
   display: flex;
   justify-content: flex-end;
   align-items: center;
   gap: 0.22rem;
+  min-width: 0;
   max-width: 100%;
   overflow: hidden;
 }
@@ -1201,6 +1258,8 @@ option {
 .hand-empty-pill {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  min-width: 1.35rem;
   min-height: 1.35rem;
   border: 1px dashed color-mix(in srgb, var(--border) 82%, var(--muted));
   border-radius: 999px;
@@ -6785,6 +6844,16 @@ option {
 
   .hand-strip {
     justify-content: flex-start;
+  }
+
+  .hand-tray {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+    gap: 0.18rem;
+  }
+
+  .hand-tray-status {
+    max-width: 100%;
   }
 
   .captured-strip {

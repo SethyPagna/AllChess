@@ -1,10 +1,15 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 function clockSeconds(value: string | null) {
   if (!value) return Number.NaN;
   const parts = value.trim().split(":").map(Number);
   if (parts.some((part) => Number.isNaN(part))) return Number.NaN;
   return parts.reduce((total, part) => total * 60 + part, 0);
+}
+
+async function expectNoHorizontalOverflow(page: Page) {
+  const overflow = await page.evaluate(() => Math.ceil(document.documentElement.scrollWidth - document.documentElement.clientWidth));
+  expect(overflow).toBeLessThanOrEqual(1);
 }
 
 test("suggestion, bot reply, and board geometry remain stable", async ({ page }) => {
@@ -347,5 +352,26 @@ test("non-classic boards use clean coordinate labels too", async ({ page }) => {
   expect(coordinateBox!.y).toBeGreaterThanOrEqual(boardBox!.y);
   expect(coordinateBox!.x + coordinateBox!.width).toBeLessThanOrEqual(boardBox!.x + boardBox!.width);
   expect(coordinateBox!.y + coordinateBox!.height).toBeLessThanOrEqual(boardBox!.y + boardBox!.height);
+  expect(runtimeErrors).toEqual([]);
+});
+
+test("drop-variant hand rails stay compact on Mini Shogi", async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
+  });
+
+  await page.setViewportSize({ width: 360, height: 760 });
+  await page.goto("/en/play/mini-shogi");
+  await expect(page.getByRole("heading", { name: "Mini Shogi" })).toBeVisible();
+  await expect(page.getByLabel("Game board")).toBeVisible();
+
+  const playerCard = page.getByLabel("Sente player card");
+  await expect(playerCard.getByLabel("Sente hand: 0")).toBeVisible();
+  await expect(playerCard.locator(".hand-tray")).toHaveAttribute("data-skin", "mini-wedge");
+  await expect(playerCard.locator(".hand-tray-status")).toContainText("Hand");
+  await expect(playerCard.locator(".hand-empty-pill")).toHaveText("0");
+  await expectNoHorizontalOverflow(page);
   expect(runtimeErrors).toEqual([]);
 });

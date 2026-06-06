@@ -3,6 +3,8 @@ import type { DragEvent } from "react";
 import { PieceIcon, getPieceDisplayName, resolvePieceSkin, type PieceSkinPreference } from "@/components/board/piece-icon";
 import { colorLabel } from "@/components/board/game-board-utils";
 import { formatClock } from "@/lib/game/clocks";
+import { normalizeLocale } from "@/lib/i18n/locales";
+import { getVocabulary } from "@/lib/i18n/vocabulary";
 import type { Piece, PlayerClock } from "@/lib/variants";
 
 type BoardPlayerCardProps = {
@@ -60,8 +62,13 @@ export function BoardPlayerCard({
   const hiddenCaptureCount = Math.max(0, capturedPieces.length - visibleCaptures.length);
   const materialLabel = materialAdvantage > 0 ? `Material advantage plus ${formatMaterialAdvantage(materialAdvantage)}` : "No material advantage";
   const handEntries = Object.entries(handCounts).filter(([, count]) => count > 0);
+  const handTotal = handEntries.reduce((total, [, count]) => total + count, 0);
   const resolvedPieceSkin = resolvePieceSkin(variantKey, pieceSkin);
   const handLabel = variantKey === "crazyhouse" ? "Pocket" : "Hand";
+  const selectedHandLabel = selectedHandCode ? getPieceDisplayName(selectedHandCode, variantKey, locale) : null;
+  const vocabulary = getVocabulary(normalizeLocale(locale));
+  const handStatus = selectedHandLabel && canUseHand ? `${vocabulary.actions.drop} ${selectedHandLabel}` : String(handTotal);
+  const handTitle = selectedHandLabel && canUseHand ? `${vocabulary.actions.drop} ${selectedHandLabel} to a highlighted square.` : `${handLabel}: ${handTotal} ${handTotal === 1 ? "piece" : "pieces"} available.`;
   const showHandTray = supportsDrops || handEntries.length > 0;
 
   return (
@@ -76,39 +83,45 @@ export function BoardPlayerCard({
       </div>
       <div className="player-piece-rail">
         {showHandTray ? (
-          <div className={`hand-strip ${handEntries.length ? "" : "is-empty"}`} aria-label={`${colorLabel(color)} ${handLabel.toLowerCase()} ${handEntries.length ? "pieces" : "empty"}`} data-skin={resolvedPieceSkin}>
-            <span className="sr-only">Tap or drag a piece in hand to a legal empty square.</span>
-            {handEntries.length ? handEntries.map(([code, count]) => {
-              const pieceLabel = getPieceDisplayName(code, variantKey, locale);
-              const actionLabel = `${canUseHand ? "Drop" : "Held"} ${pieceLabel}, ${count} in hand`;
-              const helpText = canUseHand ? `Tap or drag ${pieceLabel} to a legal empty square.` : `${pieceLabel} is in hand. Start or resume your turn to drop it.`;
-              return (
-                <button
-                  key={`${color}-${code}`}
-                  type="button"
-                  aria-label={actionLabel}
-                  className={`hand-piece-button focus-ring ${selectedHandCode === code ? "is-selected" : ""}`}
-                  data-hand-piece={code}
-                  data-hand-state={selectedHandCode === code ? "selected" : canUseHand ? "ready" : "held"}
-                  data-piece-label={pieceLabel}
-                  data-piece-count={count}
-                  data-skin={resolvedPieceSkin}
-                  disabled={!canUseHand}
-                  draggable={canUseHand}
-                  title={helpText}
-                  onClick={() => onHandPieceClick?.(code)}
-                  onDragStart={(event) => {
-                    if (!canUseHand) return;
-                    event.dataTransfer.effectAllowed = "move";
-                    event.dataTransfer.setData(handPieceDragType, code);
-                    setTransparentDragImage(event);
-                  }}
-                >
-                  <PieceIcon code={code} owner={color as Piece["owner"]} pieceSkin={pieceSkin} variantKey={variantKey} locale={locale} />
-                  <span aria-hidden="true">{count}</span>
-                </button>
-              );
-            }) : <span className="hand-empty-pill" title={`${handLabel} is empty. Captured pieces will appear here.`}>{handLabel} 0</span>}
+          <div className="hand-tray" data-hand-state={selectedHandLabel && canUseHand ? "selected" : canUseHand ? "ready" : handTotal ? "held" : "empty"} data-skin={resolvedPieceSkin}>
+            <span className="hand-tray-status" aria-label={`${colorLabel(color)} ${handLabel.toLowerCase()}: ${handStatus}`} title={handTitle}>
+              <strong>{handLabel}</strong>
+              <span>{handStatus}</span>
+            </span>
+            <div className={`hand-strip ${handEntries.length ? "" : "is-empty"}`} aria-label={`${colorLabel(color)} ${handLabel.toLowerCase()} ${handEntries.length ? "pieces" : "empty"}`} data-skin={resolvedPieceSkin}>
+              <span className="sr-only">Tap or drag a piece in hand to a legal empty square.</span>
+              {handEntries.length ? handEntries.map(([code, count]) => {
+                const pieceLabel = getPieceDisplayName(code, variantKey, locale);
+                const actionLabel = `${canUseHand ? vocabulary.actions.drop : "Held"} ${pieceLabel}, ${count} in hand`;
+                const helpText = canUseHand ? `Tap or drag ${pieceLabel} to a legal empty square.` : `${pieceLabel} is in hand. Start or resume your turn to drop it.`;
+                return (
+                  <button
+                    key={`${color}-${code}`}
+                    type="button"
+                    aria-label={actionLabel}
+                    className={`hand-piece-button focus-ring ${selectedHandCode === code ? "is-selected" : ""}`}
+                    data-hand-piece={code}
+                    data-hand-state={selectedHandCode === code ? "selected" : canUseHand ? "ready" : "held"}
+                    data-piece-label={pieceLabel}
+                    data-piece-count={count}
+                    data-skin={resolvedPieceSkin}
+                    disabled={!canUseHand}
+                    draggable={canUseHand}
+                    title={helpText}
+                    onClick={() => onHandPieceClick?.(code)}
+                    onDragStart={(event) => {
+                      if (!canUseHand) return;
+                      event.dataTransfer.effectAllowed = "move";
+                      event.dataTransfer.setData(handPieceDragType, code);
+                      setTransparentDragImage(event);
+                    }}
+                  >
+                    <PieceIcon code={code} owner={color as Piece["owner"]} pieceSkin={pieceSkin} variantKey={variantKey} locale={locale} />
+                    <span aria-hidden="true">{count}</span>
+                  </button>
+                );
+              }) : <span className="hand-empty-pill" aria-hidden="true" title={`${handLabel} is empty. Captured pieces will appear here.`}>0</span>}
+            </div>
           </div>
         ) : null}
         <div className={`captured-strip ${capturedPieces.length ? "" : "is-empty"}`} aria-label={`${colorLabel(color)} captured pieces. ${materialLabel}`} data-material-advantage={materialAdvantage > 0 ? formatMaterialAdvantage(materialAdvantage) : undefined}>
