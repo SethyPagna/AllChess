@@ -826,7 +826,7 @@ export function GameBoard({
         {playerCard(topPlayerColor, "top")}
         <div className="board-shell" data-variant={displayState.variantKey} data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
-            <BoardGrid cols={cols} files={files} legalTargets={legalTargets} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} variantKey={displayState.variantKey} />
+            <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} variantKey={displayState.variantKey} />
             {pendingPromotion ? (
               <div className="promotion-choice-card" role="dialog" aria-label={`${pendingPromotion.pieceLabel} promotion choice`}>
                 <strong>{pendingPromotion.pieceLabel}</strong>

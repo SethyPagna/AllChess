@@ -11,10 +11,13 @@ type SuggestedBoardMove = {
   to: Square;
 };
 
+type LegalTargetMode = "move" | "drop";
+
 type BoardGridProps = {
   cols: number;
   files: string[];
   legalTargets: ReadonlySet<string>;
+  legalTargetMode?: LegalTargetMode;
   locale?: string;
   onChoose: (square: Square) => void;
   onDragMove?: (from: Square, to: Square) => boolean;
@@ -29,7 +32,7 @@ type BoardGridProps = {
 
 const handPieceDragType = "application/x-allchess-hand-piece";
 
-export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, onDragMove, onDropHandPiece, orientedRows, pieceSkin = "default", rows, selected, suggestedMove, variantKey }: BoardGridProps) {
+export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move", locale = "en", onChoose, onDragMove, onDropHandPiece, orientedRows, pieceSkin = "default", rows, selected, suggestedMove, variantKey }: BoardGridProps) {
   const [draggingSquare, setDraggingSquare] = useState<Square | null>(null);
   const [pointerDragSquare, setPointerDragSquare] = useState<Square | null>(null);
   const pointerDragSquareRef = useRef<Square | null>(null);
@@ -210,7 +213,9 @@ export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, 
               : isSuggestedTo
                 ? "suggested-to"
                 : isLegal
-                  ? "legal-target"
+                  ? legalTargetMode === "drop"
+                    ? "legal-drop-target"
+                    : "legal-target"
                   : isSelected
                     ? "selected"
                     : "idle";
@@ -223,6 +228,8 @@ export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, 
                   ? "Suggested move target"
                   : squareState === "legal-target"
                     ? "Legal move target"
+                    : squareState === "legal-drop-target"
+                      ? "Legal drop target"
                     : squareState === "selected"
                       ? "Selected square"
                       : null;
@@ -245,7 +252,7 @@ export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, 
               title={squareLabel}
               data-square={name}
               data-coordinate={name}
-              data-legal-target={isLegal ? "true" : undefined}
+              data-legal-target={isLegal ? legalTargetMode : undefined}
               data-piece-label={label ?? undefined}
               data-square-state={squareState === "idle" ? undefined : squareState}
               data-dragging={(draggingSquare && sameSquare(draggingSquare, cell.square)) || (pointerDragSquare && sameSquare(pointerDragSquare, cell.square)) ? "true" : undefined}
@@ -261,7 +268,9 @@ export function BoardGrid({ cols, files, legalTargets, locale = "en", onChoose, 
                   : isSuggestedFrom || isSuggestedTo
                     ? "color-mix(in srgb, var(--info) 46%, var(--board-light))"
                     : isLegal
-                      ? "color-mix(in srgb, var(--accent) 34%, var(--board-light))"
+                      ? legalTargetMode === "drop"
+                        ? "color-mix(in srgb, var(--info) 30%, var(--accent-soft))"
+                        : "color-mix(in srgb, var(--accent) 34%, var(--board-light))"
                       : dark
                         ? "var(--board-dark)"
                         : "var(--board-light)",
