@@ -2701,6 +2701,10 @@ option {
 }
 
 .promotion-choice-card button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.32rem;
   min-width: 0;
   min-height: 2.25rem;
   border: 1px solid var(--border);
@@ -2713,6 +2717,17 @@ option {
   overflow-wrap: anywhere;
   padding: 0.38rem 0.5rem;
   transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.promotion-choice-card button .piece-icon {
+  flex: 0 0 auto;
+  width: 1.35rem;
+  height: 1.35rem;
+  font-size: 1rem;
+}
+
+.promotion-choice-card button span {
+  min-width: 0;
 }
 
 .promotion-choice-card button:first-child {
@@ -2731,7 +2746,7 @@ option {
   bottom: clamp(0.55rem, 3vw, 1rem);
   z-index: 22;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 2.2rem minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.5rem;
   min-width: min(19rem, calc(100% - 1.4rem));
@@ -2744,7 +2759,23 @@ option {
   padding: 0.48rem;
 }
 
-.drop-selection-card > span {
+.drop-piece-preview {
+  display: inline-grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid color-mix(in srgb, var(--info) 46%, var(--border));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--surface) 84%, var(--accent-soft));
+}
+
+.drop-piece-preview .piece-icon {
+  width: 1.65rem;
+  height: 1.65rem;
+  font-size: 1.18rem;
+}
+
+.drop-selection-card > span:not(.drop-piece-preview) {
   display: grid;
   min-width: 0;
   gap: 0.16rem;

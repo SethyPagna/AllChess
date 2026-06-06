@@ -421,6 +421,7 @@ test("drop-variant hand rails stay compact on Mini Shogi", async ({ page }) => {
   const dropHint = page.getByLabel("Dropping Pawn");
   await expect(dropHint).toBeVisible();
   await expect(dropHint).toContainText(/legal squares/);
+  await expect(dropHint.locator(".drop-piece-preview .piece-icon")).toHaveAttribute("data-code", "p");
   await dropHint.getByRole("button", { name: "Cancel Pawn drop" }).click();
   await expect(dropHint).toHaveCount(0);
 
@@ -434,7 +435,9 @@ test("drop-variant hand rails stay compact on Mini Shogi", async ({ page }) => {
   await board.locator('[data-coordinate="d5"]').click();
   const promotionDialog = page.getByRole("dialog", { name: "Bishop promotion choice" });
   await expect(promotionDialog).toBeVisible();
-  await expect(promotionDialog.getByRole("button", { name: "Promote to Promoted Bishop" })).toBeVisible();
+  const promoteButton = promotionDialog.getByRole("button", { name: "Promote to Promoted Bishop" });
+  await expect(promoteButton).toBeVisible();
+  await expect(promoteButton.locator(".piece-icon")).toHaveAttribute("data-promoted", "true");
   await expect(promotionDialog.getByRole("button", { name: "Keep Bishop" })).toBeVisible();
   await promotionDialog.getByRole("button", { name: "Keep Bishop" }).click();
   await expect(promotionDialog).toHaveCount(0);

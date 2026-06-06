@@ -32,7 +32,7 @@ import { BoardGrid } from "@/components/board/board-grid";
 import { BoardPlayerCard } from "@/components/board/board-player-card";
 import { GameGuideModal } from "@/components/board/game-guide-modal";
 import { MatchResultOverlay } from "@/components/board/match-result-overlay";
-import { getPieceDisplayName, getPieceSkinOptions, type PieceSkinPreference } from "@/components/board/piece-icon";
+import { PieceIcon, getPieceDisplayName, getPieceSkinOptions, type PieceSkinPreference } from "@/components/board/piece-icon";
 import { PlayActiveSetupCard } from "@/components/board/play-active-setup-card";
 import { PlayChatPanel } from "@/components/board/play-chat-panel";
 import { PlayControlCard } from "@/components/board/play-control-card";
@@ -70,19 +70,29 @@ type SuggestedMove = {
 type PendingPromotion = {
   keepMove: Move;
   promoteMove: Move;
+  pieceCode: string;
   pieceLabel: string;
+  pieceOwner: Piece["owner"];
   promotedPieceLabel: string;
 };
 
 type DropSelectionHintProps = {
   legalTargetCount: number;
   onCancel: () => void;
+  pieceCode: string;
   pieceLabel: string;
+  pieceOwner: Piece["owner"];
+  pieceSkin: PieceSkinPreference;
+  variantKey: string;
+  locale: string;
 };
 
-export function DropSelectionHint({ legalTargetCount, onCancel, pieceLabel }: DropSelectionHintProps) {
+export function DropSelectionHint({ legalTargetCount, onCancel, pieceCode, pieceLabel, pieceOwner, pieceSkin, variantKey, locale }: DropSelectionHintProps) {
   return (
     <div className="drop-selection-card" role="status" aria-label={`Dropping ${pieceLabel}`}>
+      <span className="drop-piece-preview" aria-hidden="true">
+        <PieceIcon code={pieceCode} owner={pieceOwner} pieceSkin={pieceSkin} variantKey={variantKey} locale={locale} />
+      </span>
       <span>
         <strong>Drop {pieceLabel}</strong>
         <small>{legalTargetCount ? `${legalTargetCount} legal ${legalTargetCount === 1 ? "square" : "squares"}` : "No legal squares"}</small>
@@ -96,12 +106,17 @@ export function DropSelectionHint({ legalTargetCount, onCancel, pieceLabel }: Dr
 }
 
 type PromotionChoiceCardProps = {
+  locale: string;
   onChoose: (promote: boolean) => void;
+  pieceCode: string;
   pieceLabel: string;
+  pieceOwner: Piece["owner"];
+  pieceSkin: PieceSkinPreference;
   promotedPieceLabel: string;
+  variantKey: string;
 };
 
-export function PromotionChoiceCard({ onChoose, pieceLabel, promotedPieceLabel }: PromotionChoiceCardProps) {
+export function PromotionChoiceCard({ locale, onChoose, pieceCode, pieceLabel, pieceOwner, pieceSkin, promotedPieceLabel, variantKey }: PromotionChoiceCardProps) {
   return (
     <div className="promotion-choice-card" role="dialog" aria-label={`${pieceLabel} promotion choice`}>
       <span>
@@ -110,10 +125,12 @@ export function PromotionChoiceCard({ onChoose, pieceLabel, promotedPieceLabel }
       </span>
       <div>
         <button type="button" className="focus-ring" aria-label={`Promote to ${promotedPieceLabel}`} onClick={() => onChoose(true)}>
-          Promote to {promotedPieceLabel}
+          <PieceIcon code={pieceCode} owner={pieceOwner} pieceSkin={pieceSkin} variantKey={variantKey} locale={locale} promoted />
+          <span>Promote to {promotedPieceLabel}</span>
         </button>
         <button type="button" className="focus-ring" aria-label={`Keep ${pieceLabel}`} onClick={() => onChoose(false)}>
-          Keep {pieceLabel}
+          <PieceIcon code={pieceCode} owner={pieceOwner} pieceSkin={pieceSkin} variantKey={variantKey} locale={locale} />
+          <span>Keep {pieceLabel}</span>
         </button>
       </div>
     </div>
@@ -345,7 +362,9 @@ export function GameBoard({
       setPendingPromotion({
         keepMove,
         promoteMove,
+        pieceCode: piece.code,
         pieceLabel: getPieceDisplayName(piece.code, variantKey, locale, piece.promoted),
+        pieceOwner: piece.owner,
         promotedPieceLabel: getPieceDisplayName(piece.code, variantKey, locale, true)
       });
       setNotice(null);
@@ -870,9 +889,9 @@ export function GameBoard({
         <div className="board-shell" data-variant={displayState.variantKey} data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
             <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} variantKey={displayState.variantKey} />
-            {selectedHandLabel ? <DropSelectionHint legalTargetCount={legalTargets.size} onCancel={cancelHandDrop} pieceLabel={selectedHandLabel} /> : null}
+            {selectedHandCode && selectedHandLabel ? <DropSelectionHint legalTargetCount={legalTargets.size} locale={locale} onCancel={cancelHandDrop} pieceCode={selectedHandCode} pieceLabel={selectedHandLabel} pieceOwner={state.turn} pieceSkin={pieceSkin} variantKey={displayState.variantKey} /> : null}
             {pendingPromotion ? (
-              <PromotionChoiceCard onChoose={choosePromotion} pieceLabel={pendingPromotion.pieceLabel} promotedPieceLabel={pendingPromotion.promotedPieceLabel} />
+              <PromotionChoiceCard locale={locale} onChoose={choosePromotion} pieceCode={pendingPromotion.pieceCode} pieceLabel={pendingPromotion.pieceLabel} pieceOwner={pendingPromotion.pieceOwner} pieceSkin={pieceSkin} promotedPieceLabel={pendingPromotion.promotedPieceLabel} variantKey={displayState.variantKey} />
             ) : null}
             {!gameStarted ? (
               <div className="pregame-board-overlay" role="status">
