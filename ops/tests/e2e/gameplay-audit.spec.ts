@@ -65,6 +65,7 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await expect(firstMoveRow).toBeVisible();
   await expect(firstMoveRow.locator(".review-move-side")).toHaveText("Wh");
   await expect(firstMoveRow.locator(".review-move-piece .piece-icon")).toHaveAttribute("data-code", "p");
+  await expect(firstMoveRow.locator(".review-move-meta small")).toHaveText("e2-e4");
 
   const afterSuggestion = await board.boundingBox();
   expect(afterSuggestion?.width).toBeCloseTo(before!.width, 1);

@@ -42,7 +42,7 @@ import { PlayControlCard, type BoardThemeOption, type BoardThemePreference } fro
 import { PlayMatchHeader } from "@/components/board/play-match-header";
 import { PlayPregameSetupCard } from "@/components/board/play-pregame-setup-card";
 import { playModeOptions, type PanelTab, type PlayMode } from "@/components/board/game-board-options";
-import { colorLabel, formatMove, pickHumanColor, quickSuggestionMove, withTimeControl } from "@/components/board/game-board-utils";
+import { colorLabel, formatMove, pickHumanColor, quickSuggestionMove, squareName, withTimeControl } from "@/components/board/game-board-utils";
 import { PlaySectionTabs } from "@/components/board/play-section-tabs";
 
 type BotMode = "human" | "opponent" | "both";
@@ -109,19 +109,24 @@ type ReviewMoveRow = ReviewedMove & {
   owner: Piece["owner"];
   piece: Piece | null;
   pieceLabel: string;
+  routeLabel: string;
   sideLabel: string;
 };
 
 function buildReviewMoveRows({
   locale,
+  files,
   moves,
   rawMoves,
+  rows,
   timeline,
   variantKey
 }: {
   locale: string;
+  files: string[];
   moves: ReviewedMove[];
   rawMoves: Array<Move & { notation: string }>;
+  rows: number;
   timeline: GameState[];
   variantKey: string;
 }): ReviewMoveRow[] {
@@ -135,9 +140,16 @@ function buildReviewMoveRows({
       owner,
       piece,
       pieceLabel: piece ? getPieceDisplayName(piece.code, variantKey, locale, piece.promoted) : "Move",
+      routeLabel: rawMove ? reviewRouteLabel(rawMove, files, rows) : "",
       sideLabel: colorLabel(owner)
     };
   });
+}
+
+function reviewRouteLabel(move: Move, files: string[], rows: number) {
+  const target = squareName(move.to, files, rows);
+  if (move.kind === "drop" || move.drop) return `Drop ${target}`;
+  return `${squareName(move.from, files, rows)}-${target}${move.promotion ? "+" : ""}`;
 }
 
 function findPieceAt(state: GameState | undefined, square: Square) {
@@ -315,7 +327,6 @@ export function GameBoard({
   const displayPly = reviewPly ?? timeline.length - 1;
   const displayState = timeline[Math.min(displayPly, timeline.length - 1)] ?? state;
   const activeReviewMove = displayPly > 0 ? reviewMoves[displayPly - 1] : null;
-  const reviewMoveRows = useMemo(() => buildReviewMoveRows({ locale, moves: reviewMoves, rawMoves: state.moves, timeline, variantKey: displayState.variantKey }), [displayState.variantKey, locale, reviewMoves, state.moves, timeline]);
   const isReviewing = reviewPly !== null;
   const terrainKeys = useMemo(() => {
     const present = new Set<TerrainKey>();
@@ -334,6 +345,7 @@ export function GameBoard({
   const rows = displayState.board.length;
   const cols = displayState.board[0]?.length ?? 8;
   const files = useMemo(() => Array.from({ length: cols }, (_, index) => String.fromCharCode(97 + index)), [cols]);
+  const reviewMoveRows = useMemo(() => buildReviewMoveRows({ files, locale, moves: reviewMoves, rawMoves: state.moves, rows, timeline, variantKey: displayState.variantKey }), [displayState.variantKey, files, locale, reviewMoves, rows, state.moves, timeline]);
   const botLevel = botDifficultyLevels.find((level) => level.key === botDifficulty) ?? botDifficultyLevels[1];
   const pieceSkinOptions = useMemo(() => getPieceSkinOptions(variantKey), [variantKey]);
   const supportsDrops = useMemo(() => getVariant(variantKey).supportsDrops, [variantKey]);
@@ -1203,13 +1215,16 @@ export function GameBoard({
                 {reviewMoveRows.length ? (
                   reviewMoveRows.map((move) => (
                     <li key={`${move.notation}-${move.ply}`} className={displayPly === move.ply ? "is-active" : ""} data-review={move.classification}>
-                      <button type="button" onClick={() => setReviewCursor(move.ply)} className="focus-ring" aria-label={`Review move ${move.ply} ${move.sideLabel} ${move.pieceLabel} ${move.notation}`}>
+                      <button type="button" onClick={() => setReviewCursor(move.ply)} className="focus-ring" aria-label={`Review move ${move.ply} ${move.sideLabel} ${move.pieceLabel} ${move.routeLabel} ${move.notation}`}>
                         <span className="review-move-side" data-owner={move.owner}>{move.sideLabel.slice(0, 2)}</span>
                         <span className="review-move-piece">
                           {move.piece ? <PieceIcon code={move.piece.code} owner={move.piece.owner} pieceSkin={pieceSkin} variantKey={displayState.variantKey} locale={locale} promoted={move.piece.promoted} /> : null}
                           <strong>{move.notation}</strong>
                         </span>
-                        <em>{move.label}</em>
+                        <span className="review-move-meta">
+                          <small>{move.routeLabel}</small>
+                          <em>{move.label}</em>
+                        </span>
                       </button>
                     </li>
                   ))

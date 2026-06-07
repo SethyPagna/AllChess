@@ -4548,7 +4548,7 @@ option {
 .review-move-list li button {
   display: grid;
   width: 100%;
-  grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+  grid-template-columns: 2.4rem minmax(0, 1fr) minmax(4.4rem, auto);
   gap: 0.5rem;
   align-items: center;
   border: 0;
@@ -4604,6 +4604,24 @@ option {
   height: 1.35rem;
   flex: 0 0 1.35rem;
   font-size: 1.05rem;
+}
+
+.review-move-meta {
+  display: grid;
+  justify-items: end;
+  gap: 0.14rem;
+  min-width: 0;
+}
+
+.review-move-meta small {
+  max-width: 6.6rem;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 900;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .review-move-list strong {
@@ -5256,6 +5274,31 @@ option {
 }
 
 @media (max-width: 520px) {
+  .review-move-list li button {
+    grid-template-columns: 2.05rem minmax(0, 1fr) minmax(3.6rem, auto);
+    gap: 0.35rem;
+  }
+
+  .review-move-side {
+    min-width: 1.8rem;
+    font-size: 0.56rem;
+  }
+
+  .review-move-piece {
+    gap: 0.3rem;
+  }
+
+  .review-move-piece .piece-icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    flex-basis: 1.1rem;
+    font-size: 0.9rem;
+  }
+
+  .review-move-meta small {
+    max-width: 4.4rem;
+  }
+
   .watch-room-tools {
     grid-template-columns: 1fr;
   }
