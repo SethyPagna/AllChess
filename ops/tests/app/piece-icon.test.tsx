@@ -80,6 +80,19 @@ describe("PieceIcon", () => {
     expect(promotedPawn).toContain("\u3068");
   });
 
+  test("localizes Shogi promoted piece labels for CJK language modes", () => {
+    const japaneseDragon = renderToStaticMarkup(<PieceIcon code="r" owner="sente" variantKey="shogi" locale="ja" promoted />);
+    const simplifiedDragonHorse = renderToStaticMarkup(<PieceIcon code="b" owner="sente" variantKey="mini-shogi" locale="zh-CN" promoted />);
+    const traditionalTokin = renderToStaticMarkup(<PieceIcon code="p" owner="sente" variantKey="shogi" locale="zh-TW" promoted />);
+
+    expect(japaneseDragon).toContain('aria-label="\u9f8d"');
+    expect(japaneseDragon).toContain('data-piece-label="\u9f8d"');
+    expect(simplifiedDragonHorse).toContain('aria-label="\u9f99\u9a6c"');
+    expect(simplifiedDragonHorse).toContain('data-piece-label="\u9f99\u9a6c"');
+    expect(traditionalTokin).toContain('aria-label="\u3068\u91d1"');
+    expect(traditionalTokin).toContain('data-piece-label="\u3068\u91d1"');
+  });
+
   test("renders draughts men and kings as checker discs", () => {
     const man = renderToStaticMarkup(<PieceIcon code="p" owner="white" variantKey="english-draughts" />);
     const king = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="english-draughts" promoted />);

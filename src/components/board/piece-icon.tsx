@@ -1,4 +1,4 @@
-import { normalizeLocale } from "@/lib/i18n/locales";
+import { normalizeLocale, type LocaleCode } from "@/lib/i18n/locales";
 import { getVocabulary } from "@/lib/i18n/vocabulary";
 import type { PlayerColor } from "@/lib/variants";
 
@@ -292,13 +292,44 @@ export function resolvePieceSkin(variantKey: string, preference: PieceSkinPrefer
 }
 
 export function getPieceDisplayName(code: string, variantKey: string, locale = "en", promoted = false) {
-  const vocabulary = getVocabulary(normalizeLocale(locale));
+  const normalizedLocale = normalizeLocale(locale);
+  const vocabulary = getVocabulary(normalizedLocale);
   const promotedKey = promoted ? promotedPieceVocabularyKey(code, variantKey) : null;
-  if (promotedKey) return vocabulary.pieces[promotedKey] ?? promotedKey;
+  if (promotedKey) return promotedPieceDisplayName(promotedKey, normalizedLocale, vocabulary.pieces[promotedKey] ?? promotedKey);
   const key = pieceVocabularyKey(code, variantKey, promoted);
   const fallbackKey = pieceVocabularyKey(code, "classic", false);
   const base = vocabulary.pieces[key] ?? vocabulary.pieces[fallbackKey] ?? code.toUpperCase();
   return promoted ? `${vocabulary.pieces.promoted} ${base}` : base;
+}
+
+function promotedPieceDisplayName(key: string, locale: LocaleCode, fallback: string) {
+  const localized: Partial<Record<LocaleCode, Record<string, string>>> = {
+    ja: {
+      dragonKing: "\u9f8d",
+      dragonHorse: "\u99ac",
+      promotedSilver: "\u5168",
+      promotedKnight: "\u572d",
+      promotedLance: "\u674f",
+      tokin: "\u3068"
+    },
+    "zh-CN": {
+      dragonKing: "\u9f99\u738b",
+      dragonHorse: "\u9f99\u9a6c",
+      promotedSilver: "\u6210\u94f6",
+      promotedKnight: "\u6210\u6842",
+      promotedLance: "\u6210\u9999",
+      tokin: "\u3068\u91d1"
+    },
+    "zh-TW": {
+      dragonKing: "\u9f8d\u738b",
+      dragonHorse: "\u9f8d\u99ac",
+      promotedSilver: "\u6210\u9280",
+      promotedKnight: "\u6210\u6842",
+      promotedLance: "\u6210\u9999",
+      tokin: "\u3068\u91d1"
+    }
+  };
+  return localized[locale]?.[key] ?? fallback;
 }
 
 function promotedPieceVocabularyKey(code: string, variantKey: string): string | null {
