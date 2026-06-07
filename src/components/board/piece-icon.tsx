@@ -11,7 +11,7 @@ type PieceIconProps = {
   promoted?: boolean;
 };
 
-export type PieceSkin = "western" | "glyph" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
+export type PieceSkin = "western" | "glyph" | "monogram" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
 export type PieceSkinPreference = "default" | PieceSkin;
 
 export type PieceSkinOption = {
@@ -44,6 +44,7 @@ export function PieceIcon({ code, owner, pieceSkin = "default", variantKey, loca
   }
   if (usesWesternPresentation(variantKey)) {
     if (skin === "glyph") return <WesternGlyphIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} />;
+    if (skin === "monogram") return <WesternMonogramIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} />;
     return <WesternPieceIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} skin={skin} />;
   }
 
@@ -175,6 +176,29 @@ function WesternGlyphIcon({ code, owner, variantKey, promoted, label }: { code: 
   );
 }
 
+function WesternMonogramIcon({ code, owner, variantKey, promoted, label }: { code: string; owner: PlayerColor; variantKey: string; promoted: boolean; label: string }) {
+  const piece = westernPieceName(code, variantKey);
+  return (
+    <span
+      aria-label={label}
+      className="piece-symbol piece-icon western-monogram-piece"
+      data-owner={owner}
+      data-piece={`${piece}-monogram`}
+      data-piece-label={label}
+      data-code={code}
+      data-promoted={promoted || undefined}
+      data-skin="monogram"
+      data-variant={variantKey}
+      role="img"
+      title={label}
+    >
+      <span aria-hidden="true" className="western-monogram-letter">
+        {westernMonogram(piece, code, variantKey)}
+      </span>
+    </span>
+  );
+}
+
 function westernGlyph(piece: string, owner: PlayerColor) {
   const isDark = owner === "black" || owner === "blue" || owner === "gote";
   const lightGlyphs: Record<string, string> = {
@@ -194,6 +218,29 @@ function westernGlyph(piece: string, owner: PlayerColor) {
     pawn: "\u265f"
   };
   return (isDark ? darkGlyphs : lightGlyphs)[piece] ?? (isDark ? "\u265f" : "\u2659");
+}
+
+function westernMonogram(piece: string, code: string, variantKey: string) {
+  if (variantKey === "makruk") {
+    const makrukLetters: Record<string, string> = {
+      k: "K",
+      m: "M",
+      s: "S",
+      n: "N",
+      r: "R",
+      p: "P"
+    };
+    return makrukLetters[code] ?? code.toUpperCase();
+  }
+  const letters: Record<string, string> = {
+    king: "K",
+    queen: "Q",
+    rook: "R",
+    bishop: "B",
+    knight: "N",
+    pawn: "P"
+  };
+  return letters[piece] ?? code.toUpperCase();
 }
 
 function KingPaths() {
@@ -324,9 +371,9 @@ export function getPieceSkinOptions(variantKey: string): PieceSkinOption[] {
     return [...defaults, option("stone"), option("checker")];
   }
   if (variantKey === "makruk") {
-    return [...defaults, option("makruk"), option("western"), option("glyph")];
+    return [...defaults, option("makruk"), option("western"), option("glyph"), option("monogram")];
   }
-  return [...defaults, option("western"), option("glyph"), option("makruk")];
+  return [...defaults, option("western"), option("glyph"), option("monogram"), option("makruk")];
 }
 
 export function resolvePieceSkin(variantKey: string, preference: PieceSkinPreference = "default"): PieceSkin {
@@ -428,6 +475,7 @@ function pieceSkinLabel(key: PieceSkin) {
   const labels: Record<PieceSkin, string> = {
     western: "Classic",
     glyph: "Glyph",
+    monogram: "Monogram",
     makruk: "Warm",
     disc: "Disc",
     wedge: "Wedge",
