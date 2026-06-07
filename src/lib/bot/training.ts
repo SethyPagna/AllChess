@@ -1,6 +1,6 @@
 import { moveToUci } from "@/lib/bot/stockfish-engine";
-import { getVariantBotStrengthProfile, type BotTierKey, type VariantBotStrengthProfile } from "@/lib/bot/strength";
-import { MAX_BOT_REPLY_MS } from "@/lib/bot/config";
+import { getBotStrengthBand, getVariantBotStrengthProfile, normalizeBotTierKey, type BotTierKey, type VariantBotStrengthProfile } from "@/lib/bot/strength";
+import { botDifficultyLevels, MAX_BOT_REPLY_MS } from "@/lib/bot/config";
 import { applyMove, createInitialState, getLegalMoves, variantCatalog, type GameState, type Move, type VariantDefinition } from "@/lib/variants";
 import { getVariantRuleSummary, type VariantRuleCompletion } from "@/lib/variants/rules-atlas";
 import generatedKnowledge from "@/data/bot-knowledge.generated.json";
@@ -284,15 +284,6 @@ type GeneratedBotKnowledgeFile = {
   toolManifests?: BotToolManifest[];
 };
 
-const tierRank: Record<BotTierKey, number> = {
-  easy: 0,
-  normal: 1,
-  hard: 2,
-  "very-hard": 3,
-  grandmaster: 4,
-  legend: 5
-};
-
 const trainingTierProfiles: Array<{
   key: BotTierKey;
   label: string;
@@ -302,14 +293,18 @@ const trainingTierProfiles: Array<{
   beamWidth: number;
   replyCheckWidth: number;
   knowledgeMinimumConfidence: number;
-}> = [
-  { key: "easy", label: "Easy", depth: 2, moveTimeMs: 220, nodeBudget: 360, beamWidth: 8, replyCheckWidth: 3, knowledgeMinimumConfidence: 0.78 },
-  { key: "normal", label: "Normal", depth: 3, moveTimeMs: 420, nodeBudget: 950, beamWidth: 12, replyCheckWidth: 6, knowledgeMinimumConfidence: 0.74 },
-  { key: "hard", label: "Hard", depth: 4, moveTimeMs: 780, nodeBudget: 2600, beamWidth: 18, replyCheckWidth: 10, knowledgeMinimumConfidence: 0.68 },
-  { key: "very-hard", label: "Very Hard", depth: 5, moveTimeMs: 1400, nodeBudget: 6800, beamWidth: 28, replyCheckWidth: 15, knowledgeMinimumConfidence: 0.62 },
-  { key: "grandmaster", label: "Grandmaster", depth: 5, moveTimeMs: 2100, nodeBudget: 12000, beamWidth: 34, replyCheckWidth: 17, knowledgeMinimumConfidence: 0.6 },
-  { key: "legend", label: "Legend", depth: 7, moveTimeMs: 2600, nodeBudget: 28000, beamWidth: 46, replyCheckWidth: 24, knowledgeMinimumConfidence: 0.55 }
-];
+}> = botDifficultyLevels.map((difficulty) => ({
+  key: difficulty.key,
+  label: difficulty.label,
+  depth: difficulty.depth,
+  moveTimeMs: difficulty.moveTimeMs,
+  nodeBudget: difficulty.nodeBudget,
+  beamWidth: difficulty.beamWidth,
+  replyCheckWidth: difficulty.replyCheckWidth,
+  knowledgeMinimumConfidence: difficulty.knowledgeMinimumConfidence
+}));
+
+const tierRank = new Map<BotTierKey, number>(trainingTierProfiles.map((profile, index) => [profile.key, index]));
 
 const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
   {
@@ -1465,7 +1460,7 @@ export function lookupBotKnowledge(state: GameState, tier: BotTierKey): BotKnowl
 
   const key = createBotPositionKey(state);
   const boardSignature = createBotBoardSignature(state);
-  const entries = indexedKnowledgeCandidates(state.variantKey, key, boardSignature).filter((entry) => tierRank[tier] >= tierRank[entry.minTier]);
+  const entries = indexedKnowledgeCandidates(state.variantKey, key, boardSignature).filter((entry) => rankForTier(tier) >= rankForTier(entry.minTier));
 
   for (const entry of entries) {
     const move = legalMoveByUci(state, entry.moveUci);
@@ -1716,15 +1711,13 @@ function enginePlanForVariant(variant: VariantDefinition) {
 }
 
 function targetBehaviorForTier(tier: BotTierKey) {
-  const targets: Record<BotTierKey, string> = {
-    easy: "Beginner-friendly, not naive: sees obvious wins, avoids free major-piece blunders, and keeps pieces defended.",
-    normal: "Looks one reply ahead, develops sensibly, and avoids simple tactic losses.",
-    hard: "Checks captures, threats, loose pieces, and basic counterattacks before choosing.",
-    "very-hard": "Balances tactics and positional pressure with stronger reply filtering.",
-    grandmaster: "Uses cache/engine knowledge first, deeper search second, and verifies tactical plans.",
-    legend: "Highest local tier: cache-first, deepest search, quiescence, reply pressure, and draw-saving fallback goals."
-  };
-  return targets[tier];
+  const strength = getBotStrengthBand(tier);
+  if (strength.targetElo < 600) return "Learning tier: keeps moves legal, finds obvious wins, and intentionally remains forgiving.";
+  if (strength.targetElo < 1200) return "Beginner-friendly, not naive: sees obvious wins, avoids free major-piece blunders, and keeps pieces defended.";
+  if (strength.targetElo < 1800) return "Club tier: looks one reply ahead, develops sensibly, and avoids simple tactic losses.";
+  if (strength.targetElo < 2400) return "Expert tier: checks captures, threats, loose pieces, counterattacks, and positional pressure.";
+  if (strength.targetElo < 3200) return "Engine-calibrated tier: uses cache/engine knowledge first, deeper search second, and verifies tactical plans.";
+  return "Benchmark ceiling tier: cache-first labels, deepest local search, quiescence, reply pressure, and draw-saving fallback goals.";
 }
 
 function nextTrainingJobsForVariant(variant: VariantDefinition, hasRuntimeKnowledge: boolean, rulesGated: boolean) {
@@ -1770,28 +1763,32 @@ function knowledgeEntryToEngineLabel(entry: BotKnowledgeEntry): EngineLabel {
 }
 
 function depthForEntry(entry: BotKnowledgeEntry) {
-  if (entry.minTier === "legend") return 22;
-  if (entry.minTier === "grandmaster") return 18;
-  if (entry.minTier === "very-hard") return 16;
-  if (entry.minTier === "hard") return 14;
-  if (entry.minTier === "normal") return 10;
+  const strength = getBotStrengthBand(entry.minTier);
+  if (strength.targetElo >= 3200) return 22;
+  if (strength.targetElo >= 2800) return 18;
+  if (strength.targetElo >= 2300) return 16;
+  if (strength.targetElo >= 1900) return 14;
+  if (strength.targetElo >= 1400) return 10;
   return 6;
 }
 
 function tierPolicyForCoverage(tier: BotTierKey) {
-  const policies: Record<BotTierKey, string> = {
-    easy: "not naive: common book moves, immediate wins, safe captures, and major-piece blunder filters",
-    normal: "one-reply defense, defended-piece awareness, and basic tactic labels",
-    hard: "fork, pin, skewer, loose-piece, and king-safety benchmark coverage",
-    "very-hard": "deeper replies, sacrifice filters, positional pressure, and draw-saving fallback",
-    grandmaster: "engine labels, stronger PV preference, and benchmarked tactical choices",
-    legend: "highest confidence cache first, deepest labels, anti-blunder verification, and strict latency control"
-  };
-  return policies[tier];
+  const strength = getBotStrengthBand(tier);
+  if (strength.targetElo < 600) return "legal-move coverage, obvious tactic labels, and deliberately forgiving choices";
+  if (strength.targetElo < 1200) return "not naive: common book moves, immediate wins, safe captures, and major-piece blunder filters";
+  if (strength.targetElo < 1800) return "one-reply defense, defended-piece awareness, and basic tactic labels";
+  if (strength.targetElo < 2400) return "fork, pin, skewer, loose-piece, king-safety, and counterattack benchmark coverage";
+  if (strength.targetElo < 3200) return "engine labels, stronger PV preference, sacrifice filters, and benchmarked tactical choices";
+  return "highest confidence cache first, deepest labels, anti-blunder verification, Stockfish-ceiling awareness, and strict latency control";
 }
 
 function tiersAtOrAbove(minTier: BotTierKey): BotTierKey[] {
-  return trainingTierProfiles.filter((profile) => tierRank[profile.key] >= tierRank[minTier]).map((profile) => profile.key);
+  const minRank = rankForTier(minTier);
+  return trainingTierProfiles.filter((profile) => rankForTier(profile.key) >= minRank).map((profile) => profile.key);
+}
+
+function rankForTier(tier: BotTierKey) {
+  return tierRank.get(normalizeBotTierKey(tier)) ?? 0;
 }
 
 function sourceFileForEntry(entry: BotKnowledgeEntry) {

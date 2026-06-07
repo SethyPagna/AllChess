@@ -103,7 +103,7 @@ describe("compact page copy", () => {
     expect(markup).toContain("Classic Chess");
     expect(markup).toContain("Bot Mode");
     expect(markup).toContain("Bot difficulty");
-    expect(markup).toContain('<option value="grandmaster" selected="">Grandmaster</option>');
+    expect(markup).toContain('<option value="elo-2800-2900" selected="">2800-2900 Elo</option>');
     expect(markup).toContain("Blitz 5+0");
     await expect(PlayPage({ params: Promise.resolve({ locale: "en", gameId: "%E0%A4%A" }) })).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
   });

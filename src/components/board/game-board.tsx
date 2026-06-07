@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 
-import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/lib/bot/config";
+import { botDifficultyLevels, getBotDifficultyLevel, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/lib/bot/config";
 import { getVariantBotStrengthProfile } from "@/lib/bot/strength";
 import type { BotMoveResult } from "@/lib/bot/runtime";
 import { getCatalogModeSupport, getGameCatalogEntry, type CatalogModeSupport } from "@/lib/catalog";
@@ -299,7 +299,7 @@ export function GameBoard({
   const [selectedHandCode, setSelectedHandCode] = useState<string | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [playMode, setPlayMode] = useState<PlayMode>(() => resolveSupportedPlayMode(variantKey, initialPlayMode ?? (initialBotMode === "opponent" ? "bot" : "offline")));
-  const [botDifficulty, setBotDifficulty] = useState<BotDifficultyKey>(initialBotDifficulty);
+  const [botDifficulty, setBotDifficulty] = useState<BotDifficultyKey>(() => getBotDifficultyLevel(initialBotDifficulty).key);
   const [botMode, setBotMode] = useState<BotMode>(initialBotMode);
   const [pieceSkin, setPieceSkinState] = useState<PieceSkinPreference>(() => initialPieceSkinPreference(variantKey));
   const [boardTheme, setBoardThemeState] = useState<BoardThemePreference>(() => initialBoardThemePreference(variantKey));
@@ -346,7 +346,7 @@ export function GameBoard({
   const cols = displayState.board[0]?.length ?? 8;
   const files = useMemo(() => Array.from({ length: cols }, (_, index) => String.fromCharCode(97 + index)), [cols]);
   const reviewMoveRows = useMemo(() => buildReviewMoveRows({ files, locale, moves: reviewMoves, rawMoves: state.moves, rows, timeline, variantKey: displayState.variantKey }), [displayState.variantKey, files, locale, reviewMoves, rows, state.moves, timeline]);
-  const botLevel = botDifficultyLevels.find((level) => level.key === botDifficulty) ?? botDifficultyLevels[1];
+  const botLevel = getBotDifficultyLevel(botDifficulty);
   const pieceSkinOptions = useMemo(() => getPieceSkinOptions(variantKey), [variantKey]);
   const supportsDrops = useMemo(() => getVariant(variantKey).supportsDrops, [variantKey]);
   const botStrength = useMemo(() => getVariantBotStrengthProfile(variantKey, botDifficulty), [botDifficulty, variantKey]);

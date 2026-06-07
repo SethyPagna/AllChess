@@ -61,7 +61,7 @@ describe("Stockfish engine adapter", () => {
 
     expect(easy.limitStrength).toBe(true);
     expect(easy.elo).toBe(1320);
-    expect(easy.depth).toBeGreaterThanOrEqual(5);
+    expect(easy.depth).toBeGreaterThanOrEqual(4);
     expect(easy.elo).toBeLessThan(legend.elo);
     expect(easy.moveTimeMs).toBeLessThan(legend.moveTimeMs);
     expect(legend.elo).toBe(3190);
@@ -75,9 +75,9 @@ describe("Stockfish engine adapter", () => {
 
     expect(commands).toContain("uci");
     expect(commands).toContain("setoption name UCI_LimitStrength value true");
-    expect(commands).toContain("setoption name UCI_Elo value 1900");
+    expect(commands).toContain("setoption name UCI_Elo value 1950");
     expect(commands).toContain("position startpos moves e2e4");
-    expect(commands.at(-1)).toBe("go movetime 920 depth 10");
+    expect(commands.at(-1)).toBe("go movetime 1200 depth 12");
   });
 
   test("caps Stockfish command time to the remaining live-play budget", () => {

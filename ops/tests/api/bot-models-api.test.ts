@@ -94,10 +94,12 @@ describe("bot models API", () => {
         })
       ])
     );
+    expect(body.strengthBands).toHaveLength(39);
     expect(body.strengthBands).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ tier: "easy", targetElo: 1050, stockfishUciElo: 1320 }),
-        expect.objectContaining({ tier: "legend", targetElo: 3190, display: "3190+ benchmark" })
+        expect.objectContaining({ tier: "elo-100-200", targetElo: 150, stockfishUciElo: 1320 }),
+        expect.objectContaining({ tier: "elo-1000-1100", targetElo: 1050, stockfishUciElo: 1320 }),
+        expect.objectContaining({ tier: "elo-3900-4000", targetElo: 3950, display: "3900-4000 Elo-style", calibrationStatus: "benchmark-ceiling" })
       ])
     );
     expect(body.trainingChecklists).toEqual(
@@ -107,11 +109,11 @@ describe("bot models API", () => {
           coverageStatus: "active",
           difficultyTiers: expect.arrayContaining([
             expect.objectContaining({
-              tier: "normal",
+              tier: "elo-1400-1500",
               strength: expect.objectContaining({ calibrationStatus: "stockfish-calibrated" })
             }),
             expect.objectContaining({
-              tier: "easy",
+              tier: "elo-1000-1100",
               targetBehavior: expect.stringContaining("not naive"),
               strength: expect.objectContaining({ calibrationStatus: "allchess-estimated" })
             })
@@ -144,8 +146,8 @@ describe("bot models API", () => {
           variantKey: "classic",
           claimStatus: "verified",
           tierCoverage: expect.arrayContaining([
-            expect.objectContaining({ tier: "easy", policy: expect.stringContaining("not naive") }),
-            expect.objectContaining({ tier: "legend", policy: expect.stringContaining("highest confidence") })
+            expect.objectContaining({ tier: "elo-1000-1100", policy: expect.stringContaining("not naive") }),
+            expect.objectContaining({ tier: "elo-3900-4000", policy: expect.stringContaining("highest confidence") })
           ])
         }),
         expect.objectContaining({
@@ -158,14 +160,14 @@ describe("bot models API", () => {
     expect(body.tierBenchmarks).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          tier: "grandmaster",
+          tier: "elo-2800-2900",
           benchmarkVersion: expect.any(String),
           latencyTargetMs: 2800,
           fixtureFamilies: expect.arrayContaining(["mate", "rescue", "counterattack", "draw-saving"])
         }),
         expect.objectContaining({
-          tier: "legend",
-          strongerThan: "grandmaster",
+          tier: "elo-3900-4000",
+          strongerThan: "elo-3800-3900",
           runtimePolicy: "cache-first"
         })
       ])
@@ -189,7 +191,7 @@ describe("bot models API", () => {
         positionHash: expect.any(String),
         sourceFileId: expect.any(String),
         sourceLicense: expect.any(String),
-        tierTargets: expect.arrayContaining(["legend"]),
+        tierTargets: expect.arrayContaining(["elo-3900-4000"]),
         labelDepth: expect.any(Number),
         engine: expect.any(String),
         split: expect.stringMatching(/train|eval|test/),
@@ -200,7 +202,7 @@ describe("bot models API", () => {
       expect.arrayContaining([
         expect.objectContaining({
           source: "opening-book",
-          tierTargets: expect.arrayContaining(["easy", "legend"])
+          tierTargets: expect.arrayContaining(["elo-1000-1100", "elo-3900-4000"])
         })
       ])
     );

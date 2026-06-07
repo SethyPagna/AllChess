@@ -21,15 +21,6 @@ export type StockfishSearchResult = {
   evaluation: number | null;
 };
 
-const configs: Record<BotDifficultyKey, StockfishDifficultyConfig> = {
-  easy: { limitStrength: true, elo: getBotStrengthBand("easy").stockfishUciElo, skillLevel: 6, moveTimeMs: 300, depth: 5 },
-  normal: { limitStrength: true, elo: getBotStrengthBand("normal").stockfishUciElo, skillLevel: 10, moveTimeMs: 620, depth: 8 },
-  hard: { limitStrength: true, elo: getBotStrengthBand("hard").stockfishUciElo, skillLevel: 14, moveTimeMs: 920, depth: 10 },
-  "very-hard": { limitStrength: true, elo: getBotStrengthBand("very-hard").stockfishUciElo, skillLevel: 16, moveTimeMs: 1300, depth: 12 },
-  grandmaster: { limitStrength: true, elo: getBotStrengthBand("grandmaster").stockfishUciElo, skillLevel: 18, moveTimeMs: 1700, depth: 15 },
-  legend: { limitStrength: false, elo: getBotStrengthBand("legend").stockfishUciElo, skillLevel: 20, moveTimeMs: 2400, depth: 20 }
-};
-
 const stockfishScriptPath = "/engines/stockfish/stockfish-18-lite-single.js";
 const stockfishWasmPath = "/engines/stockfish/stockfish-18-lite-single.wasm";
 const stockfishScriptSelector = `script[data-allchess-stockfish="true"]`;
@@ -57,7 +48,16 @@ export function shouldUseStockfish(state: GameState, engine: BotEngineMode = "au
 }
 
 export function getStockfishDifficultyConfig(key: BotDifficultyKey) {
-  return configs[key] ?? configs.normal;
+  const band = getBotStrengthBand(key);
+  const progress = (band.targetElo - 150) / (3950 - 150);
+  const skillLevel = Math.round(interpolate(1, 20, progress));
+  return {
+    limitStrength: band.targetElo < 3200,
+    elo: band.stockfishUciElo,
+    skillLevel,
+    moveTimeMs: Math.round(interpolate(120, 2400, progress)),
+    depth: Math.round(interpolate(4, 20, progress))
+  };
 }
 
 export function isStockfishRuntimeReady() {
@@ -183,6 +183,11 @@ function canRequestUciPromotion(state: GameState, move: Move) {
   if (variant.family === "western") return piece.code === "p" && (move.to.row === 0 || move.to.row === state.board.length - 1);
   if (variant.key === "makruk") return piece.code === "p" && (piece.owner === "white" ? move.to.row <= 2 : move.to.row >= variant.board.rows - 3);
   return false;
+}
+
+function interpolate(min: number, max: number, progress: number) {
+  const boundedProgress = Math.max(0, Math.min(1, progress));
+  return min + (max - min) * boundedProgress;
 }
 
 function canUseStockfishRuntime() {

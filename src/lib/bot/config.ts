@@ -1,4 +1,4 @@
-import { getBotStrengthBand, type BotStrengthBand, type BotTierKey } from "@/lib/bot/strength";
+import { listBotStrengthBands, normalizeBotTierKey, type BotEloBandKey, type BotStrengthBand, type BotTierKey } from "@/lib/bot/strength";
 
 export const MAX_BOT_REPLY_MS = 2800;
 
@@ -7,7 +7,7 @@ export type BotDifficultyKey = BotTierKey;
 export type BotPlayStyle = "balanced" | "tactical" | "positional" | "defensive" | "wild";
 
 export type BotDifficulty = {
-  key: BotTierKey;
+  key: BotEloBandKey;
   label: string;
   estimatedStrength: string;
   strength: BotStrengthBand;
@@ -23,101 +23,55 @@ export type BotDifficulty = {
   knowledgeMinimumConfidence: number;
 };
 
-export const botDifficultyLevels: BotDifficulty[] = [
-  {
-    key: "easy",
-    label: "Easy",
-    estimatedStrength: "Guided beginner: legal, safe, tactical, and still beatable",
-    strength: getBotStrengthBand("easy"),
-    benchmarkVersion: "allchess-bench-v2",
-    depth: 3,
-    moveTimeMs: 300,
-    skill: 8,
-    nodeBudget: 760,
-    beamWidth: 10,
-    quiescenceDepth: 1,
-    riskTolerance: 0.42,
-    replyCheckWidth: 5,
-    knowledgeMinimumConfidence: 0.72
-  },
-  {
-    key: "normal",
-    label: "Normal",
-    estimatedStrength: "Club basics with tactical and retreat checks",
-    strength: getBotStrengthBand("normal"),
-    benchmarkVersion: "allchess-bench-v2",
-    depth: 4,
-    moveTimeMs: 650,
-    skill: 11,
-    nodeBudget: 1800,
-    beamWidth: 16,
-    quiescenceDepth: 1,
-    riskTolerance: 0.32,
-    replyCheckWidth: 8,
-    knowledgeMinimumConfidence: 0.7
-  },
-  {
-    key: "hard",
-    label: "Hard",
-    estimatedStrength: "Tactical club with counterplay and king-safety checks",
-    strength: getBotStrengthBand("hard"),
-    benchmarkVersion: "allchess-bench-v2",
-    depth: 4,
-    moveTimeMs: 950,
-    skill: 14,
-    nodeBudget: 4200,
-    beamWidth: 22,
-    quiescenceDepth: 2,
-    riskTolerance: 0.22,
-    replyCheckWidth: 12,
-    knowledgeMinimumConfidence: 0.66
-  },
-  {
-    key: "very-hard",
-    label: "Very Hard",
-    estimatedStrength: "Expert training with deeper plans and sacrifice filters",
-    strength: getBotStrengthBand("very-hard"),
-    benchmarkVersion: "allchess-bench-v2",
-    depth: 5,
-    moveTimeMs: 1500,
-    skill: 17,
-    nodeBudget: 8200,
-    beamWidth: 32,
-    quiescenceDepth: 2,
-    riskTolerance: 0.13,
-    replyCheckWidth: 17,
-    knowledgeMinimumConfidence: 0.6
-  },
-  {
-    key: "grandmaster",
-    label: "Grandmaster",
-    estimatedStrength: "Engine-backed master benchmark",
-    strength: getBotStrengthBand("grandmaster"),
-    benchmarkVersion: "allchess-bench-v2",
-    depth: 5,
-    moveTimeMs: 2100,
-    skill: 18,
-    nodeBudget: 12000,
-    beamWidth: 34,
-    quiescenceDepth: 2,
-    riskTolerance: 0.1,
-    replyCheckWidth: 17,
-    knowledgeMinimumConfidence: 0.6
-  },
-  {
-    key: "legend",
-    label: "Legend",
-    estimatedStrength: "Fast cache-first benchmark with deepest safe search",
-    strength: getBotStrengthBand("legend"),
-    benchmarkVersion: "allchess-bench-v2",
-    depth: 7,
-    moveTimeMs: 2600,
-    skill: 20,
-    nodeBudget: 28000,
-    beamWidth: 46,
-    quiescenceDepth: 4,
-    riskTolerance: 0.03,
-    replyCheckWidth: 24,
-    knowledgeMinimumConfidence: 0.55
-  }
-];
+export const botDifficultyLevels: BotDifficulty[] = listBotStrengthBands().map((strength) => {
+  const progress = (strength.targetElo - 150) / (3950 - 150);
+  return {
+    key: strength.tier,
+    label: `${strength.label} Elo`,
+    estimatedStrength: estimatedStrengthForBand(strength),
+    strength,
+    benchmarkVersion: "allchess-bench-v3-elo-bands",
+    depth: Math.round(interpolate(3, 8, progress)),
+    moveTimeMs: Math.round(interpolate(220, 2600, progress)),
+    skill: Math.round(interpolate(8, 20, progress)),
+    nodeBudget: Math.round(interpolate(360, 30000, progress)),
+    beamWidth: Math.round(interpolate(8, 48, progress)),
+    quiescenceDepth: Math.max(1, Math.round(interpolate(1, 4, progress))),
+    riskTolerance: Number(interpolate(0.42, 0.03, progress).toFixed(2)),
+    replyCheckWidth: Math.round(interpolate(5, 26, progress)),
+    knowledgeMinimumConfidence: Number(interpolate(0.78, 0.54, progress).toFixed(2))
+  };
+});
+
+const botDifficultyByKey = new Map<BotEloBandKey, BotDifficulty>(botDifficultyLevels.map((level) => [level.key, level]));
+
+export function getBotDifficultyLevel(key: BotTierKey) {
+  const normalizedKey = normalizeBotTierKey(key);
+  return botDifficultyByKey.get(normalizedKey) ?? botDifficultyByKey.get("elo-1400-1500") ?? botDifficultyLevels[0];
+}
+
+export function isBeginnerBotDifficulty(difficulty: BotDifficulty) {
+  return difficulty.strength.targetElo < 1200;
+}
+
+export function isCeilingBotDifficulty(difficulty: BotDifficulty) {
+  return difficulty.strength.targetElo >= 3200;
+}
+
+export function isMasterBotDifficulty(difficulty: BotDifficulty) {
+  return difficulty.strength.targetElo >= 2800;
+}
+
+function estimatedStrengthForBand(strength: BotStrengthBand) {
+  if (strength.targetElo < 600) return "Learning tier: legal moves, obvious tactics, and high forgiveness";
+  if (strength.targetElo < 1200) return "Beginner tier: legal, safer, tactical, and still very beatable";
+  if (strength.targetElo < 1800) return "Club tier: basic tactics, defended pieces, and one-reply checks";
+  if (strength.targetElo < 2400) return "Expert tier: stronger tactics, counterplay, and positional filters";
+  if (strength.targetElo < 3200) return "Engine-calibrated tier: high Stockfish UCI strength plus AllChess validation";
+  return "Benchmark ceiling tier: Stockfish cap plus deeper cache-first AllChess search";
+}
+
+function interpolate(min: number, max: number, progress: number) {
+  const boundedProgress = Math.max(0, Math.min(1, progress));
+  return min + (max - min) * boundedProgress;
+}

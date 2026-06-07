@@ -57,11 +57,11 @@ describe("bot benchmark API", () => {
       claimStatus: "verified",
       runtimePolicy: "cache-first",
       latencyTargetMs: 2800,
-      strongerThan: "grandmaster",
+      strongerThan: "elo-3800-3900",
       fixtureFamilies: expect.arrayContaining(["mate", "rescue", "counterattack", "draw-saving"]),
       strength: {
-        display: "3190+ benchmark",
-        targetElo: 3190,
+        display: "3900-4000 Elo-style",
+        targetElo: 3950,
         stockfishUciElo: 3190
       }
     });

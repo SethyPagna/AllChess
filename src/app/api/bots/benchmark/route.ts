@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { listTierBenchmarkResults, listVariantTrainingCoverage } from "@/lib/bot/training";
-import { getBotStrengthBand } from "@/lib/bot/strength";
+import { getBotStrengthBand, isBotTierKey, normalizeBotTierKey, type BotTierKey } from "@/lib/bot/strength";
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
 
 const benchmarkSchema = z.object({
   variantKey: z.string().min(1).default("classic"),
-  tier: z.enum(["easy", "normal", "hard", "very-hard", "grandmaster", "legend"]).default("normal"),
+  tier: z.string().refine(isBotTierKey).default("normal"),
   suite: z.string().min(1).default("smoke"),
   positions: z.number().int().nonnegative().default(0),
   score: z.number().default(0),
@@ -18,15 +18,17 @@ const benchmarkSchema = z.object({
 export async function POST(request: Request) {
   const body = benchmarkSchema.parse(await request.json().catch(() => ({})));
   const completedAt = new Date().toISOString();
-  const benchmark = listTierBenchmarkResults().find((item) => item.tier === body.tier);
+  const tier = body.tier as BotTierKey;
+  const normalizedTier = normalizeBotTierKey(tier);
+  const benchmark = listTierBenchmarkResults().find((item) => item.tier === normalizedTier);
   const coverage = listVariantTrainingCoverage(body.variantKey)[0];
-  const id = `${body.variantKey}-${body.tier}-${body.suite}-${Date.now()}`;
+  const id = `${body.variantKey}-${tier}-${body.suite}-${Date.now()}`;
   const benchmarkVersion = benchmark?.benchmarkVersion ?? "manual-benchmark-v1";
   const response = {
     id,
     variantKey: body.variantKey,
-    tier: body.tier,
-    strength: getBotStrengthBand(body.tier),
+    tier,
+    strength: getBotStrengthBand(tier),
     claimStatus: coverage?.claimStatus ?? "preview-only",
     readiness: coverage?.readiness ?? "training",
     runtimePolicy: benchmark?.runtimePolicy ?? "cache-first",
@@ -53,7 +55,7 @@ export async function POST(request: Request) {
     await createD1GameRepository(env.ALLCHESS_D1).saveBotBenchmark({
       id,
       variantKey: body.variantKey,
-      tier: body.tier,
+      tier,
       benchmarkVersion,
       gamesPlayed: body.positions,
       score: body.score,

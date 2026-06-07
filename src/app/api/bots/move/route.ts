@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { requestBotMove, type BotTierKey } from "@/lib/bot/runtime";
+import { requestBotMove } from "@/lib/bot/runtime";
+import { isBotTierKey, type BotTierKey } from "@/lib/bot/strength";
 import type { GameState } from "@/lib/variants";
 
 const botMoveSchema = z.object({
   state: z.custom<GameState>(),
-  tier: z.enum(["easy", "normal", "hard", "very-hard", "grandmaster", "legend"]).default("normal"),
+  tier: z.string().refine(isBotTierKey).default("normal"),
   engineMode: z.enum(["auto", "stockfish", "internal"]).default("auto"),
   maxSearchTimeMs: z.number().int().positive().max(3000).default(900),
   roomId: z.string().optional(),

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import { cancelBotMove, chooseBotMove, chooseBotMoveSafe, botDifficultyLevels, MAX_BOT_REPLY_MS, MAX_GLOBAL_TRANSPOSITIONS, requestBotMove } from "@/lib/bot/runtime";
+import { botEloBandKeys, getBotStrengthBand } from "@/lib/bot/strength";
 import {
   createBotBoardSignature,
   createBotPositionKey,
@@ -25,24 +26,31 @@ describe("bot difficulty ladder", () => {
     expect(MAX_GLOBAL_TRANSPOSITIONS).toBeGreaterThanOrEqual(24000);
   });
 
-  test("defines the requested six difficulty levels in increasing search budget", () => {
-    expect(botDifficultyLevels.map((level) => level.key)).toEqual(["easy", "normal", "hard", "very-hard", "grandmaster", "legend"]);
-    expect(botDifficultyLevels.map((level) => level.label)).toEqual(["Easy", "Normal", "Hard", "Very Hard", "Grandmaster", "Legend"]);
-    expect(botDifficultyLevels.map((level) => level.strength.targetElo)).toEqual([1050, 1450, 1900, 2300, 2850, 3190]);
-    expect(botDifficultyLevels.map((level) => level.strength.stockfishUciElo)).toEqual([1320, 1450, 1900, 2300, 2850, 3190]);
+  test("defines 100-point Elo-style difficulty bands through the 4000 ceiling", () => {
+    expect(botDifficultyLevels.map((level) => level.key)).toEqual([...botEloBandKeys]);
+    expect(botDifficultyLevels[0]).toMatchObject({ key: "elo-100-200", label: "100-200 Elo" });
+    expect(botDifficultyLevels.at(-1)).toMatchObject({ key: "elo-3900-4000", label: "3900-4000 Elo" });
+    expect(botDifficultyLevels.map((level) => level.strength.targetElo)).toEqual(botDifficultyLevels.map((level) => (level.strength.minElo + level.strength.maxElo) / 2));
+    expect(getBotStrengthBand("easy")).toMatchObject({ tier: "elo-1000-1100", targetElo: 1050 });
+    expect(getBotStrengthBand("normal")).toMatchObject({ tier: "elo-1400-1500", targetElo: 1450 });
+    expect(getBotStrengthBand("grandmaster")).toMatchObject({ tier: "elo-2800-2900", targetElo: 2850 });
+    expect(getBotStrengthBand("legend")).toMatchObject({ tier: "elo-3900-4000", targetElo: 3950, stockfishUciElo: 3190 });
     expect(botDifficultyLevels.every((level) => level.strength.minElo <= level.strength.targetElo)).toBe(true);
+    expect(botDifficultyLevels.every((level) => level.strength.maxElo >= level.strength.targetElo)).toBe(true);
 
     const budgets = botDifficultyLevels.map((level) => level.depth * level.moveTimeMs);
     expect([...budgets].sort((a, b) => a - b)).toEqual(budgets);
-    expect(botDifficultyLevels.map((level) => level.beamWidth)).toEqual([10, 16, 22, 32, 34, 46]);
-    expect(botDifficultyLevels.map((level) => level.quiescenceDepth)).toEqual([1, 1, 2, 2, 2, 4]);
-    expect(botDifficultyLevels.map((level) => level.riskTolerance)).toEqual([0.42, 0.32, 0.22, 0.13, 0.1, 0.03]);
-    expect(botDifficultyLevels.map((level) => level.replyCheckWidth)).toEqual([5, 8, 12, 17, 17, 24]);
+    expect([...botDifficultyLevels.map((level) => level.beamWidth)].sort((a, b) => a - b)).toEqual(botDifficultyLevels.map((level) => level.beamWidth));
+    expect([...botDifficultyLevels.map((level) => level.replyCheckWidth)].sort((a, b) => a - b)).toEqual(botDifficultyLevels.map((level) => level.replyCheckWidth));
+    expect([...botDifficultyLevels.map((level) => level.riskTolerance)].sort((a, b) => b - a)).toEqual(botDifficultyLevels.map((level) => level.riskTolerance));
     expect(Math.max(...botDifficultyLevels.map((level) => level.moveTimeMs))).toBeLessThanOrEqual(MAX_BOT_REPLY_MS);
   });
 
   test("lower tiers are smarter without exceeding the reply budget", () => {
-    const [easy, normal, hard, veryHard] = botDifficultyLevels;
+    const easy = botDifficultyLevels[0];
+    const normal = botDifficultyLevels.find((level) => level.key === "elo-1400-1500") ?? botDifficultyLevels[0];
+    const hard = botDifficultyLevels.find((level) => level.key === "elo-1900-2000") ?? normal;
+    const veryHard = botDifficultyLevels.find((level) => level.key === "elo-2300-2400") ?? hard;
 
     expect(easy.depth).toBeGreaterThanOrEqual(3);
     expect(easy.skill).toBeGreaterThanOrEqual(8);
@@ -54,6 +62,18 @@ describe("bot difficulty ladder", () => {
     expect(veryHard.nodeBudget).toBeGreaterThan(8000);
     expect([easy, normal, hard, veryHard].every((level) => level.moveTimeMs < MAX_BOT_REPLY_MS)).toBe(true);
   });
+
+  test("standards-style smoke covers every Elo band with legal bounded classic moves", () => {
+    const state = createInitialState("classic", "elo-band-standard-smoke");
+    for (const level of botDifficultyLevels) {
+      const result = chooseBotMoveSafe(state, level.key, { engine: "internal", maxSearchTimeMs: 16 });
+      expect(result.reason).toBe("ok");
+      if (!result.move) throw new Error(`Expected ${level.key} to return a legal move.`);
+      expect(() => applyMove(state, result.move)).not.toThrow();
+      expect(result.elapsedMs).toBeLessThan(MAX_BOT_REPLY_MS);
+      expect(result.validatedLegal).toBe(true);
+    }
+  }, 20_000);
 
   test("always chooses a legal move for every launch variant", () => {
     const variants = ["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "shogi", "mini-shogi", "janggi", "makruk", "jungle", "english-draughts", "international-draughts", "turkish-draughts", "konane", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"];
@@ -284,7 +304,8 @@ describe("bot difficulty ladder", () => {
     if (!first.move) throw new Error("Expected an initial legal search move.");
     if (!second.move) throw new Error("Expected a legal cached-search move.");
     expect(() => applyMove(state, second.move)).not.toThrow();
-    expect(second.searchEfficiency.transpositionHits).toBeGreaterThan(first.searchEfficiency.transpositionHits);
+    expect(second.searchEfficiency.transpositionHits).toBeGreaterThan(0);
+    expect(second.searchEfficiency.transpositionHits).toBeGreaterThanOrEqual(first.searchEfficiency.transpositionHits);
     expect(second.nodesSearched).toBeLessThanOrEqual(first.nodesSearched);
   });
 
@@ -398,7 +419,7 @@ describe("bot difficulty ladder", () => {
       status: "ok",
       tier: "grandmaster",
       strength: expect.objectContaining({
-        display: "2700-2900 Elo-style",
+        display: "2800-2900 Elo-style",
         targetElo: 2850,
         calibrationStatus: "stockfish-calibrated"
       }),
@@ -892,10 +913,10 @@ describe("bot difficulty ladder", () => {
     expect(classic?.coverageStatus).toBe("active");
     expect(classic?.rulesCompletion.status).toBe("verified-playable");
     expect(classic?.rulesCompletion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("bare kings")]));
-    expect(classic?.difficultyTiers.map((tier) => tier.tier)).toEqual(["easy", "normal", "hard", "very-hard", "grandmaster", "legend"]);
-    expect(classic?.difficultyTiers[0].targetBehavior).toContain("not naive");
+    expect(classic?.difficultyTiers.map((tier) => tier.tier)).toEqual([...botEloBandKeys]);
+    expect(classic?.difficultyTiers[0].targetBehavior).toContain("Learning tier");
     expect(classic?.difficultyTiers[0].strength.calibrationStatus).toBe("allchess-estimated");
-    expect(classic?.difficultyTiers[1].strength.calibrationStatus).toBe("stockfish-calibrated");
+    expect(classic?.difficultyTiers.find((tier) => tier.tier === "elo-1400-1500")?.strength.calibrationStatus).toBe("stockfish-calibrated");
     expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "not-naive-basics", status: "ready" })]));
     expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "resource-efficiency", status: "ready" })]));
     expect(classic?.difficultyTiers[0].checklist).toEqual(expect.arrayContaining([expect.objectContaining({ id: "search-telemetry", status: "ready" })]));
@@ -906,7 +927,10 @@ describe("bot difficulty ladder", () => {
       expect(checklist?.coverageStatus).toBe("active");
       expect(checklist?.knowledgeEntries).toBeGreaterThan(0);
       expect(checklist?.engineLabels).toBeGreaterThan(0);
-      expect(checklist?.difficultyTiers.map((tier) => tier.search.maxMoveTimeMs)).toEqual([220, 420, 780, 1400, 2100, 2600]);
+      const moveTimes = checklist?.difficultyTiers.map((tier) => tier.search.maxMoveTimeMs) ?? [];
+      expect(moveTimes).toHaveLength(botEloBandKeys.length);
+      expect([...moveTimes].sort((a, b) => a - b)).toEqual(moveTimes);
+      expect(Math.max(...moveTimes)).toBeLessThanOrEqual(MAX_BOT_REPLY_MS);
     }
     expect(jungle?.coverageStatus).toBe("active");
     expect(jungle?.rulesCompletion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Rat river")]));

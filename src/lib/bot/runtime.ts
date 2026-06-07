@@ -1,7 +1,7 @@
 import { applyMove, getLegalMoves, sameSquare, type GameState, type Move, type PlayerColor } from "@/lib/variants";
 import { lookupBotKnowledge, type BotKnowledgeSource, type BotMoveExplanation } from "@/lib/bot/training";
 import { isStockfishRuntimeReady, moveToUci, requestStockfishMove, shouldUseStockfish, warmStockfishRuntime, type BotEngineMode } from "@/lib/bot/stockfish-engine";
-import { botDifficultyLevels, MAX_BOT_REPLY_MS, type BotDifficulty, type BotDifficultyKey, type BotPlayStyle } from "@/lib/bot/config";
+import { botDifficultyLevels, getBotDifficultyLevel, isBeginnerBotDifficulty, isCeilingBotDifficulty, isMasterBotDifficulty, MAX_BOT_REPLY_MS, type BotDifficulty, type BotDifficultyKey, type BotPlayStyle } from "@/lib/bot/config";
 import type { BotStrengthBand, BotTierKey } from "@/lib/bot/strength";
 
 const MIN_BOT_SEARCH_MS = 8;
@@ -131,7 +131,7 @@ export function chooseBotMoveSafe(
     }
   | { move: null; reason: "no-legal-moves" } {
   const startedAt = Date.now();
-  const difficulty = botDifficultyLevels.find((level) => level.key === difficultyKey) ?? botDifficultyLevels[1];
+  const difficulty = difficultyFor(difficultyKey);
   const searchTimeMs = boundedSearchTime(options.maxSearchTimeMs ?? difficulty.moveTimeMs, difficulty.moveTimeMs);
   const budget = createSearchBudget(startedAt, searchTimeMs);
   const legalMoves = allLegalMovesCached(state, budget);
@@ -183,7 +183,7 @@ export function chooseBotMoveSafe(
   const selected = selectRankedMove(ranked, difficulty);
   const depthReached = Math.max(1, Math.min(difficulty.depth, difficulty.depth - (Date.now() >= budget.deadline ? 1 : 0)));
 
-  if (difficulty.key === "easy") {
+  if (isBeginnerBotDifficulty(difficulty)) {
     return {
       move: selected.move,
       reason: "ok",
@@ -503,7 +503,7 @@ function evaluateMove(
   perspective: PlayerColor,
   budget: SearchBudget
 ) {
-  if (difficulty.key === "easy") {
+  if (isBeginnerBotDifficulty(difficulty)) {
     return beginnerMoveScore(state, move, perspective, difficulty, budget);
   }
 
@@ -526,7 +526,7 @@ function evaluateMove(
 }
 
 function selectRankedMove(ranked: Array<{ move: Move; score: number }>, difficulty: BotDifficulty) {
-  if (difficulty.key !== "easy") return ranked[0];
+  if (!isBeginnerBotDifficulty(difficulty)) return ranked[0];
   const bestScore = ranked[0]?.score ?? 0;
   const safeMoves = ranked.filter((entry) => entry.score >= bestScore - 28);
   return safeMoves[0] ?? ranked[0];
@@ -857,7 +857,7 @@ function deepStrategicPlanScore(
   const conversionGain = endgameConversionScore(next, perspective, budget) - endgameConversionScore(state, perspective, budget);
   const sacrificeCompensation = sacrificeCompensationScore(state, next, move, perspective, difficulty, budget);
   const drawResource = drawSavingResourceScore(state, next, perspective, budget);
-  const scale = difficulty.key === "legend" ? 1.2 : difficulty.key === "grandmaster" ? 1.05 : 0.8;
+  const scale = isCeilingBotDifficulty(difficulty) ? 1.2 : isMasterBotDifficulty(difficulty) ? 1.05 : 0.8;
 
   return (pressureGain * 0.55 + kingNetGain * 0.85 + conversionGain * 0.65 + sacrificeCompensation + drawResource) * scale;
 }
@@ -971,7 +971,7 @@ function sacrificeCompensationScore(
   const kingPressure = kingNetScore(next, perspective, budget);
   const objective = variantObjectiveScore(next, move, perspective);
   const compensation = pressureGain * 0.65 + kingPressure * 0.8 + objective;
-  const requiredCompensation = Math.abs(materialDelta) * (difficulty.key === "legend" ? 0.55 : 0.7);
+  const requiredCompensation = Math.abs(materialDelta) * (isCeilingBotDifficulty(difficulty) ? 0.55 : 0.7);
   return compensation > requiredCompensation ? compensation - requiredCompensation : materialDelta * 0.35;
 }
 
@@ -1239,24 +1239,18 @@ function squareDistance(left: { row: number; col: number }, right: { row: number
 }
 
 function confidenceFor(score: number | null, depth: number, tier: BotTierKey) {
-  const tierFloor: Record<BotTierKey, number> = {
-    easy: 0.34,
-    normal: 0.45,
-    hard: 0.56,
-    "very-hard": 0.68,
-    grandmaster: 0.82,
-    legend: 0.9
-  };
+  const difficulty = difficultyFor(tier);
+  const tierFloor = Math.max(0.28, Math.min(0.9, 0.25 + difficulty.strength.targetElo / 6100));
   const scoreSignal = Math.min(0.08, Math.abs(score ?? 0) / 24000);
   const depthSignal = Math.min(0.08, depth / 100);
-  return Number(Math.min(0.99, tierFloor[tier] + scoreSignal + depthSignal).toFixed(2));
+  return Number(Math.min(0.99, tierFloor + scoreSignal + depthSignal).toFixed(2));
 }
 
 function explanationForMove(source: BotKnowledgeSource, state: GameState, move: Move, score: number | null, tier: BotTierKey): BotMoveExplanation {
   const moving = state.board[move.from.row]?.[move.from.col]?.piece;
   const target = state.board[move.to.row]?.[move.to.col]?.piece;
   const captureValue = target ? pieceValues[target.code] ?? 100 : 0;
-  const tierPrefix = tier === "grandmaster" || tier === "legend" ? "Deep tier" : "Search";
+  const tierPrefix = isMasterBotDifficulty(difficultyFor(tier)) ? "Deep tier" : "Search";
   const attackers = moving ? opponentColors(state, moving.owner) : [];
   const wasAttacked = moving ? isSquareAttackedBy(state, move.from, attackers) : false;
   const next = tryMove(state, move);
@@ -1384,7 +1378,7 @@ function pieceLabel(code: string) {
 }
 
 function difficultyFor(key: BotDifficultyKey) {
-  return botDifficultyLevels.find((level) => level.key === key) ?? botDifficultyLevels[1];
+  return getBotDifficultyLevel(key);
 }
 
 function safeUci(state: GameState, move: Move) {

@@ -29,6 +29,7 @@ describe("API route parameter guards", () => {
     expect(parsePlayMode(["spectate", "bot"])).toBe("spectate");
     expect(parsePlayMode("matchmaking")).toBe("online");
     expect(parsePlayMode("broken", "online")).toBe("online");
+    expect(parseBotDifficulty("elo-3900-4000")).toBe("elo-3900-4000");
     expect(parseBotDifficulty("normal")).toBe("normal");
     expect(parseBotDifficulty("grandmaster")).toBe("grandmaster");
     expect(parseBotDifficulty("broken", "normal")).toBe("normal");

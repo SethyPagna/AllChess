@@ -1,4 +1,5 @@
-import { botDifficultyLevels, type BotDifficultyKey } from "@/lib/bot/config";
+import { type BotDifficultyKey } from "@/lib/bot/config";
+import { isBotTierKey } from "@/lib/bot/strength";
 import { gameFamilies, type CatalogPlayMode, type GameFamilyKey, type PlayabilityStatus } from "@/lib/catalog";
 import { timeControls, type TimeControlKey } from "@/lib/game/time-controls";
 
@@ -38,7 +39,7 @@ export function parseQueryFlag(value: string | string[] | undefined) {
 export function parseBotDifficulty(value: string | string[] | undefined, fallback?: BotDifficultyKey): BotDifficultyKey | undefined {
   const difficulty = Array.isArray(value) ? value[0] : value;
   if (!difficulty) return fallback;
-  return botDifficultyLevels.some((level) => level.key === difficulty) ? (difficulty as BotDifficultyKey) : fallback;
+  return isBotTierKey(difficulty) ? (difficulty as BotDifficultyKey) : fallback;
 }
 
 export function parseTimeControl(value: string | string[] | undefined, fallback?: TimeControlKey): TimeControlKey | undefined {
