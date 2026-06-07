@@ -293,10 +293,25 @@ export function resolvePieceSkin(variantKey: string, preference: PieceSkinPrefer
 
 export function getPieceDisplayName(code: string, variantKey: string, locale = "en", promoted = false) {
   const vocabulary = getVocabulary(normalizeLocale(locale));
+  const promotedKey = promoted ? promotedPieceVocabularyKey(code, variantKey) : null;
+  if (promotedKey) return vocabulary.pieces[promotedKey] ?? promotedKey;
   const key = pieceVocabularyKey(code, variantKey, promoted);
   const fallbackKey = pieceVocabularyKey(code, "classic", false);
   const base = vocabulary.pieces[key] ?? vocabulary.pieces[fallbackKey] ?? code.toUpperCase();
   return promoted ? `${vocabulary.pieces.promoted} ${base}` : base;
+}
+
+function promotedPieceVocabularyKey(code: string, variantKey: string): string | null {
+  if (variantKey !== "shogi" && variantKey !== "mini-shogi") return null;
+  const names: Record<string, string> = {
+    r: "dragonKing",
+    b: "dragonHorse",
+    s: "promotedSilver",
+    n: "promotedKnight",
+    l: "promotedLance",
+    p: "tokin"
+  };
+  return names[code] ?? null;
 }
 
 function pieceVocabularyKey(code: string, variantKey: string, promoted: boolean): string {

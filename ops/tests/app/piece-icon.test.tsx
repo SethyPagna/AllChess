@@ -65,6 +65,21 @@ describe("PieceIcon", () => {
     expect(chineseKing).toContain(`data-piece-label="${chineseKingName}"`);
   });
 
+  test("uses named Shogi promoted pieces in hover and accessibility labels", () => {
+    const promotedBishop = renderToStaticMarkup(<PieceIcon code="b" owner="sente" variantKey="mini-shogi" promoted />);
+    const promotedRook = renderToStaticMarkup(<PieceIcon code="r" owner="sente" variantKey="shogi" promoted />);
+    const promotedPawn = renderToStaticMarkup(<PieceIcon code="p" owner="sente" variantKey="shogi" promoted />);
+
+    expect(promotedBishop).toContain('aria-label="Dragon Horse"');
+    expect(promotedBishop).toContain('data-piece-label="Dragon Horse"');
+    expect(promotedBishop).toContain('title="Dragon Horse"');
+    expect(promotedBishop).toContain("\u99ac");
+    expect(promotedRook).toContain('aria-label="Dragon King"');
+    expect(promotedRook).toContain("\u9f8d");
+    expect(promotedPawn).toContain('aria-label="Tokin"');
+    expect(promotedPawn).toContain("\u3068");
+  });
+
   test("renders draughts men and kings as checker discs", () => {
     const man = renderToStaticMarkup(<PieceIcon code="p" owner="white" variantKey="english-draughts" />);
     const king = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="english-draughts" promoted />);

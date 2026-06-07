@@ -467,7 +467,7 @@ test("drop-variant hand rails stay compact on Mini Shogi", async ({ page }) => {
   await board.locator('[data-coordinate="d5"]').click();
   const promotionDialog = page.getByRole("dialog", { name: "Bishop promotion choice" });
   await expect(promotionDialog).toBeVisible();
-  const promoteButton = promotionDialog.getByRole("button", { name: "Promote to Promoted Bishop" });
+  const promoteButton = promotionDialog.getByRole("button", { name: "Promote to Dragon Horse" });
   await expect(promoteButton).toBeVisible();
   await expect(promoteButton.locator(".piece-icon")).toHaveAttribute("data-promoted", "true");
   await expect(promotionDialog.getByRole("button", { name: "Keep Bishop" })).toBeVisible();
