@@ -1105,6 +1105,7 @@ export function GameBoard({
                 pieceSkin={pieceSkin}
                 pieceSkinOptions={pieceSkinOptions}
                 suggestedMoveReady={Boolean(suggestedMove)}
+                variantKey={displayState.variantKey}
               />
               <div className="play-table-card">
                 {thinking.status === "thinking" ? <p className="mt-1 text-sm font-bold text-[var(--info)]">{thinking.label}</p> : null}

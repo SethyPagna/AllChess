@@ -1,6 +1,7 @@
 import { Bot, Flag, FlipHorizontal2, Handshake, Lightbulb, PauseCircle, PlayCircle, Redo2, RotateCcw, SlidersHorizontal, Undo2 } from "lucide-react";
 
-import type { PieceSkinOption, PieceSkinPreference } from "@/components/board/piece-icon";
+import { PieceIcon, type PieceSkinOption, type PieceSkinPreference } from "@/components/board/piece-icon";
+import type { Piece } from "@/lib/variants";
 
 type BotMode = "human" | "opponent" | "both";
 
@@ -40,6 +41,7 @@ type PlayControlCardProps = {
   pieceSkin: PieceSkinPreference;
   pieceSkinOptions: PieceSkinOption[];
   suggestedMoveReady: boolean;
+  variantKey: string;
 };
 
 export function PlayControlCard({
@@ -70,8 +72,10 @@ export function PlayControlCard({
   onUndo,
   pieceSkin,
   pieceSkinOptions,
-  suggestedMoveReady
+  suggestedMoveReady,
+  variantKey
 }: PlayControlCardProps) {
+  const samplePiece = getSamplePiece(variantKey);
   return (
     <div className="play-control-card" aria-label="Board controls">
       <div className="play-control-heading">
@@ -147,7 +151,7 @@ export function PlayControlCard({
                     onClick={() => onBoardThemeChange(option.key)}
                     title={option.label}
                   >
-                    <span aria-hidden="true" />
+                    <span className="play-look-swatch" aria-hidden="true" />
                     <strong>{option.label}</strong>
                   </button>
                 ))}
@@ -175,7 +179,9 @@ export function PlayControlCard({
                     onClick={() => onPieceSkinChange(option.key)}
                     title={option.label}
                   >
-                    <span aria-hidden="true" />
+                    <span className="play-look-piece-sample" aria-hidden="true">
+                      <PieceIcon code={samplePiece.code} owner={samplePiece.owner} pieceSkin={option.key} variantKey={variantKey} />
+                    </span>
                     <strong>{option.label}</strong>
                   </button>
                 ))}
@@ -213,4 +219,14 @@ export function PlayControlCard({
       </div>
     </div>
   );
+}
+
+function getSamplePiece(variantKey: string): Pick<Piece, "code" | "owner"> {
+  if (variantKey === "shogi" || variantKey === "mini-shogi") return { code: "p", owner: "sente" };
+  if (variantKey === "xiangqi" || variantKey === "janggi") return { code: "g", owner: "red" };
+  if (variantKey === "jungle") return { code: "l", owner: "white" };
+  if (variantKey === "english-draughts" || variantKey === "international-draughts" || variantKey === "turkish-draughts") return { code: "x", owner: "white" };
+  if (variantKey === "konane") return { code: "p", owner: "white" };
+  if (variantKey === "makruk") return { code: "m", owner: "white" };
+  return { code: "q", owner: "white" };
 }

@@ -3757,7 +3757,8 @@ option {
   background: color-mix(in srgb, var(--accent-soft) 58%, var(--surface));
 }
 
-.play-look-option > span {
+.play-look-option > .play-look-swatch,
+.play-look-piece-sample {
   display: block;
   width: 1.35rem;
   height: 1.35rem;
@@ -3776,48 +3777,67 @@ option {
   white-space: nowrap;
 }
 
-.play-look-option[data-board-theme-option="classic"] > span {
+.play-look-option[data-board-theme-option="classic"] > .play-look-swatch {
   background: linear-gradient(135deg, #e8ecc9 0 50%, #719553 50% 100%);
 }
 
-.play-look-option[data-board-theme-option="wood"] > span {
+.play-look-option[data-board-theme-option="wood"] > .play-look-swatch {
   background: linear-gradient(135deg, #f1d184 0 50%, #b77536 50% 100%);
 }
 
-.play-look-option[data-board-theme-option="jade"] > span {
+.play-look-option[data-board-theme-option="jade"] > .play-look-swatch {
   background: linear-gradient(135deg, #dceadf 0 50%, #4f8f74 50% 100%);
 }
 
-.play-look-option[data-board-theme-option="ocean"] > span {
+.play-look-option[data-board-theme-option="ocean"] > .play-look-swatch {
   background: linear-gradient(135deg, #d7ecf0 0 50%, #347c8f 50% 100%);
 }
 
-.play-look-option[data-board-theme-option="contrast"] > span {
+.play-look-option[data-board-theme-option="contrast"] > .play-look-swatch {
   background: linear-gradient(135deg, #f7f3d4 0 50%, #4d5b3c 50% 100%);
 }
 
-.play-look-option[data-piece-skin-option] > span {
-  background:
-    radial-gradient(circle at 50% 43%, color-mix(in srgb, var(--piece-light) 90%, white) 0 30%, transparent 31%),
-    linear-gradient(135deg, color-mix(in srgb, var(--piece-dark) 92%, black) 0 50%, color-mix(in srgb, var(--surface-raised) 94%, white) 50%);
+.play-look-piece-sample {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface-raised) 78%, var(--board-light));
 }
 
-.play-look-option[data-piece-skin-option="disc"] > span,
-.play-look-option[data-piece-skin-option="checker"] > span,
-.play-look-option[data-piece-skin-option="stone"] > span {
+.play-look-piece-sample .piece-icon {
+  width: 1.05rem;
+  height: 1.05rem;
+  font-size: 0.92rem;
+}
+
+.play-look-piece-sample .native-piece-symbol[data-skin="wedge"],
+.play-look-piece-sample .native-piece-symbol[data-skin="mini-wedge"],
+.play-look-piece-sample .native-piece-symbol[data-variant="shogi"],
+.play-look-piece-sample .native-piece-symbol[data-variant="mini-shogi"] {
+  font-size: 0.72rem;
+}
+
+.play-look-piece-sample .western-glyph-piece {
+  font-size: 1.18rem;
+}
+
+.play-look-option[data-piece-skin-option="disc"] > .play-look-piece-sample,
+.play-look-option[data-piece-skin-option="checker"] > .play-look-piece-sample,
+.play-look-option[data-piece-skin-option="stone"] > .play-look-piece-sample {
   border-radius: 999px;
 }
 
-.play-look-option[data-piece-skin-option="wedge"] > span,
-.play-look-option[data-piece-skin-option="mini-wedge"] > span {
+.play-look-option[data-piece-skin-option="wedge"] > .play-look-piece-sample,
+.play-look-option[data-piece-skin-option="mini-wedge"] > .play-look-piece-sample {
   clip-path: polygon(50% 0, 88% 18%, 76% 100%, 24% 100%, 12% 18%);
 }
 
-.play-look-option[data-piece-skin-option="tile"] > span {
+.play-look-option[data-piece-skin-option="tile"] > .play-look-piece-sample {
   border-radius: 0.22rem;
 }
 
-.play-look-option[data-selected="true"] > span {
+.play-look-option[data-selected="true"] > .play-look-swatch,
+.play-look-option[data-selected="true"] > .play-look-piece-sample {
   box-shadow:
     0 0 0 2px color-mix(in srgb, var(--accent) 64%, transparent),
     inset 0 0 0 1px rgb(255 255 255 / 16%);

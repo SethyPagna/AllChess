@@ -42,6 +42,7 @@ describe("PlayControlCard", () => {
         pieceSkin="tile"
         pieceSkinOptions={getPieceSkinOptions("mini-shogi")}
         suggestedMoveReady={false}
+        variantKey="mini-shogi"
       />
     );
 
@@ -54,6 +55,9 @@ describe("PlayControlCard", () => {
     expect(markup).toContain('data-piece-skin-option="tile"');
     expect(markup).toContain('aria-label="Piece style choices"');
     expect(markup).toContain('aria-label="Use Tile pieces"');
+    expect(markup).toContain('class="play-look-piece-sample"');
+    expect(markup).toContain('data-code="p"');
+    expect(markup).toContain('data-variant="mini-shogi"');
     expect(markup).toContain('data-selected="true"');
     expect(markup).toContain("Selected appearance: Warm wood board, Tile pieces");
   });
