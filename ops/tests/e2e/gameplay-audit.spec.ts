@@ -495,38 +495,55 @@ test("piece hover tooltips use localized piece names", async ({ page }) => {
   expect(runtimeErrors).toEqual([]);
 });
 
-test("right-click planning arrows toggle and clear cleanly", async ({ page }) => {
+test("right-click planning arrows preview only while dragging", async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
   page.on("console", (message) => {
     if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
   });
 
+  await page.setViewportSize({ width: 1536, height: 864 });
   await page.goto("/en/play/classic");
   const board = page.getByLabel("Game board");
   await expect(board).toBeVisible();
+  const bottomCard = page.getByLabel("White player card");
+  await expect(bottomCard).toBeVisible();
+  const firstViewportFit = await page.evaluate(() => ({ innerHeight, scrollHeight: document.documentElement.scrollHeight }));
+  expect(firstViewportFit.scrollHeight).toBeLessThanOrEqual(firstViewportFit.innerHeight + 4);
+  const previewChrome = await page.evaluate(() => {
+    const preview = document.createElement("span");
+    preview.className = "piece-drag-preview";
+    document.body.appendChild(preview);
+    const computed = getComputedStyle(preview);
+    const styles = {
+      backgroundColor: computed.backgroundColor,
+      borderTopWidth: computed.borderTopWidth,
+      boxShadow: computed.boxShadow
+    };
+    preview.remove();
+    return styles;
+  });
+  expect(previewChrome).toEqual({ backgroundColor: "rgba(0, 0, 0, 0)", borderTopWidth: "0px", boxShadow: "none" });
   await page.getByRole("button", { name: "Start Game" }).click();
   await expect(page.getByText("Choose setup first")).toHaveCount(0);
 
-  await rightDragSquare(page, board, "e2", "e4");
-  await expect(board.locator('[data-planning-arrow="e2-e4"]')).toHaveCount(1);
-
-  await rightDragSquare(page, board, "e2", "e4");
-  await expect(board.locator('[data-planning-arrow="e2-e4"]')).toHaveCount(0);
+  await beginRightDragSquare(page, board, "e2", "e4");
+  await expect(board.locator('[data-planning-preview="true"]')).toHaveCount(1);
+  await page.mouse.up({ button: "right" });
+  await expect(board.locator(".board-planning-layer line")).toHaveCount(0);
 
   await rightDragSquare(page, board, "g1", "f3");
   await rightDragSquare(page, board, "b1", "c3");
-  await expect(board.locator(".board-planning-layer line")).toHaveCount(2);
-
-  await page.keyboard.down("Alt");
-  await rightDragSquare(page, board, "g1", "f3");
-  await page.keyboard.up("Alt");
-  await expect(board.locator('[data-planning-arrow="g1-f3"]')).toHaveCount(0);
-  await expect(board.locator('[data-planning-arrow="b1-c3"]')).toHaveCount(1);
+  await expect(board.locator(".board-planning-layer line")).toHaveCount(0);
   expect(runtimeErrors).toEqual([]);
 });
 
 async function rightDragSquare(page: import("@playwright/test").Page, board: import("@playwright/test").Locator, from: string, to: string) {
+  await beginRightDragSquare(page, board, from, to);
+  await page.mouse.up({ button: "right" });
+}
+
+async function beginRightDragSquare(page: import("@playwright/test").Page, board: import("@playwright/test").Locator, from: string, to: string) {
   const fromBox = await board.locator(`[data-coordinate="${from}"]`).boundingBox();
   const toBox = await board.locator(`[data-coordinate="${to}"]`).boundingBox();
   expect(fromBox).not.toBeNull();
@@ -535,5 +552,4 @@ async function rightDragSquare(page: import("@playwright/test").Page, board: imp
   await page.mouse.move(fromBox.x + fromBox.width / 2, fromBox.y + fromBox.height / 2);
   await page.mouse.down({ button: "right" });
   await page.mouse.move(toBox.x + toBox.width / 2, toBox.y + toBox.height / 2, { steps: 8 });
-  await page.mouse.up({ button: "right" });
 }

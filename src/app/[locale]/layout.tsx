@@ -37,6 +37,7 @@ const boardPlanningScript = `
   if (window.__allchessBoardPlanning) return;
   window.__allchessBoardPlanning = true;
   let origin = null;
+  let activeBoard = null;
   function squareName(target) {
     return target instanceof Element ? target.closest("[data-square]")?.dataset.square ?? null : null;
   }
@@ -53,40 +54,45 @@ const boardPlanningScript = `
       y: ((cellRect.top + cellRect.height / 2 - boardRect.top) / boardRect.height) * 100
     };
   }
-  function toggleArrow(board, from, to, mode) {
+  function clearArrows(board) {
+    board?.querySelectorAll(".board-planning-layer [data-planning-arrow]").forEach((line) => line.remove());
+  }
+  function drawPreviewArrow(board, from, to) {
     const layer = board?.querySelector(".board-planning-layer");
     if (!layer || !from || !to || from === to) return;
-    const key = from + "-" + to;
-    const existing = layer.querySelector('[data-planning-arrow="' + CSS.escape(key) + '"]');
-    if (existing || mode === "erase") {
-      existing?.remove();
-      return;
-    }
     const start = pointFor(board, from);
     const end = pointFor(board, to);
     if (!start || !end) return;
-    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-    line.setAttribute("data-planning-arrow", key);
+    const line = layer.querySelector("[data-planning-preview]") ?? document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("data-planning-preview", "true");
     line.setAttribute("x1", String(start.x));
     line.setAttribute("y1", String(start.y));
     line.setAttribute("x2", String(end.x));
     line.setAttribute("y2", String(end.y));
-    layer.appendChild(line);
+    if (!line.parentNode) layer.appendChild(line);
+  }
+  function clearPreview(board) {
+    board?.querySelectorAll(".board-planning-layer [data-planning-preview]").forEach((line) => line.remove());
   }
   document.addEventListener("mousedown", (event) => {
     if (event.button !== 2) return;
     origin = squareName(event.target);
+    const board = boardFor(event.target);
+    activeBoard = board;
+    clearArrows(board);
+    clearPreview(board);
+  }, true);
+  document.addEventListener("mousemove", (event) => {
+    if (!origin || (event.buttons & 2) !== 2) return;
+    drawPreviewArrow(activeBoard ?? boardFor(event.target), origin, squareName(event.target));
   }, true);
   document.addEventListener("mouseup", (event) => {
     if (event.button !== 2 || !origin) return;
-    const board = boardFor(event.target);
-    const target = squareName(event.target);
-    if (event.shiftKey) {
-      board?.querySelectorAll(".board-planning-layer [data-planning-arrow]").forEach((line) => line.remove());
-    } else {
-      toggleArrow(board, origin, target, event.altKey ? "erase" : "draw");
-    }
+    const board = activeBoard ?? boardFor(event.target);
+    clearArrows(board);
+    clearPreview(board);
     origin = null;
+    activeBoard = null;
   }, true);
   document.addEventListener("contextmenu", (event) => {
     if (squareName(event.target)) event.preventDefault();
