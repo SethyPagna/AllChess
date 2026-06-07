@@ -1,13 +1,12 @@
 "use client";
 
-import { useRef, useState, type DragEvent } from "react";
+import { useMemo, useRef, useState, type DragEvent, type PointerEvent } from "react";
 
-import { setPieceDragImage } from "@/components/board/drag-preview";
 import { PieceIcon, getPieceDisplayName, type PieceSkinPreference } from "@/components/board/piece-icon";
 import { squareName } from "@/components/board/game-board-utils";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getVocabulary } from "@/lib/i18n/vocabulary";
-import { sameSquare, serializeSquare, type BoardCell, type Square } from "@/lib/variants";
+import { sameSquare, serializeSquare, type BoardCell, type Piece, type Square } from "@/lib/variants";
 
 type SuggestedBoardMove = {
   from: Square;
@@ -15,6 +14,22 @@ type SuggestedBoardMove = {
 };
 
 type LegalTargetMode = "move" | "drop";
+
+type DragGhost = {
+  piece: Piece;
+  x: number;
+  y: number;
+};
+
+type PlanningArrow = {
+  from: Square;
+  to: Square;
+};
+
+type PlanningDraft = {
+  from: Square;
+  to: Square;
+};
 
 type BoardGridProps = {
   cols: number;
@@ -38,55 +53,35 @@ const handPieceDragType = "application/x-allchess-hand-piece";
 export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move", locale = "en", onChoose, onDragMove, onDropHandPiece, orientedRows, pieceSkin = "default", rows, selected, suggestedMove, variantKey }: BoardGridProps) {
   const terrainLabels = getVocabulary(normalizeLocale(locale)).terrain;
   const gridRef = useRef<HTMLDivElement>(null);
-  const [draggingSquare, setDraggingSquare] = useState<Square | null>(null);
   const [pointerDragSquare, setPointerDragSquare] = useState<Square | null>(null);
   const pointerDragSquareRef = useRef<Square | null>(null);
+  const pointerDragMovedRef = useRef(false);
+  const [dragGhost, setDragGhost] = useState<DragGhost | null>(null);
   const [invalidDrop, setInvalidDrop] = useState<Square | null>(null);
+  const [planningArrows, setPlanningArrows] = useState<PlanningArrow[]>([]);
+  const [planningDraft, setPlanningDraft] = useState<PlanningDraft | null>(null);
+  const planningDraftRef = useRef<PlanningDraft | null>(null);
+  const squareCenters = useMemo(() => buildSquareCenters(orientedRows, cols, rows), [cols, orientedRows, rows]);
 
   function flashInvalid(square: Square) {
     setInvalidDrop(square);
     window.setTimeout(() => setInvalidDrop((current) => (current && sameSquare(current, square) ? null : current)), 520);
   }
 
-  function handleDragStart(event: DragEvent<HTMLButtonElement>, cell: BoardCell) {
-    if (!cell.piece) {
-      event.preventDefault();
-      return;
-    }
-    event.dataTransfer.effectAllowed = "move";
-    event.dataTransfer.setData("application/x-allchess-square", serializeSquare(cell.square));
-    setPieceDragImage(event);
-    setDraggingSquare(cell.square);
-    onChoose(cell.square);
-  }
-
   function handleDrop(event: DragEvent<HTMLButtonElement>, target: Square) {
     event.preventDefault();
     const handCode = event.dataTransfer.getData(handPieceDragType);
-    const sourceSquare = squareFromSerialized(event.dataTransfer.getData("application/x-allchess-square")) ?? draggingSquare;
-    const moved = handCode ? (onDropHandPiece?.(handCode, target) ?? false) : sourceSquare ? (onDragMove?.(sourceSquare, target) ?? false) : false;
+    const moved = handCode ? (onDropHandPiece?.(handCode, target) ?? false) : false;
     if (!moved) flashInvalid(target);
-    setDraggingSquare(null);
   }
 
-  function handlePointerDragStart(origin: Square) {
+  function handlePointerDragStart(event: PointerEvent<HTMLDivElement>, origin: Square, piece: Piece) {
+    setPlanningArrows([]);
+    pointerDragMovedRef.current = false;
     pointerDragSquareRef.current = origin;
     setPointerDragSquare(origin);
-    window.addEventListener(
-      "pointerup",
-      (event) => {
-        const targetElement = document.elementFromPoint(event.clientX, event.clientY);
-        const targetSquareName = targetElement instanceof HTMLElement ? targetElement.closest<HTMLElement>("[data-square]")?.dataset.square : undefined;
-        const target = targetSquareName ? squareFromBoardName(targetSquareName, files, rows) : null;
-        if (!pointerDragSquareRef.current || !sameSquare(pointerDragSquareRef.current, origin)) return;
-        pointerDragSquareRef.current = null;
-        setPointerDragSquare(null);
-        if (!target || sameSquare(origin, target)) return;
-        const moved = onDragMove?.(origin, target) ?? false;
-        if (!moved) flashInvalid(target);
-      },
-      { once: true }
-    );
+    setDragGhost({ piece, x: event.clientX, y: event.clientY });
+    onChoose(origin);
   }
 
   function squareFromEventTarget(target: EventTarget | null) {
@@ -107,17 +102,49 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
     return orientedRows[visualRow]?.[visualCol]?.square ?? null;
   }
 
-  function hasPieceAt(square: Square) {
-    return orientedRows.some((row) => row.some((cell) => sameSquare(cell.square, square) && Boolean(cell.piece)));
+  function pieceAt(square: Square) {
+    for (const row of orientedRows) {
+      for (const cell of row) {
+        if (sameSquare(cell.square, square)) return cell.piece ?? null;
+      }
+    }
+    return null;
   }
 
   function finishPointerDrag(target: Square | null) {
     const origin = pointerDragSquareRef.current;
     pointerDragSquareRef.current = null;
     setPointerDragSquare(null);
+    setDragGhost(null);
     if (!origin || !target || sameSquare(origin, target)) return;
     const moved = onDragMove?.(origin, target) ?? false;
     if (!moved) flashInvalid(target);
+  }
+
+  function startPlanningArrow(origin: Square) {
+    planningDraftRef.current = { from: origin, to: origin };
+    setPlanningDraft({ from: origin, to: origin });
+  }
+
+  function updatePlanningArrow(target: Square | null) {
+    const draft = planningDraftRef.current;
+    if (!draft || !target) return;
+    const nextDraft = { from: draft.from, to: target };
+    planningDraftRef.current = nextDraft;
+    setPlanningDraft(nextDraft);
+  }
+
+  function finishPlanningArrow(target: Square | null) {
+    const draft = planningDraftRef.current;
+    planningDraftRef.current = null;
+    setPlanningDraft(null);
+    const to = target ?? draft?.to ?? null;
+    if (!draft || !to || sameSquare(draft.from, to)) return;
+    setPlanningArrows((current) => {
+      const existing = current.findIndex((arrow) => sameSquare(arrow.from, draft.from) && sameSquare(arrow.to, to));
+      if (existing >= 0) return current.filter((_, index) => index !== existing);
+      return [...current.slice(-7), { from: draft.from, to }];
+    });
   }
 
   return (
@@ -130,13 +157,46 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
         const square = squareFromEventTarget(event.target);
         if (!square) return;
         if (event.button === 2) {
+          event.currentTarget.setPointerCapture(event.pointerId);
+          startPlanningArrow(square);
           return;
         }
-        if (event.button === 0 && hasPieceAt(square)) handlePointerDragStart(square);
+        if (event.button !== 0) return;
+        pointerDragMovedRef.current = false;
+        const piece = pieceAt(square);
+        if (piece) {
+          event.currentTarget.setPointerCapture(event.pointerId);
+          handlePointerDragStart(event, square, piece);
+        } else {
+          setPlanningArrows([]);
+        }
+      }}
+      onPointerMoveCapture={(event) => {
+        const target = squareFromPoint(event.clientX, event.clientY);
+        if (planningDraftRef.current) {
+          updatePlanningArrow(target);
+          return;
+        }
+        if (!pointerDragSquareRef.current) return;
+        pointerDragMovedRef.current = true;
+        setDragGhost((current) => (current ? { ...current, x: event.clientX, y: event.clientY } : current));
       }}
       onPointerUpCapture={(event) => {
-        if (event.button === 2) return;
-        finishPointerDrag(squareFromPoint(event.clientX, event.clientY));
+        const target = squareFromPoint(event.clientX, event.clientY);
+        if (event.button === 2) {
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+          finishPlanningArrow(target);
+          return;
+        }
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+        finishPointerDrag(target);
+      }}
+      onPointerCancel={() => {
+        pointerDragSquareRef.current = null;
+        planningDraftRef.current = null;
+        setPointerDragSquare(null);
+        setDragGhost(null);
+        setPlanningDraft(null);
       }}
       onContextMenu={(event) => event.preventDefault()}
     >
@@ -146,6 +206,21 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
             <path d="M0,0 L5,2.5 L0,5 Z" />
           </marker>
         </defs>
+        {[...planningArrows, ...(planningDraft && !sameSquare(planningDraft.from, planningDraft.to) ? [planningDraft] : [])].map((arrow, index) => {
+          const from = squareCenters.get(serializeSquare(arrow.from));
+          const to = squareCenters.get(serializeSquare(arrow.to));
+          if (!from || !to) return null;
+          return (
+            <line
+              key={`${serializeSquare(arrow.from)}-${serializeSquare(arrow.to)}-${index}`}
+              x1={from.x}
+              y1={from.y}
+              x2={to.x}
+              y2={to.y}
+              data-planning-preview={planningDraft && index === planningArrows.length ? "true" : undefined}
+            />
+          );
+        })}
       </svg>
       {orientedRows.map((row, visualRow) =>
         row.map((cell, visualCol) => {
@@ -194,10 +269,10 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
             <button
               type="button"
               key={serializeSquare(cell.square)}
-              onClick={() => onChoose(cell.square)}
-              draggable={Boolean(cell.piece)}
-              onDragStart={(event) => handleDragStart(event, cell)}
-              onDragEnd={() => setDraggingSquare(null)}
+              onClick={() => {
+                if (!pointerDragMovedRef.current) onChoose(cell.square);
+              }}
+              draggable={false}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => handleDrop(event, cell.square)}
               onContextMenu={(event) => event.preventDefault()}
@@ -210,7 +285,7 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
               data-legal-target={isLegal ? legalTargetMode : undefined}
               data-piece-label={label ?? undefined}
               data-square-state={squareState === "idle" ? undefined : squareState}
-              data-dragging={(draggingSquare && sameSquare(draggingSquare, cell.square)) || (pointerDragSquare && sameSquare(pointerDragSquare, cell.square)) ? "true" : undefined}
+              data-dragging={pointerDragSquare && sameSquare(pointerDragSquare, cell.square) ? "true" : undefined}
               data-invalid-drop={isInvalidDrop ? "true" : undefined}
               data-tone={dark ? "dark" : "light"}
               data-suggested={isSuggestedFrom ? "from" : isSuggestedTo ? "to" : undefined}
@@ -238,8 +313,26 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
           );
         })
       )}
+      {dragGhost ? (
+        <span className="board-drag-ghost" aria-hidden="true" style={{ left: dragGhost.x, top: dragGhost.y }}>
+          <PieceIcon code={dragGhost.piece.code} owner={dragGhost.piece.owner} pieceSkin={pieceSkin} variantKey={variantKey} locale={locale} promoted={dragGhost.piece.promoted} />
+        </span>
+      ) : null}
     </div>
   );
+}
+
+function buildSquareCenters(orientedRows: BoardCell[][], cols: number, rows: number) {
+  const centers = new Map<string, { x: number; y: number }>();
+  orientedRows.forEach((row, visualRow) => {
+    row.forEach((cell, visualCol) => {
+      centers.set(serializeSquare(cell.square), {
+        x: ((visualCol + 0.5) / cols) * 100,
+        y: ((visualRow + 0.5) / rows) * 100
+      });
+    });
+  });
+  return centers;
 }
 
 function squareFromBoardName(name: string, files: string[], rows: number): Square | null {
@@ -248,14 +341,6 @@ function squareFromBoardName(name: string, files: string[], rows: number): Squar
   const col = files.indexOf(file);
   if (col < 0 || Number.isNaN(rank)) return null;
   return { row: rows - rank, col };
-}
-
-function squareFromSerialized(value: string): Square | null {
-  const [rowValue, colValue] = value.split(":");
-  const row = Number(rowValue);
-  const col = Number(colValue);
-  if (!Number.isInteger(row) || !Number.isInteger(col)) return null;
-  return { row, col };
 }
 
 function labelTerrain(terrain: BoardCell["terrain"], labels: Record<string, string>) {
