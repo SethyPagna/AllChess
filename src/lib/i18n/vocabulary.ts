@@ -3,6 +3,7 @@ import type { LocaleCode } from "./locales";
 export type VocabularyDomain =
   | "pieces"
   | "actions"
+  | "terrain"
   | "results"
   | "timeControls"
   | "analysis"
@@ -61,6 +62,15 @@ const english: VocabularyPack = {
     rematch: "Rematch",
     save: "Save",
     replay: "Replay"
+  },
+  terrain: {
+    camp: "Camp",
+    den: "Den",
+    palace: "Palace",
+    promotion: "Promotion",
+    promotionZone: "Promotion zone",
+    river: "River",
+    trap: "Trap"
   },
   results: {
     win: "Win",
@@ -139,6 +149,7 @@ export function getVocabulary(locale: LocaleCode): VocabularyPack {
   return {
     pieces: { ...english.pieces, ...partial.pieces },
     actions: { ...english.actions, ...partial.actions },
+    terrain: { ...english.terrain, ...partial.terrain },
     results: { ...english.results, ...partial.results },
     timeControls: { ...english.timeControls, ...partial.timeControls },
     analysis: { ...english.analysis, ...partial.analysis },

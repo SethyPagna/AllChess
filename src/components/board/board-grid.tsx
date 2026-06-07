@@ -4,6 +4,8 @@ import { useRef, useState, type DragEvent, type MouseEvent } from "react";
 
 import { PieceIcon, getPieceDisplayName, type PieceSkinPreference } from "@/components/board/piece-icon";
 import { squareName } from "@/components/board/game-board-utils";
+import { normalizeLocale } from "@/lib/i18n/locales";
+import { getVocabulary } from "@/lib/i18n/vocabulary";
 import { sameSquare, serializeSquare, type BoardCell, type Square } from "@/lib/variants";
 
 type SuggestedBoardMove = {
@@ -34,6 +36,7 @@ const handPieceDragType = "application/x-allchess-hand-piece";
 const maxPlanningArrows = 32;
 
 export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move", locale = "en", onChoose, onDragMove, onDropHandPiece, orientedRows, pieceSkin = "default", rows, selected, suggestedMove, variantKey }: BoardGridProps) {
+  const terrainLabels = getVocabulary(normalizeLocale(locale)).terrain;
   const [draggingSquare, setDraggingSquare] = useState<Square | null>(null);
   const [pointerDragSquare, setPointerDragSquare] = useState<Square | null>(null);
   const pointerDragSquareRef = useRef<Square | null>(null);
@@ -200,7 +203,7 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
           const isDarkPiece = cell.piece?.owner === "black" || cell.piece?.owner === "blue" || cell.piece?.owner === "gote";
           const name = squareName(cell.square, files, rows);
           const label = cell.piece ? getPieceDisplayName(cell.piece.code, variantKey, locale, cell.piece.promoted) : null;
-          const terrainLabel = labelTerrain(cell.terrain);
+          const terrainLabel = labelTerrain(cell.terrain, terrainLabels);
           const squareState = isInvalidDrop
             ? "invalid-drop"
             : isSuggestedFrom
@@ -301,13 +304,13 @@ function squareFromSerialized(value: string): Square | null {
   return { row, col };
 }
 
-function labelTerrain(terrain: BoardCell["terrain"]) {
-  if (terrain === "promotion-zone") return "Promotion zone";
-  if (terrain === "palace") return "Palace";
-  if (terrain === "river") return "River";
-  if (terrain === "den") return "Den";
-  if (terrain === "trap") return "Trap";
-  if (terrain === "camp") return "Camp";
+function labelTerrain(terrain: BoardCell["terrain"], labels: Record<string, string>) {
+  if (terrain === "promotion-zone") return labels.promotionZone;
+  if (terrain === "palace") return labels.palace;
+  if (terrain === "river") return labels.river;
+  if (terrain === "den") return labels.den;
+  if (terrain === "trap") return labels.trap;
+  if (terrain === "camp") return labels.camp;
   return null;
 }
 

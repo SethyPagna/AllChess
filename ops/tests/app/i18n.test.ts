@@ -40,6 +40,8 @@ describe("i18n dictionaries", () => {
 
     expect(vocabulary.pieces.king).toBe("王");
     expect(vocabulary.analysis.blunder).toBe("Blunder");
+    expect(vocabulary.terrain.promotionZone).toBe("Promotion zone");
+    expect(vocabulary.terrain.palace).toBe("Palace");
     expect(vocabulary.accessibility.board).toBe("Game board");
   });
 });

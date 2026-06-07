@@ -25,6 +25,8 @@ import { tickGameClock } from "@/lib/game/clocks";
 import { redoTimeline, redoTimelineUntil, undoTimeline, undoTimelineUntil } from "@/lib/game/history";
 import { analyzeMoveList, summarizeReview } from "@/lib/game/review";
 import { describeGameOutcome } from "@/lib/game/outcome";
+import { normalizeLocale } from "@/lib/i18n/locales";
+import { getVocabulary } from "@/lib/i18n/vocabulary";
 import type { VariantRuleSummary } from "@/lib/variants/rules-atlas";
 import { getTimeControl, type TimeControlKey } from "@/lib/game/time-controls";
 import { applyMove, createInitialState, getLegalMoves, getVariant, sameSquare, serializeSquare, type GameState, type Move, type Piece, type Square } from "@/lib/variants";
@@ -120,15 +122,7 @@ type TerrainKey = Exclude<NonNullable<GameState["board"][number][number]["terrai
 
 type TerrainKeyLegendProps = {
   terrainKeys: TerrainKey[];
-};
-
-const terrainKeyLabels: Record<TerrainKey, string> = {
-  camp: "Camp",
-  den: "Den",
-  palace: "Palace",
-  "promotion-zone": "Promotion",
-  river: "River",
-  trap: "Trap"
+  locale?: string;
 };
 
 const terrainKeyOrder: TerrainKey[] = ["promotion-zone", "palace", "river", "den", "trap", "camp"];
@@ -154,14 +148,15 @@ export function PromotionChoiceCard({ locale, onChoose, pieceCode, pieceLabel, p
   );
 }
 
-export function TerrainKeyLegend({ terrainKeys }: TerrainKeyLegendProps) {
+export function TerrainKeyLegend({ terrainKeys, locale = "en" }: TerrainKeyLegendProps) {
   if (!terrainKeys.length) return null;
+  const terrainLabels = getVocabulary(normalizeLocale(locale)).terrain;
   return (
     <div className="terrain-key" aria-label="Board terrain key">
       {terrainKeys.map((terrain) => (
         <span key={terrain} className="terrain-key-item" data-terrain={terrain}>
           <i aria-hidden="true" />
-          <strong>{terrainKeyLabels[terrain]}</strong>
+          <strong>{terrain === "promotion-zone" ? terrainLabels.promotion : terrainLabels[terrain]}</strong>
         </span>
       ))}
     </div>
@@ -952,7 +947,7 @@ export function GameBoard({
             ) : null}
           </div>
         </div>
-        <TerrainKeyLegend terrainKeys={terrainKeys} />
+        <TerrainKeyLegend terrainKeys={terrainKeys} locale={locale} />
         {playerCard(bottomPlayerColor, "bottom")}
       </div>
 
