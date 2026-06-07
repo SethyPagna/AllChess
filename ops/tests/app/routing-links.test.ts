@@ -7,6 +7,7 @@ describe("route link helpers", () => {
   test("builds watch filter links without default query clutter", () => {
     expect(watchHref("en", { q: "", status: "all", sort: "recent" })).toBe("/en/watch");
     expect(watchHref("en", { q: "rapid", status: "active", sort: "spectators" })).toBe("/en/watch?q=rapid&status=active&sort=spectators");
+    expect(watchHref("en", { q: "mini-shogi-local", variant: "mini-shogi" })).toBe("/en/watch?q=mini-shogi-local&variant=mini-shogi");
   });
 
   test("encodes analysis game ids and preserves autoplay", () => {

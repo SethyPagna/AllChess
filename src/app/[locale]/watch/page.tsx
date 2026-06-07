@@ -4,6 +4,7 @@ import { WatchRoomPanel } from "@/components/watch/watch-room-panel";
 import { WatchStats } from "@/components/watch/watch-stats";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getRuntimeLiveStats, getRuntimeRoomList, normalizeRoomListInput } from "@/lib/realtime/runtime";
+import { getGameCatalogEntry } from "@/lib/catalog";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export default async function WatchPage({
   searchParams
 }: {
   params: Promise<{ locale: string }>;
-  searchParams?: Promise<{ q?: string; status?: string; sort?: string }>;
+  searchParams?: Promise<{ q?: string; status?: string; sort?: string; variant?: string }>;
 }) {
   const { locale: rawLocale } = await params;
   const query = (await searchParams) ?? {};
@@ -31,6 +32,7 @@ export default async function WatchPage({
   });
   const [stats, roomList] = await Promise.all([getRuntimeLiveStats(), getRuntimeRoomList(requestedFilters)]);
   const hasRooms = stats.activeRooms > 0;
+  const requestedVariant = query.variant && getGameCatalogEntry(query.variant) ? query.variant : undefined;
 
   return (
     <section className="watch-page grid gap-5">
@@ -39,7 +41,7 @@ export default async function WatchPage({
         <InfoHint text="Public games appear here only when live room activity exists. No filler matches, seeded players, or guessed counts." />
       </div>
       <WatchStats stats={stats} />
-      <WatchRoomPanel hasRooms={hasRooms} locale={locale} roomList={roomList} />
+      <WatchRoomPanel hasRooms={hasRooms} locale={locale} requestedVariant={requestedVariant} roomList={roomList} />
     </section>
   );
 }

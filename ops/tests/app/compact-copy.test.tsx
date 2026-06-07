@@ -149,6 +149,20 @@ describe("compact page copy", () => {
     expect(markup).not.toContain("Search unlocks when public rooms are available.");
   });
 
+  test("watch room query from chat exposes a direct spectate handoff", async () => {
+    const element = await WatchPage({
+      params: Promise.resolve({ locale: "en" }),
+      searchParams: Promise.resolve({ q: "mini-shogi-local", variant: "mini-shogi" })
+    });
+    const markup = renderToStaticMarkup(element);
+
+    expect(markup).toContain("Open searched room");
+    expect(markup).toContain("Mini Shogi / mini-shogi-local");
+    expect(markup).toContain("/en/play/mini-shogi?mode=spectate&amp;room=mini-shogi-local");
+    expect(markup).toContain('name="variant"');
+    expect(markup).toContain('value="mini-shogi"');
+  });
+
   test("analysis keeps empty review controls visible but disabled", async () => {
     const element = await AnalysisPage({ params: Promise.resolve({ locale: "en", gameId: "demo" }) });
     const markup = renderToStaticMarkup(element);

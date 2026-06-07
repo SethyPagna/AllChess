@@ -1,29 +1,41 @@
 import Link from "next/link";
-import { Radio, Search, Swords, Trophy, Users } from "lucide-react";
+import { ExternalLink, Radio, Search, Swords, Trophy, Users } from "lucide-react";
 
 import type { RuntimeRoomList } from "@/lib/realtime/runtime";
+import { getGameCatalog, getGameCatalogEntry } from "@/lib/catalog";
 import { playSetupHref } from "@/lib/routing/play-links";
 import { watchHref } from "@/lib/routing/watch-links";
 
 type WatchRoomPanelProps = {
   hasRooms: boolean;
   locale: string;
+  requestedVariant?: string;
   roomList: RuntimeRoomList;
 };
 
-export function WatchRoomPanel({ hasRooms, locale, roomList }: WatchRoomPanelProps) {
+export function WatchRoomPanel({ hasRooms, locale, requestedVariant, roomList }: WatchRoomPanelProps) {
   const { query: searchQuery, sort: roomSort, status: statusFilter } = roomList.filters;
   const hasVisibleRooms = roomList.rooms.length > 0;
+  const searchedRoom = createSearchedRoomShortcut(searchQuery, requestedVariant, roomList);
 
   return (
     <div className="panel watch-empty-state">
+      {searchedRoom ? (
+        <Link href={`/${locale}/play/${searchedRoom.variantKey}?mode=spectate&room=${encodeURIComponent(searchedRoom.roomId)}` as never} className="focus-ring watch-room-lookup" aria-label={`Open searched room ${searchedRoom.roomId}`}>
+          <span>
+            <strong>Open searched room</strong>
+            <small>{searchedRoom.variantLabel} / {searchedRoom.roomId}</small>
+          </span>
+          <ExternalLink size={16} />
+        </Link>
+      ) : null}
       {hasVisibleRooms ? (
         <>
           <h2>Live room list</h2>
           <p>Public rooms from Cloudflare D1. Search by room, game, status, or rated state.</p>
           <div className="watch-room-list" aria-label="Public rooms">
             {roomList.rooms.map((room) => (
-              <Link key={room.roomId} href={`/${locale}/play/${room.variantKey}?mode=spectate&room=${room.roomId}`} className="focus-ring watch-room-card">
+              <Link key={room.roomId} href={`/${locale}/play/${room.variantKey}?mode=spectate&room=${encodeURIComponent(room.roomId)}`} className="focus-ring watch-room-card">
                 <span>
                   <strong>{room.variantKey}</strong>
                   <small>{room.status} / {room.rated ? "rated" : "casual"}</small>
@@ -55,20 +67,21 @@ export function WatchRoomPanel({ hasRooms, locale, roomList }: WatchRoomPanelPro
           <Search size={15} />
           Search
         </button>
+        {requestedVariant ? <input type="hidden" name="variant" value={requestedVariant} /> : null}
         <div className="watch-filter-list" role="group" aria-label="Room filters">
-          <Link href={watchHref(locale, { q: searchQuery, status: "all", sort: roomSort }) as never} className={`focus-ring watch-filter-chip${statusFilter === "all" ? " is-active" : ""}`} aria-current={statusFilter === "all" ? true : undefined}>
+          <Link href={watchHref(locale, { q: searchQuery, variant: requestedVariant, status: "all", sort: roomSort }) as never} className={`focus-ring watch-filter-chip${statusFilter === "all" ? " is-active" : ""}`} aria-current={statusFilter === "all" ? true : undefined}>
             <Radio size={15} />
             All
           </Link>
-          <Link href={watchHref(locale, { q: searchQuery, status: "active", sort: roomSort }) as never} className={`focus-ring watch-filter-chip${statusFilter === "active" ? " is-active" : ""}`} aria-current={statusFilter === "active" ? true : undefined}>
+          <Link href={watchHref(locale, { q: searchQuery, variant: requestedVariant, status: "active", sort: roomSort }) as never} className={`focus-ring watch-filter-chip${statusFilter === "active" ? " is-active" : ""}`} aria-current={statusFilter === "active" ? true : undefined}>
             <Radio size={15} />
             Live
           </Link>
-          <Link href={watchHref(locale, { q: searchQuery, status: "waiting", sort: roomSort }) as never} className={`focus-ring watch-filter-chip${statusFilter === "waiting" ? " is-active" : ""}`} aria-current={statusFilter === "waiting" ? true : undefined}>
+          <Link href={watchHref(locale, { q: searchQuery, variant: requestedVariant, status: "waiting", sort: roomSort }) as never} className={`focus-ring watch-filter-chip${statusFilter === "waiting" ? " is-active" : ""}`} aria-current={statusFilter === "waiting" ? true : undefined}>
             <Radio size={15} />
             Waiting
           </Link>
-          <Link href={watchHref(locale, { q: searchQuery, status: statusFilter, sort: "spectators" }) as never} className={`focus-ring watch-filter-chip${roomSort === "spectators" ? " is-active" : ""}`} aria-current={roomSort === "spectators" ? true : undefined}>
+          <Link href={watchHref(locale, { q: searchQuery, variant: requestedVariant, status: statusFilter, sort: "spectators" }) as never} className={`focus-ring watch-filter-chip${roomSort === "spectators" ? " is-active" : ""}`} aria-current={roomSort === "spectators" ? true : undefined}>
             <Users size={15} />
             Spectators
           </Link>
@@ -86,4 +99,30 @@ export function WatchRoomPanel({ hasRooms, locale, roomList }: WatchRoomPanelPro
       </div>
     </div>
   );
+}
+
+function createSearchedRoomShortcut(searchQuery: string, requestedVariant: string | undefined, roomList: RuntimeRoomList) {
+  const roomId = searchQuery.trim();
+  if (!roomId) return null;
+  const exactRoom = roomList.rooms.find((room) => room.roomId === roomId || room.gameId === roomId);
+  const variantKey = exactRoom?.variantKey ?? resolveWatchVariant(requestedVariant) ?? inferVariantFromRoomId(roomId) ?? "classic";
+  const variant = getGameCatalogEntry(variantKey);
+  return {
+    roomId,
+    variantKey,
+    variantLabel: variant?.name.short ?? variant?.name.english ?? variantKey
+  };
+}
+
+function resolveWatchVariant(value: string | undefined) {
+  if (!value) return null;
+  return getGameCatalogEntry(value)?.variantKey ?? null;
+}
+
+function inferVariantFromRoomId(roomId: string) {
+  const normalized = roomId.toLowerCase();
+  const localSuffix = "-local";
+  if (!normalized.endsWith(localSuffix)) return null;
+  const candidate = normalized.slice(0, -localSuffix.length);
+  return getGameCatalog().some((entry) => entry.variantKey === candidate) ? candidate : null;
 }

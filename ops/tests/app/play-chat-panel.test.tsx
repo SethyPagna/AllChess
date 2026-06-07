@@ -22,11 +22,17 @@ describe("PlayChatPanel", () => {
     const markup = renderToStaticMarkup(<PlayChatPanel gameStarted isSpectating locale="en" playMode="spectate" roomId="room-123" title="Classic Chess" variantKey="classic" />);
 
     expect(markup).toContain('aria-selected="true"');
-    expect(markup).toContain("/en/watch?q=room-123");
+    expect(markup).toContain("/en/watch?q=room-123&amp;variant=classic");
     expect(markup).toContain("Player chat is available in playable rooms");
     expect(markup).toContain("Spectator room");
     expect(markup).toContain("Public room ready.");
     expect(markup).toContain("Everyone watching can join.");
     expect(markup).toContain("Message public room");
+  });
+
+  test("links local variant chat to watch with a variant hint", () => {
+    const markup = renderToStaticMarkup(<PlayChatPanel gameStarted locale="en" isSpectating={false} playMode="bot" roomId="mini-shogi-local" title="Mini Shogi" variantKey="mini-shogi" />);
+
+    expect(markup).toContain("/en/watch?q=mini-shogi-local&amp;variant=mini-shogi");
   });
 });

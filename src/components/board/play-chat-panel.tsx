@@ -5,6 +5,7 @@ import Link from "next/link";
 import { MessageCircle, Radio, Send, Users } from "lucide-react";
 
 import type { PlayMode } from "@/components/board/game-board-options";
+import { watchHref } from "@/lib/routing/watch-links";
 
 type ChatChannel = "players" | "public";
 
@@ -89,7 +90,7 @@ export function PlayChatPanel({ gameStarted, isSpectating, locale, playMode, roo
   const channelLabel = resolvedChannel === "players" ? "Players" : "Public";
   const placeholder = resolvedChannel === "players" ? "Message player room" : "Message public room";
   const channelSummary = resolvedChannel === "players" ? "Private 1v1 room" : "Spectator room";
-  const watchRoomHref = `/${locale}/watch?q=${encodeURIComponent(roomId)}`;
+  const watchRoomHref = watchHref(locale, { q: roomId, variant: variantKey });
 
   useEffect(() => {
     storageLoadedRef.current = false;
