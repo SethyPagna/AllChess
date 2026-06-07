@@ -2794,6 +2794,10 @@ option {
   color: var(--accent);
 }
 
+.play-section-tabs button > * {
+  pointer-events: none;
+}
+
 .play-tab-panel {
   min-height: 0;
   overflow: auto;
