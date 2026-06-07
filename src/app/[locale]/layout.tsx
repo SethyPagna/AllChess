@@ -32,6 +32,68 @@ const themeInitScript = `
 })();
 `;
 
+const boardPlanningScript = `
+(() => {
+  if (window.__allchessBoardPlanning) return;
+  window.__allchessBoardPlanning = true;
+  let origin = null;
+  function squareName(target) {
+    return target instanceof Element ? target.closest("[data-square]")?.dataset.square ?? null : null;
+  }
+  function boardFor(target) {
+    return target instanceof Element ? target.closest(".board-grid") : null;
+  }
+  function pointFor(board, square) {
+    const cell = board?.querySelector('[data-square="' + CSS.escape(square) + '"]');
+    if (!board || !cell) return null;
+    const boardRect = board.getBoundingClientRect();
+    const cellRect = cell.getBoundingClientRect();
+    return {
+      x: ((cellRect.left + cellRect.width / 2 - boardRect.left) / boardRect.width) * 100,
+      y: ((cellRect.top + cellRect.height / 2 - boardRect.top) / boardRect.height) * 100
+    };
+  }
+  function toggleArrow(board, from, to, mode) {
+    const layer = board?.querySelector(".board-planning-layer");
+    if (!layer || !from || !to || from === to) return;
+    const key = from + "-" + to;
+    const existing = layer.querySelector('[data-planning-arrow="' + CSS.escape(key) + '"]');
+    if (existing || mode === "erase") {
+      existing?.remove();
+      return;
+    }
+    const start = pointFor(board, from);
+    const end = pointFor(board, to);
+    if (!start || !end) return;
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    line.setAttribute("data-planning-arrow", key);
+    line.setAttribute("x1", String(start.x));
+    line.setAttribute("y1", String(start.y));
+    line.setAttribute("x2", String(end.x));
+    line.setAttribute("y2", String(end.y));
+    layer.appendChild(line);
+  }
+  document.addEventListener("mousedown", (event) => {
+    if (event.button !== 2) return;
+    origin = squareName(event.target);
+  }, true);
+  document.addEventListener("mouseup", (event) => {
+    if (event.button !== 2 || !origin) return;
+    const board = boardFor(event.target);
+    const target = squareName(event.target);
+    if (event.shiftKey) {
+      board?.querySelectorAll(".board-planning-layer [data-planning-arrow]").forEach((line) => line.remove());
+    } else {
+      toggleArrow(board, origin, target, event.altKey ? "erase" : "draw");
+    }
+    origin = null;
+  }, true);
+  document.addEventListener("contextmenu", (event) => {
+    if (squareName(event.target)) event.preventDefault();
+  }, true);
+})();
+`;
+
 export async function generateMetadata({
   params
 }: {
@@ -64,6 +126,7 @@ export default async function LocaleLayout({
     <html lang={locale} dir={rtlLocales.has(locale) ? "rtl" : "ltr"} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+        <script dangerouslySetInnerHTML={{ __html: boardPlanningScript }} />
       </head>
       <body>
         <ThemeProvider>

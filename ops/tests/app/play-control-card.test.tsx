@@ -1,16 +1,22 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test, vi } from "vitest";
 
-import { PlayControlCard } from "@/components/board/play-control-card";
+import { PlayControlCard, type BoardThemeOption } from "@/components/board/play-control-card";
 import { getPieceSkinOptions } from "@/components/board/piece-icon";
 
 describe("PlayControlCard", () => {
-  test("renders piece skins as compact swatch radio buttons", () => {
+  test("renders board and piece appearance as compact select controls", () => {
     const noop = vi.fn();
+    const boardThemeOptions: BoardThemeOption[] = [
+      { key: "classic", label: "Classic green" },
+      { key: "wood", label: "Warm wood" }
+    ];
     const markup = renderToStaticMarkup(
       <PlayControlCard
         botLevelLabel="Normal"
         botMode="human"
+        boardTheme="wood"
+        boardThemeOptions={boardThemeOptions}
         canEndGame={false}
         canRedo={false}
         canUndo={false}
@@ -23,6 +29,7 @@ describe("PlayControlCard", () => {
         onFlipBoard={noop}
         onMoveForCurrentSide={noop}
         onOfferDraw={noop}
+        onBoardThemeChange={noop}
         onPieceSkinChange={noop}
         onRedo={noop}
         onResign={noop}
@@ -37,12 +44,12 @@ describe("PlayControlCard", () => {
       />
     );
 
-    expect(markup).toContain('role="radiogroup"');
-    expect(markup).toContain('aria-label="Piece skin"');
-    expect(markup).toContain('data-skin-option="mini-wedge"');
-    expect(markup).toContain('data-skin-option="tile"');
-    expect(markup).toContain('aria-checked="true"');
-    expect(markup).toContain("Selected piece skin: Tile");
-    expect(markup).not.toContain("<select");
+    expect(markup).toContain("Look");
+    expect(markup).toContain("<select");
+    expect(markup).toContain('value="wood"');
+    expect(markup).toContain('value="tile"');
+    expect(markup).toContain('data-board-theme-option="wood"');
+    expect(markup).toContain('data-selected="true"');
+    expect(markup).toContain("Selected appearance: Warm wood board, Tile pieces");
   });
 });

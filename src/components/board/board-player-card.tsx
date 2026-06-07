@@ -1,5 +1,4 @@
-import type { DragEvent } from "react";
-
+import { setPieceDragImage } from "@/components/board/drag-preview";
 import { PieceIcon, getPieceDisplayName, resolvePieceSkin, type PieceSkinPreference } from "@/components/board/piece-icon";
 import { colorLabel } from "@/components/board/game-board-utils";
 import { formatClock } from "@/lib/game/clocks";
@@ -113,7 +112,7 @@ export function BoardPlayerCard({
                       if (!canUseHand) return;
                       event.dataTransfer.effectAllowed = "move";
                       event.dataTransfer.setData(handPieceDragType, code);
-                      setTransparentDragImage(event);
+                      setPieceDragImage(event);
                     }}
                   >
                     <PieceIcon code={code} owner={color as Piece["owner"]} pieceSkin={pieceSkin} variantKey={variantKey} locale={locale} />
@@ -142,20 +141,6 @@ export function BoardPlayerCard({
       </div>
     </div>
   );
-}
-
-function setTransparentDragImage(event: DragEvent<HTMLButtonElement>) {
-  const dragImage = document.createElement("span");
-  dragImage.style.position = "fixed";
-  dragImage.style.top = "0";
-  dragImage.style.left = "0";
-  dragImage.style.width = "1px";
-  dragImage.style.height = "1px";
-  dragImage.style.opacity = "0";
-  dragImage.style.pointerEvents = "none";
-  document.body.appendChild(dragImage);
-  event.dataTransfer.setDragImage(dragImage, 0, 0);
-  window.setTimeout(() => dragImage.remove(), 0);
 }
 
 function materialValue(pieces: Piece[]) {

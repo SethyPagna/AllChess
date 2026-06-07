@@ -31,6 +31,7 @@ export default async function PlaySetupPage({
   const initialBotDifficulty = parseBotDifficulty(query.bot);
   const initialTimeControl = parseTimeControl(query.time ?? query.clock, "rapid");
   const initialBotMode = initialBotDifficulty || parseQueryFlag(query.bot) || initialPlayMode === "bot" ? "opponent" : "human";
+  const initialRoomId = singleQueryValue(query.room);
 
   return (
     <section className="play-arena">
@@ -42,10 +43,15 @@ export default async function PlaySetupPage({
           initialBotDifficulty={initialBotDifficulty}
           initialPlayMode={initialPlayMode}
           initialTimeControl={initialTimeControl}
+          initialRoomId={initialRoomId}
           locale={locale}
           title={t(variant.nameKey)}
         />
       </div>
     </section>
   );
+}
+
+function singleQueryValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
 }

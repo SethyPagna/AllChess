@@ -5,9 +5,10 @@ import { PlayChatPanel } from "@/components/board/play-chat-panel";
 
 describe("PlayChatPanel", () => {
   test("renders player and public chat channels", () => {
-    const markup = renderToStaticMarkup(<PlayChatPanel gameStarted={false} isSpectating={false} playMode="offline" title="Mini Shogi" />);
+    const markup = renderToStaticMarkup(<PlayChatPanel gameStarted={false} isSpectating={false} locale="en" playMode="offline" roomId="mini-shogi-local" title="Mini Shogi" variantKey="mini-shogi" />);
 
     expect(markup).toContain('aria-label="Mini Shogi chat room"');
+    expect(markup).toContain("mini-shogi-local");
     expect(markup).toContain("Players");
     expect(markup).toContain("Public");
     expect(markup).toContain("Private 1v1 room");
@@ -18,9 +19,10 @@ describe("PlayChatPanel", () => {
   });
 
   test("starts spectators in public chat", () => {
-    const markup = renderToStaticMarkup(<PlayChatPanel gameStarted isSpectating playMode="spectate" title="Classic Chess" />);
+    const markup = renderToStaticMarkup(<PlayChatPanel gameStarted isSpectating locale="en" playMode="spectate" roomId="room-123" title="Classic Chess" variantKey="classic" />);
 
     expect(markup).toContain('aria-selected="true"');
+    expect(markup).toContain("/en/watch?q=room-123");
     expect(markup).toContain("Player chat is available in playable rooms");
     expect(markup).toContain("Spectator room");
     expect(markup).toContain("Public room ready.");

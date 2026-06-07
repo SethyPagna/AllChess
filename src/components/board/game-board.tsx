@@ -37,7 +37,7 @@ import { MatchResultOverlay } from "@/components/board/match-result-overlay";
 import { PieceIcon, getPieceDisplayName, getPieceSkinOptions, type PieceSkinPreference } from "@/components/board/piece-icon";
 import { PlayActiveSetupCard } from "@/components/board/play-active-setup-card";
 import { PlayChatPanel } from "@/components/board/play-chat-panel";
-import { PlayControlCard } from "@/components/board/play-control-card";
+import { PlayControlCard, type BoardThemeOption, type BoardThemePreference } from "@/components/board/play-control-card";
 import { PlayMatchHeader } from "@/components/board/play-match-header";
 import { PlayPregameSetupCard } from "@/components/board/play-pregame-setup-card";
 import { playModeOptions, type PanelTab, type PlayMode } from "@/components/board/game-board-options";
@@ -48,11 +48,25 @@ type BotMode = "human" | "opponent" | "both";
 type SeatChoice = "random" | "first" | "second";
 type BoardOrientation = "auto" | "first" | "second";
 const pieceSkinStoragePrefix = "allchess-piece-skin:";
+const boardThemeStoragePrefix = "allchess-board-theme:";
+const boardThemeOptions: BoardThemeOption[] = [
+  { key: "classic", label: "Classic green" },
+  { key: "wood", label: "Warm wood" },
+  { key: "jade", label: "Jade clear" },
+  { key: "contrast", label: "High contrast" }
+];
 
 function initialPieceSkinPreference(variantKey: string): PieceSkinPreference {
   if (typeof window === "undefined") return "default";
   const stored = window.localStorage.getItem(`${pieceSkinStoragePrefix}${variantKey}`) as PieceSkinPreference | null;
   return stored && getPieceSkinOptions(variantKey).some((option) => option.key === stored) ? stored : "default";
+}
+
+function initialBoardThemePreference(variantKey: string): BoardThemePreference {
+  if (typeof window === "undefined") return variantKey === "mini-shogi" || variantKey === "shogi" ? "wood" : "classic";
+  const fallback = variantKey === "mini-shogi" || variantKey === "shogi" ? "wood" : "classic";
+  const stored = window.localStorage.getItem(`${boardThemeStoragePrefix}${variantKey}`) as BoardThemePreference | null;
+  return stored && boardThemeOptions.some((option) => option.key === stored) ? stored : fallback;
 }
 
 type ThinkingState = {
@@ -205,6 +219,7 @@ export function GameBoard({
   initialBotDifficulty = "normal",
   initialPlayMode,
   initialTimeControl = "rapid",
+  initialRoomId,
   locale = "en",
   title = "Game"
 }: {
@@ -215,6 +230,7 @@ export function GameBoard({
   initialBotDifficulty?: BotDifficultyKey;
   initialPlayMode?: PlayMode;
   initialTimeControl?: TimeControlKey;
+  initialRoomId?: string;
   locale?: string;
   title?: string;
 }) {
@@ -229,6 +245,7 @@ export function GameBoard({
   const [botDifficulty, setBotDifficulty] = useState<BotDifficultyKey>(initialBotDifficulty);
   const [botMode, setBotMode] = useState<BotMode>(initialBotMode);
   const [pieceSkin, setPieceSkinState] = useState<PieceSkinPreference>(() => initialPieceSkinPreference(variantKey));
+  const [boardTheme, setBoardThemeState] = useState<BoardThemePreference>(() => initialBoardThemePreference(variantKey));
   const [seatChoice, setSeatChoice] = useState<SeatChoice>("random");
   const [boardOrientation, setBoardOrientation] = useState<BoardOrientation>("auto");
   const [humanColor, setHumanColor] = useState(() => pickHumanColor(withTimeControl(initialState ?? createInitialState(variantKey), initialTimeControl), "first"));
@@ -310,6 +327,7 @@ export function GameBoard({
     return isBoardFlipped ? rowsToRender.reverse().map((row) => row.reverse()) : rowsToRender;
   }, [displayState.board, isBoardFlipped]);
   const modeDetails = playModeOptions.find((option) => option.key === playMode) ?? playModeOptions[2];
+  const chatRoomId = initialRoomId?.trim() || `${displayState.variantKey}-local`;
   const statusHeading = isSearchingOnline
     ? "Searching for opponent"
     : isWatchingMode
@@ -375,6 +393,12 @@ export function GameBoard({
     const validSkin = pieceSkinOptions.some((option) => option.key === nextSkin) ? nextSkin : "default";
     setPieceSkinState(validSkin);
     window.localStorage.setItem(`${pieceSkinStoragePrefix}${variantKey}`, validSkin);
+  }
+
+  function changeBoardTheme(nextTheme: BoardThemePreference) {
+    const validTheme = boardThemeOptions.some((option) => option.key === nextTheme) ? nextTheme : "classic";
+    setBoardThemeState(validTheme);
+    window.localStorage.setItem(`${boardThemeStoragePrefix}${variantKey}`, validTheme);
   }
 
   function commitPlayerMove(move: Move) {
@@ -921,7 +945,7 @@ export function GameBoard({
     <div className="game-board-layout grid gap-4">
       <div className="board-column grid gap-3">
         {playerCard(topPlayerColor, "top")}
-        <div className="board-shell" data-variant={displayState.variantKey} data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
+        <div className="board-shell" data-variant={displayState.variantKey} data-board-theme={boardTheme} data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
             <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} variantKey={displayState.variantKey} />
             {selectedHandCode && selectedHandLabel ? <DropSelectionHint legalTargetCount={legalTargets.size} locale={locale} onCancel={cancelHandDrop} pieceCode={selectedHandCode} pieceLabel={selectedHandLabel} pieceOwner={state.turn} pieceSkin={pieceSkin} variantKey={displayState.variantKey} /> : null}
@@ -1002,6 +1026,8 @@ export function GameBoard({
               <PlayControlCard
                 botLevelLabel={botLevel.label}
                 botMode={botMode}
+                boardTheme={boardTheme}
+                boardThemeOptions={boardThemeOptions}
                 canEndGame={canEndGame}
                 canRedo={canRedo}
                 canUndo={canUndo}
@@ -1014,6 +1040,7 @@ export function GameBoard({
                 onFlipBoard={flipBoard}
                 onMoveForCurrentSide={() => void playBotMove("manual")}
                 onOfferDraw={offerDraw}
+                onBoardThemeChange={changeBoardTheme}
                 onPieceSkinChange={changePieceSkin}
                 onRedo={redo}
                 onResign={resignGame}
@@ -1183,7 +1210,7 @@ export function GameBoard({
             </div>
           ) : null}
         </div>
-        <PlayChatPanel key={playMode} gameStarted={gameStarted} isSpectating={isSpectating} playMode={playMode} title={title} />
+        <PlayChatPanel key={`${playMode}-${chatRoomId}`} gameStarted={gameStarted} isSpectating={isSpectating} locale={locale} playMode={playMode} roomId={chatRoomId} title={title} variantKey={displayState.variantKey} />
       </aside>
       <GameGuideModal show={showRules} rulesSummary={rulesSummary} onClose={() => setShowRules(false)} />
     </div>

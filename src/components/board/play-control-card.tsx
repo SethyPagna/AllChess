@@ -4,9 +4,18 @@ import type { PieceSkinOption, PieceSkinPreference } from "@/components/board/pi
 
 type BotMode = "human" | "opponent" | "both";
 
+export type BoardThemePreference = "classic" | "wood" | "jade" | "contrast";
+
+export type BoardThemeOption = {
+  key: BoardThemePreference;
+  label: string;
+};
+
 type PlayControlCardProps = {
   botLevelLabel: string;
   botMode: BotMode;
+  boardTheme: BoardThemePreference;
+  boardThemeOptions: BoardThemeOption[];
   canEndGame: boolean;
   canRedo: boolean;
   canUndo: boolean;
@@ -19,6 +28,7 @@ type PlayControlCardProps = {
   onFlipBoard: () => void;
   onMoveForCurrentSide: () => void;
   onOfferDraw: () => void;
+  onBoardThemeChange: (theme: BoardThemePreference) => void;
   onPieceSkinChange: (pieceSkin: PieceSkinPreference) => void;
   onRedo: () => void;
   onResign: () => void;
@@ -35,6 +45,8 @@ type PlayControlCardProps = {
 export function PlayControlCard({
   botLevelLabel,
   botMode,
+  boardTheme,
+  boardThemeOptions,
   canEndGame,
   canRedo,
   canUndo,
@@ -47,6 +59,7 @@ export function PlayControlCard({
   onFlipBoard,
   onMoveForCurrentSide,
   onOfferDraw,
+  onBoardThemeChange,
   onPieceSkinChange,
   onRedo,
   onResign,
@@ -104,30 +117,42 @@ export function PlayControlCard({
             </button>
           </div>
         </section>
-        <section className="play-control-section" aria-label="Piece appearance">
-          <div className="play-control-group-label">
-            <span>Look</span>
-            <small>Piece skin</small>
-          </div>
-          <div className="play-skin-rail" role="radiogroup" aria-label="Piece skin">
-            {pieceSkinOptions.map((option) => (
-              <button
-                key={option.key}
-                type="button"
-                role="radio"
-                aria-checked={pieceSkin === option.key}
-                title={`Use ${option.label} piece skin`}
-                onClick={() => onPieceSkinChange(option.key)}
-                className={`focus-ring play-skin-chip ${pieceSkin === option.key ? "is-selected" : ""}`}
-                data-skin-option={option.key}
-              >
-                <span className="play-skin-swatch" aria-hidden="true" />
-                <span>{option.label}</span>
-              </button>
-            ))}
-          </div>
+        <section className="play-control-section" aria-label="Board appearance">
+          <details className="play-look-disclosure">
+            <summary className="focus-ring">
+              <span>Look</span>
+              <small>{boardThemeOptions.find((option) => option.key === boardTheme)?.label ?? "Board"} / {pieceSkinOptions.find((option) => option.key === pieceSkin)?.label ?? "Pieces"}</small>
+            </summary>
+            <div className="play-look-grid">
+              <label>
+                <span>Board</span>
+                <select className="focus-ring" aria-label="Board theme" value={boardTheme} onChange={(event) => onBoardThemeChange(event.target.value as BoardThemePreference)}>
+                  {boardThemeOptions.map((option) => (
+                    <option key={option.key} value={option.key}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Pieces</span>
+                <select className="focus-ring" aria-label="Piece skin" value={pieceSkin} onChange={(event) => onPieceSkinChange(event.target.value as PieceSkinPreference)}>
+                  {pieceSkinOptions.map((option) => (
+                    <option key={option.key} value={option.key}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="play-look-swatches" aria-hidden="true">
+                {boardThemeOptions.map((option) => (
+                  <span key={option.key} data-board-theme-option={option.key} data-selected={boardTheme === option.key ? "true" : undefined} />
+                ))}
+              </div>
+            </div>
+          </details>
           <span className="sr-only" aria-live="polite">
-            Selected piece skin: {pieceSkinOptions.find((option) => option.key === pieceSkin)?.label ?? "Auto"}
+            Selected appearance: {boardThemeOptions.find((option) => option.key === boardTheme)?.label ?? "Board"} board, {pieceSkinOptions.find((option) => option.key === pieceSkin)?.label ?? "Auto"} pieces
           </span>
         </section>
         <section className="play-control-section" aria-label="Match controls">

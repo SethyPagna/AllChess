@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { MessageCircle, Radio, Send, Users } from "lucide-react";
 
 import type { PlayMode } from "@/components/board/game-board-options";
@@ -19,8 +20,11 @@ type ChatMessage = {
 type PlayChatPanelProps = {
   gameStarted: boolean;
   isSpectating: boolean;
+  locale: string;
   playMode: PlayMode;
+  roomId: string;
   title: string;
+  variantKey: string;
 };
 
 const seedMessages: ChatMessage[] = [
@@ -58,15 +62,17 @@ const seedMessages: ChatMessage[] = [
   }
 ];
 
-export function PlayChatPanel({ gameStarted, isSpectating, playMode, title }: PlayChatPanelProps) {
+export function PlayChatPanel({ gameStarted, isSpectating, locale, playMode, roomId, title, variantKey }: PlayChatPanelProps) {
   const inputHelpId = useId();
   const preferredChannel: ChatChannel = isSpectating || playMode === "spectate" ? "public" : "players";
   const playerChatLocked = preferredChannel === "public";
+  const storageKey = `allchess-chat:${roomId}`;
   const [activeChannel, setActiveChannel] = useState<ChatChannel>(preferredChannel);
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>(seedMessages);
   const messageSequence = useRef(0);
   const logRef = useRef<HTMLDivElement>(null);
+  const storageLoadedRef = useRef(false);
   const resolvedChannel: ChatChannel = playerChatLocked && activeChannel === "players" ? "public" : activeChannel;
   const visibleMessages = useMemo(() => messages.filter((message) => message.channel === resolvedChannel), [messages, resolvedChannel]);
   const channelCounts = useMemo(
@@ -83,11 +89,48 @@ export function PlayChatPanel({ gameStarted, isSpectating, playMode, title }: Pl
   const channelLabel = resolvedChannel === "players" ? "Players" : "Public";
   const placeholder = resolvedChannel === "players" ? "Message player room" : "Message public room";
   const channelSummary = resolvedChannel === "players" ? "Private 1v1 room" : "Spectator room";
+  const watchRoomHref = `/${locale}/watch?q=${encodeURIComponent(roomId)}`;
+
+  useEffect(() => {
+    storageLoadedRef.current = false;
+    window.queueMicrotask(() => {
+      let nextMessages: ChatMessage[] | null = null;
+      let loaded = false;
+      try {
+        const stored = window.localStorage.getItem(storageKey);
+        nextMessages = stored ? (JSON.parse(stored) as ChatMessage[]) : null;
+        loaded = true;
+      } catch {
+        nextMessages = seedMessages;
+        loaded = true;
+      }
+      if (nextMessages) setMessages(nextMessages);
+      storageLoadedRef.current = loaded;
+    });
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (!storageLoadedRef.current) return;
+    window.localStorage.setItem(storageKey, JSON.stringify(messages));
+  }, [messages, storageKey]);
 
   useEffect(() => {
     const log = logRef.current;
     if (log) log.scrollTop = log.scrollHeight;
   }, [visibleMessages]);
+
+  useEffect(() => {
+    function syncFromStorage(event: StorageEvent) {
+      if (event.key !== storageKey || !event.newValue) return;
+      try {
+        setMessages(JSON.parse(event.newValue) as ChatMessage[]);
+      } catch {
+        setMessages(seedMessages);
+      }
+    }
+    window.addEventListener("storage", syncFromStorage);
+    return () => window.removeEventListener("storage", syncFromStorage);
+  }, [storageKey]);
 
   function sendMessage() {
     const body = draft.trim();
@@ -139,8 +182,14 @@ export function PlayChatPanel({ gameStarted, isSpectating, playMode, title }: Pl
       </div>
       <div className="play-chat-context" aria-live="polite">
         <strong>{channelSummary}</strong>
-        <span>{gameStarted ? "Live" : "Setup"}</span>
+        <Link href={watchRoomHref as never} className="focus-ring" title={`Find ${roomId} in watch rooms`}>
+          {gameStarted || playMode === "spectate" ? "Watch" : "Setup"}
+        </Link>
       </div>
+      <p className="play-chat-room-meta">
+        <span>{variantKey}</span>
+        <code>{roomId}</code>
+      </p>
       <div ref={logRef} className="play-chat-log" role="log" aria-live="polite" aria-label={`${channelLabel} chat messages`}>
         {visibleMessages.map((message) => (
           <p key={message.id} className="play-chat-message" data-tone={message.tone}>

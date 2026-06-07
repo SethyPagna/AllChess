@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState, type DragEvent, type MouseEvent } from "react";
+import { useRef, useState, type DragEvent } from "react";
 
+import { setPieceDragImage } from "@/components/board/drag-preview";
 import { PieceIcon, getPieceDisplayName, type PieceSkinPreference } from "@/components/board/piece-icon";
 import { squareName } from "@/components/board/game-board-utils";
 import { normalizeLocale } from "@/lib/i18n/locales";
@@ -33,16 +34,14 @@ type BoardGridProps = {
 };
 
 const handPieceDragType = "application/x-allchess-hand-piece";
-const maxPlanningArrows = 32;
 
 export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move", locale = "en", onChoose, onDragMove, onDropHandPiece, orientedRows, pieceSkin = "default", rows, selected, suggestedMove, variantKey }: BoardGridProps) {
   const terrainLabels = getVocabulary(normalizeLocale(locale)).terrain;
+  const gridRef = useRef<HTMLDivElement>(null);
   const [draggingSquare, setDraggingSquare] = useState<Square | null>(null);
   const [pointerDragSquare, setPointerDragSquare] = useState<Square | null>(null);
   const pointerDragSquareRef = useRef<Square | null>(null);
   const [invalidDrop, setInvalidDrop] = useState<Square | null>(null);
-  const [planningOrigin, setPlanningOrigin] = useState<Square | null>(null);
-  const [planningArrows, setPlanningArrows] = useState<SuggestedBoardMove[]>([]);
 
   function flashInvalid(square: Square) {
     setInvalidDrop(square);
@@ -56,7 +55,7 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
     }
     event.dataTransfer.effectAllowed = "move";
     event.dataTransfer.setData("application/x-allchess-square", serializeSquare(cell.square));
-    setTransparentDragImage(event);
+    setPieceDragImage(event);
     setDraggingSquare(cell.square);
     onChoose(cell.square);
   }
@@ -97,54 +96,19 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
 
   function squareFromPoint(clientX: number, clientY: number) {
     const targetElement = document.elementFromPoint(clientX, clientY);
-    return squareFromEventTarget(targetElement);
+    return squareFromEventTarget(targetElement) ?? squareFromGridPoint(clientX, clientY);
+  }
+
+  function squareFromGridPoint(clientX: number, clientY: number) {
+    const rect = gridRef.current?.getBoundingClientRect();
+    if (!rect || clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) return null;
+    const visualCol = Math.min(cols - 1, Math.max(0, Math.floor(((clientX - rect.left) / rect.width) * cols)));
+    const visualRow = Math.min(rows - 1, Math.max(0, Math.floor(((clientY - rect.top) / rect.height) * rows)));
+    return orientedRows[visualRow]?.[visualCol]?.square ?? null;
   }
 
   function hasPieceAt(square: Square) {
     return orientedRows.some((row) => row.some((cell) => sameSquare(cell.square, square) && Boolean(cell.piece)));
-  }
-
-  function visualCenter(square: Square) {
-    for (let visualRow = 0; visualRow < orientedRows.length; visualRow += 1) {
-      const visualCol = orientedRows[visualRow]?.findIndex((cell) => sameSquare(cell.square, square)) ?? -1;
-      if (visualCol >= 0) {
-        return {
-          x: ((visualCol + 0.5) / cols) * 100,
-          y: ((visualRow + 0.5) / rows) * 100
-        };
-      }
-    }
-    return null;
-  }
-
-  function handlePlanningMark(event: MouseEvent<HTMLButtonElement>, square: Square) {
-    event.preventDefault();
-    event.stopPropagation();
-    if (event.shiftKey) {
-      setPlanningOrigin(null);
-      setPlanningArrows([]);
-      return;
-    }
-    if (event.altKey) {
-      setPlanningOrigin(null);
-      setPlanningArrows((current) => current.filter((arrow) => !sameSquare(arrow.from, square) && !sameSquare(arrow.to, square)));
-      return;
-    }
-    if (!planningOrigin) {
-      setPlanningOrigin(square);
-      return;
-    }
-    if (sameSquare(planningOrigin, square)) {
-      setPlanningOrigin(null);
-      return;
-    }
-    const nextArrow = { from: planningOrigin, to: square };
-    setPlanningArrows((current) => {
-      const existingIndex = current.findIndex((arrow) => sameSquare(arrow.from, nextArrow.from) && sameSquare(arrow.to, nextArrow.to));
-      if (existingIndex >= 0) return current.filter((_, index) => index !== existingIndex);
-      return [...current, nextArrow].slice(-maxPlanningArrows);
-    });
-    setPlanningOrigin(null);
   }
 
   function finishPointerDrag(target: Square | null) {
@@ -158,17 +122,23 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
 
   return (
     <div
+      ref={gridRef}
       className="board-grid relative overflow-hidden rounded-lg border border-[var(--border)] shadow-2xl"
       style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
       aria-label="Game board"
       onPointerDownCapture={(event) => {
-        if (event.button !== 0) return;
         const square = squareFromEventTarget(event.target);
-        if (square && hasPieceAt(square)) handlePointerDragStart(square);
+        if (!square) return;
+        if (event.button === 2) {
+          return;
+        }
+        if (event.button === 0 && hasPieceAt(square)) handlePointerDragStart(square);
       }}
       onPointerUpCapture={(event) => {
+        if (event.button === 2) return;
         finishPointerDrag(squareFromPoint(event.clientX, event.clientY));
       }}
+      onContextMenu={(event) => event.preventDefault()}
     >
       <svg className="board-planning-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         <defs>
@@ -176,21 +146,6 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
             <path d="M0,0 L5,2.5 L0,5 Z" />
           </marker>
         </defs>
-        {planningArrows.map((arrow, index) => {
-          const from = visualCenter(arrow.from);
-          const to = visualCenter(arrow.to);
-          if (!from || !to) return null;
-          return (
-            <line
-              key={`${serializeSquare(arrow.from)}-${serializeSquare(arrow.to)}-${index}`}
-              data-planning-arrow={`${squareName(arrow.from, files, rows)}-${squareName(arrow.to, files, rows)}`}
-              x1={from.x}
-              y1={from.y}
-              x2={to.x}
-              y2={to.y}
-            />
-          );
-        })}
       </svg>
       {orientedRows.map((row, visualRow) =>
         row.map((cell, visualCol) => {
@@ -245,7 +200,7 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
               onDragEnd={() => setDraggingSquare(null)}
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => handleDrop(event, cell.square)}
-              onContextMenu={(event) => handlePlanningMark(event, cell.square)}
+              onContextMenu={(event) => event.preventDefault()}
               className="board-square focus-ring relative grid place-items-center overflow-hidden font-black"
               aria-label={squareLabel}
               title={squareLabel}
@@ -257,7 +212,6 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
               data-square-state={squareState === "idle" ? undefined : squareState}
               data-dragging={(draggingSquare && sameSquare(draggingSquare, cell.square)) || (pointerDragSquare && sameSquare(pointerDragSquare, cell.square)) ? "true" : undefined}
               data-invalid-drop={isInvalidDrop ? "true" : undefined}
-              data-planning-origin={planningOrigin && sameSquare(planningOrigin, cell.square) ? "true" : undefined}
               data-tone={dark ? "dark" : "light"}
               data-suggested={isSuggestedFrom ? "from" : isSuggestedTo ? "to" : undefined}
               style={{
@@ -312,18 +266,4 @@ function labelTerrain(terrain: BoardCell["terrain"], labels: Record<string, stri
   if (terrain === "trap") return labels.trap;
   if (terrain === "camp") return labels.camp;
   return null;
-}
-
-function setTransparentDragImage(event: DragEvent<HTMLButtonElement>) {
-  const dragImage = document.createElement("span");
-  dragImage.style.position = "fixed";
-  dragImage.style.top = "0";
-  dragImage.style.left = "0";
-  dragImage.style.width = "1px";
-  dragImage.style.height = "1px";
-  dragImage.style.opacity = "0";
-  dragImage.style.pointerEvents = "none";
-  document.body.appendChild(dragImage);
-  event.dataTransfer.setDragImage(dragImage, 0, 0);
-  window.setTimeout(() => dragImage.remove(), 0);
 }

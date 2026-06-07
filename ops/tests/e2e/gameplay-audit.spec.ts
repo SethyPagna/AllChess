@@ -437,8 +437,8 @@ test("drop-variant hand rails stay compact on Mini Shogi", async ({ page }) => {
   await expect(board.locator('[data-coordinate="a5"]')).toHaveAttribute("aria-label", /Promotion zone/);
   await expect(page.getByLabel("Board terrain key")).toContainText("Promotion");
   await page.getByRole("button", { name: "Status" }).click();
-  await page.getByRole("radio", { name: /Tile/ }).click();
-  await expect(page.getByRole("radio", { name: /Tile/ })).toHaveAttribute("aria-checked", "true");
+  await page.getByText("Look").click();
+  await page.getByLabel("Piece skin").selectOption("tile");
   await expect(page.getByLabel("Game board").locator(".piece-icon").first()).toHaveAttribute("data-skin", "tile");
 
   await page.getByRole("button", { name: "Setup" }).click();
@@ -507,22 +507,32 @@ test("right-click planning arrows toggle and clear cleanly", async ({ page }) =>
   await page.getByRole("button", { name: "Start Game" }).click();
   await expect(page.getByText("Choose setup first")).toHaveCount(0);
 
-  await board.locator('[data-coordinate="e2"]').click({ button: "right" });
-  await board.locator('[data-coordinate="e4"]').click({ button: "right" });
+  await rightDragSquare(page, board, "e2", "e4");
   await expect(board.locator('[data-planning-arrow="e2-e4"]')).toHaveCount(1);
 
-  await board.locator('[data-coordinate="e2"]').click({ button: "right" });
-  await board.locator('[data-coordinate="e4"]').click({ button: "right" });
+  await rightDragSquare(page, board, "e2", "e4");
   await expect(board.locator('[data-planning-arrow="e2-e4"]')).toHaveCount(0);
 
-  await board.locator('[data-coordinate="g1"]').click({ button: "right" });
-  await board.locator('[data-coordinate="f3"]').click({ button: "right" });
-  await board.locator('[data-coordinate="b1"]').click({ button: "right" });
-  await board.locator('[data-coordinate="c3"]').click({ button: "right" });
+  await rightDragSquare(page, board, "g1", "f3");
+  await rightDragSquare(page, board, "b1", "c3");
   await expect(board.locator(".board-planning-layer line")).toHaveCount(2);
 
-  await board.locator('[data-coordinate="g1"]').click({ button: "right", modifiers: ["Alt"] });
+  await page.keyboard.down("Alt");
+  await rightDragSquare(page, board, "g1", "f3");
+  await page.keyboard.up("Alt");
   await expect(board.locator('[data-planning-arrow="g1-f3"]')).toHaveCount(0);
   await expect(board.locator('[data-planning-arrow="b1-c3"]')).toHaveCount(1);
   expect(runtimeErrors).toEqual([]);
 });
+
+async function rightDragSquare(page: import("@playwright/test").Page, board: import("@playwright/test").Locator, from: string, to: string) {
+  const fromBox = await board.locator(`[data-coordinate="${from}"]`).boundingBox();
+  const toBox = await board.locator(`[data-coordinate="${to}"]`).boundingBox();
+  expect(fromBox).not.toBeNull();
+  expect(toBox).not.toBeNull();
+  if (!fromBox || !toBox) return;
+  await page.mouse.move(fromBox.x + fromBox.width / 2, fromBox.y + fromBox.height / 2);
+  await page.mouse.down({ button: "right" });
+  await page.mouse.move(toBox.x + toBox.width / 2, toBox.y + toBox.height / 2, { steps: 8 });
+  await page.mouse.up({ button: "right" });
+}
