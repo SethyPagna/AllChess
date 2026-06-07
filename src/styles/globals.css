@@ -2997,7 +2997,8 @@ option {
 }
 
 .drop-selection-card strong,
-.drop-selection-card small {
+.drop-selection-card small,
+.drop-selection-card em {
   min-width: 0;
   overflow: hidden;
   line-height: 1.05;
@@ -3015,6 +3016,13 @@ option {
   color: var(--muted);
   font-size: 0.64rem;
   font-weight: 850;
+}
+
+.drop-selection-card em {
+  color: color-mix(in srgb, var(--info) 78%, var(--muted));
+  font-size: 0.58rem;
+  font-style: normal;
+  font-weight: 820;
 }
 
 .drop-selection-card button {

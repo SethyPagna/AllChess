@@ -105,6 +105,7 @@ type DropSelectionHintProps = {
 };
 
 export function DropSelectionHint({ legalTargetCount, onCancel, pieceCode, pieceLabel, pieceOwner, pieceSkin, variantKey, locale }: DropSelectionHintProps) {
+  const ruleNote = dropRuleNote(variantKey, pieceCode);
   return (
     <div className="drop-selection-card" role="status" aria-label={`Dropping ${pieceLabel}`}>
       <span className="drop-piece-preview" aria-hidden="true">
@@ -113,6 +114,7 @@ export function DropSelectionHint({ legalTargetCount, onCancel, pieceCode, piece
       <span>
         <strong>Drop {pieceLabel}</strong>
         <small>{legalTargetCount ? `${legalTargetCount} legal ${legalTargetCount === 1 ? "square" : "squares"}` : "No legal squares"}</small>
+        <em>{ruleNote}</em>
       </span>
       <button type="button" className="focus-ring" aria-label={`Cancel ${pieceLabel} drop`} onClick={onCancel}>
         <X size={14} />
@@ -120,6 +122,16 @@ export function DropSelectionHint({ legalTargetCount, onCancel, pieceCode, piece
       </button>
     </div>
   );
+}
+
+function dropRuleNote(variantKey: string, pieceCode: string) {
+  if (variantKey === "crazyhouse") return pieceCode === "p" ? "Pawns cannot drop on the first or last rank." : "Drops must land on empty legal squares.";
+  if (variantKey === "shogi" || variantKey === "mini-shogi") {
+    if (pieceCode === "p") return "Nifu, dead-rank, check, and pawn-drop mate rules are checked.";
+    if (pieceCode === "l" || pieceCode === "n") return "Dead-rank drops and self-check are checked.";
+    return "Drops must land on empty squares without leaving check.";
+  }
+  return "Drops must land on legal empty squares.";
 }
 
 type PromotionChoiceCardProps = {

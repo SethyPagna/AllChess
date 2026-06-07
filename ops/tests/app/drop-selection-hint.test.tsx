@@ -13,6 +13,7 @@ describe("DropSelectionHint", () => {
     expect(markup).toContain('data-skin="mini-wedge"');
     expect(markup).toContain("Drop Gold");
     expect(markup).toContain("7 legal squares");
+    expect(markup).toContain("Drops must land on empty squares without leaving check.");
     expect(markup).toContain('aria-label="Cancel Gold drop"');
   });
 
@@ -20,6 +21,13 @@ describe("DropSelectionHint", () => {
     const markup = renderToStaticMarkup(<DropSelectionHint legalTargetCount={0} locale="en" onCancel={() => undefined} pieceCode="p" pieceLabel="Pawn" pieceOwner="sente" pieceSkin="default" variantKey="mini-shogi" />);
 
     expect(markup).toContain("No legal squares");
+    expect(markup).toContain("Nifu, dead-rank, check, and pawn-drop mate rules are checked.");
     expect(markup).toContain("Cancel");
+  });
+
+  test("explains Crazyhouse pawn drop rank limits", () => {
+    const markup = renderToStaticMarkup(<DropSelectionHint legalTargetCount={12} locale="en" onCancel={() => undefined} pieceCode="p" pieceLabel="Pawn" pieceOwner="white" pieceSkin="default" variantKey="crazyhouse" />);
+
+    expect(markup).toContain("Pawns cannot drop on the first or last rank.");
   });
 });

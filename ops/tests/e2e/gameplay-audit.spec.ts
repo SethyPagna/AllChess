@@ -453,6 +453,7 @@ test("drop-variant hand rails stay compact on Mini Shogi", async ({ page }) => {
   const dropHint = page.getByLabel("Dropping Pawn");
   await expect(dropHint).toBeVisible();
   await expect(dropHint).toContainText(/legal squares/);
+  await expect(dropHint).toContainText("Nifu");
   await expect(dropHint.locator(".drop-piece-preview .piece-icon")).toHaveAttribute("data-code", "p");
   await dropHint.getByRole("button", { name: "Cancel Pawn drop" }).click();
   await expect(dropHint).toHaveCount(0);
