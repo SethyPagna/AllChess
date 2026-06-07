@@ -11,7 +11,7 @@ type PieceIconProps = {
   promoted?: boolean;
 };
 
-export type PieceSkin = "western" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
+export type PieceSkin = "western" | "glyph" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
 export type PieceSkinPreference = "default" | PieceSkin;
 
 export type PieceSkinOption = {
@@ -43,6 +43,7 @@ export function PieceIcon({ code, owner, pieceSkin = "default", variantKey, loca
     return <StonePieceIcon owner={owner} variantKey={variantKey} label={label} skin={skin} />;
   }
   if (usesWesternPresentation(variantKey)) {
+    if (skin === "glyph") return <WesternGlyphIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} />;
     return <WesternPieceIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} skin={skin} />;
   }
 
@@ -135,6 +136,7 @@ function WesternPieceIcon({ code, owner, variantKey, promoted, label, skin }: { 
       data-owner={owner}
       data-piece={piece}
       data-piece-label={label}
+      data-code={code}
       data-promoted={promoted || undefined}
       data-skin={skin}
       data-variant={variantKey}
@@ -150,6 +152,48 @@ function WesternPieceIcon({ code, owner, variantKey, promoted, label, skin }: { 
       {piece === "pawn" ? <PawnPaths /> : null}
     </svg>
   );
+}
+
+function WesternGlyphIcon({ code, owner, variantKey, promoted, label }: { code: string; owner: PlayerColor; variantKey: string; promoted: boolean; label: string }) {
+  const piece = westernPieceName(code, variantKey);
+  return (
+    <span
+      aria-label={label}
+      className="piece-symbol piece-icon western-glyph-piece"
+      data-owner={owner}
+      data-piece={`${piece}-glyph`}
+      data-piece-label={label}
+      data-code={code}
+      data-promoted={promoted || undefined}
+      data-skin="glyph"
+      data-variant={variantKey}
+      role="img"
+      title={label}
+    >
+      {westernGlyph(piece, owner)}
+    </span>
+  );
+}
+
+function westernGlyph(piece: string, owner: PlayerColor) {
+  const isDark = owner === "black" || owner === "blue" || owner === "gote";
+  const lightGlyphs: Record<string, string> = {
+    king: "\u2654",
+    queen: "\u2655",
+    rook: "\u2656",
+    bishop: "\u2657",
+    knight: "\u2658",
+    pawn: "\u2659"
+  };
+  const darkGlyphs: Record<string, string> = {
+    king: "\u265a",
+    queen: "\u265b",
+    rook: "\u265c",
+    bishop: "\u265d",
+    knight: "\u265e",
+    pawn: "\u265f"
+  };
+  return (isDark ? darkGlyphs : lightGlyphs)[piece] ?? (isDark ? "\u265f" : "\u2659");
 }
 
 function KingPaths() {
@@ -280,9 +324,9 @@ export function getPieceSkinOptions(variantKey: string): PieceSkinOption[] {
     return [...defaults, option("stone"), option("checker")];
   }
   if (variantKey === "makruk") {
-    return [...defaults, option("makruk"), option("western")];
+    return [...defaults, option("makruk"), option("western"), option("glyph")];
   }
-  return [...defaults, option("western"), option("makruk")];
+  return [...defaults, option("western"), option("glyph"), option("makruk")];
 }
 
 export function resolvePieceSkin(variantKey: string, preference: PieceSkinPreference = "default"): PieceSkin {
@@ -383,6 +427,7 @@ function option(key: PieceSkin): PieceSkinOption {
 function pieceSkinLabel(key: PieceSkin) {
   const labels: Record<PieceSkin, string> = {
     western: "Classic",
+    glyph: "Glyph",
     makruk: "Warm",
     disc: "Disc",
     wedge: "Wedge",

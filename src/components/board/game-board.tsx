@@ -23,7 +23,7 @@ import { getCatalogModeSupport, getGameCatalogEntry, type CatalogModeSupport } f
 import { applyBotMoveAfterThinking, settleBotThinkingSnapshot } from "@/lib/game/bot-clock";
 import { tickGameClock } from "@/lib/game/clocks";
 import { redoTimeline, redoTimelineUntil, undoTimeline, undoTimelineUntil } from "@/lib/game/history";
-import { analyzeMoveList, summarizeReview } from "@/lib/game/review";
+import { analyzeMoveList, summarizeReview, type ReviewedMove } from "@/lib/game/review";
 import { describeGameOutcome } from "@/lib/game/outcome";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getVocabulary } from "@/lib/i18n/vocabulary";
@@ -104,6 +104,45 @@ type DropSelectionHintProps = {
   variantKey: string;
   locale: string;
 };
+
+type ReviewMoveRow = ReviewedMove & {
+  owner: Piece["owner"];
+  piece: Piece | null;
+  pieceLabel: string;
+  sideLabel: string;
+};
+
+function buildReviewMoveRows({
+  locale,
+  moves,
+  rawMoves,
+  timeline,
+  variantKey
+}: {
+  locale: string;
+  moves: ReviewedMove[];
+  rawMoves: Array<Move & { notation: string }>;
+  timeline: GameState[];
+  variantKey: string;
+}): ReviewMoveRow[] {
+  return moves.map((move) => {
+    const rawMove = rawMoves[move.ply - 1];
+    const beforeState = timeline[move.ply - 1] ?? timeline[0];
+    const piece = rawMove ? rawMove.drop ?? findPieceAt(beforeState, rawMove.from) : null;
+    const owner = piece?.owner ?? beforeState?.turn ?? "white";
+    return {
+      ...move,
+      owner,
+      piece,
+      pieceLabel: piece ? getPieceDisplayName(piece.code, variantKey, locale, piece.promoted) : "Move",
+      sideLabel: colorLabel(owner)
+    };
+  });
+}
+
+function findPieceAt(state: GameState | undefined, square: Square) {
+  return state?.board[square.row]?.[square.col]?.piece ?? null;
+}
 
 export function DropSelectionHint({ legalTargetCount, onCancel, pieceCode, pieceLabel, pieceOwner, pieceSkin, variantKey, locale }: DropSelectionHintProps) {
   const ruleNote = getDropRuleNote(variantKey, pieceCode);
@@ -276,6 +315,7 @@ export function GameBoard({
   const displayPly = reviewPly ?? timeline.length - 1;
   const displayState = timeline[Math.min(displayPly, timeline.length - 1)] ?? state;
   const activeReviewMove = displayPly > 0 ? reviewMoves[displayPly - 1] : null;
+  const reviewMoveRows = useMemo(() => buildReviewMoveRows({ locale, moves: reviewMoves, rawMoves: state.moves, timeline, variantKey: displayState.variantKey }), [displayState.variantKey, locale, reviewMoves, state.moves, timeline]);
   const isReviewing = reviewPly !== null;
   const terrainKeys = useMemo(() => {
     const present = new Set<TerrainKey>();
@@ -338,7 +378,7 @@ export function GameBoard({
     ? "Searching for opponent"
     : isWatchingMode
       ? "Watching rooms"
-      : `${colorLabel(state.turn)} to move`;
+      : "Live position";
   const botSearchDetail = lastBotResult
     ? `Bot: ${lastBotResult.knowledgeSource ?? lastBotResult.engine} ${lastBotResult.depthReached}/${lastBotResult.nodesSearched}.`
     : isBotMode
@@ -1155,17 +1195,19 @@ export function GameBoard({
               <ol className="review-move-list move-list text-sm">
                 <li className={displayPly === 0 ? "is-active" : ""}>
                   <button type="button" onClick={() => setReviewCursor(0)} className="focus-ring">
-                    <span>0.</span>
+                    <span className="review-move-side" data-owner={firstColor}>{colorLabel(firstColor).slice(0, 2)}</span>
                     <strong>Starting position</strong>
-                    <em>Info</em>
                   </button>
                 </li>
-                {reviewMoves.length ? (
-                  reviewMoves.map((move) => (
+                {reviewMoveRows.length ? (
+                  reviewMoveRows.map((move) => (
                     <li key={`${move.notation}-${move.ply}`} className={displayPly === move.ply ? "is-active" : ""} data-review={move.classification}>
-                      <button type="button" onClick={() => setReviewCursor(move.ply)} className="focus-ring" aria-label={`Review move ${move.ply} ${move.notation}`}>
-                        <span>{move.ply}.</span>
-                        <strong>{move.notation}</strong>
+                      <button type="button" onClick={() => setReviewCursor(move.ply)} className="focus-ring" aria-label={`Review move ${move.ply} ${move.sideLabel} ${move.pieceLabel} ${move.notation}`}>
+                        <span className="review-move-side" data-owner={move.owner}>{move.sideLabel.slice(0, 2)}</span>
+                        <span className="review-move-piece">
+                          {move.piece ? <PieceIcon code={move.piece.code} owner={move.piece.owner} pieceSkin={pieceSkin} variantKey={displayState.variantKey} locale={locale} promoted={move.piece.promoted} /> : null}
+                          <strong>{move.notation}</strong>
+                        </span>
                         <em>{move.label}</em>
                       </button>
                     </li>
@@ -1173,9 +1215,8 @@ export function GameBoard({
                 ) : (
                   <li>
                     <button type="button" className="focus-ring" disabled>
-                      <span>1.</span>
+                      <span className="review-move-side" data-owner={state.turn}>{colorLabel(state.turn).slice(0, 2)}</span>
                       <strong>No moves yet</strong>
-                      <em>Info</em>
                     </button>
                   </li>
                 )}

@@ -35,8 +35,10 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await expect(controls.getByLabel("Utility controls")).toHaveCount(0);
   await expect(controls.getByRole("button", { name: "Bot Mode" })).toBeDisabled();
   await expect(page.getByLabel("Local play status")).toContainText("Offline Local");
-  await expect(page.locator(".review-position-card")).toContainText("White to move");
+  await expect(page.locator(".review-position-card")).toContainText("Live position");
   await expect(page.locator(".review-move-list")).toHaveCSS("overflow-y", "auto");
+  await expect(page.locator(".review-move-list")).not.toContainText("Info");
+  await expect(page.locator(".review-move-side").first()).toBeVisible();
   const before = await board.boundingBox();
   expect(before).toBeTruthy();
 
@@ -55,11 +57,14 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await expect(coordinate).not.toHaveCSS("text-shadow", "none");
   await expect(page.getByLabel("Black player card")).not.toHaveCSS("background-color", "rgb(36, 35, 31)");
 
-  await page.getByRole("button", { name: "Suggest" }).click();
+  await controls.getByRole("button", { name: "Suggest", exact: true }).click();
   await expect(board.locator('[data-suggested="from"]')).toBeVisible();
   await expect(board.locator('[data-suggested="to"]')).toBeVisible();
-  await page.getByRole("button", { name: "Suggest" }).click();
-  await expect(page.getByText(/^1\./)).toBeVisible();
+  await controls.getByRole("button", { name: "Suggest", exact: true }).click();
+  const firstMoveRow = page.locator(".review-move-list li[data-review]").first();
+  await expect(firstMoveRow).toBeVisible();
+  await expect(firstMoveRow.locator(".review-move-side")).toHaveText("Wh");
+  await expect(firstMoveRow.locator(".review-move-piece .piece-icon")).toHaveAttribute("data-code", "p");
 
   const afterSuggestion = await board.boundingBox();
   expect(afterSuggestion?.width).toBeCloseTo(before!.width, 1);
