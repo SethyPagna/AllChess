@@ -367,11 +367,13 @@ test("non-classic boards use clean coordinate labels too", async ({ page }) => {
   const board = page.getByLabel("Game board");
   await expect(board).toBeVisible();
   await expect(board.locator(".board-square")).toHaveCount(90);
+  await expect(board.locator('[data-terrain="palace"]')).toHaveCount(18);
+  await expect(board.locator('[data-coordinate="d10"]')).toHaveAttribute("data-terrain", "palace");
+  await expect(board.locator('[data-coordinate="d10"]')).toHaveAttribute("aria-label", /Palace/);
   const coordinate = board.locator(".board-coordinate").first();
   await expect(coordinate).toBeVisible();
-  await expect(coordinate).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  await expect(coordinate).toHaveCSS("box-shadow", "none");
-  await expect(coordinate).toHaveCSS("border-radius", "0px");
+  await expect(coordinate).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(coordinate).not.toHaveCSS("border-radius", "0px");
   await expect(coordinate).not.toHaveCSS("color", "rgba(0, 0, 0, 0)");
   await expect(coordinate).not.toHaveCSS("text-shadow", "none");
 
@@ -383,6 +385,27 @@ test("non-classic boards use clean coordinate labels too", async ({ page }) => {
   expect(coordinateBox!.y).toBeGreaterThanOrEqual(boardBox!.y);
   expect(coordinateBox!.x + coordinateBox!.width).toBeLessThanOrEqual(boardBox!.x + boardBox!.width);
   expect(coordinateBox!.y + coordinateBox!.height).toBeLessThanOrEqual(boardBox!.y + boardBox!.height);
+  expect(runtimeErrors).toEqual([]);
+});
+
+test("jungle board exposes river, den, and trap terrain", async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
+  });
+
+  await page.goto("/en/play/jungle");
+  const board = page.getByLabel("Game board");
+  await expect(board).toBeVisible();
+  await expect(board.locator(".board-square")).toHaveCount(63);
+  await expect(board.locator('[data-terrain="river"]')).toHaveCount(12);
+  await expect(board.locator('[data-terrain="den"]')).toHaveCount(2);
+  await expect(board.locator('[data-terrain="trap"]')).toHaveCount(10);
+  await expect(board.locator('[data-coordinate="b6"]')).toHaveAttribute("data-terrain", "river");
+  await expect(board.locator('[data-coordinate="d9"]')).toHaveAttribute("aria-label", /Den/);
+  await expect(board.locator('[data-coordinate="c9"]')).toHaveAttribute("aria-label", /Trap/);
+  await expectNoHorizontalOverflow(page);
   expect(runtimeErrors).toEqual([]);
 });
 
