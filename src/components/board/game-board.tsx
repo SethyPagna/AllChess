@@ -116,6 +116,23 @@ type PromotionChoiceCardProps = {
   variantKey: string;
 };
 
+type TerrainKey = Exclude<NonNullable<GameState["board"][number][number]["terrain"]>, "land">;
+
+type TerrainKeyLegendProps = {
+  terrainKeys: TerrainKey[];
+};
+
+const terrainKeyLabels: Record<TerrainKey, string> = {
+  camp: "Camp",
+  den: "Den",
+  palace: "Palace",
+  "promotion-zone": "Promotion",
+  river: "River",
+  trap: "Trap"
+};
+
+const terrainKeyOrder: TerrainKey[] = ["promotion-zone", "palace", "river", "den", "trap", "camp"];
+
 export function PromotionChoiceCard({ locale, onChoose, pieceCode, pieceLabel, pieceOwner, pieceSkin, promotedPieceLabel, variantKey }: PromotionChoiceCardProps) {
   return (
     <div className="promotion-choice-card" role="dialog" aria-label={`${pieceLabel} promotion choice`}>
@@ -133,6 +150,20 @@ export function PromotionChoiceCard({ locale, onChoose, pieceCode, pieceLabel, p
           <span>Keep {pieceLabel}</span>
         </button>
       </div>
+    </div>
+  );
+}
+
+export function TerrainKeyLegend({ terrainKeys }: TerrainKeyLegendProps) {
+  if (!terrainKeys.length) return null;
+  return (
+    <div className="terrain-key" aria-label="Board terrain key">
+      {terrainKeys.map((terrain) => (
+        <span key={terrain} className="terrain-key-item" data-terrain={terrain}>
+          <i aria-hidden="true" />
+          <strong>{terrainKeyLabels[terrain]}</strong>
+        </span>
+      ))}
     </div>
   );
 }
@@ -228,6 +259,15 @@ export function GameBoard({
   const displayState = timeline[Math.min(displayPly, timeline.length - 1)] ?? state;
   const activeReviewMove = displayPly > 0 ? reviewMoves[displayPly - 1] : null;
   const isReviewing = reviewPly !== null;
+  const terrainKeys = useMemo(() => {
+    const present = new Set<TerrainKey>();
+    for (const row of displayState.board) {
+      for (const cell of row) {
+        if (cell.terrain && cell.terrain !== "land") present.add(cell.terrain);
+      }
+    }
+    return terrainKeyOrder.filter((terrain) => present.has(terrain));
+  }, [displayState.board]);
   const selectedHandPiece = useMemo(() => (selectedHandCode ? createHandDropPiece(state.turn, selectedHandCode) : null), [selectedHandCode, state.turn]);
   const legalMoves = useMemo(() => (selected ? getLegalMoves(state, selected) : selectedHandPiece ? getLegalMoves(state, { drop: selectedHandPiece }) : []), [selected, selectedHandPiece, state]);
   const legalTargets = useMemo(() => new Set(legalMoves.map((move) => serializeSquare(move.to))), [legalMoves]);
@@ -912,6 +952,7 @@ export function GameBoard({
             ) : null}
           </div>
         </div>
+        <TerrainKeyLegend terrainKeys={terrainKeys} />
         {playerCard(bottomPlayerColor, "bottom")}
       </div>
 

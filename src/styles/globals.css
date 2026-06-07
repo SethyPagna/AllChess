@@ -1768,6 +1768,67 @@ option {
   isolation: isolate;
 }
 
+.terrain-key {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+  width: var(--board-fixed-size);
+  max-width: calc(100vw - 1.5rem);
+  margin: 0.42rem auto 0;
+}
+
+.terrain-key-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.24rem;
+  min-height: 1.45rem;
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-raised) 88%, transparent);
+  color: var(--muted);
+  padding: 0.12rem 0.42rem;
+  font-size: 0.62rem;
+  font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.terrain-key-item i {
+  display: inline-block;
+  width: 0.78rem;
+  height: 0.78rem;
+  border-radius: 0.18rem;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+}
+
+.terrain-key-item[data-terrain="promotion-zone"] i {
+  background: color-mix(in srgb, var(--warning) 28%, transparent);
+}
+
+.terrain-key-item[data-terrain="palace"] i {
+  background:
+    linear-gradient(45deg, transparent calc(50% - 1px), color-mix(in srgb, var(--accent) 42%, transparent) 50%, transparent calc(50% + 1px)),
+    color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.terrain-key-item[data-terrain="river"] i {
+  background: color-mix(in srgb, var(--info) 32%, transparent);
+}
+
+.terrain-key-item[data-terrain="den"] i {
+  background: color-mix(in srgb, var(--danger) 28%, transparent);
+}
+
+.terrain-key-item[data-terrain="trap"] i {
+  border-style: dashed;
+  background: color-mix(in srgb, var(--warning) 20%, transparent);
+}
+
+.terrain-key-item[data-terrain="camp"] i {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
 .board-grid {
   display: grid;
   width: 100%;

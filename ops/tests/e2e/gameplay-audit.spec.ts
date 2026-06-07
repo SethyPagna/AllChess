@@ -370,6 +370,7 @@ test("non-classic boards use clean coordinate labels too", async ({ page }) => {
   await expect(board.locator('[data-terrain="palace"]')).toHaveCount(18);
   await expect(board.locator('[data-coordinate="d10"]')).toHaveAttribute("data-terrain", "palace");
   await expect(board.locator('[data-coordinate="d10"]')).toHaveAttribute("aria-label", /Palace/);
+  await expect(page.getByLabel("Board terrain key")).toContainText("Palace");
   const coordinate = board.locator(".board-coordinate").first();
   await expect(coordinate).toBeVisible();
   await expect(coordinate).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
@@ -405,6 +406,10 @@ test("jungle board exposes river, den, and trap terrain", async ({ page }) => {
   await expect(board.locator('[data-coordinate="b6"]')).toHaveAttribute("data-terrain", "river");
   await expect(board.locator('[data-coordinate="d9"]')).toHaveAttribute("aria-label", /Den/);
   await expect(board.locator('[data-coordinate="c9"]')).toHaveAttribute("aria-label", /Trap/);
+  const terrainKey = page.getByLabel("Board terrain key");
+  await expect(terrainKey).toContainText("River");
+  await expect(terrainKey).toContainText("Den");
+  await expect(terrainKey).toContainText("Trap");
   await expectNoHorizontalOverflow(page);
   expect(runtimeErrors).toEqual([]);
 });
@@ -430,6 +435,7 @@ test("drop-variant hand rails stay compact on Mini Shogi", async ({ page }) => {
   await expect(board.locator('[data-terrain="promotion-zone"]')).toHaveCount(10);
   await expect(board.locator('[data-coordinate="a5"]')).toHaveAttribute("data-terrain", "promotion-zone");
   await expect(board.locator('[data-coordinate="a5"]')).toHaveAttribute("aria-label", /Promotion zone/);
+  await expect(page.getByLabel("Board terrain key")).toContainText("Promotion");
   await page.getByRole("button", { name: "Status" }).click();
   await page.getByRole("radio", { name: /Tile/ }).click();
   await expect(page.getByRole("radio", { name: /Tile/ })).toHaveAttribute("aria-checked", "true");
