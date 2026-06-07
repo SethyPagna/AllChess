@@ -53,6 +53,7 @@ const boardThemeOptions: BoardThemeOption[] = [
   { key: "classic", label: "Classic green" },
   { key: "wood", label: "Warm wood" },
   { key: "jade", label: "Jade clear" },
+  { key: "ocean", label: "Ocean clear" },
   { key: "contrast", label: "High contrast" }
 ];
 
@@ -167,10 +168,11 @@ export function TerrainKeyLegend({ terrainKeys, locale = "en" }: TerrainKeyLegen
   const terrainLabels = getVocabulary(normalizeLocale(locale)).terrain;
   return (
     <div className="terrain-key" aria-label="Board terrain key">
+      <span className="terrain-key-label">Zones</span>
       {terrainKeys.map((terrain) => (
         <span key={terrain} className="terrain-key-item" data-terrain={terrain}>
           <i aria-hidden="true" />
-          <strong>{terrain === "promotion-zone" ? terrainLabels.promotion : terrainLabels[terrain]}</strong>
+          <strong>{terrain === "promotion-zone" ? "Promo zone" : terrainLabels[terrain]}</strong>
         </span>
       ))}
     </div>

@@ -4,7 +4,7 @@ import type { PieceSkinOption, PieceSkinPreference } from "@/components/board/pi
 
 type BotMode = "human" | "opponent" | "both";
 
-export type BoardThemePreference = "classic" | "wood" | "jade" | "contrast";
+export type BoardThemePreference = "classic" | "wood" | "jade" | "ocean" | "contrast";
 
 export type BoardThemeOption = {
   key: BoardThemePreference;
@@ -134,6 +134,24 @@ export function PlayControlCard({
                   ))}
                 </select>
               </label>
+              <div className="play-look-option-row" role="group" aria-label="Board theme options">
+                {boardThemeOptions.map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    className="focus-ring play-look-option"
+                    aria-label={`Use ${option.label} board`}
+                    aria-pressed={boardTheme === option.key}
+                    data-board-theme-option={option.key}
+                    data-selected={boardTheme === option.key ? "true" : undefined}
+                    onClick={() => onBoardThemeChange(option.key)}
+                    title={option.label}
+                  >
+                    <span aria-hidden="true" />
+                    <strong>{option.label}</strong>
+                  </button>
+                ))}
+              </div>
               <label>
                 <span>Pieces</span>
                 <select className="focus-ring" aria-label="Piece skin" value={pieceSkin} onChange={(event) => onPieceSkinChange(event.target.value as PieceSkinPreference)}>
@@ -144,9 +162,22 @@ export function PlayControlCard({
                   ))}
                 </select>
               </label>
-              <div className="play-look-swatches" aria-hidden="true">
-                {boardThemeOptions.map((option) => (
-                  <span key={option.key} data-board-theme-option={option.key} data-selected={boardTheme === option.key ? "true" : undefined} />
+              <div className="play-look-option-row play-look-piece-row" role="group" aria-label="Piece style choices">
+                {pieceSkinOptions.map((option) => (
+                  <button
+                    key={option.key}
+                    type="button"
+                    className="focus-ring play-look-option"
+                    aria-label={`Use ${option.label} pieces`}
+                    aria-pressed={pieceSkin === option.key}
+                    data-piece-skin-option={option.key}
+                    data-selected={pieceSkin === option.key ? "true" : undefined}
+                    onClick={() => onPieceSkinChange(option.key)}
+                    title={option.label}
+                  >
+                    <span aria-hidden="true" />
+                    <strong>{option.label}</strong>
+                  </button>
                 ))}
               </div>
             </div>

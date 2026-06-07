@@ -9,7 +9,8 @@ describe("PlayControlCard", () => {
     const noop = vi.fn();
     const boardThemeOptions: BoardThemeOption[] = [
       { key: "classic", label: "Classic green" },
-      { key: "wood", label: "Warm wood" }
+      { key: "wood", label: "Warm wood" },
+      { key: "ocean", label: "Ocean clear" }
     ];
     const markup = renderToStaticMarkup(
       <PlayControlCard
@@ -49,6 +50,10 @@ describe("PlayControlCard", () => {
     expect(markup).toContain('value="wood"');
     expect(markup).toContain('value="tile"');
     expect(markup).toContain('data-board-theme-option="wood"');
+    expect(markup).toContain('aria-label="Use Warm wood board"');
+    expect(markup).toContain('data-piece-skin-option="tile"');
+    expect(markup).toContain('aria-label="Piece style choices"');
+    expect(markup).toContain('aria-label="Use Tile pieces"');
     expect(markup).toContain('data-selected="true"');
     expect(markup).toContain("Selected appearance: Warm wood board, Tile pieces");
   });

@@ -435,7 +435,7 @@ test("drop-variant hand rails stay compact on Mini Shogi", async ({ page }) => {
   await expect(board.locator('[data-terrain="promotion-zone"]')).toHaveCount(10);
   await expect(board.locator('[data-coordinate="a5"]')).toHaveAttribute("data-terrain", "promotion-zone");
   await expect(board.locator('[data-coordinate="a5"]')).toHaveAttribute("aria-label", /Promotion zone/);
-  await expect(page.getByLabel("Board terrain key")).toContainText("Promotion");
+  await expect(page.getByLabel("Board terrain key")).toContainText("Promo zone");
   await page.getByRole("button", { name: "Status" }).click();
   await page.getByText("Look").click();
   await page.getByLabel("Piece skin").selectOption("tile");
