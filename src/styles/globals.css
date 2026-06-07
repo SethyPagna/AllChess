@@ -3001,7 +3001,7 @@ option {
 .drop-selection-card em {
   min-width: 0;
   overflow: hidden;
-  line-height: 1.05;
+  line-height: 1.08;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -3019,10 +3019,15 @@ option {
 }
 
 .drop-selection-card em {
+  display: -webkit-box;
   color: color-mix(in srgb, var(--info) 78%, var(--muted));
   font-size: 0.58rem;
   font-style: normal;
   font-weight: 820;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: normal;
 }
 
 .drop-selection-card button {

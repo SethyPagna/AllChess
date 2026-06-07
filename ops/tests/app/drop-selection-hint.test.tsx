@@ -7,7 +7,7 @@ describe("DropSelectionHint", () => {
   test("summarizes selected hand drops with a legal-square count", () => {
     const markup = renderToStaticMarkup(<DropSelectionHint legalTargetCount={7} locale="en" onCancel={() => undefined} pieceCode="g" pieceLabel="Gold" pieceOwner="sente" pieceSkin="default" variantKey="mini-shogi" />);
 
-    expect(markup).toContain('aria-label="Dropping Gold"');
+    expect(markup).toContain('aria-label="Dropping Gold. 7 legal squares. Drops must land on empty squares without leaving check."');
     expect(markup).toContain("drop-piece-preview");
     expect(markup).toContain('data-code="g"');
     expect(markup).toContain('data-skin="mini-wedge"');

@@ -213,6 +213,7 @@ describe("PieceIcon", () => {
     expect(card).toContain('class="hand-tray"');
     expect(card).toContain('aria-label="Sente hand: Drop \u6b69"');
     expect(card).toContain('aria-label="Drop \u6b69, 2 in hand"');
+    expect(card).toContain('title="Tap or drag \u6b69 to a legal empty square. Nifu, dead-rank, check, and pawn-drop mate rules are checked."');
     expect(card).toContain('class="hand-piece-button focus-ring is-selected"');
     expect(card).toContain('data-hand-state="selected"');
     expect(card).toContain('data-piece-label="\u6b69"');

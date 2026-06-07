@@ -32,6 +32,7 @@ import { getTimeControl, type TimeControlKey } from "@/lib/game/time-controls";
 import { applyMove, createInitialState, getLegalMoves, getVariant, sameSquare, serializeSquare, type GameState, type Move, type Piece, type Square } from "@/lib/variants";
 import { BoardGrid } from "@/components/board/board-grid";
 import { BoardPlayerCard } from "@/components/board/board-player-card";
+import { getDropRuleNote } from "@/components/board/drop-guidance";
 import { GameGuideModal } from "@/components/board/game-guide-modal";
 import { MatchResultOverlay } from "@/components/board/match-result-overlay";
 import { PieceIcon, getPieceDisplayName, getPieceSkinOptions, type PieceSkinPreference } from "@/components/board/piece-icon";
@@ -105,15 +106,16 @@ type DropSelectionHintProps = {
 };
 
 export function DropSelectionHint({ legalTargetCount, onCancel, pieceCode, pieceLabel, pieceOwner, pieceSkin, variantKey, locale }: DropSelectionHintProps) {
-  const ruleNote = dropRuleNote(variantKey, pieceCode);
+  const ruleNote = getDropRuleNote(variantKey, pieceCode);
+  const legalTargetLabel = legalTargetCount ? `${legalTargetCount} legal ${legalTargetCount === 1 ? "square" : "squares"}` : "No legal squares";
   return (
-    <div className="drop-selection-card" role="status" aria-label={`Dropping ${pieceLabel}`}>
+    <div className="drop-selection-card" role="status" aria-label={`Dropping ${pieceLabel}. ${legalTargetLabel}. ${ruleNote}`}>
       <span className="drop-piece-preview" aria-hidden="true">
         <PieceIcon code={pieceCode} owner={pieceOwner} pieceSkin={pieceSkin} variantKey={variantKey} locale={locale} />
       </span>
       <span>
         <strong>Drop {pieceLabel}</strong>
-        <small>{legalTargetCount ? `${legalTargetCount} legal ${legalTargetCount === 1 ? "square" : "squares"}` : "No legal squares"}</small>
+        <small>{legalTargetLabel}</small>
         <em>{ruleNote}</em>
       </span>
       <button type="button" className="focus-ring" aria-label={`Cancel ${pieceLabel} drop`} onClick={onCancel}>
@@ -122,16 +124,6 @@ export function DropSelectionHint({ legalTargetCount, onCancel, pieceCode, piece
       </button>
     </div>
   );
-}
-
-function dropRuleNote(variantKey: string, pieceCode: string) {
-  if (variantKey === "crazyhouse") return pieceCode === "p" ? "Pawns cannot drop on the first or last rank." : "Drops must land on empty legal squares.";
-  if (variantKey === "shogi" || variantKey === "mini-shogi") {
-    if (pieceCode === "p") return "Nifu, dead-rank, check, and pawn-drop mate rules are checked.";
-    if (pieceCode === "l" || pieceCode === "n") return "Dead-rank drops and self-check are checked.";
-    return "Drops must land on empty squares without leaving check.";
-  }
-  return "Drops must land on legal empty squares.";
 }
 
 type PromotionChoiceCardProps = {

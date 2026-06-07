@@ -1,4 +1,5 @@
 import { setPieceDragImage } from "@/components/board/drag-preview";
+import { getHandPieceHelpText } from "@/components/board/drop-guidance";
 import { PieceIcon, getPieceDisplayName, resolvePieceSkin, type PieceSkinPreference } from "@/components/board/piece-icon";
 import { colorLabel } from "@/components/board/game-board-utils";
 import { formatClock } from "@/lib/game/clocks";
@@ -88,11 +89,11 @@ export function BoardPlayerCard({
               <span>{handStatus}</span>
             </span>
             <div className={`hand-strip ${handEntries.length ? "" : "is-empty"}`} aria-label={`${colorLabel(color)} ${handLabel.toLowerCase()} ${handEntries.length ? "pieces" : "empty"}`} data-skin={resolvedPieceSkin}>
-              <span className="sr-only">Tap or drag a piece in hand to a legal empty square.</span>
+              <span className="sr-only">Tap or drag a piece in hand to a legal empty square. Drop restrictions are included on each piece.</span>
               {handEntries.length ? handEntries.map(([code, count]) => {
                 const pieceLabel = getPieceDisplayName(code, variantKey, locale);
                 const actionLabel = `${canUseHand ? vocabulary.actions.drop : "Held"} ${pieceLabel}, ${count} in hand`;
-                const helpText = canUseHand ? `Tap or drag ${pieceLabel} to a legal empty square.` : `${pieceLabel} is in hand. Start or resume your turn to drop it.`;
+                const helpText = getHandPieceHelpText({ canUseHand, pieceLabel, pieceCode: code, variantKey });
                 return (
                   <button
                     key={`${color}-${code}`}
