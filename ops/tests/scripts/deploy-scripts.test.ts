@@ -43,8 +43,11 @@ describe("deployment scripts", () => {
 
     expect(patchScript).toContain("function allchessRatingRange");
     expect(patchScript).toContain("function allchessRoomIdFromPath");
+    expect(patchScript).toContain("function allchessRoomSocketRequest");
     expect(patchScript).toContain("function allchessTicketsCompatible");
     expect(patchScript).toContain("function allchessMatch");
+    expect(patchScript).toContain('/^\\\\/api\\\\/rooms\\\\/([^/]+)\\\\/socket\\\\/?$/');
+    expect(patchScript).toContain("const allchessRealtimeResponse = allchessRoomSocketRequest(request, env);");
     expect(patchScript).toContain("broadcastSocket");
     expect(patchScript).toContain("handleSocketMessage");
     expect(patchScript).toContain("socket.readyState === 1");

@@ -35,6 +35,24 @@ function allchessRoomIdFromPath(pathname) {
   return match ? decodeURIComponent(match[1]) : null;
 }
 
+function allchessRoomSocketRequest(request, env) {
+  const url = new URL(request.url);
+  const match = url.pathname.match(/^\\/api\\/rooms\\/([^/]+)\\/socket\\/?$/);
+  if (!match) return null;
+  if (request.headers.get("upgrade") !== "websocket") {
+    return allchessDoJson({ error: "WebSocket upgrade required." }, { status: 426 });
+  }
+  if (!env?.GAME_ROOM_DO) {
+    return allchessDoJson({ error: "Realtime room storage is not configured." }, { status: 501 });
+  }
+  const roomId = decodeURIComponent(match[1]);
+  const durableId = env.GAME_ROOM_DO.idFromName(roomId);
+  const stub = env.GAME_ROOM_DO.get(durableId);
+  const internalUrl = new URL(\`/rooms/\${encodeURIComponent(roomId)}\`, "https://allchess.internal");
+  internalUrl.search = url.search;
+  return stub.fetch(internalUrl.toString(), { headers: request.headers });
+}
+
 function allchessRatingRange(body) {
   if (Array.isArray(body.ratingRange) && body.ratingRange.length === 2) return body.ratingRange;
   const rating = Number.isFinite(Number(body.rating)) ? Number(body.rating) : 1200;
@@ -202,13 +220,29 @@ export class PresenceDurableObject extends PresenceDO {}
 `;
 
 const worker = await readFile(workerPath, "utf8");
-if (!worker.includes(exportMarker)) {
+let patchedWorker = worker;
+if (!patchedWorker.includes(exportMarker)) {
   const defaultExportIndex = worker.indexOf("export default {");
   if (defaultExportIndex === -1) {
     throw new Error("Could not find OpenNext default worker export to patch Durable Objects.");
   }
-  await writeFile(workerPath, `${worker.slice(0, defaultExportIndex)}${durableObjectExports}\n${worker.slice(defaultExportIndex).trimStart()}`);
+  patchedWorker = `${worker.slice(0, defaultExportIndex)}${durableObjectExports}\n${worker.slice(defaultExportIndex).trimStart()}`;
 }
+const entryPointMarker = "            const url = new URL(request.url);";
+if (!patchedWorker.includes("const allchessRealtimeResponse = allchessRoomSocketRequest(request, env);")) {
+  if (!patchedWorker.includes(entryPointMarker)) {
+    throw new Error("Could not find OpenNext fetch entry point to patch realtime sockets.");
+  }
+  patchedWorker = patchedWorker.replace(
+    entryPointMarker,
+    `            const url = new URL(request.url);
+            const allchessRealtimeResponse = allchessRoomSocketRequest(request, env);
+            if (allchessRealtimeResponse) {
+                return allchessRealtimeResponse;
+            }`
+  );
+}
+await writeFile(workerPath, patchedWorker);
 
 const defaultFunctionDir = path.join(openNextDir, "server-functions", "default");
 await cp(path.join(defaultFunctionDir, ".next", "server"), path.join(defaultFunctionDir, "server"), {
