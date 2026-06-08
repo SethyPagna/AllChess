@@ -13,6 +13,7 @@
   --border: #d9e4df;
   --border-strong: #bfd2c8;
   --accent: #14895b;
+  --accent-foreground: #ffffff;
   --accent-strong: #0f6847;
   --accent-soft: #dff4ea;
   --info: #2f6fbb;
@@ -48,6 +49,7 @@
   --border: #30473e;
   --border-strong: #446155;
   --accent: #78d99f;
+  --accent-foreground: #102018;
   --accent-strong: #a2f1c0;
   --accent-soft: #193b2a;
   --info: #8db9ff;
@@ -2204,7 +2206,7 @@ option {
 .board-file {
   right: 0.16rem;
   bottom: 0.16rem;
-  text-transform: uppercase;
+  text-transform: lowercase;
 }
 
 .piece-symbol {
@@ -5030,8 +5032,39 @@ option {
 
 .lobby-dashboard {
   display: grid;
-  gap: 1rem;
-  grid-template-columns: minmax(0, 1fr) minmax(19rem, 23rem);
+  align-items: start;
+  gap: clamp(0.9rem, 1.8vw, 1.25rem);
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 20rem);
+}
+
+.lobby-main-stack {
+  display: grid;
+  gap: clamp(0.85rem, 1.5vw, 1.05rem);
+}
+
+.lobby-stat-rail {
+  position: sticky;
+  top: 1rem;
+  display: grid;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-raised);
+  padding: clamp(0.8rem, 1.4vw, 1rem);
+  box-shadow: var(--shadow);
+}
+
+.lobby-content-grid {
+  display: grid;
+  align-items: start;
+  gap: clamp(0.85rem, 1.5vw, 1.05rem);
+  grid-template-columns: minmax(0, 1.15fr) minmax(17rem, 0.85fr);
+}
+
+.lobby-section-card {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .section-title {
@@ -5241,7 +5274,7 @@ option {
 
 .lobby-action-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.75rem), 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.65rem;
   padding: clamp(0.8rem, 1.4vw, 1rem);
 }
@@ -5270,22 +5303,26 @@ option {
 
 .lobby-stat-grid {
   display: grid;
-  gap: 0.75rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+  grid-template-columns: 1fr;
 }
 
 .lobby-stat-card {
   display: grid;
-  gap: 0.25rem;
-  padding: 0.9rem;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.15rem 0.65rem;
+  align-items: center;
+  padding: 0.72rem;
 }
 
 .lobby-stat-card svg {
+  grid-row: span 2;
   color: var(--accent);
 }
 
 .lobby-stat-card strong {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 950;
   line-height: 1;
 }
@@ -5303,16 +5340,19 @@ option {
 
 .lobby-family-strip {
   display: grid;
-  gap: 0.35rem;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  padding: 0.75rem;
+  gap: 0.45rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0.7rem;
 }
 
 .lobby-family-strip a {
   display: grid;
   gap: 0.15rem;
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
   border-radius: 8px;
-  padding: 0.65rem;
+  background: var(--surface);
+  padding: 0.6rem;
 }
 
 .lobby-family-strip a:hover {
@@ -6746,6 +6786,13 @@ option {
   padding: 0.65rem;
 }
 
+.rules-guide-note {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  padding: 0.68rem;
+}
+
 .rules-numbered-list span {
   display: grid;
   height: 1.55rem;
@@ -6770,6 +6817,14 @@ option {
 .rules-modal-grid {
   display: grid;
   gap: 0.45rem;
+  padding: 0.75rem;
+}
+
+.rules-source-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem;
 }
 
 .rules-source-link {
@@ -7273,6 +7328,10 @@ option {
   gap: 0.45rem;
 }
 
+.catalog-guide-sections .catalog-mode-grid {
+  padding: 0.75rem;
+}
+
 .catalog-mode-row {
   display: grid;
   gap: 0.22rem;
@@ -7370,10 +7429,10 @@ option {
 }
 
 .catalog-rules-sheet {
-  width: min(46rem, 100%);
+  width: min(52rem, 100%);
   max-height: calc(100vh - 2rem);
   overflow: auto;
-  padding: 1rem;
+  padding: clamp(0.9rem, 2vw, 1.15rem);
   box-shadow: 0 24px 80px rgb(0 0 0 / 35%);
 }
 
@@ -7401,7 +7460,7 @@ option {
 .catalog-rules-grid,
 .catalog-guide-sections {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.85rem;
   margin-top: 0.85rem;
 }
 
@@ -7411,21 +7470,40 @@ option {
 
 .catalog-rules-grid article,
 .catalog-guide-sections details {
-  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 10px;
   background: var(--surface-strong);
-  padding: 0.85rem;
+  padding: 0;
+  overflow: hidden;
 }
 
 .catalog-rules-grid h3,
 .catalog-guide-sections summary {
-  margin: 0 0 0.55rem;
+  margin: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  background: color-mix(in srgb, var(--foreground) 3%, transparent);
+  padding: 0.72rem 0.82rem;
   font-size: 0.95rem;
   font-weight: 950;
 }
 
 .catalog-guide-sections summary {
   cursor: pointer;
-  list-style-position: inside;
+  list-style: none;
+}
+
+.catalog-guide-sections summary::-webkit-details-marker {
+  display: none;
+}
+
+.catalog-guide-sections summary::after {
+  float: right;
+  color: var(--muted);
+  content: "+";
+}
+
+.catalog-guide-sections details[open] summary::after {
+  content: "-";
 }
 
 .catalog-rules-grid ol,
@@ -7435,7 +7513,7 @@ option {
   display: grid;
   gap: 0.45rem;
   margin: 0;
-  padding: 0;
+  padding: 0.75rem;
   list-style: none;
 }
 
@@ -7448,15 +7526,68 @@ option {
   line-height: 1.35;
 }
 
-.catalog-source-list {
-  display: flex;
-  flex-wrap: wrap;
+.catalog-guide-list li {
+  display: grid;
+  grid-template-columns: 1.65rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.65rem;
+  border: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+  border-radius: 8px;
+  background: var(--surface);
+  padding: 0.6rem;
+}
+
+.catalog-guide-list li strong {
+  display: grid;
+  width: 1.45rem;
+  height: 1.45rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-size: 0.72rem;
+  font-weight: 950;
+}
+
+.catalog-guide-list-plain li {
+  display: block;
+  border-left: 3px solid color-mix(in srgb, var(--accent) 64%, transparent);
+  padding-left: 0.72rem;
+}
+
+.catalog-guide-status-grid {
+  display: grid;
   gap: 0.45rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0.75rem;
+}
+
+.catalog-guide-status-grid span {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  padding: 0.55rem 0.62rem;
+  font-size: 0.8rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.catalog-source-list {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
 }
 
 .catalog-source-list a {
+  min-width: 0;
+  justify-content: flex-start;
   padding: 0.45rem 0.65rem;
   font-size: 0.8rem;
+  text-align: left;
+  white-space: normal;
 }
 
 .catalog-rules-actions {
@@ -7766,6 +7897,18 @@ option {
     grid-template-columns: 1fr;
   }
 
+  .lobby-action-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lobby-stat-rail {
+    position: static;
+  }
+
+  .lobby-content-grid {
+    grid-template-columns: 1fr;
+  }
+
   .catalog-toolbar {
     grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.5rem;
@@ -7850,13 +7993,19 @@ option {
 
   .lobby-stat-grid {
     gap: 0.5rem;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
   }
 
   .lobby-stat-card {
+    grid-template-columns: 1fr;
     min-height: 5.1rem;
+    justify-items: start;
     gap: 0.18rem;
     padding: 0.68rem;
+  }
+
+  .lobby-stat-card svg {
+    grid-row: auto;
   }
 
   .lobby-stat-card strong {
@@ -7867,6 +8016,7 @@ option {
   .catalog-count,
   .catalog-card p,
   .catalog-card-meta,
+  .catalog-guide-status-grid span,
   .leaderboard-card p {
     font-size: 0.78rem;
     line-height: 1.2;
@@ -8194,10 +8344,6 @@ option {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .lobby-action-row .lobby-action-button:last-child {
-    grid-column: 1 / -1;
-  }
-
   .lobby-action-button,
   .watch-action-button {
     min-height: 2.65rem;
@@ -8206,15 +8352,17 @@ option {
   }
 
   .lobby-stat-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .lobby-stat-card {
+    grid-template-columns: 1fr;
     min-height: 4.65rem;
     padding: 0.55rem;
   }
 
   .lobby-stat-card svg {
+    grid-row: auto;
     width: 1rem;
     height: 1rem;
   }

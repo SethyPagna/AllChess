@@ -43,7 +43,7 @@ export function LobbyCatalogStats({ stats }: LobbyStatsProps) {
 
 export function LobbyFeaturedGames({ entries, locale }: FeaturedGamesProps) {
   return (
-    <>
+    <section className="lobby-section-card">
       <div className="compact-section-heading">
         <h2 className="section-title">Play Now</h2>
         <InfoHint text="Playable boards, grouped tightly so the lobby reads at a glance." />
@@ -59,7 +59,7 @@ export function LobbyFeaturedGames({ entries, locale }: FeaturedGamesProps) {
           </Link>
         ))}
       </div>
-    </>
+    </section>
   );
 }
 
@@ -67,7 +67,7 @@ export function LobbyFamilyHighlights({ locale, stats }: FamilyHighlightsProps) 
   const familyHighlights = gameFamilies.slice(0, 6);
 
   return (
-    <>
+    <section className="lobby-section-card">
       <div className="compact-section-heading">
         <h2 className="section-title">Games & Rules</h2>
         <InfoHint text="Browse related games together, then open a short rule guide or a verified board." />
@@ -80,6 +80,6 @@ export function LobbyFamilyHighlights({ locale, stats }: FamilyHighlightsProps) 
           </Link>
         ))}
       </div>
-    </>
+    </section>
   );
 }

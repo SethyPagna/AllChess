@@ -304,10 +304,10 @@ export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCata
         <div className="catalog-guide-sections">
           <details open>
             <summary>Basics</summary>
-            <ol>
+            <ol className="catalog-guide-list">
               {entry.shortRules.slice(0, 4).map((rule, index) => (
                 <li key={rule}>
-                  <strong>{index + 1}.</strong>
+                  <strong>{index + 1}</strong>
                   <span>{rule}</span>
                 </li>
               ))}
@@ -315,7 +315,7 @@ export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCata
           </details>
           <details>
             <summary>How it ends</summary>
-            <ul>
+            <ul className="catalog-guide-list catalog-guide-list-plain">
               {entry.winConditions.slice(0, 3).map((condition) => (
                 <li key={condition}>{condition}</li>
               ))}
@@ -323,7 +323,7 @@ export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCata
           </details>
           <details>
             <summary>Status</summary>
-            <div className="catalog-card-meta">
+            <div className="catalog-guide-status-grid">
               <span>{entry.board.description}</span>
               <span>{displayPiecePresentation(entry)}</span>
               <span>{displayRulesReadiness(entry)}</span>

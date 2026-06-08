@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bot, Eye, Library, Swords, Trophy } from "lucide-react";
+import { Bot, Library, Swords, Trophy } from "lucide-react";
 
 import { playGameHref, playSetupHref } from "@/lib/routing/play-links";
 
@@ -17,10 +17,6 @@ export function LobbyActions({ locale }: LobbyActionsProps) {
       <Link href={playGameHref(locale, "classic", { mode: "bot", time: "rapid" }) as never} className="focus-ring action-secondary lobby-action-button">
         <Bot size={16} />
         Bot training
-      </Link>
-      <Link href={`/${locale}/watch` as never} className="focus-ring action-secondary lobby-action-button">
-        <Eye size={16} />
-        Watch rooms
       </Link>
       <Link href={`/${locale}/variants`} className="focus-ring action-secondary lobby-action-button">
         <Library size={16} />

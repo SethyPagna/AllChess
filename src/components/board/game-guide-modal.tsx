@@ -15,7 +15,7 @@ export function GameGuideModal({ onClose, rulesSummary, show }: GameGuideModalPr
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">Game guide</p>
-            <h2>{rulesSummary.variantKey}</h2>
+            <h2>{formatVariantTitle(rulesSummary.variantKey)}</h2>
           </div>
           <button type="button" title="Close guide" onClick={onClose} className="focus-ring action-secondary px-3 py-2 text-sm">
             Close
@@ -36,20 +36,20 @@ export function GameGuideModal({ onClose, rulesSummary, show }: GameGuideModalPr
           <details>
             <summary>How it ends</summary>
             <div className="rules-modal-grid">
-              <p>
+              <p className="rules-guide-note">
                 <strong>Win:</strong> {rulesSummary.winConditions.join("; ")}
               </p>
-              <p>
+              <p className="rules-guide-note">
                 <strong>Draw:</strong> {rulesSummary.drawConditions.join("; ")}
               </p>
-              <p>
+              <p className="rules-guide-note">
                 <strong>Illegal:</strong> {rulesSummary.illegalMoveNotes.join("; ")}
               </p>
             </div>
           </details>
           <details>
             <summary>Sources</summary>
-            <div className="flex flex-wrap gap-2">
+            <div className="rules-source-list">
               {rulesSummary.sourceLinks.map((source) => (
                 <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="rules-source-link focus-ring">
                   {source.name}
@@ -61,4 +61,11 @@ export function GameGuideModal({ onClose, rulesSummary, show }: GameGuideModalPr
       </section>
     </div>
   );
+}
+
+function formatVariantTitle(variantKey: string): string {
+  return variantKey
+    .split("-")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }

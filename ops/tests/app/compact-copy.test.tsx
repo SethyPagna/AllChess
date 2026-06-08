@@ -49,10 +49,11 @@ describe("compact page copy", () => {
 
     expect(markup).toContain("Play Now");
     expect(markup).toContain("Games &amp; Rules");
-    expect(markup).toContain("Rooms &amp; Activity");
+    expect(markup).toContain("Stats");
+    expect(markup).not.toContain("Rooms &amp; Activity");
     expect(markup).toContain("/en/play?mode=online&amp;time=rapid");
-    expect(markup).toContain("/en/play?mode=online&amp;time=correspondence");
     expect(markup).toContain("/en/play/classic?bot=normal&amp;mode=bot&amp;time=rapid");
+    expect(markup).toContain("/en/variants");
     expect(markup).not.toContain("time=daily");
     expect(markup).toContain('class="info-hint');
     expect(markup).not.toContain("A Cloudflare-first arena for chess");
