@@ -32,6 +32,59 @@ describe("realtime multiplayer foundations", () => {
     if (legal.ok) expect(legal.snapshot.moveVersion).toBe(1);
   });
 
+  test("authoritative room moves preserve promotion and hand-drop intent", () => {
+    let promotionState = createInitialState("mini-shogi", "room-promotion");
+    promotionState = {
+      ...promotionState,
+      board: promotionState.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      turn: "sente"
+    };
+    promotionState.board[1][1].piece = { id: "sente-silver", code: "s", owner: "sente", labelKey: "shogi.silver" };
+    promotionState.board[4][4].piece = { id: "sente-king", code: "k", owner: "sente", labelKey: "shogi.king" };
+    promotionState.board[0][4].piece = { id: "gote-king", code: "k", owner: "gote", labelKey: "shogi.king" };
+
+    const promoted = applyAuthoritativeRoomMove(createRoomSnapshot({ state: promotionState }), { from: { row: 1, col: 1 }, to: { row: 0, col: 0 }, promotion: true });
+    expect(promoted).toMatchObject({ ok: true });
+    if (promoted.ok) expect(promoted.snapshot.state.board[0][0].piece?.promoted).toBe(true);
+
+    let dropState = createInitialState("mini-shogi", "room-drop");
+    dropState = {
+      ...dropState,
+      board: dropState.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
+      hands: { sente: { p: 1 } },
+      turn: "sente"
+    };
+    dropState.board[4][4].piece = { id: "sente-king", code: "k", owner: "sente", labelKey: "shogi.king" };
+    dropState.board[0][4].piece = { id: "gote-king", code: "k", owner: "gote", labelKey: "shogi.king" };
+    const dropSnapshot = createRoomSnapshot({ state: dropState });
+
+    expect(
+      applyAuthoritativeRoomMove(dropSnapshot, {
+        kind: "drop",
+        from: { row: 0, col: 0 },
+        to: { row: 2, col: 2 },
+        drop: { id: "gote-pawn", code: "p", owner: "gote", labelKey: "shogi.pawn" }
+      })
+    ).toMatchObject({ ok: false });
+
+    const legalDrop = applyAuthoritativeRoomMove(dropSnapshot, {
+      kind: "drop",
+      from: { row: 0, col: 0 },
+      to: { row: 2, col: 2 },
+      drop: { id: "sente-pawn", code: "p", owner: "sente", labelKey: "shogi.pawn" }
+    });
+    expect(legalDrop).toMatchObject({ ok: true });
+    if (legalDrop.ok) expect(legalDrop.snapshot.state.board[2][2].piece).toMatchObject({ code: "p", owner: "sente" });
+  });
+
+  test("authoritative room move validation supports regional pass moves", () => {
+    const snapshot = createRoomSnapshot({ state: createInitialState("janggi", "room-pass") });
+    const passed = applyAuthoritativeRoomMove(snapshot, { kind: "pass", from: { row: -1, col: -1 }, to: { row: -1, col: -1 } });
+
+    expect(passed).toMatchObject({ ok: true });
+    if (passed.ok) expect(passed.snapshot.moveVersion).toBe(1);
+  });
+
   test("matchmaking tickets use rating windows and requested settings", () => {
     expect(createMatchmakingTicket({ profileId: "p1", variantKey: "shogi", timeControlKey: "blitz", rating: 1750, rated: true })).toMatchObject({
       profileId: "p1",

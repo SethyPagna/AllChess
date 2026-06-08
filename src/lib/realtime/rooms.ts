@@ -34,7 +34,7 @@ export function createRoomSnapshot(input: {
 }
 
 export function applyAuthoritativeRoomMove(snapshot: RoomSnapshot, move: Move) {
-  const legal = getLegalMoves(snapshot.state, move.from).some((candidate) => sameSquare(candidate.to, move.to));
+  const legal = isAuthoritativeMoveLegal(snapshot.state, move);
   if (!legal) {
     return { ok: false as const, reason: "Illegal move for current room state.", snapshot };
   }
@@ -49,6 +49,29 @@ export function applyAuthoritativeRoomMove(snapshot: RoomSnapshot, move: Move) {
       moveVersion: nextState.ply
     }
   };
+}
+
+function isAuthoritativeMoveLegal(state: GameState, move: Move) {
+  if (move.kind === "pass") {
+    try {
+      applyMove(state, move);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  return getLegalMoves(state, move.kind === "drop" && move.drop ? { drop: move.drop } : move.from).some((candidate) => movesMatch(candidate, move));
+}
+
+function movesMatch(candidate: Move, requested: Move) {
+  if (!sameSquare(candidate.to, requested.to)) return false;
+  if ((candidate.kind ?? "move") !== (requested.kind ?? "move")) return false;
+  if (candidate.kind === "drop" || requested.kind === "drop") return candidate.drop?.code === requested.drop?.code && candidate.drop?.owner === requested.drop?.owner;
+  if (!sameSquare(candidate.from, requested.from)) return false;
+  if (requested.promotion === true) return candidate.promotion === true;
+  if (requested.promotion === false) return candidate.promotion !== true;
+  return true;
 }
 
 export function createMatchmakingTicket(input: {

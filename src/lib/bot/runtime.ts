@@ -5,8 +5,9 @@ import { botDifficultyLevels, getBotDifficultyLevel, isBeginnerBotDifficulty, is
 import type { BotStrengthBand, BotTierKey } from "@/lib/bot/strength";
 
 const MIN_BOT_SEARCH_MS = 8;
-export const MAX_GLOBAL_TRANSPOSITIONS = 24000;
+export const MAX_GLOBAL_TRANSPOSITIONS = 48000;
 const BOT_REPLY_SAFETY_MS = 120;
+const QUICK_SEARCH_MAX_MS = 16;
 const MAX_TERMINAL_THREAT_CANDIDATES = 32;
 const MAX_TERMINAL_THREAT_REPLIES = 40;
 const TERMINAL_THREAT_FILTER_VARIANTS = new Set(["classic", "chess960", "king-of-the-hill", "three-check"]);
@@ -176,9 +177,7 @@ export function chooseBotMoveSafe(
   }
 
   const candidateMoves = movesThatAvoidImmediateTerminalReply(state, legalMoves, perspective, difficulty, budget);
-  const ranked = candidateMoves
-    .map((move) => ({ move, score: evaluateMove(state, move, difficulty, perspective, budget) }))
-    .sort((a, b) => b.score - a.score);
+  const ranked = rankCandidateMoves(state, candidateMoves, difficulty, perspective, budget, searchTimeMs);
 
   const selected = selectRankedMove(ranked, difficulty);
   const depthReached = Math.max(1, Math.min(difficulty.depth, difficulty.depth - (Date.now() >= budget.deadline ? 1 : 0)));
@@ -523,6 +522,47 @@ function evaluateMove(
   const replyPenalty = difficulty.skill >= 6 ? opponentReplyPenalty(next, perspective, difficulty, budget) * (1.15 - difficulty.riskTolerance) : 0;
   const noise = difficulty.skill >= 20 ? 0 : deterministicNoise(move) * (22 - difficulty.skill);
   return searchScore + strategyBonus + rescueBonus - riskPenalty - tradePenalty - replyPenalty + noise;
+}
+
+function rankCandidateMoves(
+  state: GameState,
+  candidateMoves: Move[],
+  difficulty: BotDifficulty,
+  perspective: PlayerColor,
+  budget: SearchBudget,
+  searchTimeMs: number
+) {
+  if (searchTimeMs <= QUICK_SEARCH_MAX_MS) {
+    return candidateMoves
+      .map((move) => ({ move, score: quickMoveScore(state, move, difficulty, perspective, budget) }))
+      .sort((a, b) => b.score - a.score);
+  }
+
+  const ranked: Array<{ move: Move; score: number }> = [];
+  for (const move of candidateMoves) {
+    const score = Date.now() >= budget.deadline || budget.nodes >= difficulty.nodeBudget ? quickMoveScore(state, move, difficulty, perspective, budget) : evaluateMove(state, move, difficulty, perspective, budget);
+    ranked.push({ move, score });
+  }
+  return ranked.sort((a, b) => b.score - a.score);
+}
+
+function quickMoveScore(state: GameState, move: Move, difficulty: BotDifficulty, perspective: PlayerColor, budget: SearchBudget) {
+  budget.nodes += 1;
+  const next = tryMove(state, move);
+  if (!next) return Number.NEGATIVE_INFINITY;
+  if (next.status === "completed") return evaluateState(next, perspective, budget);
+  const movingPiece = state.board[move.from.row]?.[move.from.col]?.piece;
+  const targetPiece = state.board[move.to.row]?.[move.to.col]?.piece;
+  const movedPiece = next.board[move.to.row]?.[move.to.col]?.piece;
+  const movedValue = movingPiece ? pieceValues[movingPiece.code] ?? 100 : 100;
+  const targetValue = targetPiece ? pieceValues[targetPiece.code] ?? 100 : 0;
+  const defendedLowValueTargetPenalty =
+    movingPiece && targetPiece && movedValue >= 500 && targetValue <= 150 && isSquareAttackedBy(next, move.to, opponentColors(next, movingPiece.owner), budget)
+      ? movedValue * (2.5 - difficulty.riskTolerance)
+      : 0;
+  const objective = movedPiece ? variantObjectiveScore(next, move, movedPiece.owner) * 0.5 : 0;
+  const noise = difficulty.skill >= 20 ? 0 : deterministicNoise(move) * Math.max(1, 18 - difficulty.skill);
+  return staticMoveScore(state, move) + objective + noise - defendedLowValueTargetPenalty;
 }
 
 function selectRankedMove(ranked: Array<{ move: Move; score: number }>, difficulty: BotDifficulty) {

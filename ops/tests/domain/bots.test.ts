@@ -23,7 +23,7 @@ import { applyMove, createInitialState, getLegalMoves } from "@/lib/variants";
 
 describe("bot difficulty ladder", () => {
   test("keeps a larger bounded cross-request position cache", () => {
-    expect(MAX_GLOBAL_TRANSPOSITIONS).toBeGreaterThanOrEqual(24000);
+    expect(MAX_GLOBAL_TRANSPOSITIONS).toBeGreaterThanOrEqual(48000);
   });
 
   test("defines 100-point Elo-style difficulty bands through the 4000 ceiling", () => {
@@ -72,6 +72,37 @@ describe("bot difficulty ladder", () => {
       expect(() => applyMove(state, result.move)).not.toThrow();
       expect(result.elapsedMs).toBeLessThan(MAX_BOT_REPLY_MS);
       expect(result.validatedLegal).toBe(true);
+    }
+  }, 30_000);
+
+  test("drop and objective game families cover every Elo band with legal bounded bot moves", () => {
+    const variants = ["mini-shogi", "jungle"];
+
+    for (const variantKey of variants) {
+      const state = createInitialState(variantKey, `${variantKey}-elo-family-smoke`);
+      for (const level of botDifficultyLevels) {
+        const result = chooseBotMoveSafe(state, level.key, { engine: "internal", maxSearchTimeMs: 12 });
+        expect(result.reason).toBe("ok");
+        if (!result.move) throw new Error(`Expected ${variantKey} ${level.key} to return a legal move.`);
+        expect(() => applyMove(state, result.move)).not.toThrow();
+        expect(result.validatedLegal).toBe(true);
+      }
+    }
+  }, 30_000);
+
+  test("regional, draughts, and abstract families cover anchor bot tiers", () => {
+    const variants = ["xiangqi", "english-draughts", "konane"];
+    const tiers = ["elo-100-200", "elo-1400-1500", "elo-2800-2900", "elo-3900-4000"] as const;
+
+    for (const variantKey of variants) {
+      const state = createInitialState(variantKey, `${variantKey}-tier-anchor-smoke`);
+      for (const tier of tiers) {
+        const result = chooseBotMoveSafe(state, tier, { engine: "internal", maxSearchTimeMs: 12 });
+        expect(result.reason).toBe("ok");
+        if (!result.move) throw new Error(`Expected ${variantKey} ${tier} to return a legal move.`);
+        expect(() => applyMove(state, result.move)).not.toThrow();
+        expect(result.validatedLegal).toBe(true);
+      }
     }
   }, 20_000);
 

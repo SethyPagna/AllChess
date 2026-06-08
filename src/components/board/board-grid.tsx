@@ -49,6 +49,7 @@ type BoardGridProps = {
 };
 
 const handPieceDragType = "application/x-allchess-hand-piece";
+const maxPlanningArrows = 12;
 
 export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move", locale = "en", onChoose, onDragMove, onDropHandPiece, orientedRows, pieceSkin = "default", rows, selected, suggestedMove, variantKey }: BoardGridProps) {
   const terrainLabels = getVocabulary(normalizeLocale(locale)).terrain;
@@ -116,6 +117,7 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
     pointerDragSquareRef.current = null;
     setPointerDragSquare(null);
     setDragGhost(null);
+    setPlanningArrows([]);
     if (!origin || !target || sameSquare(origin, target)) return;
     const moved = onDragMove?.(origin, target) ?? false;
     if (!moved) flashInvalid(target);
@@ -140,7 +142,11 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
     setPlanningDraft(null);
     const to = target ?? draft?.to ?? null;
     if (!draft || !to || sameSquare(draft.from, to)) return;
-    setPlanningArrows([]);
+    setPlanningArrows((current) => {
+      const matchingIndex = current.findIndex((arrow) => sameSquare(arrow.from, draft.from) && sameSquare(arrow.to, to));
+      if (matchingIndex >= 0) return current.filter((_, index) => index !== matchingIndex);
+      return [...current.slice(-(maxPlanningArrows - 1)), { from: draft.from, to }];
+    });
   }
 
   return (
@@ -158,13 +164,12 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
           return;
         }
         if (event.button !== 0) return;
+        setPlanningArrows([]);
         pointerDragMovedRef.current = false;
         const piece = pieceAt(square);
         if (piece) {
           event.currentTarget.setPointerCapture(event.pointerId);
           handlePointerDragStart(event, square, piece);
-        } else {
-          setPlanningArrows([]);
         }
       }}
       onPointerMoveCapture={(event) => {

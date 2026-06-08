@@ -501,7 +501,7 @@ test("piece hover tooltips use localized piece names", async ({ page }) => {
   expect(runtimeErrors).toEqual([]);
 });
 
-test("right-click planning arrows preview only while dragging", async ({ page }) => {
+test("right-click planning arrows persist until normal play interaction", async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
   page.on("console", (message) => {
@@ -536,10 +536,12 @@ test("right-click planning arrows preview only while dragging", async ({ page })
   await beginRightDragSquare(page, board, "e2", "e4");
   await expect(board.locator('[data-planning-preview="true"]')).toHaveCount(1);
   await page.mouse.up({ button: "right" });
-  await expect(board.locator(".board-planning-layer line")).toHaveCount(0);
+  await expect(board.locator(".board-planning-layer line")).toHaveCount(1);
 
   await rightDragSquare(page, board, "g1", "f3");
   await rightDragSquare(page, board, "b1", "c3");
+  await expect(board.locator(".board-planning-layer line")).toHaveCount(3);
+  await board.locator('[data-coordinate="e2"]').click();
   await expect(board.locator(".board-planning-layer line")).toHaveCount(0);
   expect(runtimeErrors).toEqual([]);
 });
