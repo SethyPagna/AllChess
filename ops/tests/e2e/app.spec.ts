@@ -79,23 +79,24 @@ test("localized game hub can open variants and a playable board", async ({ page 
   await page.getByRole("button", { name: "Bot Mode" }).click();
   await expect(page.getByRole("heading", { name: "Classic Chess" })).toBeVisible();
   await expect(page.getByLabel("Game board")).toBeVisible();
-  await expect(page.getByLabel("Bot difficulty")).toContainText("Grandmaster");
-  await expect(page.getByLabel("Bot difficulty")).toContainText("Legend");
+  await expect(page.getByLabel("Bot difficulty")).toContainText("100-200 Elo");
+  await expect(page.getByLabel("Bot difficulty")).toContainText("3900-4000 Elo");
   await expect(page.getByLabel("Game guide")).toBeVisible();
-  await expect(page.locator(".play-title-actions").getByRole("button", { name: "Room" })).toBeVisible();
-  await expect(page.locator(".play-title-actions").getByRole("button", { name: "Watch" })).toBeVisible();
-  await page.getByRole("button", { name: "Status" }).click();
+  await expect(page.locator(".play-title-actions").getByRole("button", { name: "Share game" })).toBeVisible();
+  await page.getByRole("tab", { name: "Status" }).click();
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();
-  await page.locator(".play-title-actions").getByRole("button", { name: "Room" }).click();
+  await page.locator(".play-title-actions").getByRole("button", { name: "Share game" }).click();
+  await expect(page.getByRole("dialog", { name: "Share game options" })).toContainText("Room code");
+  await expect(page.getByRole("link", { name: /Spectate link/ })).toHaveAttribute("href", /mode=spectate/);
+  await page.getByRole("button", { name: /Room setup/ }).click();
   await expect(page.getByLabel("Play modes").getByRole("button", { name: "Create Room" })).toHaveClass(/is-selected/);
   await expect(page.getByLabel("Bot difficulty")).toHaveCount(0);
-  await page.locator(".play-title-actions").getByRole("button", { name: "Watch" }).click();
+  await page.getByLabel("Play modes").getByRole("button", { name: "Spectate" }).click();
   await expect(page.getByLabel("Play modes").getByRole("button", { name: "Spectate" })).toHaveClass(/is-selected/);
   await expect(page.getByLabel("Bot difficulty")).toHaveCount(0);
   await expect(page.locator(".play-title-actions").getByRole("button", { name: "Game guide" })).toBeVisible();
-  await expect(page.locator(".play-title-actions").getByRole("button", { name: "Room" })).toBeVisible();
-  await expect(page.locator(".play-title-actions").getByRole("button", { name: "Watch" })).toBeVisible();
+  await expect(page.locator(".play-title-actions").getByRole("button", { name: "Share game" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 
@@ -200,7 +201,7 @@ test("mobile shell language, notifications, and board controls stay in bounds", 
   await mobileHeader.getByLabel(/Notifications/).click();
   await expect(mobileHeader.locator(".notification-panel")).toBeHidden();
 
-  await page.getByRole("button", { name: "Status" }).click();
+  await page.getByRole("tab", { name: "Status" }).click();
   await expect(page.getByLabel("Board controls")).toBeVisible();
   await expect(page.getByLabel("Board controls")).toContainText("Suggest");
   await expect(page.getByLabel("Board controls")).toContainText("Auto");
@@ -216,8 +217,8 @@ test("games and rules shows compact bot training status", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
   await expect(page.getByLabel("Bot training status")).toContainText("Book & tactics");
   await expect(page.getByLabel("Bot training status")).toContainText("tactics");
-  await expect(page.getByLabel("Bot training status")).toContainText("3190+ benchmark");
-  await expect(page.getByLabel("Bot training status")).toContainText("ready / 1 gated");
+  await expect(page.getByLabel("Bot training status")).toContainText("3900-4000 Elo-style");
+  await expect(page.getByLabel("Bot training status")).toContainText("ready / 0 gated");
   await expect(page.getByRole("link", { name: "Play" }).first()).toBeVisible();
   await expect(page.locator(".catalog-status").filter({ hasText: "Ready to play" }).first()).toBeVisible();
   await page.getByRole("button", { name: /Open guide for Classic Chess/ }).click();

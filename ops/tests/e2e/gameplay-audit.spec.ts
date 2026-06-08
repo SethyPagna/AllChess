@@ -258,7 +258,7 @@ test("classic grandmaster replies quickly with engine or bounded fallback", asyn
   expect(runtimeErrors).toEqual([]);
 });
 
-test("online setup disables bot controls and shows opponent search", async ({ page }) => {
+test("online setup disables bot controls and shows automatic ranked queue", async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
   page.on("console", (message) => {
@@ -271,8 +271,9 @@ test("online setup disables bot controls and shows opponent search", async ({ pa
   await page.getByRole("button", { name: "Start Game" }).click();
 
   await expect(page.getByText("Searching for opponent").first()).toBeVisible();
-  await expect(page.getByLabel("Online matchmaking status")).toContainText("Searching for opponent");
-  await expect(page.getByLabel("Online matchmaking status")).toContainText("Bots paused while matching");
+  await expect(page.getByLabel("Online matchmaking status")).toContainText("Auto-matching opponent");
+  await expect(page.getByLabel("Online matchmaking status")).toContainText("Rapid 10+0");
+  await expect(page.getByLabel("Online matchmaking status")).toContainText("Ranked");
   await expect(page.getByRole("button", { name: "Bot Mode" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Apply move" })).toHaveCount(0);
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Suggest" })).toBeDisabled();
@@ -289,7 +290,7 @@ test("spectate mode is read-only after start", async ({ page }) => {
   });
 
   await page.goto("/en/play/classic");
-  await page.locator(".play-title-actions").getByRole("button", { name: "Watch" }).click();
+  await page.getByLabel("Play modes").getByRole("button", { name: "Spectate" }).click();
   await page.getByRole("button", { name: "Start Game" }).click();
   await expect(page.getByText("Watching rooms").first()).toBeVisible();
   await expect(page.getByText("Spectate mode is read-only. Watch rooms without moving pieces.")).toBeVisible();
@@ -327,7 +328,7 @@ test("play chat keeps player and public rooms separate", async ({ page }) => {
   await chat.getByRole("button", { name: "Send public chat message" }).click();
   await expect(chat.getByText("Watching here")).toBeVisible();
 
-  await page.locator(".play-title-actions").getByRole("button", { name: "Watch" }).click();
+  await page.getByLabel("Play modes").getByRole("button", { name: "Spectate" }).click();
   const spectatorChat = page.getByLabel("Classic Chess chat room");
   await expect(spectatorChat.getByRole("tab", { name: /Players/ })).toBeDisabled();
   await expect(spectatorChat.getByText("Spectator room")).toBeVisible();

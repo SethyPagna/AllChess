@@ -50,9 +50,11 @@ describe("PieceIcon", () => {
     const westernCarved = renderToStaticMarkup(<PieceIcon code="r" owner="black" pieceSkin="silhouette" variantKey="classic" />);
     const westernGlyph = renderToStaticMarkup(<PieceIcon code="q" owner="black" pieceSkin="glyph" variantKey="classic" />);
     const westernMonogram = renderToStaticMarkup(<PieceIcon code="n" owner="black" pieceSkin="monogram" variantKey="classic" />);
+    const westernCastle = renderToStaticMarkup(<PieceIcon code="r" owner="white" pieceSkin="castle" variantKey="classic" />);
+    const westernPirate = renderToStaticMarkup(<PieceIcon code="n" owner="black" pieceSkin="pirate" variantKey="classic" />);
 
     expect(shogiSkins).toEqual(expect.arrayContaining(["default", "wedge", "mini-wedge", "tile"]));
-    expect(classicSkins).toEqual(expect.arrayContaining(["default", "western", "silhouette", "glyph", "monogram", "makruk"]));
+    expect(classicSkins).toEqual(expect.arrayContaining(["default", "western", "castle", "pirate", "silhouette", "glyph", "monogram", "makruk"]));
     expect(shogiTile).toContain('data-skin="tile"');
     expect(shogiTile).toContain("\u6b69");
     expect(westernWarm).toContain('data-skin="makruk"');
@@ -66,6 +68,10 @@ describe("PieceIcon", () => {
     expect(westernMonogram).toContain('data-piece="knight-monogram"');
     expect(westernMonogram).toContain('data-skin="monogram"');
     expect(westernMonogram).toContain(">N</span>");
+    expect(westernCastle).toContain('data-piece="rook-castle"');
+    expect(westernCastle).toContain('data-detail="castle-rook-battlements"');
+    expect(westernPirate).toContain('data-piece="knight-pirate"');
+    expect(westernPirate).toContain('data-detail="pirate-knight-horse"');
   });
 
   test("adds localized piece metadata to SVG and native pieces", () => {

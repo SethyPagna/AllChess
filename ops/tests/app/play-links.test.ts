@@ -11,6 +11,7 @@ describe("play link helpers", () => {
   test("routes spectate setup and games to the watch surface", () => {
     expect(playSetupHref("en", { mode: "spectate", time: "rapid" })).toBe("/en/watch");
     expect(playGameHref("en", "classic", { mode: "spectate", time: "rapid" })).toBe("/en/watch");
+    expect(playGameHref("en", "classic", { mode: "spectate", time: "rapid", room: "ROOM42" })).toBe("/en/play/classic?mode=spectate&time=rapid&room=ROOM42");
   });
 
   test("keeps bot game links explicit and clocked", () => {
