@@ -7163,6 +7163,7 @@ option {
   overflow-wrap: anywhere;
   font-size: clamp(1.1rem, 2.4vw, 1.55rem);
   font-weight: 950;
+  line-height: 1.08;
 }
 
 .catalog-card-meta {

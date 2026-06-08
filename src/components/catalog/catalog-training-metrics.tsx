@@ -12,6 +12,7 @@ type CatalogTrainingMetricsProps = {
 
 export function CatalogTrainingMetrics({ knowledge, legendBand, trainingGate }: CatalogTrainingMetricsProps) {
   const calibration = legendBand.calibrationStatus.replace(/-/g, " ");
+  const legendDisplay = legendBand.display.replace(" Elo-style", " Elo");
 
   return (
     <div className="panel bot-training-metrics" aria-label="Bot training status">
@@ -39,7 +40,7 @@ export function CatalogTrainingMetrics({ knowledge, legendBand, trainingGate }: 
           Legend
           <InfoHint text={legendBand.basis} />
         </span>
-        <strong>{legendBand.display}</strong>
+        <strong>{legendDisplay}</strong>
         <small>{calibration}</small>
       </div>
       <div>
