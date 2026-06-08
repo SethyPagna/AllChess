@@ -106,7 +106,7 @@ export class GameRoomDO extends DurableObject {
 
   private sendSocketMessage(socket: WebSocket, message: ServerRealtimeMessage) {
     try {
-      if (socket.readyState === 1) socket.send(JSON.stringify(message));
+      if (socket.readyState === undefined || socket.readyState === 1) socket.send(JSON.stringify(message));
     } catch {
       this.sockets.delete(socket);
     }

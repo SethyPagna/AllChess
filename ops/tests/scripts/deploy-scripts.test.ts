@@ -50,7 +50,7 @@ describe("deployment scripts", () => {
     expect(patchScript).toContain("const allchessRealtimeResponse = allchessRoomSocketRequest(request, env);");
     expect(patchScript).toContain("broadcastSocket");
     expect(patchScript).toContain("handleSocketMessage");
-    expect(patchScript).toContain("socket.readyState === 1");
+    expect(patchScript).toContain("socket.readyState === undefined || socket.readyState === 1");
     expect(patchScript).toContain("[Math.max(100, rating - 200), rating + 200]");
     expect(patchScript).toContain("body.expectedMoveVersion !== snapshot.moveVersion");
     expect(patchScript).toContain("message.expectedMoveVersion !== snapshot.moveVersion");
