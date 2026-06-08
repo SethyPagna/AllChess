@@ -11,7 +11,7 @@ type PieceIconProps = {
   promoted?: boolean;
 };
 
-export type PieceSkin = "western" | "glyph" | "monogram" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
+export type PieceSkin = "western" | "silhouette" | "glyph" | "monogram" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
 export type PieceSkinPreference = "default" | PieceSkin;
 
 export type PieceSkinOption = {
@@ -43,6 +43,7 @@ export function PieceIcon({ code, owner, pieceSkin = "default", variantKey, loca
     return <StonePieceIcon owner={owner} variantKey={variantKey} label={label} skin={skin} />;
   }
   if (usesWesternPresentation(variantKey)) {
+    if (skin === "silhouette") return <WesternSilhouetteIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} />;
     if (skin === "glyph") return <WesternGlyphIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} />;
     if (skin === "monogram") return <WesternMonogramIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} />;
     return <WesternPieceIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} skin={skin} />;
@@ -155,6 +156,33 @@ function WesternPieceIcon({ code, owner, variantKey, promoted, label, skin }: { 
   );
 }
 
+function WesternSilhouetteIcon({ code, owner, variantKey, promoted, label }: { code: string; owner: PlayerColor; variantKey: string; promoted: boolean; label: string }) {
+  const piece = westernPieceName(code, variantKey);
+  return (
+    <svg
+      aria-label={label}
+      className="piece-symbol piece-icon piece-svg"
+      data-owner={owner}
+      data-piece={`${piece}-silhouette`}
+      data-piece-label={label}
+      data-code={code}
+      data-promoted={promoted || undefined}
+      data-skin="silhouette"
+      data-variant={variantKey}
+      role="img"
+      viewBox="0 0 100 100"
+    >
+      <title>{label}</title>
+      {piece === "king" ? <KingSilhouettePaths /> : null}
+      {piece === "queen" ? <QueenSilhouettePaths /> : null}
+      {piece === "rook" ? <RookSilhouettePaths /> : null}
+      {piece === "bishop" ? <BishopSilhouettePaths /> : null}
+      {piece === "knight" ? <KnightSilhouettePaths /> : null}
+      {piece === "pawn" ? <PawnSilhouettePaths /> : null}
+    </svg>
+  );
+}
+
 function WesternGlyphIcon({ code, owner, variantKey, promoted, label }: { code: string; owner: PlayerColor; variantKey: string; promoted: boolean; label: string }) {
   const piece = westernPieceName(code, variantKey);
   return (
@@ -241,6 +269,66 @@ function westernMonogram(piece: string, code: string, variantKey: string) {
     pawn: "P"
   };
   return letters[piece] ?? code.toUpperCase();
+}
+
+function KingSilhouettePaths() {
+  return (
+    <>
+      <path d="M45 8h10v13h13v10H55v13H45V31H32V21h13z" data-detail="silhouette-king-cross" />
+      <path d="M28 86h44l-6-33c-2-10-11-17-16-17s-14 7-16 17z" data-detail="silhouette-king-body" />
+      <path d="M20 93h60l-6-11H26z" data-detail="silhouette-base" />
+    </>
+  );
+}
+
+function QueenSilhouettePaths() {
+  return (
+    <>
+      <path d="M16 33 30 17l13 22 7-28 7 28 13-22 14 16-13 49H29z" data-detail="silhouette-queen-crown" />
+      <path d="M23 93h54l-6-12H29z" data-detail="silhouette-base" />
+      <circle cx="50" cy="14" r="5" data-detail="silhouette-jewel" />
+    </>
+  );
+}
+
+function RookSilhouettePaths() {
+  return (
+    <>
+      <path d="M20 16h17v13h8V16h10v13h8V16h17v30H20z" data-detail="silhouette-rook-head" />
+      <path d="M30 46h40l-4 36H34z" data-detail="silhouette-rook-body" />
+      <path d="M22 93h56l-7-11H29z" data-detail="silhouette-base" />
+    </>
+  );
+}
+
+function BishopSilhouettePaths() {
+  return (
+    <>
+      <path d="M50 9c15 12 23 26 21 41-2 17-16 25-21 25s-19-8-21-25C27 35 35 21 50 9z" data-detail="silhouette-bishop-body" />
+      <path d="M58 25 42 59" fill="none" stroke="var(--piece-cutout)" strokeWidth="9" data-detail="silhouette-bishop-cut" />
+      <path d="M24 93h52l-8-18H32z" data-detail="silhouette-base" />
+    </>
+  );
+}
+
+function KnightSilhouettePaths() {
+  return (
+    <>
+      <path d="M24 88c7-10 11-21 9-34l-16 7c-2-13 2-22 12-28l13-10-10-7c27 3 42 20 40 46l8 26z" data-detail="silhouette-knight-head" />
+      <path d="M44 32h8v8h-8z" fill="var(--piece-cutout)" stroke="var(--piece-cutout)" data-detail="silhouette-knight-eye" />
+      <path d="M21 94h58l-5-7H27z" data-detail="silhouette-base" />
+    </>
+  );
+}
+
+function PawnSilhouettePaths() {
+  return (
+    <>
+      <circle cx="50" cy="25" r="15" data-detail="silhouette-pawn-head" />
+      <path d="M34 79h32l-7-37H41z" data-detail="silhouette-pawn-body" />
+      <path d="M22 93h56l-8-14H30z" data-detail="silhouette-base" />
+    </>
+  );
 }
 
 function KingPaths() {
@@ -371,9 +459,9 @@ export function getPieceSkinOptions(variantKey: string): PieceSkinOption[] {
     return [...defaults, option("stone"), option("checker")];
   }
   if (variantKey === "makruk") {
-    return [...defaults, option("makruk"), option("western"), option("glyph"), option("monogram")];
+    return [...defaults, option("makruk"), option("silhouette"), option("western"), option("glyph"), option("monogram")];
   }
-  return [...defaults, option("western"), option("glyph"), option("monogram"), option("makruk")];
+  return [...defaults, option("western"), option("silhouette"), option("glyph"), option("monogram"), option("makruk")];
 }
 
 export function resolvePieceSkin(variantKey: string, preference: PieceSkinPreference = "default"): PieceSkin {
@@ -474,6 +562,7 @@ function option(key: PieceSkin): PieceSkinOption {
 function pieceSkinLabel(key: PieceSkin) {
   const labels: Record<PieceSkin, string> = {
     western: "Classic",
+    silhouette: "Carved",
     glyph: "Glyph",
     monogram: "Monogram",
     makruk: "Warm",

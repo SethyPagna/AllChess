@@ -35,10 +35,11 @@ import { BoardPlayerCard } from "@/components/board/board-player-card";
 import { getDropRuleNote } from "@/components/board/drop-guidance";
 import { GameGuideModal } from "@/components/board/game-guide-modal";
 import { MatchResultOverlay } from "@/components/board/match-result-overlay";
-import { PieceIcon, getPieceDisplayName, getPieceSkinOptions, type PieceSkinPreference } from "@/components/board/piece-icon";
+import { boardThemeOptions, getAppearancePresetOptions, isAppearancePresetPreference, resolveAppearancePreset, type AppearancePresetPreference } from "@/components/board/appearance";
+import { PieceIcon, getPieceDisplayName, type PieceSkinPreference } from "@/components/board/piece-icon";
 import { PlayActiveSetupCard } from "@/components/board/play-active-setup-card";
 import { PlayChatPanel } from "@/components/board/play-chat-panel";
-import { PlayControlCard, type BoardThemeOption, type BoardThemePreference } from "@/components/board/play-control-card";
+import { PlayControlCard } from "@/components/board/play-control-card";
 import { PlayMatchHeader } from "@/components/board/play-match-header";
 import { PlayPregameSetupCard } from "@/components/board/play-pregame-setup-card";
 import { playModeOptions, type PanelTab, type PlayMode } from "@/components/board/game-board-options";
@@ -48,27 +49,12 @@ import { PlaySectionTabs } from "@/components/board/play-section-tabs";
 type BotMode = "human" | "opponent" | "both";
 type SeatChoice = "random" | "first" | "second";
 type BoardOrientation = "auto" | "first" | "second";
-const pieceSkinStoragePrefix = "allchess-piece-skin:";
-const boardThemeStoragePrefix = "allchess-board-theme:";
-const boardThemeOptions: BoardThemeOption[] = [
-  { key: "classic", label: "Classic green" },
-  { key: "wood", label: "Warm wood" },
-  { key: "jade", label: "Jade clear" },
-  { key: "ocean", label: "Ocean clear" },
-  { key: "contrast", label: "High contrast" }
-];
+const appearanceStoragePrefix = "allchess-appearance-set:";
 
-function initialPieceSkinPreference(variantKey: string): PieceSkinPreference {
+function initialAppearancePreset(variantKey: string): AppearancePresetPreference {
   if (typeof window === "undefined") return "default";
-  const stored = window.localStorage.getItem(`${pieceSkinStoragePrefix}${variantKey}`) as PieceSkinPreference | null;
-  return stored && getPieceSkinOptions(variantKey).some((option) => option.key === stored) ? stored : "default";
-}
-
-function initialBoardThemePreference(variantKey: string): BoardThemePreference {
-  if (typeof window === "undefined") return variantKey === "mini-shogi" || variantKey === "shogi" ? "wood" : "classic";
-  const fallback = variantKey === "mini-shogi" || variantKey === "shogi" ? "wood" : "classic";
-  const stored = window.localStorage.getItem(`${boardThemeStoragePrefix}${variantKey}`) as BoardThemePreference | null;
-  return stored && boardThemeOptions.some((option) => option.key === stored) ? stored : fallback;
+  const stored = window.localStorage.getItem(`${appearanceStoragePrefix}${variantKey}`);
+  return isAppearancePresetPreference(variantKey, stored) ? stored : "default";
 }
 
 type ThinkingState = {
@@ -301,8 +287,7 @@ export function GameBoard({
   const [playMode, setPlayMode] = useState<PlayMode>(() => resolveSupportedPlayMode(variantKey, initialPlayMode ?? (initialBotMode === "opponent" ? "bot" : "offline")));
   const [botDifficulty, setBotDifficulty] = useState<BotDifficultyKey>(() => getBotDifficultyLevel(initialBotDifficulty).key);
   const [botMode, setBotMode] = useState<BotMode>(initialBotMode);
-  const [pieceSkin, setPieceSkinState] = useState<PieceSkinPreference>(() => initialPieceSkinPreference(variantKey));
-  const [boardTheme, setBoardThemeState] = useState<BoardThemePreference>(() => initialBoardThemePreference(variantKey));
+  const [appearancePreset, setAppearancePreset] = useState<AppearancePresetPreference>(() => initialAppearancePreset(variantKey));
   const [seatChoice, setSeatChoice] = useState<SeatChoice>("random");
   const [boardOrientation, setBoardOrientation] = useState<BoardOrientation>("auto");
   const [humanColor, setHumanColor] = useState(() => pickHumanColor(withTimeControl(initialState ?? createInitialState(variantKey), initialTimeControl), "first"));
@@ -347,7 +332,10 @@ export function GameBoard({
   const files = useMemo(() => Array.from({ length: cols }, (_, index) => String.fromCharCode(97 + index)), [cols]);
   const reviewMoveRows = useMemo(() => buildReviewMoveRows({ files, locale, moves: reviewMoves, rawMoves: state.moves, rows, timeline, variantKey: displayState.variantKey }), [displayState.variantKey, files, locale, reviewMoves, rows, state.moves, timeline]);
   const botLevel = getBotDifficultyLevel(botDifficulty);
-  const pieceSkinOptions = useMemo(() => getPieceSkinOptions(variantKey), [variantKey]);
+  const appearanceOptions = useMemo(() => getAppearancePresetOptions(variantKey), [variantKey]);
+  const appearance = useMemo(() => resolveAppearancePreset(variantKey, appearancePreset), [appearancePreset, variantKey]);
+  const boardTheme = appearance.boardTheme;
+  const pieceSkin = appearance.pieceSkin;
   const supportsDrops = useMemo(() => getVariant(variantKey).supportsDrops, [variantKey]);
   const botStrength = useMemo(() => getVariantBotStrengthProfile(variantKey, botDifficulty), [botDifficulty, variantKey]);
   const botCalibrationLabel = botStrength.calibrationStatus.replace(/-/g, " ");
@@ -447,16 +435,10 @@ export function GameBoard({
     );
   }
 
-  function changePieceSkin(nextSkin: PieceSkinPreference) {
-    const validSkin = pieceSkinOptions.some((option) => option.key === nextSkin) ? nextSkin : "default";
-    setPieceSkinState(validSkin);
-    window.localStorage.setItem(`${pieceSkinStoragePrefix}${variantKey}`, validSkin);
-  }
-
-  function changeBoardTheme(nextTheme: BoardThemePreference) {
-    const validTheme = boardThemeOptions.some((option) => option.key === nextTheme) ? nextTheme : "classic";
-    setBoardThemeState(validTheme);
-    window.localStorage.setItem(`${boardThemeStoragePrefix}${variantKey}`, validTheme);
+  function changeAppearancePreset(nextPreset: AppearancePresetPreference) {
+    const validPreset = isAppearancePresetPreference(variantKey, nextPreset) ? nextPreset : "default";
+    setAppearancePreset(validPreset);
+    window.localStorage.setItem(`${appearanceStoragePrefix}${variantKey}`, validPreset);
   }
 
   function commitPlayerMove(move: Move) {
@@ -1084,6 +1066,8 @@ export function GameBoard({
               <PlayControlCard
                 botLevelLabel={botLevel.label}
                 botMode={botMode}
+                appearancePreset={appearancePreset}
+                appearanceOptions={appearanceOptions}
                 boardTheme={boardTheme}
                 boardThemeOptions={boardThemeOptions}
                 canEndGame={canEndGame}
@@ -1098,8 +1082,7 @@ export function GameBoard({
                 onFlipBoard={flipBoard}
                 onMoveForCurrentSide={() => void playBotMove("manual")}
                 onOfferDraw={offerDraw}
-                onBoardThemeChange={changeBoardTheme}
-                onPieceSkinChange={changePieceSkin}
+                onAppearancePresetChange={changeAppearancePreset}
                 onRedo={redo}
                 onResign={resignGame}
                 onReset={reset}
@@ -1115,7 +1098,6 @@ export function GameBoard({
                 }}
                 onUndo={undo}
                 pieceSkin={pieceSkin}
-                pieceSkinOptions={pieceSkinOptions}
                 suggestedMoveReady={Boolean(suggestedMove)}
                 variantKey={displayState.variantKey}
               />

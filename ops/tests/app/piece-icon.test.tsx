@@ -47,14 +47,18 @@ describe("PieceIcon", () => {
     const classicSkins = getPieceSkinOptions("classic").map((option) => option.key);
     const shogiTile = renderToStaticMarkup(<PieceIcon code="p" owner="sente" pieceSkin="tile" variantKey="shogi" />);
     const westernWarm = renderToStaticMarkup(<PieceIcon code="k" owner="white" pieceSkin="makruk" variantKey="classic" />);
+    const westernCarved = renderToStaticMarkup(<PieceIcon code="r" owner="black" pieceSkin="silhouette" variantKey="classic" />);
     const westernGlyph = renderToStaticMarkup(<PieceIcon code="q" owner="black" pieceSkin="glyph" variantKey="classic" />);
     const westernMonogram = renderToStaticMarkup(<PieceIcon code="n" owner="black" pieceSkin="monogram" variantKey="classic" />);
 
     expect(shogiSkins).toEqual(expect.arrayContaining(["default", "wedge", "mini-wedge", "tile"]));
-    expect(classicSkins).toEqual(expect.arrayContaining(["default", "western", "glyph", "monogram", "makruk"]));
+    expect(classicSkins).toEqual(expect.arrayContaining(["default", "western", "silhouette", "glyph", "monogram", "makruk"]));
     expect(shogiTile).toContain('data-skin="tile"');
     expect(shogiTile).toContain("\u6b69");
     expect(westernWarm).toContain('data-skin="makruk"');
+    expect(westernCarved).toContain('data-piece="rook-silhouette"');
+    expect(westernCarved).toContain('data-skin="silhouette"');
+    expect(westernCarved).toContain('data-detail="silhouette-rook-head"');
     expect(westernGlyph).toContain('class="piece-symbol piece-icon western-glyph-piece"');
     expect(westernGlyph).toContain('data-piece="queen-glyph"');
     expect(westernGlyph).toContain("\u265b");

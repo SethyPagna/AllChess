@@ -1,22 +1,20 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test, vi } from "vitest";
 
-import { PlayControlCard, type BoardThemeOption } from "@/components/board/play-control-card";
-import { getPieceSkinOptions } from "@/components/board/piece-icon";
+import { boardThemeOptions, getAppearancePresetOptions } from "@/components/board/appearance";
+import { PlayControlCard } from "@/components/board/play-control-card";
 
 describe("PlayControlCard", () => {
-  test("renders board and piece appearance as compact select controls", () => {
+  test("renders board and piece appearance as unified matched sets", () => {
     const noop = vi.fn();
-    const boardThemeOptions: BoardThemeOption[] = [
-      { key: "classic", label: "Classic green" },
-      { key: "wood", label: "Warm wood" },
-      { key: "ocean", label: "Ocean clear" }
-    ];
+    const appearanceOptions = getAppearancePresetOptions("mini-shogi");
     const markup = renderToStaticMarkup(
       <PlayControlCard
+        appearanceOptions={appearanceOptions}
+        appearancePreset="tablet"
         botLevelLabel="Normal"
         botMode="human"
-        boardTheme="wood"
+        boardTheme="jade"
         boardThemeOptions={boardThemeOptions}
         canEndGame={false}
         canRedo={false}
@@ -30,8 +28,7 @@ describe("PlayControlCard", () => {
         onFlipBoard={noop}
         onMoveForCurrentSide={noop}
         onOfferDraw={noop}
-        onBoardThemeChange={noop}
-        onPieceSkinChange={noop}
+        onAppearancePresetChange={noop}
         onRedo={noop}
         onResign={noop}
         onReset={noop}
@@ -40,25 +37,24 @@ describe("PlayControlCard", () => {
         onToggleBot={noop}
         onUndo={noop}
         pieceSkin="tile"
-        pieceSkinOptions={getPieceSkinOptions("mini-shogi")}
         suggestedMoveReady={false}
         variantKey="mini-shogi"
       />
     );
 
     expect(markup).toContain("Look");
+    expect(markup).toContain("Appearance set");
     expect(markup).toContain("<select");
-    expect(markup).toContain('value="wood"');
-    expect(markup).toContain('value="tile"');
-    expect(markup).toContain('data-board-theme-option="wood"');
-    expect(markup).toContain('aria-label="Use Warm wood board"');
+    expect(markup).toContain('value="tablet"');
+    expect(markup).toContain('data-appearance-option="tablet"');
+    expect(markup).toContain('data-board-theme-option="jade"');
     expect(markup).toContain('data-piece-skin-option="tile"');
-    expect(markup).toContain('aria-label="Piece style choices"');
-    expect(markup).toContain('aria-label="Use Tile pieces"');
+    expect(markup).toContain('aria-label="Appearance set options"');
+    expect(markup).toContain('aria-label="Use Tablets appearance set"');
     expect(markup).toContain('class="play-look-piece-sample"');
     expect(markup).toContain('data-code="p"');
     expect(markup).toContain('data-variant="mini-shogi"');
     expect(markup).toContain('data-selected="true"');
-    expect(markup).toContain("Selected appearance: Warm wood board, Tile pieces");
+    expect(markup).toContain("Selected appearance: Tablets, Jade clear board, tile pieces");
   });
 });

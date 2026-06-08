@@ -1,18 +1,14 @@
 import { Bot, Flag, FlipHorizontal2, Handshake, Lightbulb, PauseCircle, PlayCircle, Redo2, RotateCcw, SlidersHorizontal, Undo2 } from "lucide-react";
 
-import { PieceIcon, type PieceSkinOption, type PieceSkinPreference } from "@/components/board/piece-icon";
+import type { AppearancePresetOption, AppearancePresetPreference, BoardThemeOption, BoardThemePreference } from "@/components/board/appearance";
+import { PieceIcon, type PieceSkinPreference } from "@/components/board/piece-icon";
 import type { Piece } from "@/lib/variants";
 
 type BotMode = "human" | "opponent" | "both";
 
-export type BoardThemePreference = "classic" | "wood" | "jade" | "ocean" | "contrast";
-
-export type BoardThemeOption = {
-  key: BoardThemePreference;
-  label: string;
-};
-
 type PlayControlCardProps = {
+  appearanceOptions: AppearancePresetOption[];
+  appearancePreset: AppearancePresetPreference;
   botLevelLabel: string;
   botMode: BotMode;
   boardTheme: BoardThemePreference;
@@ -29,8 +25,7 @@ type PlayControlCardProps = {
   onFlipBoard: () => void;
   onMoveForCurrentSide: () => void;
   onOfferDraw: () => void;
-  onBoardThemeChange: (theme: BoardThemePreference) => void;
-  onPieceSkinChange: (pieceSkin: PieceSkinPreference) => void;
+  onAppearancePresetChange: (preset: AppearancePresetPreference) => void;
   onRedo: () => void;
   onResign: () => void;
   onReset: () => void;
@@ -39,12 +34,13 @@ type PlayControlCardProps = {
   onToggleBot: () => void;
   onUndo: () => void;
   pieceSkin: PieceSkinPreference;
-  pieceSkinOptions: PieceSkinOption[];
   suggestedMoveReady: boolean;
   variantKey: string;
 };
 
 export function PlayControlCard({
+  appearanceOptions,
+  appearancePreset,
   botLevelLabel,
   botMode,
   boardTheme,
@@ -61,8 +57,7 @@ export function PlayControlCard({
   onFlipBoard,
   onMoveForCurrentSide,
   onOfferDraw,
-  onBoardThemeChange,
-  onPieceSkinChange,
+  onAppearancePresetChange,
   onRedo,
   onResign,
   onReset,
@@ -71,11 +66,11 @@ export function PlayControlCard({
   onToggleBot,
   onUndo,
   pieceSkin,
-  pieceSkinOptions,
   suggestedMoveReady,
   variantKey
 }: PlayControlCardProps) {
   const samplePiece = getSamplePiece(variantKey);
+  const selectedAppearance = appearanceOptions.find((option) => option.key === appearancePreset) ?? appearanceOptions[0];
   return (
     <div className="play-control-card" aria-label="Board controls">
       <div className="play-control-heading">
@@ -125,62 +120,37 @@ export function PlayControlCard({
           <details className="play-look-disclosure">
             <summary className="focus-ring">
               <span>Look</span>
-              <small>{boardThemeOptions.find((option) => option.key === boardTheme)?.label ?? "Board"} / {pieceSkinOptions.find((option) => option.key === pieceSkin)?.label ?? "Pieces"}</small>
+              <small>{selectedAppearance?.label ?? "Matched set"}</small>
             </summary>
             <div className="play-look-grid">
               <label>
-                <span>Board</span>
-                <select className="focus-ring" aria-label="Board theme" value={boardTheme} onChange={(event) => onBoardThemeChange(event.target.value as BoardThemePreference)}>
-                  {boardThemeOptions.map((option) => (
+                <span>Appearance set</span>
+                <select className="focus-ring" aria-label="Appearance set" value={appearancePreset} onChange={(event) => onAppearancePresetChange(event.target.value as AppearancePresetPreference)}>
+                  {appearanceOptions.map((option) => (
                     <option key={option.key} value={option.key}>
                       {option.label}
                     </option>
                   ))}
                 </select>
               </label>
-              <div className="play-look-option-row" role="group" aria-label="Board theme options">
-                {boardThemeOptions.map((option) => (
+              <div className="play-look-option-row play-look-set-row" role="group" aria-label="Appearance set options">
+                {appearanceOptions.map((option) => (
                   <button
                     key={option.key}
                     type="button"
                     className="focus-ring play-look-option"
-                    aria-label={`Use ${option.label} board`}
-                    aria-pressed={boardTheme === option.key}
-                    data-board-theme-option={option.key}
-                    data-selected={boardTheme === option.key ? "true" : undefined}
-                    onClick={() => onBoardThemeChange(option.key)}
+                    aria-label={`Use ${option.label} appearance set`}
+                    aria-pressed={appearancePreset === option.key}
+                    data-appearance-option={option.key}
+                    data-board-theme-option={option.boardTheme}
+                    data-piece-skin-option={option.pieceSkin}
+                    data-selected={appearancePreset === option.key ? "true" : undefined}
+                    onClick={() => onAppearancePresetChange(option.key)}
                     title={option.label}
                   >
                     <span className="play-look-swatch" aria-hidden="true" />
-                    <strong>{option.label}</strong>
-                  </button>
-                ))}
-              </div>
-              <label>
-                <span>Pieces</span>
-                <select className="focus-ring" aria-label="Piece skin" value={pieceSkin} onChange={(event) => onPieceSkinChange(event.target.value as PieceSkinPreference)}>
-                  {pieceSkinOptions.map((option) => (
-                    <option key={option.key} value={option.key}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="play-look-option-row play-look-piece-row" role="group" aria-label="Piece style choices">
-                {pieceSkinOptions.map((option) => (
-                  <button
-                    key={option.key}
-                    type="button"
-                    className="focus-ring play-look-option"
-                    aria-label={`Use ${option.label} pieces`}
-                    aria-pressed={pieceSkin === option.key}
-                    data-piece-skin-option={option.key}
-                    data-selected={pieceSkin === option.key ? "true" : undefined}
-                    onClick={() => onPieceSkinChange(option.key)}
-                    title={option.label}
-                  >
                     <span className="play-look-piece-sample" aria-hidden="true">
-                      <PieceIcon code={samplePiece.code} owner={samplePiece.owner} pieceSkin={option.key} variantKey={variantKey} />
+                      <PieceIcon code={samplePiece.code} owner={samplePiece.owner} pieceSkin={option.pieceSkin} variantKey={variantKey} />
                     </span>
                     <strong>{option.label}</strong>
                   </button>
@@ -189,7 +159,7 @@ export function PlayControlCard({
             </div>
           </details>
           <span className="sr-only" aria-live="polite">
-            Selected appearance: {boardThemeOptions.find((option) => option.key === boardTheme)?.label ?? "Board"} board, {pieceSkinOptions.find((option) => option.key === pieceSkin)?.label ?? "Auto"} pieces
+            Selected appearance: {selectedAppearance?.label ?? "Matched set"}, {boardThemeOptions.find((option) => option.key === boardTheme)?.label ?? "Board"} board, {pieceSkin} pieces
           </span>
         </section>
         <section className="play-control-section" aria-label="Match controls">

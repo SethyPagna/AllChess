@@ -2184,6 +2184,15 @@ option {
     0 0 0.18rem rgb(0 0 0 / 42%);
 }
 
+.board-shell:not([data-variant="classic"]):not([data-variant="chess960"]):not([data-variant="antichess"]):not([data-variant="horde"]):not([data-variant="king-of-the-hill"]):not([data-variant="three-check"]):not([data-variant="racing-kings"]) .board-coordinate {
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: 999px;
+  background: rgb(12 18 14 / 58%);
+  color: #fff8d6;
+  padding: 0.08rem 0.18rem;
+  text-shadow: 0 1px 1px rgb(0 0 0 / 62%);
+}
+
 .board-rank {
   left: 0.16rem;
   top: 0.16rem;
@@ -2230,6 +2239,13 @@ option {
   stroke: color-mix(in srgb, var(--piece-light-stroke) 82%, #6d522b);
 }
 
+.piece-svg[data-skin="silhouette"] {
+  fill: color-mix(in srgb, var(--piece-light) 88%, #faf1d2);
+  stroke: color-mix(in srgb, var(--piece-light-stroke) 92%, #503b1f);
+  stroke-linejoin: round;
+  stroke-width: 5.4;
+}
+
 .piece-svg[data-owner="black"],
 .piece-svg[data-owner="blue"],
 .piece-svg[data-owner="gote"] {
@@ -2240,6 +2256,13 @@ option {
 .piece-svg[data-skin="makruk"][data-owner="black"] {
   fill: color-mix(in srgb, var(--piece-dark) 88%, #6d522b);
   stroke: color-mix(in srgb, var(--piece-dark-stroke) 82%, #d6b46e);
+}
+
+.piece-svg[data-skin="silhouette"][data-owner="black"],
+.piece-svg[data-skin="silhouette"][data-owner="blue"],
+.piece-svg[data-skin="silhouette"][data-owner="gote"] {
+  fill: color-mix(in srgb, var(--piece-dark) 88%, #17120d);
+  stroke: color-mix(in srgb, var(--piece-dark-stroke) 78%, #d8bd7a);
 }
 
 .western-glyph-piece {
@@ -3817,7 +3840,7 @@ option {
 
 .play-look-option {
   display: grid;
-  grid-template-columns: 1.35rem minmax(0, 1fr);
+  grid-template-columns: 1.3rem 1.35rem minmax(0, 1fr);
   align-items: center;
   gap: 0.45rem;
   min-width: 0;
@@ -3850,6 +3873,10 @@ option {
   border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   border-radius: 0.38rem;
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 14%);
+}
+
+.play-look-set-row {
+  grid-template-columns: repeat(auto-fit, minmax(8.75rem, 1fr));
 }
 
 .play-look-option strong {

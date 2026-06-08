@@ -140,11 +140,7 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
     setPlanningDraft(null);
     const to = target ?? draft?.to ?? null;
     if (!draft || !to || sameSquare(draft.from, to)) return;
-    setPlanningArrows((current) => {
-      const existing = current.findIndex((arrow) => sameSquare(arrow.from, draft.from) && sameSquare(arrow.to, to));
-      if (existing >= 0) return current.filter((_, index) => index !== existing);
-      return [...current.slice(-7), { from: draft.from, to }];
-    });
+    setPlanningArrows([]);
   }
 
   return (

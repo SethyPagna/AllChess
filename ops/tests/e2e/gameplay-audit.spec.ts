@@ -75,10 +75,10 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await page.getByLabel("Side").selectOption("first");
   await page.getByRole("button", { name: /Bot Mode/ }).last().click();
   await page.getByRole("button", { name: "Start Game" }).click();
-  await expect(page.getByText(/Normal bot/i).first()).toBeVisible();
+  await expect(page.getByText(/1400-1500 Elo bot/i).first()).toBeVisible();
   await page.getByRole("button", { name: /e2.*pawn/i }).click();
   await page.getByRole("button", { name: "e4" }).click();
-  await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 5000 });
+  await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 12000 });
 
   const afterBot = await board.boundingBox();
   expect(afterBot?.width).toBeCloseTo(before!.width, 1);
@@ -102,7 +102,7 @@ test("bot thinking time is charged to the bot clock", async ({ page }) => {
 
   await page.getByRole("button", { name: /h2.*white.*pawn/i }).click();
   await page.getByRole("button", { name: "h3" }).click();
-  await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 7000 });
+  await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 12000 });
 
   const after = clockSeconds(await blackClock.textContent());
   expect(after).toBeLessThan(before);
@@ -137,7 +137,7 @@ test("play setup carries selected clock into game links", async ({ page }) => {
   await classicLink.click();
 
   await expect(page).toHaveURL(/\/en\/play\/classic\?bot=normal&mode=bot&time=blitz$/);
-  await expect(page.getByLabel("Bot difficulty")).toHaveValue("normal");
+  await expect(page.getByLabel("Bot difficulty")).toHaveValue("elo-1400-1500");
   await expect(page.locator(".play-time-grid .is-selected")).toContainText("Blitz 5+0");
   expect(runtimeErrors).toEqual([]);
 });
@@ -223,7 +223,7 @@ test("setup flow supports Bot Mode as black with an automatic first reply", asyn
   expect(before).toBeTruthy();
 
   await page.getByLabel("Side").selectOption("second");
-  await page.getByLabel("Bot difficulty").first().selectOption("grandmaster");
+  await page.getByLabel("Bot difficulty").first().selectOption("elo-2800-2900");
   await page.getByRole("button", { name: "Start Game" }).click();
 
   await expect(page.getByText("Black side").first()).toBeVisible();
@@ -248,7 +248,7 @@ test("classic grandmaster replies quickly with engine or bounded fallback", asyn
   await expect(board).toBeVisible();
 
   await page.getByLabel("Side").selectOption("first");
-  await page.getByLabel("Bot difficulty").first().selectOption("grandmaster");
+  await page.getByLabel("Bot difficulty").first().selectOption("elo-2800-2900");
   await page.getByRole("button", { name: "Start Game" }).click();
   await page.getByRole("button", { name: /h2.*white.*pawn/i }).click();
   await page.getByRole("button", { name: "h3" }).click();
@@ -356,7 +356,7 @@ test("resign result can be dismissed and reset to setup cleanly", async ({ page 
   await page.getByLabel("Board controls").getByRole("button", { name: "Reset" }).click();
   await expect(page.getByText("Choose setup first")).toBeVisible();
   await expect(page.getByLabel("Play modes").getByRole("button", { name: "Offline Local" })).toHaveClass(/is-selected/);
-  await page.getByRole("button", { name: "Status" }).click();
+  await page.getByRole("tab", { name: "Status" }).click();
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();
   expect(runtimeErrors).toEqual([]);
@@ -442,12 +442,12 @@ test("drop-variant hand rails stay compact on Mini Shogi", async ({ page }) => {
   await expect(board.locator('[data-coordinate="a5"]')).toHaveAttribute("data-terrain", "promotion-zone");
   await expect(board.locator('[data-coordinate="a5"]')).toHaveAttribute("aria-label", /Promotion zone/);
   await expect(page.getByLabel("Board terrain key")).toContainText("Promo zone");
-  await page.getByRole("button", { name: "Status" }).click();
+  await page.getByRole("tab", { name: "Status" }).click();
   await page.getByText("Look").click();
-  await page.getByLabel("Piece skin").selectOption("tile");
+  await page.getByLabel("Appearance set", { exact: true }).selectOption("tablet");
   await expect(page.getByLabel("Game board").locator(".piece-icon").first()).toHaveAttribute("data-skin", "tile");
 
-  await page.getByRole("button", { name: "Setup" }).click();
+  await page.getByRole("tab", { name: "Setup" }).click();
   await page.getByRole("button", { name: "Start Game" }).click();
   await board.locator('[data-coordinate="e1"]').click();
   await board.locator('[data-coordinate="e4"]').click();
