@@ -5429,7 +5429,7 @@ option {
 
 .watch-actions {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.75rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.75rem), 1fr));
   gap: 0.65rem;
   width: 100%;
 }
@@ -5486,6 +5486,7 @@ option {
   display: inline-flex;
   min-height: 2.75rem;
   min-width: 0;
+  width: 100%;
   align-items: center;
   justify-content: center;
   gap: 0.55rem;
@@ -5494,6 +5495,7 @@ option {
   font-size: 0.84rem;
   font-weight: 950;
   line-height: 1.15;
+  overflow-wrap: anywhere;
   white-space: normal;
 }
 
@@ -5552,15 +5554,15 @@ option {
 }
 
 .watch-filter-list {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
   gap: 0.45rem;
   grid-column: 1 / -1;
 }
 
 .watch-filter-list .watch-filter-chip {
-  flex: 1 1 8.5rem;
   min-width: 0;
+  width: 100%;
 }
 
 .watch-filter-chip.is-active {
@@ -5645,6 +5647,10 @@ option {
   }
 
   .watch-room-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .watch-actions {
     grid-template-columns: 1fr;
   }
 
@@ -8430,8 +8436,7 @@ option {
     font-size: 0.72rem;
   }
 
-  .lobby-action-row,
-  .watch-actions {
+  .lobby-action-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
