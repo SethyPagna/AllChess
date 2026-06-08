@@ -42,8 +42,10 @@ describe("deployment scripts", () => {
     const patchScript = readFileSync(join(repoRoot, "ops", "scripts", "ops", "deploy", "patch-opennext-worker.ts"), "utf8");
 
     expect(patchScript).toContain("function allchessRatingRange");
+    expect(patchScript).toContain("function allchessRoomIdFromPath");
     expect(patchScript).toContain("[Math.max(100, rating - 200), rating + 200]");
     expect(patchScript).toContain("body.expectedMoveVersion !== snapshot.moveVersion");
+    expect(patchScript).toContain("snapshot.roomId = roomId");
     expect(patchScript).not.toContain("body.ratingRange ?? [0, 3000]");
   });
 

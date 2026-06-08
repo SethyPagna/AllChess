@@ -21,10 +21,11 @@ export class GameRoomDO extends DurableObject {
   async fetch(request: Request) {
     const url = new URL(request.url);
     if (request.headers.get("upgrade") === "websocket") return this.handleSocket();
-    if (request.method === "GET") return json(await this.getSnapshot(url.searchParams.get("variantKey") ?? "classic"));
+    const pathRoomId = roomIdFromPath(url.pathname);
+    if (request.method === "GET") return json(await this.getSnapshot(url.searchParams.get("variantKey") ?? "classic", pathRoomId ?? undefined));
     if (request.method === "POST" && url.pathname.endsWith("/move")) {
       const body = (await request.json().catch(() => null)) as Extract<ClientRealtimeMessage, { type: "make_move" }> | null;
-      const snapshot = await this.getSnapshot();
+      const snapshot = await this.getSnapshot(undefined, body?.roomId ?? pathRoomId ?? undefined);
       if (!body?.move || body.expectedMoveVersion !== snapshot.moveVersion) {
         return json({ type: "move_rejected", reason: "Stale or malformed move.", expectedMoveVersion: snapshot.moveVersion } satisfies ServerRealtimeMessage, { status: 409 });
       }
@@ -37,9 +38,9 @@ export class GameRoomDO extends DurableObject {
     return json({ error: "Unsupported room operation." }, { status: 404 });
   }
 
-  private async getSnapshot(variantKey = "classic") {
+  private async getSnapshot(variantKey = "classic", roomId?: string) {
     if (this.snapshot) return this.snapshot;
-    this.snapshot = ((await this.ctx.storage.get("snapshot")) as RoomSnapshot | undefined) ?? createRoomSnapshot({ variantKey });
+    this.snapshot = ((await this.ctx.storage.get("snapshot")) as RoomSnapshot | undefined) ?? createRoomSnapshot({ roomId, variantKey });
     await this.ctx.storage.put("snapshot", this.snapshot);
     return this.snapshot;
   }
@@ -58,6 +59,11 @@ export class GameRoomDO extends DurableObject {
     });
     return new Response(null, { status: 101, webSocket: client } as ResponseInit);
   }
+}
+
+function roomIdFromPath(pathname: string) {
+  const match = pathname.match(/\/rooms\/([^/]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
 }
 
 export class MatchmakingDO extends DurableObject {

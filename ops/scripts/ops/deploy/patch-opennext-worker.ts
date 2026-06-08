@@ -30,6 +30,11 @@ function allchessRoomSnapshot(variantKey = "classic") {
   };
 }
 
+function allchessRoomIdFromPath(pathname) {
+  const match = pathname.match(/\\/rooms\\/([^/]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 function allchessRatingRange(body) {
   if (Array.isArray(body.ratingRange) && body.ratingRange.length === 2) return body.ratingRange;
   const rating = Number.isFinite(Number(body.rating)) ? Number(body.rating) : 1200;
@@ -40,7 +45,8 @@ export class GameRoomDO extends DurableObject {
   async fetch(request) {
     const url = new URL(request.url);
     if (request.headers.get("upgrade") === "websocket") return this.handleSocket();
-    const snapshot = await this.getSnapshot(url.searchParams.get("variantKey") ?? "classic");
+    const pathRoomId = allchessRoomIdFromPath(url.pathname);
+    const snapshot = await this.getSnapshot(url.searchParams.get("variantKey") ?? "classic", pathRoomId);
     if (request.method === "GET") return allchessDoJson(snapshot);
     if (request.method === "POST" && url.pathname.endsWith("/move")) {
       const body = await request.json().catch(() => ({}));
@@ -53,10 +59,11 @@ export class GameRoomDO extends DurableObject {
     return allchessDoJson({ error: "Unsupported room operation." }, { status: 404 });
   }
 
-  async getSnapshot(variantKey) {
+  async getSnapshot(variantKey, roomId) {
     const stored = await this.ctx.storage.get("snapshot");
     if (stored) return stored;
     const snapshot = allchessRoomSnapshot(variantKey);
+    if (roomId) snapshot.roomId = roomId;
     await this.ctx.storage.put("snapshot", snapshot);
     return snapshot;
   }

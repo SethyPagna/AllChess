@@ -1,10 +1,10 @@
 import { describe, expect, test, vi } from "vitest";
 
 import { createInitialState } from "@/lib/variants";
-import type { D1Database } from "@cloudflare/workers-types";
+import type { D1Database, DurableObjectNamespace } from "@cloudflare/workers-types";
 
 const runtime = vi.hoisted(() => ({
-  env: {} as { ALLCHESS_D1?: D1Database }
+  env: {} as { ALLCHESS_D1?: D1Database; GAME_ROOM_DO?: DurableObjectNamespace }
 }));
 const roomApiTestTimeoutMs = 15_000;
 
@@ -56,6 +56,9 @@ function createRoomApiD1(roomId: string) {
                   { profile_id: "p2", participant_type: "user", seat: "black", display_name: "Player 2", connected: 0, rating_at_start: 1200 }
                 ]
               };
+            },
+            async run() {
+              return {};
             }
           };
         }
@@ -64,6 +67,30 @@ function createRoomApiD1(roomId: string) {
   } as unknown as D1Database;
 
   return db;
+}
+
+function createRoomMoveDurableObject() {
+  return {
+    idFromName(name: string) {
+      return name;
+    },
+    get(name: string) {
+      return {
+        async fetch(url: string, init?: RequestInit) {
+          const body = JSON.parse(String(init?.body ?? "{}")) as { expectedMoveVersion?: number; move?: unknown };
+          if (body.expectedMoveVersion !== 0) {
+            return Response.json({ type: "move_rejected", reason: "Stale move.", expectedMoveVersion: 0 }, { status: 409 });
+          }
+          return Response.json({
+            type: "move_applied",
+            snapshot: { roomId: name, moveVersion: 1 },
+            move: body.move,
+            href: url
+          });
+        }
+      };
+    }
+  } as unknown as DurableObjectNamespace;
 }
 
 describe("room API", () => {
@@ -111,6 +138,73 @@ describe("room API", () => {
           spectators: 2
         }
       ]
+    });
+  }, roomApiTestTimeoutMs);
+
+  test("applies legal room moves against persisted D1 room state", async () => {
+    runtime.env = { ALLCHESS_D1: createRoomApiD1("room-1") };
+    const { POST } = await import("@/app/api/rooms/[id]/move/route");
+
+    const response = await POST(
+      new Request("http://allchess.test/api/rooms/room-1/move", {
+        method: "POST",
+        body: JSON.stringify({ expectedMoveVersion: 0, move: { from: { row: 6, col: 4 }, to: { row: 4, col: 4 } } })
+      }),
+      { params: Promise.resolve({ id: "room-1" }) }
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      mode: "d1",
+      type: "move_applied",
+      snapshot: {
+        roomId: "room-1",
+        moveVersion: 1,
+        state: {
+          ply: 1
+        }
+      }
+    });
+  }, roomApiTestTimeoutMs);
+
+  test("rejects stale D1 room move transmissions", async () => {
+    runtime.env = { ALLCHESS_D1: createRoomApiD1("room-1") };
+    const { POST } = await import("@/app/api/rooms/[id]/move/route");
+
+    const response = await POST(
+      new Request("http://allchess.test/api/rooms/room-1/move", {
+        method: "POST",
+        body: JSON.stringify({ expectedMoveVersion: 3, move: { from: { row: 6, col: 4 }, to: { row: 4, col: 4 } } })
+      }),
+      { params: Promise.resolve({ id: "room-1" }) }
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({
+      mode: "d1",
+      type: "move_rejected",
+      expectedMoveVersion: 0
+    });
+  }, roomApiTestTimeoutMs);
+
+  test("uses durable room coordination when no D1 room snapshot exists", async () => {
+    runtime.env = { GAME_ROOM_DO: createRoomMoveDurableObject() };
+    const { POST } = await import("@/app/api/rooms/[id]/move/route");
+
+    const response = await POST(
+      new Request("http://allchess.test/api/rooms/live-room/move", {
+        method: "POST",
+        body: JSON.stringify({ expectedMoveVersion: 0, move: { from: { row: 6, col: 4 }, to: { row: 4, col: 4 } } })
+      }),
+      { params: Promise.resolve({ id: "live-room" }) }
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      mode: "durable-object",
+      type: "move_applied",
+      snapshot: {
+        roomId: "live-room",
+        moveVersion: 1
+      }
     });
   }, roomApiTestTimeoutMs);
 });
