@@ -19,7 +19,7 @@ import {
   lookupBotKnowledge
 } from "@/lib/bot/training";
 import { moveToUci } from "@/lib/bot/stockfish-engine";
-import { applyMove, createInitialState, getLegalMoves } from "@/lib/variants";
+import { applyMove, createInitialState, getLegalMoves, variantCatalog } from "@/lib/variants";
 
 describe("bot difficulty ladder", () => {
   test("keeps a larger bounded cross-request position cache", () => {
@@ -120,6 +120,29 @@ describe("bot difficulty ladder", () => {
       }
     }
   }, 20_000);
+
+  test("every launch variant covers every Elo band with a legal bounded bot move", () => {
+    const failures: string[] = [];
+
+    for (const variant of variantCatalog) {
+      const state = createInitialState(variant.key, `${variant.key}-all-elo-smoke`);
+      for (const level of botDifficultyLevels) {
+        const result = chooseBotMoveSafe(state, level.key, { engine: "internal", maxSearchTimeMs: 8 });
+        if (result.reason !== "ok" || !result.move) {
+          failures.push(`${variant.key}:${level.key}:no-move`);
+          continue;
+        }
+        try {
+          applyMove(state, result.move);
+        } catch (error) {
+          failures.push(`${variant.key}:${level.key}:${error instanceof Error ? error.message : "illegal"}`);
+        }
+        if (!result.validatedLegal) failures.push(`${variant.key}:${level.key}:not-validated`);
+      }
+    }
+
+    expect(failures).toEqual([]);
+  }, 120_000);
 
   test("always chooses a legal move for every launch variant", () => {
     const variants = ["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "shogi", "mini-shogi", "janggi", "makruk", "jungle", "english-draughts", "international-draughts", "turkish-draughts", "konane", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"];
