@@ -31,7 +31,7 @@ function allchessRoomSnapshot(variantKey = "classic") {
 }
 
 function allchessRoomIdFromPath(pathname) {
-  const match = pathname.match(/\\/rooms\\/([^/]+)/);
+  const match = pathname.match(/(?:\\/api)?\\/rooms\\/([^/]+)/);
   return match ? decodeURIComponent(match[1]) : null;
 }
 
@@ -48,9 +48,7 @@ function allchessRoomSocketRequest(request, env) {
   const roomId = decodeURIComponent(match[1]);
   const durableId = env.GAME_ROOM_DO.idFromName(roomId);
   const stub = env.GAME_ROOM_DO.get(durableId);
-  const internalUrl = new URL(\`/rooms/\${encodeURIComponent(roomId)}\`, "https://allchess.internal");
-  internalUrl.search = url.search;
-  return stub.fetch(internalUrl.toString(), { headers: request.headers });
+  return stub.fetch(request);
 }
 
 function allchessRatingRange(body) {

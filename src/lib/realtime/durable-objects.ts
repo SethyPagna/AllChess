@@ -114,7 +114,7 @@ export class GameRoomDO extends DurableObject {
 }
 
 function roomIdFromPath(pathname: string) {
-  const match = pathname.match(/\/rooms\/([^/]+)/);
+  const match = pathname.match(/(?:\/api)?\/rooms\/([^/]+)/);
   return match ? decodeURIComponent(match[1]) : null;
 }
 
