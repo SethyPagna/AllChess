@@ -149,6 +149,7 @@ describe("matchmaking API", () => {
     });
     const roomInsert = calls.find((call) => call.sql.includes("insert into rooms"));
     expect(roomInsert?.values[0]).toBe("match-room");
+    expect(roomInsert?.values[1]).toBeNull();
     expect(roomInsert?.values[9]).toBe("rapid");
     expect(roomInsert?.values[10]).toBe("unlisted");
     const cancelled = calls.filter((call) => call.sql.includes("update matchmaking_tickets")).map((call) => call.values[0]);

@@ -25,7 +25,6 @@ export async function POST(request: Request) {
         });
         const room = await repository.createRoom({
           snapshot,
-          hostId: durable.data.ticket.profileId,
           visibility: "unlisted",
           timeControlKey: durable.data.ticket.timeControlKey
         });
