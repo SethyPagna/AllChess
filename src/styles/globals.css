@@ -7305,8 +7305,8 @@ option {
 }
 
 .catalog-card-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(6rem, auto) minmax(0, 1fr);
   align-items: center;
   gap: 0.55rem;
 }
@@ -7317,8 +7317,10 @@ option {
 .catalog-rules-actions a {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.45rem;
   min-height: 2.4rem;
+  min-width: 0;
   padding: 0.55rem 0.85rem;
   font-size: 0.84rem;
 }
@@ -7364,8 +7366,12 @@ option {
 }
 
 .catalog-status {
+  min-width: 0;
+  justify-self: end;
   font-size: 0.78rem;
   font-weight: 950;
+  overflow-wrap: anywhere;
+  text-align: center;
 }
 
 .catalog-release {
@@ -8559,6 +8565,19 @@ option {
 
   .play-review-compact {
     max-height: min(20rem, 44vh);
+  }
+
+  .catalog-card-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-card-actions a,
+  .catalog-card-actions button {
+    width: 100%;
+  }
+
+  .catalog-status {
+    justify-self: start;
   }
 
   .play-quick-card {

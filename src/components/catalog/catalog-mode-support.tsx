@@ -50,10 +50,18 @@ export function CatalogModeGrid({ entry }: { entry: GameCatalogEntry }) {
 }
 
 function CatalogModeChip({ entry, support }: { entry: GameCatalogEntry; support: CatalogModeSupport }) {
+  const modeLabel = catalogModeLabels[support.mode];
+  const readiness = displayModeReadiness(entry, support.mode);
+  const normalizedModeLabel = modeLabel.toLowerCase();
+  const normalizedReadiness = readiness.toLowerCase();
+  const readinessIncludesMode = normalizedReadiness === normalizedModeLabel || normalizedReadiness.startsWith(`${normalizedModeLabel} `);
+  const primaryLabel = readinessIncludesMode ? readiness : modeLabel;
+  const showReadiness = !readinessIncludesMode;
+
   return (
     <span className="catalog-mode-chip" data-level={support.level} title={support.reason}>
-      {catalogModeLabels[support.mode]}
-      <small>{displayModeReadiness(entry, support.mode)}</small>
+      {primaryLabel}
+      {showReadiness ? <small>{readiness}</small> : null}
     </span>
   );
 }
