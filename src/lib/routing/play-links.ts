@@ -3,6 +3,7 @@ import type { PlayModeKey } from "@/lib/routing/params";
 
 type PlayLinkOptions = {
   mode?: PlayModeKey;
+  room?: string;
   time?: TimeControlKey;
   bot?: boolean;
 };
@@ -21,8 +22,9 @@ export function playSetupHref(locale: string, options: PlayLinkOptions = {}) {
 export function playGameHref(locale: string, variantKey: string | undefined, options: PlayLinkOptions = {}) {
   const mode = options.mode ?? DEFAULT_GAME_MODE;
   const time = options.time ?? DEFAULT_TIME_CONTROL;
-  if (mode === "spectate") return `/${locale}/watch`;
+  const roomQuery = options.room ? `&room=${encodeURIComponent(options.room)}` : "";
+  if (mode === "spectate" && (!variantKey || !options.room)) return `/${locale}/watch`;
   if (!variantKey) return playSetupHref(locale, { mode, time });
   if (mode === "bot" || options.bot) return `/${locale}/play/${variantKey}?bot=normal&mode=bot&time=${time}`;
-  return `/${locale}/play/${variantKey}?mode=${mode}&time=${time}`;
+  return `/${locale}/play/${variantKey}?mode=${mode}&time=${time}${roomQuery}`;
 }

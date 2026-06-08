@@ -11,7 +11,7 @@ type PieceIconProps = {
   promoted?: boolean;
 };
 
-export type PieceSkin = "western" | "silhouette" | "glyph" | "monogram" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
+export type PieceSkin = "western" | "silhouette" | "glyph" | "monogram" | "castle" | "pirate" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
 export type PieceSkinPreference = "default" | PieceSkin;
 
 export type PieceSkinOption = {
@@ -46,6 +46,7 @@ export function PieceIcon({ code, owner, pieceSkin = "default", variantKey, loca
     if (skin === "silhouette") return <WesternSilhouetteIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} />;
     if (skin === "glyph") return <WesternGlyphIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} />;
     if (skin === "monogram") return <WesternMonogramIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} />;
+    if (skin === "castle" || skin === "pirate") return <WesternThemeIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} theme={skin} />;
     return <WesternPieceIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} skin={skin} />;
   }
 
@@ -224,6 +225,141 @@ function WesternMonogramIcon({ code, owner, variantKey, promoted, label }: { cod
         {westernMonogram(piece, code, variantKey)}
       </span>
     </span>
+  );
+}
+
+function WesternThemeIcon({ code, owner, variantKey, promoted, label, theme }: { code: string; owner: PlayerColor; variantKey: string; promoted: boolean; label: string; theme: "castle" | "pirate" }) {
+  const piece = westernPieceName(code, variantKey);
+  return (
+    <svg
+      aria-label={label}
+      className="piece-symbol piece-icon piece-svg western-theme-piece"
+      data-owner={owner}
+      data-piece={`${piece}-${theme}`}
+      data-piece-label={label}
+      data-code={code}
+      data-promoted={promoted || undefined}
+      data-skin={theme}
+      data-variant={variantKey}
+      role="img"
+      viewBox="0 0 100 100"
+    >
+      <title>{label}</title>
+      {theme === "castle" ? <CastleThemePaths piece={piece} /> : <PirateThemePaths piece={piece} />}
+    </svg>
+  );
+}
+
+function CastleThemePaths({ piece }: { piece: string }) {
+  if (piece === "king") {
+    return (
+      <>
+        <path d="M46 8h8v12h12v8H54v12h-8V28H34v-8h12z" data-detail="castle-king-cross" />
+        <path d="M27 91h46l-5-43H32z" data-detail="castle-keep" />
+        <path d="M24 38h13V25h10v13h6V25h10v13h13v13H24z" data-detail="castle-battlements" />
+        <path d="M42 91V70c0-7 16-7 16 0v21" fill="var(--piece-cutout)" stroke="var(--piece-cutout)" data-detail="castle-door" />
+      </>
+    );
+  }
+  if (piece === "queen") {
+    return (
+      <>
+        <path d="M18 42 30 18l11 25 9-31 9 31 11-25 12 24-10 48H28z" data-detail="castle-queen-crown" />
+        <circle cx="50" cy="14" r="5" data-detail="castle-queen-gem" />
+        <path d="M30 72h40M25 91h50" fill="none" data-detail="castle-base-lines" />
+      </>
+    );
+  }
+  if (piece === "rook") {
+    return (
+      <>
+        <path d="M19 17h16v12h9V17h12v12h9V17h16v29H19z" data-detail="castle-rook-battlements" />
+        <path d="M28 46h44l-5 45H33z" data-detail="castle-rook-tower" />
+        <path d="M42 91V65h16v26M33 58h34" fill="var(--piece-cutout)" stroke="var(--piece-cutout)" data-detail="castle-rook-gate" />
+      </>
+    );
+  }
+  if (piece === "bishop") {
+    return (
+      <>
+        <path d="M50 10c16 12 24 27 20 43-4 15-17 22-20 22s-16-7-20-22c-4-16 4-31 20-43z" data-detail="castle-bishop-shield" />
+        <path d="M58 26 42 57" fill="none" stroke="var(--piece-cutout)" strokeWidth="8" data-detail="castle-bishop-mark" />
+        <path d="M30 91h40l-8-18H38z" data-detail="castle-bishop-base" />
+      </>
+    );
+  }
+  if (piece === "knight") {
+    return (
+      <>
+        <path d="M22 88h56c-7-13-10-25-8-39 2-19-13-33-39-38l9 12-15 12c-8 6-10 15-7 25l14-7c2 9-1 20-10 35z" data-detail="castle-knight-horse" />
+        <path d="M42 30h8v8h-8z" fill="var(--piece-cutout)" stroke="var(--piece-cutout)" data-detail="castle-knight-eye" />
+        <path d="M31 92h48" fill="none" data-detail="castle-knight-base" />
+      </>
+    );
+  }
+  return (
+    <>
+      <path d="M50 15 67 30v22c0 15-8 27-17 34-9-7-17-19-17-34V30z" data-detail="castle-pawn-shield" />
+      <path d="M37 91h26M42 58h16" fill="none" data-detail="castle-pawn-base" />
+    </>
+  );
+}
+
+function PirateThemePaths({ piece }: { piece: string }) {
+  if (piece === "king") {
+    return (
+      <>
+        <path d="M26 34c8-20 40-20 48 0v19c0 18-12 29-24 29S26 71 26 53z" data-detail="pirate-king-skull" />
+        <path d="M24 35c10-15 42-20 58-4-14-1-31 3-46 12z" data-detail="pirate-king-hat" />
+        <circle cx="41" cy="51" r="6" fill="var(--piece-cutout)" stroke="var(--piece-cutout)" data-detail="pirate-eye" />
+        <circle cx="59" cy="51" r="6" fill="var(--piece-cutout)" stroke="var(--piece-cutout)" data-detail="pirate-eye" />
+        <path d="M42 67h16M22 91h56" fill="none" data-detail="pirate-base" />
+      </>
+    );
+  }
+  if (piece === "queen") {
+    return (
+      <>
+        <path d="M50 12 78 42 62 90H38L22 42z" data-detail="pirate-anchor-crown" />
+        <path d="M50 15v58M34 43c6 8 26 8 32 0M29 76c10 9 32 9 42 0" fill="none" data-detail="pirate-anchor-lines" />
+        <circle cx="50" cy="22" r="7" fill="var(--piece-cutout)" stroke="var(--piece-cutout)" data-detail="pirate-anchor-hole" />
+      </>
+    );
+  }
+  if (piece === "rook") {
+    return (
+      <>
+        <path d="M18 54h56l11 12-11 12H18z" data-detail="pirate-cannon" />
+        <circle cx="34" cy="79" r="9" data-detail="pirate-cannon-wheel" />
+        <circle cx="63" cy="79" r="9" data-detail="pirate-cannon-wheel" />
+        <path d="M29 38h34l8 16H22z" data-detail="pirate-cannon-deck" />
+      </>
+    );
+  }
+  if (piece === "bishop") {
+    return (
+      <>
+        <path d="M49 9c20 26 22 48 3 67 21-5 32-18 34-39C73 29 62 20 49 9z" data-detail="pirate-sail" />
+        <path d="M49 9v81M27 90h46" fill="none" data-detail="pirate-mast" />
+        <path d="M35 70h37" fill="none" data-detail="pirate-sail-boom" />
+      </>
+    );
+  }
+  if (piece === "knight") {
+    return (
+      <>
+        <path d="M23 88h54c-7-13-8-25-5-40 4-21-10-34-35-39l7 13-15 11c-8 6-11 15-8 25l13-6c3 10-1 21-11 36z" data-detail="pirate-knight-horse" />
+        <path d="M36 30h19" fill="none" data-detail="pirate-bandana" />
+        <circle cx="43" cy="37" r="4" fill="var(--piece-cutout)" stroke="var(--piece-cutout)" data-detail="pirate-knight-eye" />
+      </>
+    );
+  }
+  return (
+    <>
+      <circle cx="50" cy="33" r="17" data-detail="pirate-pawn-coin" />
+      <path d="M35 53h30l7 34H28z" data-detail="pirate-pawn-barrel" />
+      <path d="M33 65h34M31 78h38" fill="none" data-detail="pirate-barrel-bands" />
+    </>
   );
 }
 
@@ -459,9 +595,9 @@ export function getPieceSkinOptions(variantKey: string): PieceSkinOption[] {
     return [...defaults, option("stone"), option("checker")];
   }
   if (variantKey === "makruk") {
-    return [...defaults, option("makruk"), option("silhouette"), option("western"), option("glyph"), option("monogram")];
+    return [...defaults, option("makruk"), option("silhouette"), option("western"), option("castle"), option("pirate"), option("glyph"), option("monogram")];
   }
-  return [...defaults, option("western"), option("silhouette"), option("glyph"), option("monogram"), option("makruk")];
+  return [...defaults, option("western"), option("castle"), option("pirate"), option("silhouette"), option("glyph"), option("monogram"), option("makruk")];
 }
 
 export function resolvePieceSkin(variantKey: string, preference: PieceSkinPreference = "default"): PieceSkin {
@@ -565,6 +701,8 @@ function pieceSkinLabel(key: PieceSkin) {
     silhouette: "Carved",
     glyph: "Glyph",
     monogram: "Monogram",
+    castle: "Castle",
+    pirate: "Pirate",
     makruk: "Warm",
     disc: "Disc",
     wedge: "Wedge",

@@ -2268,6 +2268,40 @@ option {
   stroke: color-mix(in srgb, var(--piece-dark-stroke) 78%, #d8bd7a);
 }
 
+.western-theme-piece[data-skin="castle"] {
+  fill: color-mix(in srgb, var(--piece-light) 82%, #eef5dc);
+  stroke: color-mix(in srgb, var(--piece-light-stroke) 86%, #28543a);
+  stroke-width: 5.8px;
+}
+
+.western-theme-piece[data-skin="castle"][data-owner="black"],
+.western-theme-piece[data-skin="castle"][data-owner="blue"],
+.western-theme-piece[data-skin="castle"][data-owner="gote"] {
+  fill: color-mix(in srgb, var(--piece-dark) 84%, #203327);
+  stroke: color-mix(in srgb, var(--piece-dark-stroke) 70%, #b7d29b);
+}
+
+.western-theme-piece[data-skin="pirate"] {
+  fill: color-mix(in srgb, var(--piece-light) 78%, #ffe1a3);
+  stroke: color-mix(in srgb, var(--piece-light-stroke) 84%, #4f351b);
+  stroke-width: 5.8px;
+}
+
+.western-theme-piece[data-skin="pirate"][data-owner="black"],
+.western-theme-piece[data-skin="pirate"][data-owner="blue"],
+.western-theme-piece[data-skin="pirate"][data-owner="gote"] {
+  fill: color-mix(in srgb, var(--piece-dark) 84%, #2f241a);
+  stroke: color-mix(in srgb, var(--piece-dark-stroke) 74%, #f1c66d);
+}
+
+.western-theme-piece[data-skin="castle"] [data-detail*="door"],
+.western-theme-piece[data-skin="castle"] [data-detail*="eye"],
+.western-theme-piece[data-skin="pirate"] [data-detail*="eye"],
+.western-theme-piece[data-skin="pirate"] [data-detail*="hole"] {
+  fill: var(--piece-cutout);
+  stroke: var(--piece-cutout);
+}
+
 .western-glyph-piece {
   width: 88%;
   height: 88%;
@@ -2700,7 +2734,8 @@ option {
   min-width: 0;
 }
 
-.play-title-actions button {
+.play-title-actions > button,
+.play-share-menu > button {
   min-width: 2.55rem;
   min-height: 2.55rem;
   border-radius: 7px;
@@ -2712,7 +2747,8 @@ option {
   white-space: nowrap;
 }
 
-.play-panel-match-header .play-title-actions button {
+.play-panel-match-header .play-title-actions > button,
+.play-panel-match-header .play-share-menu > button {
   width: 2.55rem;
   padding: 0.42rem;
 }
@@ -2724,6 +2760,107 @@ option {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+.play-share-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.play-share-menu-panel {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  right: 0;
+  z-index: 42;
+  display: grid;
+  width: min(19rem, calc(100vw - 2rem));
+  gap: 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--border));
+  border-radius: 10px;
+  background: var(--surface-raised);
+  padding: 0.65rem;
+  box-shadow: 0 18px 42px rgb(0 0 0 / 22%);
+}
+
+.play-share-code,
+.play-share-option,
+.play-share-copy-link {
+  display: grid;
+  min-width: 0;
+  align-items: center;
+  gap: 0.38rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--foreground);
+  padding: 0.55rem;
+  text-align: left;
+}
+
+.play-share-code {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.play-share-code span,
+.play-share-option small,
+.play-share-menu-panel p {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  line-height: 1.15;
+}
+
+.play-share-code code {
+  max-width: 8rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-soft));
+  color: var(--accent-strong);
+  padding: 0.18rem 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.play-share-code button {
+  min-width: 1.75rem;
+  min-height: 1.75rem;
+  padding: 0.2rem;
+}
+
+.play-share-option {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  text-decoration: none;
+}
+
+.play-share-option svg,
+.play-share-copy-link svg {
+  color: var(--accent);
+}
+
+.play-share-option span,
+.play-share-copy-link {
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+.play-share-option:hover,
+.play-share-copy-link:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+}
+
+.play-share-copy-link {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.play-share-menu-panel p {
+  margin: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--info) 12%, var(--surface));
+  color: var(--info);
+  padding: 0.3rem 0.5rem;
 }
 
 .play-panel-match-header .play-header-command-actions {
@@ -4374,6 +4511,23 @@ option {
   line-height: 1.35;
 }
 
+.online-queue-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.32rem;
+  margin-top: 0.25rem;
+}
+
+.online-queue-tags span {
+  border: 1px solid color-mix(in srgb, var(--info) 34%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--info) 10%, var(--surface));
+  color: var(--foreground);
+  padding: 0.18rem 0.48rem;
+  font-size: 0.68rem;
+  font-weight: 950;
+}
+
 .opponent-search-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -4623,6 +4777,27 @@ option {
   font-weight: 800;
 }
 
+.review-summary-pills {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.32rem;
+}
+
+.review-summary-pills span,
+.review-summary-pills em {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  padding: 0.15rem 0.45rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 950;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
 .review-position-card {
   display: grid;
   gap: 0.35rem;
@@ -4770,19 +4945,22 @@ option {
 }
 
 [data-review="best"] em,
-.review-summary-row [data-review="best"] {
+.review-summary-row [data-review="best"],
+.review-summary-pills [data-review="best"] {
   background: #7dbd43;
   color: #0b1207;
 }
 
 [data-review="excellent"] em,
-.review-summary-row [data-review="excellent"] {
+.review-summary-row [data-review="excellent"],
+.review-summary-pills [data-review="excellent"] {
   background: #4a9f5f;
   color: #f8fff8;
 }
 
 [data-review="blunder"] em,
-.review-summary-row [data-review="blunder"] {
+.review-summary-row [data-review="blunder"],
+.review-summary-pills [data-review="blunder"] {
   background: #d64242;
   color: #fff7f7;
 }
@@ -7813,7 +7991,8 @@ option {
     white-space: nowrap;
   }
 
-  .play-title-actions button {
+  .play-title-actions > button,
+  .play-share-menu > button {
     width: 2.2rem;
     min-height: 2.25rem;
     justify-content: center;
@@ -7825,7 +8004,8 @@ option {
     font-size: 0.92rem;
   }
 
-  .play-title-actions .button-label {
+  .play-title-actions > button .button-label,
+  .play-share-menu > button .button-label {
     position: absolute;
     width: 1px;
     height: 1px;

@@ -7,7 +7,6 @@ import {
   Crown,
   PauseCircle,
   PlayCircle,
-  Search,
   SkipBack,
   SkipForward,
   Sparkles,
@@ -79,6 +78,12 @@ type PendingPromotion = {
   pieceOwner: Piece["owner"];
   promotedPieceLabel: string;
 };
+
+type MatchmakingState =
+  | { status: "idle" }
+  | { status: "queued"; ticketId: string; ratingRange: [number, number] }
+  | { status: "matched"; roomId: string }
+  | { status: "failed"; message: string };
 
 type DropSelectionHintProps = {
   legalTargetCount: number;
@@ -300,7 +305,7 @@ export function GameBoard({
   const [panelTab, setPanelTab] = useState<PanelTab>("setup");
   const [reviewPly, setReviewPly] = useState<number | null>(null);
   const [reviewPlaying, setReviewPlaying] = useState(false);
-  const [opponentQuery, setOpponentQuery] = useState("");
+  const [matchmaking, setMatchmaking] = useState<MatchmakingState>({ status: "idle" });
   const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
   const activeBotRequestRef = useRef<string | null>(null);
   const resolvedRandomSeatRef = useRef(false);
@@ -359,7 +364,8 @@ export function GameBoard({
   const isOnlineMode = playMode === "online" || playMode === "room";
   const isBotMode = playMode === "bot";
   const isSpectating = playMode === "spectate";
-  const isSearchingOnline = gameStarted && isOnlineMode && state.status !== "completed";
+  const isMatchedOnlineGame = playMode === "online" && matchmaking.status === "matched";
+  const isSearchingOnline = gameStarted && isOnlineMode && state.status !== "completed" && !isMatchedOnlineGame;
   const isWatchingMode = gameStarted && isSpectating && state.status !== "completed";
   const canUseAssist = gameStarted && state.status === "active" && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
   const canUseBots = gameStarted && state.status === "active" && isBotMode && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
@@ -373,8 +379,10 @@ export function GameBoard({
     return isBoardFlipped ? rowsToRender.reverse().map((row) => row.reverse()) : rowsToRender;
   }, [displayState.board, isBoardFlipped]);
   const modeDetails = playModeOptions.find((option) => option.key === playMode) ?? playModeOptions[2];
-  const chatRoomId = initialRoomId?.trim() || `${displayState.variantKey}-local`;
-  const statusHeading = isSearchingOnline
+  const chatRoomId = initialRoomId?.trim() || (matchmaking.status === "matched" ? matchmaking.roomId : "") || `${displayState.variantKey}-local`;
+  const statusHeading = playMode === "room" && gameStarted
+    ? "Invite room ready"
+    : isSearchingOnline
     ? "Searching for opponent"
     : isWatchingMode
       ? "Watching rooms"
@@ -384,7 +392,6 @@ export function GameBoard({
     : isBotMode
       ? `Bot budget: ${botResponseBudget}ms.`
       : "";
-  const trimmedOpponentQuery = opponentQuery.trim();
   const topPlayerColor = isBoardFlipped ? firstColor : secondColor;
   const bottomPlayerColor = isBoardFlipped ? secondColor : firstColor;
   const capturedBy = useCallback(
@@ -427,7 +434,7 @@ export function GameBoard({
       state.status === "active" &&
       !isReviewing &&
       !isThinking &&
-      !isOnlineMode &&
+      (!isOnlineMode || isMatchedOnlineGame) &&
       !isSpectating &&
       color === state.turn &&
       botMode !== "both" &&
@@ -527,7 +534,7 @@ export function GameBoard({
       setPendingPromotion(null);
       return;
     }
-    if (isOnlineMode) {
+    if (isOnlineMode && !isMatchedOnlineGame) {
       setNotice("Searching for opponent. Board moves unlock after a live opponent is paired.");
       setPanelTab("status");
       setPendingPromotion(null);
@@ -811,6 +818,8 @@ export function GameBoard({
     setPanelTab("setup");
     setReviewPly(null);
     setReviewPlaying(false);
+    setMatchmaking({ status: "idle" });
+    setMatchmaking({ status: "idle" });
   }
 
   function changeTimeControl(nextControl: TimeControlKey) {
@@ -859,6 +868,7 @@ export function GameBoard({
     setLastBotResult(null);
     setGameStarted(true);
     setState((current) => (isOnlineMode || isSpectating ? { ...current, status: "waiting" } : { ...current, status: "active" }));
+    setMatchmaking({ status: "idle" });
     setPanelTab("status");
     setNotice(
       isOnlineMode
@@ -875,7 +885,7 @@ export function GameBoard({
       return;
     }
     setPlayMode(nextMode);
-    setOpponentQuery("");
+    setMatchmaking({ status: "idle" });
     setSelected(null);
     setSelectedHandCode(null);
     if (nextMode !== "bot") {
@@ -915,12 +925,6 @@ export function GameBoard({
     setNotice("Back to live board.");
   }
 
-  function searchOpponent() {
-    if (!trimmedOpponentQuery) return;
-    setPanelTab("status");
-    setNotice(`Searching for ${trimmedOpponentQuery}. Live player results will appear here when Cloudflare presence reports a match.`);
-  }
-
   function setReviewCursor(nextPly: number) {
     setReviewPly(Math.max(0, Math.min(nextPly, timeline.length - 1)));
     setReviewPlaying(false);
@@ -944,6 +948,55 @@ export function GameBoard({
     }, 80);
     return () => window.clearTimeout(timer);
   }, [botColor, botMode, gameStarted, isReviewing, playBotMove, state, thinking.status]);
+
+  useEffect(() => {
+    if (!gameStarted || playMode !== "online" || state.status !== "waiting" || matchmaking.status !== "idle") return;
+    const controller = new AbortController();
+    let cancelled = false;
+
+    async function joinMatchmakingQueue() {
+      try {
+        const response = await fetch("/api/matchmaking/join", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ variantKey, timeControlKey: timeControl, rating: 1450, rated: timeControl === "rapid" }),
+          signal: controller.signal
+        });
+        const data = (await response.json().catch(() => ({}))) as {
+          ticket?: { ticketId?: string; ratingRange?: [number, number] };
+          match?: { roomId?: string };
+          error?: string;
+        };
+        if (cancelled) return;
+        if (!response.ok) {
+          setMatchmaking({ status: "failed", message: data.error ?? "Matchmaking is unavailable." });
+          setNotice(data.error ?? "Matchmaking is unavailable. Try again in a moment.");
+          return;
+        }
+        if (data.match?.roomId) {
+          setMatchmaking({ status: "matched", roomId: data.match.roomId });
+          setState((current) => ({ ...current, status: "active" }));
+          setNotice(`Matched in room ${data.match.roomId}. Share can copy the spectator link.`);
+          return;
+        }
+        setMatchmaking({
+          status: "queued",
+          ticketId: data.ticket?.ticketId ?? "pending",
+          ratingRange: data.ticket?.ratingRange ?? [1250, 1650]
+        });
+      } catch (error) {
+        if (cancelled || controller.signal.aborted) return;
+        setMatchmaking({ status: "failed", message: error instanceof Error ? error.message : "Matchmaking request failed." });
+        setNotice("Matchmaking request failed. Check the network and try again.");
+      }
+    }
+
+    void joinMatchmakingQueue();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [gameStarted, matchmaking.status, playMode, state.status, timeControl, variantKey]);
 
   useEffect(() => {
     if (!outcomeKey) {
@@ -1030,6 +1083,7 @@ export function GameBoard({
             setPanelTab("setup");
           }}
           playMode={playMode}
+          roomId={chatRoomId}
           showGuide={Boolean(rulesSummary)}
           timeControl={timeControl}
           title={title}
@@ -1107,25 +1161,25 @@ export function GameBoard({
                   <div className="online-search-card" role="status" aria-label="Online matchmaking status">
                     <Swords size={18} />
                     <div>
-                      <strong>{isSearchingOnline ? "Searching for opponent" : "Online opponent required"}</strong>
-                      <span>{isSearchingOnline ? "Bots paused while matching." : "Start search from setup."}</span>
-                      <form
-                        className="opponent-search-form"
-                        onSubmit={(event) => {
-                          event.preventDefault();
-                          searchOpponent();
-                        }}
-                      >
-                        <label className="opponent-search-field">
-                          <Search size={14} />
-                          <span className="sr-only">Search opponent or room code</span>
-                          <input value={opponentQuery} onChange={(event) => setOpponentQuery(event.target.value)} placeholder="Username or room code" />
-                        </label>
-                        <button type="submit" className="focus-ring action-secondary px-2 py-1 text-xs" disabled={!trimmedOpponentQuery} title="Search real online presence when available.">
-                          Search
-                        </button>
-                      </form>
-                      {trimmedOpponentQuery ? <span>Looking for: {trimmedOpponentQuery}</span> : null}
+                      <strong>{playMode === "room" ? "Invite room ready" : matchmaking.status === "matched" ? "Opponent matched" : "Auto-matching opponent"}</strong>
+                      <span>
+                        {playMode === "room"
+                          ? "Use Share to copy a play link, spectator link, or room code."
+                          : matchmaking.status === "matched"
+                            ? `Room ${matchmaking.roomId} is active.`
+                            : matchmaking.status === "queued"
+                              ? `Queued in ${matchmaking.ratingRange[0]}-${matchmaking.ratingRange[1]} ${getTimeControl(timeControl).label}.`
+                              : matchmaking.status === "failed"
+                                ? matchmaking.message
+                                : `Ranked ${getTimeControl(timeControl).label} pairs by game, clock, and rating.`}
+                      </span>
+                      {playMode === "online" ? (
+                        <div className="online-queue-tags" aria-label="Online queue details">
+                          <span>{getTimeControl(timeControl).label}</span>
+                          <span>{timeControl === "rapid" ? "Ranked" : "Casual"}</span>
+                          <span>{displayState.variantKey}</span>
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 ) : isBotMode ? (
@@ -1170,7 +1224,12 @@ export function GameBoard({
                   <Brain size={16} className="text-[var(--accent)]" />
                   Moves
                 </span>
-                <span>{isReviewing ? "Reviewing" : "Live"}</span>
+                <span className="review-summary-pills" aria-label="Move review summary">
+                  {isReviewing ? <em>Reviewing</em> : null}
+                  <span data-review="best">{reviewSummary.best} Best</span>
+                  <span data-review="excellent">{reviewSummary.excellent} Excellent</span>
+                  <span data-review="blunder">{reviewSummary.blunder} Blunder</span>
+                </span>
               </div>
               <div className={`review-position-card ${activeReviewMove ? "" : "is-live"}`}>
                 {activeReviewMove ? (
@@ -1219,11 +1278,6 @@ export function GameBoard({
                   </li>
                 )}
               </ol>
-              <div className="review-summary-row">
-                <span data-review="best">{reviewSummary.best} Best</span>
-                <span data-review="excellent">{reviewSummary.excellent} Excellent</span>
-                <span data-review="blunder">{reviewSummary.blunder} Blunder</span>
-              </div>
               <div className="review-controls" aria-label="Review playback controls">
                 <button type="button" onClick={() => setReviewCursor(0)} className="focus-ring" aria-label="First move" disabled={!reviewMoves.length}>
                   <SkipBack size={20} />

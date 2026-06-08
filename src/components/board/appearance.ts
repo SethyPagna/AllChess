@@ -1,7 +1,7 @@
 import { getPieceSkin, resolvePieceSkin, type PieceSkinPreference } from "@/components/board/piece-icon";
 
 export type BoardThemePreference = "classic" | "wood" | "jade" | "ocean" | "contrast";
-export type AppearancePresetPreference = "default" | "classic" | "carved" | "glyph" | "badge" | "tablet" | "disc" | "stone" | "contrast";
+export type AppearancePresetPreference = "default" | "classic" | "castle" | "pirate" | "carved" | "glyph" | "badge" | "tablet" | "disc" | "stone" | "contrast";
 
 export type AppearancePresetOption = {
   key: AppearancePresetPreference;
@@ -32,6 +32,8 @@ const familyPresets: Record<string, AppearancePresetOption[]> = {
   western: [
     preset("default", "Auto matched", "classic", "default"),
     preset("classic", "Classic set", "classic", "western"),
+    preset("castle", "Castle set", "jade", "castle"),
+    preset("pirate", "Pirate set", "ocean", "pirate"),
     preset("glyph", "Glyph set", "contrast", "glyph"),
     preset("badge", "Badge set", "jade", "monogram"),
     preset("carved", "Carved set", "wood", "silhouette")
@@ -73,6 +75,7 @@ const familyPresets: Record<string, AppearancePresetOption[]> = {
   makruk: [
     preset("default", "Auto matched", "wood", "default"),
     preset("carved", "Carved set", "wood", "silhouette"),
+    preset("castle", "Castle set", "jade", "castle"),
     preset("glyph", "Glyph set", "contrast", "glyph"),
     preset("badge", "Badge set", "jade", "monogram")
   ]
