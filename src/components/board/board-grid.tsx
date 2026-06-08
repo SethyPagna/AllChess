@@ -163,6 +163,7 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
         const square = squareFromEventTarget(event.target);
         if (!square) return;
         if (event.button === 2) {
+          event.preventDefault();
           event.currentTarget.setPointerCapture(event.pointerId);
           startPlanningArrow(square);
           return;
@@ -172,6 +173,7 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
         pointerDragMovedRef.current = false;
         const piece = pieceAt(square);
         if (piece) {
+          event.preventDefault();
           event.currentTarget.setPointerCapture(event.pointerId);
           handlePointerDragStart(event, square, piece);
         }
