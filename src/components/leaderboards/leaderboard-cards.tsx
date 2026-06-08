@@ -72,20 +72,24 @@ export function LeaderboardFilterBar({
   scopes
 }: LeaderboardFilterBarProps) {
   return (
-    <form className={`panel leaderboard-filter-bar ${hasComputedBoards ? "" : "is-empty"}`} aria-label="Leaderboard filters">
-      <div className="leaderboard-scope-select" role="group" aria-label="Leaderboard scope" title="Choose a leaderboard scope. Empty scopes stay visible until rated games create rows.">
+    <form method="get" className={`panel leaderboard-filter-bar ${hasComputedBoards ? "" : "is-empty"}`} aria-label="Leaderboard filters">
+      <label className="leaderboard-scope-field" title="Choose a leaderboard scope. Empty scopes stay visible until rated games create rows.">
         <Filter size={16} />
-        <button type="submit" name="scope" value="all" className={`focus-ring leaderboard-scope-chip${filters.scope === "all" ? " is-active" : ""}`} aria-pressed={filters.scope === "all"}>
-          All
-        </button>
-        {scopes.map((scope) => (
-          <button key={scope.id} type="submit" name="scope" value={scope.id} className={`focus-ring leaderboard-scope-chip${filters.scope === scope.id ? " is-active" : ""}`} aria-pressed={filters.scope === scope.id}>
-            {scope.label}
-          </button>
-        ))}
-      </div>
-      <span aria-disabled="true" title="Only real rated games appear here.">Rated only</span>
-      <span aria-disabled={hasRatedResults ? undefined : "true"} title={hasRatedResults ? "Showing computed Cloudflare D1 leaderboard rows." : "Leaderboards stay empty until real games are recorded."}>
+        <span>Scope</span>
+        <select name="scope" defaultValue={filters.scope} aria-label="Leaderboard scope">
+          <option value="all">All scopes</option>
+          {scopes.map((scope) => (
+            <option key={scope.id} value={scope.id}>
+              {scope.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <button type="submit" className="leaderboard-filter-submit focus-ring">
+        Filter
+      </button>
+      <span className="leaderboard-filter-stat" aria-disabled="true" title="Only real rated games appear here.">Rated only</span>
+      <span className="leaderboard-filter-stat" aria-disabled={hasRatedResults ? undefined : "true"} title={hasRatedResults ? "Showing computed Cloudflare D1 leaderboard rows." : "Leaderboards stay empty until real games are recorded."}>
         {hasRatedResults ? `${populatedCount} computed boards` : "Real results"}
       </span>
     </form>

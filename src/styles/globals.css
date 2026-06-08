@@ -5836,14 +5836,14 @@ option {
 .leaderboard-filter-bar,
 .analysis-command-bar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) repeat(2, minmax(7.5rem, auto));
+  grid-template-columns: minmax(12rem, 1fr) auto repeat(2, minmax(7.5rem, auto));
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
   padding: clamp(0.75rem, 1.4vw, 1rem);
 }
 
-.leaderboard-filter-bar span,
+.leaderboard-filter-stat,
 .analysis-command-bar span {
   display: inline-flex;
   min-height: 2.25rem;
@@ -5861,56 +5861,75 @@ option {
   white-space: normal;
 }
 
-.leaderboard-scope-select {
-  display: flex;
-  min-height: 2.25rem;
+.leaderboard-scope-field {
+  display: grid;
+  min-height: 2.65rem;
+  grid-template-columns: auto auto minmax(0, 1fr);
   align-items: center;
-  flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.55rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--surface-strong);
+  color: var(--muted);
   min-width: 0;
   overflow: hidden;
-  padding: 0.4rem;
-  color: var(--muted);
+  padding: 0 0.75rem;
+  transition: border-color var(--motion-fast), background var(--motion-fast), box-shadow var(--motion-fast);
 }
 
-.leaderboard-scope-chip {
+.leaderboard-scope-field:hover,
+.leaderboard-scope-field:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 52%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 36%, var(--surface-strong));
+}
+
+.leaderboard-scope-field > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.leaderboard-scope-field select {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 900;
+  outline: 0;
+}
+
+.leaderboard-filter-submit {
   display: inline-flex;
-  min-height: 2rem;
+  min-height: 2.65rem;
   min-width: 0;
   align-items: center;
   justify-content: center;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--text);
-  padding: 0.35rem 0.65rem;
-  font-size: 0.84rem;
-  font-weight: 850;
+  border: 1px solid color-mix(in srgb, var(--accent) 52%, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 0 0.9rem;
+  font-size: 0.86rem;
+  font-weight: 950;
   white-space: nowrap;
   transition: transform var(--motion-fast), border-color var(--motion-fast), background var(--motion-fast), color var(--motion-fast);
 }
 
-.leaderboard-scope-chip:hover {
+.leaderboard-filter-submit:hover {
   transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
-  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 70%, var(--border));
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface-soft));
   color: var(--foreground);
-}
-
-.leaderboard-scope-chip.is-active {
-  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
-  background: color-mix(in srgb, var(--accent) 16%, var(--surface-soft));
-  color: var(--accent);
 }
 
 .leaderboard-filter-bar.is-empty {
   opacity: 0.82;
 }
 
-.leaderboard-filter-bar.is-empty span {
+.leaderboard-filter-bar.is-empty .leaderboard-filter-stat {
   cursor: not-allowed;
 }
 
@@ -8033,15 +8052,13 @@ option {
     grid-template-columns: 1fr;
   }
 
-  .leaderboard-filter-bar > span,
+  .leaderboard-filter-stat,
   .analysis-command-bar > span,
+  .leaderboard-filter-submit,
+  .leaderboard-scope-field,
   .watch-room-tools > button,
   .watch-action-button,
   .lobby-action-button {
-    width: 100%;
-  }
-
-  .leaderboard-scope-select {
     width: 100%;
   }
 

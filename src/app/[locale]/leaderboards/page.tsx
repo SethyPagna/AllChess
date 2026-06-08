@@ -26,8 +26,9 @@ export default async function LeaderboardsPage({
   const populatedLeaderboards = leaderboards.filter((leaderboard) => leaderboard.entries.length > 0);
   const hasComputedBoards = totalLeaderboards > 0;
   const hasRatedResults = populatedLeaderboards.length > 0;
-  const primaryScopes = scopes.slice(0, 4);
-  const familyScopes = scopes.slice(4);
+  const selectedScope = filters.scope === "all" ? null : scopes.find((scope) => scope.id === filters.scope);
+  const emptyScopes = selectedScope ? [selectedScope] : scopes.slice(0, 4);
+  const familyScopes = selectedScope ? [] : scopes.slice(4);
 
   return (
     <section className="leaderboards-page grid gap-5">
@@ -36,8 +37,8 @@ export default async function LeaderboardsPage({
         <InfoHint text={source === "d1" ? "Leaderboards read Cloudflare D1 rows. Empty boards mean no rated entries have been computed yet." : "Rated tables stay empty until real match results are recorded. No seeded players or guessed rankings."} />
       </div>
       <LeaderboardFilterBar filters={filters} hasComputedBoards={hasComputedBoards} hasRatedResults={hasRatedResults} populatedCount={populatedLeaderboards.length} scopes={scopes} />
-      {hasRatedResults ? <PopulatedLeaderboards leaderboards={populatedLeaderboards} /> : <EmptyLeaderboardScopes scopes={primaryScopes} />}
-      <LeaderboardFamilyList scopes={familyScopes} />
+      {hasRatedResults ? <PopulatedLeaderboards leaderboards={populatedLeaderboards} /> : <EmptyLeaderboardScopes scopes={emptyScopes} />}
+      {familyScopes.length > 0 ? <LeaderboardFamilyList scopes={familyScopes} /> : null}
       <LeaderboardActions locale={locale} />
     </section>
   );
