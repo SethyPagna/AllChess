@@ -30,6 +30,12 @@ function allchessRoomSnapshot(variantKey = "classic") {
   };
 }
 
+function allchessRatingRange(body) {
+  if (Array.isArray(body.ratingRange) && body.ratingRange.length === 2) return body.ratingRange;
+  const rating = Number.isFinite(Number(body.rating)) ? Number(body.rating) : 1200;
+  return [Math.max(100, rating - 200), rating + 200];
+}
+
 export class GameRoomDO extends DurableObject {
   async fetch(request) {
     const url = new URL(request.url);
@@ -39,6 +45,7 @@ export class GameRoomDO extends DurableObject {
     if (request.method === "POST" && url.pathname.endsWith("/move")) {
       const body = await request.json().catch(() => ({}));
       if (!body?.move) return allchessDoJson({ type: "move_rejected", reason: "Missing move.", expectedMoveVersion: snapshot.moveVersion }, { status: 400 });
+      if (body.expectedMoveVersion !== snapshot.moveVersion) return allchessDoJson({ type: "move_rejected", reason: "Stale move.", expectedMoveVersion: snapshot.moveVersion }, { status: 409 });
       const next = { ...snapshot, moveVersion: snapshot.moveVersion + 1, status: "active" };
       await this.ctx.storage.put("snapshot", next);
       return allchessDoJson({ type: "move_applied", snapshot: next, move: body.move });
@@ -77,7 +84,7 @@ export class MatchmakingDO extends DurableObject {
         profileId: body.profileId ?? "guest",
         variantKey: body.variantKey ?? "classic",
         timeControlKey: body.timeControlKey ?? "rapid",
-        ratingRange: body.ratingRange ?? [0, 3000],
+        ratingRange: allchessRatingRange(body),
         rated: Boolean(body.rated),
         createdAt: new Date().toISOString()
       };

@@ -38,6 +38,15 @@ describe("deployment scripts", () => {
     expect(packageJson.scripts["cf:deploy"]).not.toContain("populateCache remote");
   });
 
+  test("cloudflare durable object patch keeps matchmaking and room transmission bounded", () => {
+    const patchScript = readFileSync(join(repoRoot, "ops", "scripts", "ops", "deploy", "patch-opennext-worker.ts"), "utf8");
+
+    expect(patchScript).toContain("function allchessRatingRange");
+    expect(patchScript).toContain("[Math.max(100, rating - 200), rating + 200]");
+    expect(patchScript).toContain("body.expectedMoveVersion !== snapshot.moveVersion");
+    expect(patchScript).not.toContain("body.ratingRange ?? [0, 3000]");
+  });
+
   test("cloudflare cache population is explicit because R2 upload retries should not block deploys", () => {
     expect(packageJson.scripts["cf:cache:populate"]).toBe("opennextjs-cloudflare populateCache remote --cacheChunkSize 1");
   });
