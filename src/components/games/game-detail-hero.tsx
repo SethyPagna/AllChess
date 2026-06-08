@@ -15,10 +15,10 @@ export function GameDetailHero({ entry, family, locale }: GameDetailHeroProps) {
   return (
     <div className="game-detail-hero panel">
       <div>
-        <p className="inline-flex items-center gap-2">
+        <div className="game-detail-family-label">
           {family?.label}
           <InfoHint text={family?.description ?? "Game family and rule lineage."} />
-        </p>
+        </div>
         <h1>{displayGameName(entry)}</h1>
         <div className="game-detail-tags">
           <span>{displayPlayabilityStatus(entry.playability)}</span>

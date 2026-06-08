@@ -14,10 +14,10 @@ export function GameDetailSources({ sources }: GameDetailSourcesProps) {
         <h2>Sources</h2>
         <InfoHint text="Rule guides stay linked here so playable games can be checked against credible references." />
       </div>
-      <ul>
+      <ul className="game-detail-source-list">
         {sources.slice(0, 3).map((source) => (
           <li key={source.url}>
-            <a className="focus-ring inline-flex items-center gap-2" href={source.url} rel="noreferrer" target="_blank">
+            <a className="focus-ring" href={source.url} rel="noreferrer" target="_blank">
               {source.name}
               <ExternalLink size={14} />
             </a>

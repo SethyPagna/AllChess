@@ -7684,7 +7684,10 @@ option {
   padding: clamp(1rem, 3vw, 1.4rem);
 }
 
-.game-detail-hero p {
+.game-detail-family-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   margin: 0 0 0.35rem;
   color: var(--accent);
   font-size: 0.8rem;
@@ -7704,6 +7707,12 @@ option {
   flex-wrap: wrap;
   gap: 0.35rem;
   margin-top: 0.8rem;
+}
+
+.game-detail-tags span {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .game-detail-actions {
@@ -7792,12 +7801,87 @@ option {
   padding: 1rem;
 }
 
-.game-detail-section ul {
-  display: grid;
-  gap: 0.35rem;
+.game-detail-section h2 {
   margin: 0;
-  padding-left: 1.15rem;
+}
+
+.game-detail-rule-list,
+.game-detail-source-list {
+  display: grid;
+  gap: 0.48rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.game-detail-rule-list li {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: 8px;
+  background: var(--surface-strong);
   color: var(--muted);
+  padding: 0.62rem 0.68rem;
+  font-size: 0.86rem;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
+.game-detail-rule-list-numbered li {
+  display: grid;
+  grid-template-columns: 1.65rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.62rem;
+}
+
+.game-detail-rule-list-numbered strong {
+  display: grid;
+  width: 1.45rem;
+  height: 1.45rem;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-foreground);
+  font-size: 0.72rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.game-detail-rule-list-plain li {
+  border-left: 3px solid color-mix(in srgb, var(--accent) 62%, transparent);
+}
+
+.game-detail-source-list {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+}
+
+.game-detail-source-list a {
+  display: flex;
+  min-height: 2.55rem;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+  border-radius: 8px;
+  background: var(--surface-strong);
+  color: var(--foreground);
+  padding: 0.62rem 0.68rem;
+  font-size: 0.84rem;
+  font-weight: 850;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  transition: transform var(--motion-fast), border-color var(--motion-fast), background var(--motion-fast);
+}
+
+.game-detail-source-list a:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  background: var(--accent-soft);
+}
+
+.game-detail-source-list svg {
+  flex: 0 0 auto;
+  color: var(--accent);
 }
 
 .focus-ring:focus-visible {
