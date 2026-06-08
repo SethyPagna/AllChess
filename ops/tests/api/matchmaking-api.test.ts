@@ -54,7 +54,8 @@ function createMatchmakingDurableObject() {
             match: {
               type: "match_found",
               roomId: "match-room",
-              ticketId: "ticket-2"
+              ticketId: "ticket-2",
+              opponentTicketId: "ticket-1"
             }
           });
         }
@@ -124,8 +125,33 @@ describe("matchmaking API", () => {
       match: {
         type: "match_found",
         roomId: "match-room",
-        ticketId: "ticket-2"
+        ticketId: "ticket-2",
+        opponentTicketId: "ticket-1"
       }
     });
+  });
+
+  test("creates a D1 room and clears queued tickets when Durable Object players pair", async () => {
+    const { db, calls } = createMatchmakingD1();
+    runtime.env = { ALLCHESS_D1: db, MATCHMAKING_DO: createMatchmakingDurableObject() };
+
+    const response = await joinQueue(
+      new Request("http://allchess.test/api/matchmaking/join", {
+        method: "POST",
+        body: JSON.stringify({ profileId: "profile-2", variantKey: "classic", timeControlKey: "rapid", rating: 1350 })
+      })
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      mode: "durable-object",
+      match: { roomId: "match-room", ticketId: "ticket-2", opponentTicketId: "ticket-1" },
+      room: { id: "match-room", mode: "d1" }
+    });
+    const roomInsert = calls.find((call) => call.sql.includes("insert into rooms"));
+    expect(roomInsert?.values[0]).toBe("match-room");
+    expect(roomInsert?.values[9]).toBe("rapid");
+    expect(roomInsert?.values[10]).toBe("unlisted");
+    const cancelled = calls.filter((call) => call.sql.includes("update matchmaking_tickets")).map((call) => call.values[0]);
+    expect(cancelled).toEqual(["ticket-1", "ticket-2"]);
   });
 });

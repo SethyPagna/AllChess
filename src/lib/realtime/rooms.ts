@@ -106,7 +106,8 @@ export function createMatchmakingMatch(ticket: MatchmakingTicket, opponent: Matc
   return {
     type: "match_found",
     roomId: `match-${pairId}`,
-    ticketId: ticket.ticketId
+    ticketId: ticket.ticketId,
+    opponentTicketId: opponent.ticketId
   };
 }
 

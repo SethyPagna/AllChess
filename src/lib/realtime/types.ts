@@ -42,6 +42,7 @@ export type MatchmakingMatch = {
   type: "match_found";
   roomId: string;
   ticketId: string;
+  opponentTicketId: string;
 };
 
 export type LiveStats = {

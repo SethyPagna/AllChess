@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
 import { fetchDurableJson } from "@/lib/realtime/durable-client";
-import { createMatchmakingTicket } from "@/lib/realtime/rooms";
+import { createMatchmakingTicket, createRoomSnapshot } from "@/lib/realtime/rooms";
 import type { MatchmakingMatch } from "@/lib/realtime/types";
 
 export async function POST(request: Request) {
@@ -16,7 +16,24 @@ export async function POST(request: Request) {
 
   if (durable) {
     if (env.ALLCHESS_D1 && durable.data.ticket) {
-      await createD1GameRepository(env.ALLCHESS_D1).saveMatchmakingTicket(durable.data.ticket);
+      const repository = createD1GameRepository(env.ALLCHESS_D1);
+      if (durable.data.match) {
+        const snapshot = createRoomSnapshot({
+          roomId: durable.data.match.roomId,
+          variantKey: durable.data.ticket.variantKey,
+          rated: durable.data.ticket.rated
+        });
+        const room = await repository.createRoom({
+          snapshot,
+          hostId: durable.data.ticket.profileId,
+          visibility: "unlisted",
+          timeControlKey: durable.data.ticket.timeControlKey
+        });
+        await repository.cancelMatchmakingTicket(durable.data.match.opponentTicketId);
+        await repository.cancelMatchmakingTicket(durable.data.ticket.ticketId);
+        return NextResponse.json({ mode: "durable-object", ...durable.data, room }, { status: durable.status });
+      }
+      await repository.saveMatchmakingTicket(durable.data.ticket);
     }
     return NextResponse.json({ mode: "durable-object", ...durable.data }, { status: durable.status });
   }

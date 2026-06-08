@@ -100,7 +100,8 @@ describe("realtime multiplayer foundations", () => {
     expect(areMatchmakingTicketsCompatible(ticket, createMatchmakingTicket({ profileId: "p1", variantKey: "shogi", timeControlKey: "blitz", rating: 1850, rated: true }))).toBe(false);
     expect(createMatchmakingMatch(ticket, { ...ticket, ticketId: "opponent-ticket", profileId: "p2" })).toMatchObject({
       type: "match_found",
-      ticketId: ticket.ticketId
+      ticketId: ticket.ticketId,
+      opponentTicketId: "opponent-ticket"
     });
   });
 

@@ -198,7 +198,7 @@ export type SavedMoveSnapshot = {
 
 export type GameRepository = {
   createGame(input: CreateGameInput): Promise<{ id: string; mode: "d1" }>;
-  createRoom(input: { snapshot: RoomSnapshot; hostId?: string | null; roomCode?: string | null; visibility?: RoomVisibility }): Promise<{ id: string; mode: "d1"; roomCode: string }>;
+  createRoom(input: { snapshot: RoomSnapshot; hostId?: string | null; roomCode?: string | null; visibility?: RoomVisibility; timeControlKey?: string }): Promise<{ id: string; mode: "d1"; roomCode: string }>;
   getGameState(gameId: string): Promise<GameState | null>;
   getRoomSnapshot(roomIdOrCode: string): Promise<RoomSnapshot | null>;
   listRooms(input?: RoomListInput): Promise<RoomSnapshot[]>;
@@ -284,7 +284,7 @@ export function createD1GameRepository(db: D1Database): GameRepository {
           input.snapshot.state.turn,
           roomCode,
           input.hostId ?? null,
-          JSON.stringify({ key: "rapid" })
+          JSON.stringify({ key: input.timeControlKey ?? "rapid" })
         )
         .run();
 
@@ -304,7 +304,7 @@ export function createD1GameRepository(db: D1Database): GameRepository {
           input.snapshot.status,
           input.snapshot.spectators,
           input.snapshot.rated ? 1 : 0,
-          "rapid",
+          input.timeControlKey ?? "rapid",
           input.visibility ?? "public",
           input.snapshot.chatPolicy
         )

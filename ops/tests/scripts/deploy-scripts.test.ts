@@ -49,6 +49,7 @@ describe("deployment scripts", () => {
     expect(patchScript).toContain("body.expectedMoveVersion !== snapshot.moveVersion");
     expect(patchScript).toContain("snapshot.roomId = roomId");
     expect(patchScript).toContain("match_found");
+    expect(patchScript).toContain("opponentTicketId");
     expect(patchScript).not.toContain("body.ratingRange ?? [0, 3000]");
   });
 

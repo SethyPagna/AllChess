@@ -51,7 +51,7 @@ function allchessTicketsCompatible(left, right) {
 
 function allchessMatch(ticket, opponent) {
   const pairId = [ticket.ticketId, opponent.ticketId].sort().map((id) => id.slice(0, 8)).join("-");
-  return { type: "match_found", roomId: \`match-\${pairId}\`, ticketId: ticket.ticketId };
+  return { type: "match_found", roomId: \`match-\${pairId}\`, ticketId: ticket.ticketId, opponentTicketId: opponent.ticketId };
 }
 
 export class GameRoomDO extends DurableObject {
