@@ -150,7 +150,7 @@ export class GameRoomDO extends DurableObject {
 
   sendSocket(socket, message) {
     try {
-      if (socket.readyState === undefined || socket.readyState === 1) socket.send(JSON.stringify(message));
+      socket.send(JSON.stringify(message));
     } catch {
       this.sockets.delete(socket);
     }
