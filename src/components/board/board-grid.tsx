@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, type DragEvent, type PointerEvent } from "react";
+import { useMemo, useRef, useState, type CSSProperties, type DragEvent, type PointerEvent } from "react";
 
 import { PieceIcon, getPieceDisplayName, type PieceSkinPreference } from "@/components/board/piece-icon";
 import { squareName } from "@/components/board/game-board-utils";
@@ -17,6 +17,7 @@ type LegalTargetMode = "move" | "drop";
 
 type DragGhost = {
   piece: Piece;
+  size: number;
   x: number;
   y: number;
 };
@@ -77,11 +78,14 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
   }
 
   function handlePointerDragStart(event: PointerEvent<HTMLDivElement>, origin: Square, piece: Piece) {
+    const rect = gridRef.current?.getBoundingClientRect();
+    const cellSize = rect ? Math.min(rect.width / cols, rect.height / rows) : 72;
+    const ghostSize = Math.max(28, Math.min(96, cellSize * 0.86));
     setPlanningArrows([]);
     pointerDragMovedRef.current = false;
     pointerDragSquareRef.current = origin;
     setPointerDragSquare(origin);
-    setDragGhost({ piece, x: event.clientX, y: event.clientY });
+    setDragGhost({ piece, size: ghostSize, x: event.clientX, y: event.clientY });
     onChoose(origin);
   }
 
@@ -315,7 +319,17 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
         })
       )}
       {dragGhost ? (
-        <span className="board-drag-ghost" aria-hidden="true" style={{ left: dragGhost.x, top: dragGhost.y }}>
+        <span
+          className="board-drag-ghost"
+          aria-hidden="true"
+          style={
+            {
+              "--drag-piece-size": `${dragGhost.size}px`,
+              left: dragGhost.x,
+              top: dragGhost.y
+            } as CSSProperties
+          }
+        >
           <PieceIcon code={dragGhost.piece.code} owner={dragGhost.piece.owner} pieceSkin={pieceSkin} variantKey={variantKey} locale={locale} promoted={dragGhost.piece.promoted} />
         </span>
       ) : null}

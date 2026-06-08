@@ -533,6 +533,35 @@ test("right-click planning arrows persist until normal play interaction", async 
   await page.getByRole("button", { name: "Start Game" }).click();
   await expect(page.getByText("Choose setup first")).toHaveCount(0);
 
+  const e2Box = await board.locator('[data-coordinate="e2"]').boundingBox();
+  const e3Box = await board.locator('[data-coordinate="e3"]').boundingBox();
+  expect(e2Box).not.toBeNull();
+  expect(e3Box).not.toBeNull();
+  if (e2Box && e3Box) {
+    await page.mouse.move(e2Box.x + e2Box.width / 2, e2Box.y + e2Box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(e3Box.x + e3Box.width / 2, e3Box.y + e3Box.height / 2, { steps: 4 });
+    await expect(page.locator(".board-drag-ghost")).toHaveCount(1);
+    const ghost = await page.locator(".board-drag-ghost").evaluate((element) => {
+      const computed = getComputedStyle(element);
+      const piece = element.querySelector<HTMLElement>(".piece-icon");
+      return {
+        backgroundColor: computed.backgroundColor,
+        borderTopWidth: computed.borderTopWidth,
+        boxShadow: computed.boxShadow,
+        pieceCode: piece?.dataset.code,
+        width: Math.round(element.getBoundingClientRect().width)
+      };
+    });
+    expect(ghost.backgroundColor).toBe("rgba(0, 0, 0, 0)");
+    expect(ghost.borderTopWidth).toBe("0px");
+    expect(ghost.boxShadow).toBe("none");
+    expect(ghost.pieceCode).toBe("p");
+    expect(ghost.width).toBeGreaterThan(28);
+    await page.mouse.up();
+    await expect(page.locator(".board-drag-ghost")).toHaveCount(0);
+  }
+
   await beginRightDragSquare(page, board, "e2", "e4");
   await expect(board.locator('[data-planning-preview="true"]')).toHaveCount(1);
   await page.mouse.up({ button: "right" });

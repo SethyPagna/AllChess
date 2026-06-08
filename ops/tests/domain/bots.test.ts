@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 
-import { cancelBotMove, chooseBotMove, chooseBotMoveSafe, botDifficultyLevels, MAX_BOT_REPLY_MS, MAX_GLOBAL_TRANSPOSITIONS, requestBotMove } from "@/lib/bot/runtime";
+import { cancelBotMove, chooseBotMove, chooseBotMoveSafe, botDifficultyLevels, createBotSearchStateKey, MAX_BOT_REPLY_MS, MAX_GLOBAL_TRANSPOSITIONS, requestBotMove } from "@/lib/bot/runtime";
 import { botEloBandKeys, getBotStrengthBand } from "@/lib/bot/strength";
 import {
   createBotBoardSignature,
@@ -23,7 +23,22 @@ import { applyMove, createInitialState, getLegalMoves } from "@/lib/variants";
 
 describe("bot difficulty ladder", () => {
   test("keeps a larger bounded cross-request position cache", () => {
-    expect(MAX_GLOBAL_TRANSPOSITIONS).toBeGreaterThanOrEqual(48000);
+    expect(MAX_GLOBAL_TRANSPOSITIONS).toBeGreaterThanOrEqual(96000);
+  });
+
+  test("bot cache keys include drop hands and variant-rule state", () => {
+    const withPawnHand = createInitialState("mini-shogi", "cache-key-hands-a");
+    const withSilverHand = createInitialState("mini-shogi", "cache-key-hands-b");
+    const withReorderedVariantState = createInitialState("janggi", "cache-key-variant-a");
+    const withSameVariantStateDifferentOrder = createInitialState("janggi", "cache-key-variant-b");
+
+    withPawnHand.hands = { sente: { p: 1 }, gote: {} };
+    withSilverHand.hands = { sente: { s: 1 }, gote: {} };
+    withReorderedVariantState.variantState = { bikjangPlayer: "red", nested: { b: 2, a: 1 } };
+    withSameVariantStateDifferentOrder.variantState = { nested: { a: 1, b: 2 }, bikjangPlayer: "red" };
+
+    expect(createBotSearchStateKey(withPawnHand)).not.toBe(createBotSearchStateKey(withSilverHand));
+    expect(createBotSearchStateKey(withReorderedVariantState)).toBe(createBotSearchStateKey(withSameVariantStateDifferentOrder));
   });
 
   test("defines 100-point Elo-style difficulty bands through the 4000 ceiling", () => {

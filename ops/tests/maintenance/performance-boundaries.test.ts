@@ -44,7 +44,14 @@ describe("performance boundaries", () => {
   test("bot runtime builds search cache keys without nested board maps", () => {
     const botRuntimeSource = readFileSync(join(repoRoot, "src", "lib", "bot", "runtime.ts"), "utf8");
 
-    expect(botRuntimeSource).not.toMatch(/function searchStateKey[\s\S]*?state\.board\s*\n\s*\.map/);
+    expect(botRuntimeSource).not.toMatch(/function createBotSearchStateKey[\s\S]*?state\.board\s*\n\s*\.map/);
+  });
+
+  test("bot transposition cache refreshes hot entries before bounded eviction", () => {
+    const botRuntimeSource = readFileSync(join(repoRoot, "src", "lib", "bot", "runtime.ts"), "utf8");
+
+    expect(botRuntimeSource).toContain("globalTranspositionCache.delete(key)");
+    expect(botRuntimeSource).toContain("MAX_GLOBAL_TRANSPOSITIONS = 96000");
   });
 
   test("variant draw checks scan pieces without flattening the board", () => {

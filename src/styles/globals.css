@@ -2115,9 +2115,12 @@ option {
   position: fixed;
   z-index: 2147483000;
   display: grid;
-  width: calc((var(--board-fixed-size) / var(--board-cols)) * 0.86);
-  height: calc((var(--board-fixed-size) / var(--board-cols)) * 0.86);
+  width: var(--drag-piece-size, calc((var(--board-fixed-size) / var(--board-cols)) * 0.86));
+  height: var(--drag-piece-size, calc((var(--board-fixed-size) / var(--board-cols)) * 0.86));
   place-items: center;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   transform: translate(-50%, -50%) scale(1.03);
   filter: drop-shadow(0 0.42rem 0.55rem rgb(0 0 0 / 32%));
   pointer-events: none;
@@ -2126,7 +2129,7 @@ option {
 .board-drag-ghost .piece-icon {
   width: 100%;
   height: 100%;
-  font-size: calc((var(--board-fixed-size) / var(--board-cols)) * 0.82);
+  font-size: calc(var(--drag-piece-size, calc(var(--board-fixed-size) / var(--board-cols))) * 0.95);
 }
 
 .board-square[data-dragging="true"] {

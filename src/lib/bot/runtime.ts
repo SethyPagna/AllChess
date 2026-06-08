@@ -5,7 +5,7 @@ import { botDifficultyLevels, getBotDifficultyLevel, isBeginnerBotDifficulty, is
 import type { BotStrengthBand, BotTierKey } from "@/lib/bot/strength";
 
 const MIN_BOT_SEARCH_MS = 8;
-export const MAX_GLOBAL_TRANSPOSITIONS = 48000;
+export const MAX_GLOBAL_TRANSPOSITIONS = 96000;
 const BOT_REPLY_SAFETY_MS = 120;
 const QUICK_SEARCH_MAX_MS = 16;
 const MAX_TERMINAL_THREAT_CANDIDATES = 32;
@@ -464,7 +464,7 @@ function searchEfficiencyFromBudget(budget: SearchBudget): BotSearchEfficiency {
 }
 
 function allLegalMovesCached(state: GameState, budget: SearchBudget) {
-  const key = searchStateKey(state);
+  const key = createBotSearchStateKey(state);
   const cached = budget.legalMovesCache.get(key);
   if (cached) {
     budget.cacheHits += 1;
@@ -477,7 +477,7 @@ function allLegalMovesCached(state: GameState, budget: SearchBudget) {
   return moves;
 }
 
-function searchStateKey(state: GameState) {
+export function createBotSearchStateKey(state: GameState) {
   let board = "";
 
   for (let rowIndex = 0; rowIndex < state.board.length; rowIndex += 1) {
@@ -488,11 +488,23 @@ function searchStateKey(state: GameState) {
     }
   }
 
-  return `${state.variantKey}|${state.turn}|${state.status}|${state.result ?? ""}|${state.ply}|${board}`;
+  return [
+    state.variantKey,
+    state.turn,
+    state.status,
+    state.result ?? "",
+    state.outcomeReason ?? "",
+    state.ply,
+    state.halfmoveClock,
+    board,
+    handStateSignature(state.hands),
+    checksSignature(state.checks),
+    stableStateSignature(state.variantState ?? {})
+  ].join("|");
 }
 
 function transpositionKey(state: GameState, perspective: PlayerColor, depth: number) {
-  return `${searchStateKey(state)}|perspective:${perspective}|depth:${depth}`;
+  return `${createBotSearchStateKey(state)}|perspective:${perspective}|depth:${depth}`;
 }
 
 function evaluateMove(
@@ -710,12 +722,51 @@ function getGlobalTransposition(key: string, minimumDepth: number) {
 function rememberTransposition(budget: SearchBudget, key: string, depth: number, score: number) {
   const entry = { depth, score };
   budget.transpositionCache.set(key, entry);
+  if (globalTranspositionCache.has(key)) {
+    globalTranspositionCache.delete(key);
+  }
   globalTranspositionCache.set(key, entry);
   while (globalTranspositionCache.size > MAX_GLOBAL_TRANSPOSITIONS) {
     const oldestKey = globalTranspositionCache.keys().next().value;
     if (!oldestKey) break;
     globalTranspositionCache.delete(oldestKey);
   }
+}
+
+function handStateSignature(hands: GameState["hands"]) {
+  if (!hands) return "hands:";
+  const owners = Object.keys(hands).sort();
+  let signature = "hands:";
+  for (const owner of owners) {
+    const hand = hands[owner as PlayerColor] ?? {};
+    const pieces = Object.keys(hand)
+      .sort()
+      .map((code) => `${code}${hand[code] ?? 0}`)
+      .join(",");
+    signature += `${owner}[${pieces}];`;
+  }
+  return signature;
+}
+
+function checksSignature(checks: GameState["checks"]) {
+  const colors = Object.keys(checks).sort();
+  if (!colors.length) return "checks:";
+  return `checks:${colors.map((color) => `${color}${checks[color as PlayerColor] ?? 0}`).join(",")}`;
+}
+
+function stableStateSignature(value: unknown): string {
+  if (value == null) return "null";
+  if (typeof value === "string") return JSON.stringify(value);
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (Array.isArray(value)) return `[${value.map((entry) => stableStateSignature(entry)).join(",")}]`;
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return `{${Object.keys(record)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stableStateSignature(record[key])}`)
+      .join(",")}}`;
+  }
+  return String(value);
 }
 
 function quiescence(
