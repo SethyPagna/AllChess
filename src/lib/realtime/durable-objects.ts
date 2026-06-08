@@ -1,7 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 import type { DurableObjectState } from "@cloudflare/workers-types";
 
-import { applyAuthoritativeRoomMove, createDemoLiveStats, createMatchmakingTicket, createRoomSnapshot } from "@/lib/realtime/rooms";
+import { applyAuthoritativeRoomMove, areMatchmakingTicketsCompatible, createDemoLiveStats, createMatchmakingMatch, createMatchmakingTicket, createRoomSnapshot } from "@/lib/realtime/rooms";
 import type { ClientRealtimeMessage, LiveStats, MatchmakingTicket, RoomSnapshot, ServerRealtimeMessage } from "@/lib/realtime/types";
 
 function json(data: unknown, init?: ResponseInit) {
@@ -76,6 +76,11 @@ export class MatchmakingDO extends DurableObject {
     if (request.method === "POST" && url.pathname.endsWith("/join")) {
       const body = (await request.json().catch(() => ({}))) as Partial<MatchmakingTicket>;
       const ticket = createMatchmakingTicket(body);
+      const opponent = await this.findOpponent(ticket);
+      if (opponent) {
+        await this.ctx.storage.delete(`ticket:${opponent.ticketId}`);
+        return json({ ticket, match: createMatchmakingMatch(ticket, opponent) });
+      }
       await this.ctx.storage.put(`ticket:${ticket.ticketId}`, ticket);
       return json({ ticket });
     }
@@ -85,6 +90,14 @@ export class MatchmakingDO extends DurableObject {
       return json({ left: Boolean(body.ticketId) });
     }
     return json({ error: "Unsupported matchmaking operation." }, { status: 404 });
+  }
+
+  private async findOpponent(ticket: MatchmakingTicket) {
+    const queuedTickets = await this.ctx.storage.list<MatchmakingTicket>({ prefix: "ticket:" });
+    for (const opponent of queuedTickets.values()) {
+      if (areMatchmakingTicketsCompatible(ticket, opponent)) return opponent;
+    }
+    return null;
   }
 }
 

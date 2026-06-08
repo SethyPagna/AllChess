@@ -1,9 +1,9 @@
 import { describe, expect, test, vi } from "vitest";
 
-import type { D1Database } from "@cloudflare/workers-types";
+import type { D1Database, DurableObjectNamespace } from "@cloudflare/workers-types";
 
 const runtime = vi.hoisted(() => ({
-  env: {} as { ALLCHESS_D1?: D1Database }
+  env: {} as { ALLCHESS_D1?: D1Database; MATCHMAKING_DO?: DurableObjectNamespace }
 }));
 
 vi.mock("@/lib/cloudflare/runtime", () => ({
@@ -31,6 +31,36 @@ function createMatchmakingD1() {
   } as unknown as D1Database;
 
   return { db, calls };
+}
+
+function createMatchmakingDurableObject() {
+  return {
+    idFromName(name: string) {
+      return name;
+    },
+    get() {
+      return {
+        async fetch() {
+          return Response.json({
+            ticket: {
+              ticketId: "ticket-2",
+              profileId: "profile-2",
+              variantKey: "classic",
+              timeControlKey: "rapid",
+              ratingRange: [1150, 1550],
+              rated: false,
+              createdAt: "2026-06-08T00:00:00.000Z"
+            },
+            match: {
+              type: "match_found",
+              roomId: "match-room",
+              ticketId: "ticket-2"
+            }
+          });
+        }
+      };
+    }
+  } as unknown as DurableObjectNamespace;
 }
 
 describe("matchmaking API", () => {
@@ -74,5 +104,28 @@ describe("matchmaking API", () => {
     await expect(response.json()).resolves.toMatchObject({ mode: "d1", left: true, ticketId: "ticket-1" });
     const update = calls.find((call) => call.sql.includes("update matchmaking_tickets"));
     expect(update?.values).toEqual(["ticket-1"]);
+  });
+
+  test("returns Durable Object match payloads when compatible players pair", async () => {
+    runtime.env = { MATCHMAKING_DO: createMatchmakingDurableObject() };
+
+    const response = await joinQueue(
+      new Request("http://allchess.test/api/matchmaking/join", {
+        method: "POST",
+        body: JSON.stringify({ profileId: "profile-2", variantKey: "classic", timeControlKey: "rapid", rating: 1350 })
+      })
+    );
+
+    await expect(response.json()).resolves.toMatchObject({
+      mode: "durable-object",
+      ticket: {
+        ticketId: "ticket-2"
+      },
+      match: {
+        type: "match_found",
+        roomId: "match-room",
+        ticketId: "ticket-2"
+      }
+    });
   });
 });

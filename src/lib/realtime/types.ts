@@ -38,6 +38,12 @@ export type MatchmakingTicket = {
   createdAt: string;
 };
 
+export type MatchmakingMatch = {
+  type: "match_found";
+  roomId: string;
+  ticketId: string;
+};
+
 export type LiveStats = {
   playersOnline: number;
   activeRooms: number;
@@ -66,7 +72,7 @@ export type ServerRealtimeMessage =
   | { type: "move_applied"; snapshot: RoomSnapshot; move: Move }
   | { type: "move_rejected"; reason: string; expectedMoveVersion: number }
   | { type: "clock_sync"; clocks: PlayerClock[]; serverTime: string }
-  | { type: "match_found"; roomId: string; ticketId: string }
+  | MatchmakingMatch
   | { type: "player_joined"; roomId: string; player: RoomPlayer }
   | { type: "spectator_count"; roomId: string; spectators: number }
   | { type: "game_finished"; snapshot: RoomSnapshot }

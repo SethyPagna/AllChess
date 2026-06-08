@@ -5,7 +5,7 @@ import { GET as liveStatsGet } from "@/app/api/live-stats/route";
 import { POST as queueJoinPost } from "@/app/api/matchmaking/join/route";
 import { GET as roomGet } from "@/app/api/rooms/[id]/route";
 import { POST as roomPost } from "@/app/api/rooms/route";
-import { applyAuthoritativeRoomMove, createMatchmakingTicket, createRoomSnapshot } from "@/lib/realtime/rooms";
+import { applyAuthoritativeRoomMove, areMatchmakingTicketsCompatible, createMatchmakingMatch, createMatchmakingTicket, createRoomSnapshot } from "@/lib/realtime/rooms";
 import { createInitialState } from "@/lib/variants";
 
 describe("realtime multiplayer foundations", () => {
@@ -86,12 +86,21 @@ describe("realtime multiplayer foundations", () => {
   });
 
   test("matchmaking tickets use rating windows and requested settings", () => {
-    expect(createMatchmakingTicket({ profileId: "p1", variantKey: "shogi", timeControlKey: "blitz", rating: 1750, rated: true })).toMatchObject({
+    const ticket = createMatchmakingTicket({ profileId: "p1", variantKey: "shogi", timeControlKey: "blitz", rating: 1750, rated: true });
+
+    expect(ticket).toMatchObject({
       profileId: "p1",
       variantKey: "shogi",
       timeControlKey: "blitz",
       ratingRange: [1550, 1950],
       rated: true
+    });
+    expect(areMatchmakingTicketsCompatible(ticket, createMatchmakingTicket({ profileId: "p2", variantKey: "shogi", timeControlKey: "blitz", rating: 1850, rated: true }))).toBe(true);
+    expect(areMatchmakingTicketsCompatible(ticket, createMatchmakingTicket({ profileId: "p2", variantKey: "shogi", timeControlKey: "rapid", rating: 1850, rated: true }))).toBe(false);
+    expect(areMatchmakingTicketsCompatible(ticket, createMatchmakingTicket({ profileId: "p1", variantKey: "shogi", timeControlKey: "blitz", rating: 1850, rated: true }))).toBe(false);
+    expect(createMatchmakingMatch(ticket, { ...ticket, ticketId: "opponent-ticket", profileId: "p2" })).toMatchObject({
+      type: "match_found",
+      ticketId: ticket.ticketId
     });
   });
 

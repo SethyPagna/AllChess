@@ -1,6 +1,6 @@
 import { applyMove, createInitialState, getLegalMoves, sameSquare, type GameState, type Move } from "@/lib/variants";
 import { getCatalogStats } from "@/lib/catalog";
-import type { LiveStats, MatchmakingTicket, RoomSnapshot } from "@/lib/realtime/types";
+import type { LiveStats, MatchmakingMatch, MatchmakingTicket, RoomSnapshot } from "@/lib/realtime/types";
 
 export function createRoomSnapshot(input: {
   roomId?: string;
@@ -91,6 +91,27 @@ export function createMatchmakingTicket(input: {
     rated: input.rated ?? false,
     createdAt: new Date().toISOString()
   };
+}
+
+export function areMatchmakingTicketsCompatible(left: MatchmakingTicket, right: MatchmakingTicket) {
+  if (left.profileId === right.profileId) return false;
+  if (left.variantKey !== right.variantKey) return false;
+  if (left.timeControlKey !== right.timeControlKey) return false;
+  if (left.rated !== right.rated) return false;
+  return rangesOverlap(left.ratingRange, right.ratingRange);
+}
+
+export function createMatchmakingMatch(ticket: MatchmakingTicket, opponent: MatchmakingTicket): MatchmakingMatch {
+  const pairId = [ticket.ticketId, opponent.ticketId].sort().map((id) => id.slice(0, 8)).join("-");
+  return {
+    type: "match_found",
+    roomId: `match-${pairId}`,
+    ticketId: ticket.ticketId
+  };
+}
+
+function rangesOverlap(left: [number, number], right: [number, number]) {
+  return Math.max(left[0], right[0]) <= Math.min(left[1], right[1]);
 }
 
 export function createDemoLiveStats(overrides: Partial<LiveStats> = {}): LiveStats {

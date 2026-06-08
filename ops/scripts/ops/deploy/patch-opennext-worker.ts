@@ -41,6 +41,19 @@ function allchessRatingRange(body) {
   return [Math.max(100, rating - 200), rating + 200];
 }
 
+function allchessTicketsCompatible(left, right) {
+  if (left.profileId === right.profileId) return false;
+  if (left.variantKey !== right.variantKey) return false;
+  if (left.timeControlKey !== right.timeControlKey) return false;
+  if (left.rated !== right.rated) return false;
+  return Math.max(left.ratingRange[0], right.ratingRange[0]) <= Math.min(left.ratingRange[1], right.ratingRange[1]);
+}
+
+function allchessMatch(ticket, opponent) {
+  const pairId = [ticket.ticketId, opponent.ticketId].sort().map((id) => id.slice(0, 8)).join("-");
+  return { type: "match_found", roomId: \`match-\${pairId}\`, ticketId: ticket.ticketId };
+}
+
 export class GameRoomDO extends DurableObject {
   async fetch(request) {
     const url = new URL(request.url);
@@ -95,6 +108,13 @@ export class MatchmakingDO extends DurableObject {
         rated: Boolean(body.rated),
         createdAt: new Date().toISOString()
       };
+      const queued = await this.ctx.storage.list({ prefix: "ticket:" });
+      for (const opponent of queued.values()) {
+        if (allchessTicketsCompatible(ticket, opponent)) {
+          await this.ctx.storage.delete(\`ticket:\${opponent.ticketId}\`);
+          return allchessDoJson({ ticket, match: allchessMatch(ticket, opponent) });
+        }
+      }
       await this.ctx.storage.put(\`ticket:\${ticket.ticketId}\`, ticket);
       return allchessDoJson({ ticket });
     }
