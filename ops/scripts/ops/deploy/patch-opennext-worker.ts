@@ -55,10 +55,12 @@ function allchessMatch(ticket, opponent) {
 }
 
 export class GameRoomDO extends DurableObject {
+  sockets = new Set();
+
   async fetch(request) {
     const url = new URL(request.url);
-    if (request.headers.get("upgrade") === "websocket") return this.handleSocket();
     const pathRoomId = allchessRoomIdFromPath(url.pathname);
+    if (request.headers.get("upgrade") === "websocket") return this.handleSocket(url.searchParams.get("variantKey") ?? "classic", pathRoomId);
     const snapshot = await this.getSnapshot(url.searchParams.get("variantKey") ?? "classic", pathRoomId);
     if (request.method === "GET") return allchessDoJson(snapshot);
     if (request.method === "POST" && url.pathname.endsWith("/move")) {
@@ -81,16 +83,59 @@ export class GameRoomDO extends DurableObject {
     return snapshot;
   }
 
-  handleSocket() {
+  handleSocket(variantKey = "classic", roomId = null) {
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
     server.accept();
-    void this.getSnapshot("classic").then((snapshot) => server.send(JSON.stringify({ type: "room_snapshot", snapshot })));
+    this.sockets.add(server);
+    void this.getSnapshot(variantKey, roomId).then((snapshot) => this.sendSocket(server, { type: "room_snapshot", snapshot }));
     server.addEventListener("message", (event) => {
-      const message = JSON.parse(String(event.data));
-      if (message.type === "ping") server.send(JSON.stringify({ type: "pong", sentAt: message.sentAt, serverTime: new Date().toISOString() }));
+      void this.handleSocketMessage(server, event.data, variantKey, roomId);
     });
+    server.addEventListener("close", () => this.sockets.delete(server));
+    server.addEventListener("error", () => this.sockets.delete(server));
     return new Response(null, { status: 101, webSocket: client });
+  }
+
+  async handleSocketMessage(server, data, variantKey, roomId) {
+    let message;
+    try {
+      message = JSON.parse(String(data));
+    } catch {
+      this.sendSocket(server, { type: "move_rejected", reason: "Malformed realtime message.", expectedMoveVersion: 0 });
+      return;
+    }
+    if (message.type === "ping") {
+      this.sendSocket(server, { type: "pong", sentAt: message.sentAt, serverTime: new Date().toISOString() });
+      return;
+    }
+    if (message.type === "join_room") {
+      const snapshot = await this.getSnapshot(variantKey, message.roomId ?? roomId);
+      this.sendSocket(server, { type: "room_snapshot", snapshot });
+      return;
+    }
+    if (message.type === "make_move") {
+      const snapshot = await this.getSnapshot(variantKey, message.roomId ?? roomId);
+      if (!message.move || message.expectedMoveVersion !== snapshot.moveVersion) {
+        this.sendSocket(server, { type: "move_rejected", reason: "Stale or malformed move.", expectedMoveVersion: snapshot.moveVersion });
+        return;
+      }
+      const next = { ...snapshot, moveVersion: snapshot.moveVersion + 1, status: "active" };
+      await this.ctx.storage.put("snapshot", next);
+      this.broadcastSocket({ type: "move_applied", snapshot: next, move: message.move });
+    }
+  }
+
+  broadcastSocket(message) {
+    for (const socket of this.sockets) this.sendSocket(socket, message);
+  }
+
+  sendSocket(socket, message) {
+    try {
+      if (socket.readyState === 1) socket.send(JSON.stringify(message));
+    } catch {
+      this.sockets.delete(socket);
+    }
   }
 }
 

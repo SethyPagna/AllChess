@@ -13,6 +13,7 @@ function json(data: unknown, init?: ResponseInit) {
 
 export class GameRoomDO extends DurableObject {
   private snapshot: RoomSnapshot | null = null;
+  private sockets = new Set<WebSocket>();
 
   constructor(ctx: DurableObjectState, env: unknown) {
     super(ctx, env);
@@ -20,8 +21,8 @@ export class GameRoomDO extends DurableObject {
 
   async fetch(request: Request) {
     const url = new URL(request.url);
-    if (request.headers.get("upgrade") === "websocket") return this.handleSocket();
     const pathRoomId = roomIdFromPath(url.pathname);
+    if (request.headers.get("upgrade") === "websocket") return this.handleSocket(url.searchParams.get("variantKey") ?? "classic", pathRoomId ?? undefined);
     if (request.method === "GET") return json(await this.getSnapshot(url.searchParams.get("variantKey") ?? "classic", pathRoomId ?? undefined));
     if (request.method === "POST" && url.pathname.endsWith("/move")) {
       const body = (await request.json().catch(() => null)) as Extract<ClientRealtimeMessage, { type: "make_move" }> | null;
@@ -45,25 +46,84 @@ export class GameRoomDO extends DurableObject {
     return this.snapshot;
   }
 
-  private handleSocket() {
+  private handleSocket(variantKey = "classic", roomId?: string) {
     const WebSocketPairCtor = (globalThis as unknown as { WebSocketPair?: new () => { 0: WebSocket; 1: WebSocket } }).WebSocketPair;
     if (!WebSocketPairCtor) return json({ error: "WebSocketPair is only available in the Cloudflare runtime." }, { status: 501 });
     const pair = new WebSocketPairCtor();
     const [client, rawServer] = Object.values(pair);
     const server = rawServer as WebSocket & { accept: () => void };
     server.accept();
-    void this.getSnapshot().then((snapshot) => server.send(JSON.stringify({ type: "room_snapshot", snapshot } satisfies ServerRealtimeMessage)));
+    this.sockets.add(server);
+    void this.getSnapshot(variantKey, roomId).then((snapshot) => this.sendSocketMessage(server, { type: "room_snapshot", snapshot } satisfies ServerRealtimeMessage));
     server.addEventListener("message", (event: MessageEvent) => {
-      const message = JSON.parse(String(event.data)) as ClientRealtimeMessage;
-      if (message.type === "ping") server.send(JSON.stringify({ type: "pong", sentAt: message.sentAt, serverTime: new Date().toISOString() } satisfies ServerRealtimeMessage));
+      void this.handleSocketMessage(server, event.data, variantKey, roomId);
     });
+    server.addEventListener("close", () => this.sockets.delete(server));
+    server.addEventListener("error", () => this.sockets.delete(server));
     return new Response(null, { status: 101, webSocket: client } as ResponseInit);
+  }
+
+  private async handleSocketMessage(server: WebSocket, data: unknown, variantKey: string, roomId?: string) {
+    const message = parseClientMessage(data);
+    if (!message) {
+      this.sendSocketMessage(server, { type: "move_rejected", reason: "Malformed realtime message.", expectedMoveVersion: this.snapshot?.moveVersion ?? 0 } satisfies ServerRealtimeMessage);
+      return;
+    }
+
+    if (message.type === "ping") {
+      this.sendSocketMessage(server, { type: "pong", sentAt: message.sentAt, serverTime: new Date().toISOString() } satisfies ServerRealtimeMessage);
+      return;
+    }
+
+    if (message.type === "join_room") {
+      const snapshot = await this.getSnapshot(variantKey, message.roomId || roomId);
+      this.sendSocketMessage(server, { type: "room_snapshot", snapshot } satisfies ServerRealtimeMessage);
+      return;
+    }
+
+    if (message.type === "make_move") {
+      const snapshot = await this.getSnapshot(variantKey, message.roomId || roomId);
+      if (message.expectedMoveVersion !== snapshot.moveVersion) {
+        this.sendSocketMessage(server, { type: "move_rejected", reason: "Stale move.", expectedMoveVersion: snapshot.moveVersion } satisfies ServerRealtimeMessage);
+        return;
+      }
+      const result = applyAuthoritativeRoomMove(snapshot, message.move);
+      if (!result.ok) {
+        this.sendSocketMessage(server, { type: "move_rejected", reason: result.reason, expectedMoveVersion: snapshot.moveVersion } satisfies ServerRealtimeMessage);
+        return;
+      }
+      this.snapshot = result.snapshot;
+      await this.ctx.storage.put("snapshot", this.snapshot);
+      this.broadcastSocketMessage({ type: "move_applied", snapshot: this.snapshot, move: message.move } satisfies ServerRealtimeMessage);
+    }
+  }
+
+  private broadcastSocketMessage(message: ServerRealtimeMessage) {
+    for (const socket of this.sockets) {
+      this.sendSocketMessage(socket, message);
+    }
+  }
+
+  private sendSocketMessage(socket: WebSocket, message: ServerRealtimeMessage) {
+    try {
+      if (socket.readyState === 1) socket.send(JSON.stringify(message));
+    } catch {
+      this.sockets.delete(socket);
+    }
   }
 }
 
 function roomIdFromPath(pathname: string) {
   const match = pathname.match(/\/rooms\/([^/]+)/);
   return match ? decodeURIComponent(match[1]) : null;
+}
+
+function parseClientMessage(data: unknown): ClientRealtimeMessage | null {
+  try {
+    return JSON.parse(String(data)) as ClientRealtimeMessage;
+  } catch {
+    return null;
+  }
 }
 
 export class MatchmakingDO extends DurableObject {

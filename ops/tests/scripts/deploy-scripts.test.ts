@@ -45,8 +45,12 @@ describe("deployment scripts", () => {
     expect(patchScript).toContain("function allchessRoomIdFromPath");
     expect(patchScript).toContain("function allchessTicketsCompatible");
     expect(patchScript).toContain("function allchessMatch");
+    expect(patchScript).toContain("broadcastSocket");
+    expect(patchScript).toContain("handleSocketMessage");
+    expect(patchScript).toContain("socket.readyState === 1");
     expect(patchScript).toContain("[Math.max(100, rating - 200), rating + 200]");
     expect(patchScript).toContain("body.expectedMoveVersion !== snapshot.moveVersion");
+    expect(patchScript).toContain("message.expectedMoveVersion !== snapshot.moveVersion");
     expect(patchScript).toContain("snapshot.roomId = roomId");
     expect(patchScript).toContain("match_found");
     expect(patchScript).toContain("opponentTicketId");
