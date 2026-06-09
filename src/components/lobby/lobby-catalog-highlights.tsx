@@ -49,15 +49,21 @@ export function LobbyFeaturedGames({ entries, locale }: FeaturedGamesProps) {
         <InfoHint text="Playable boards, grouped tightly so the lobby reads at a glance." />
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        {entries.map((entry) => (
-          <Link key={entry.id} href={playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) as never} className="panel lobby-featured-card focus-ring">
-            <span className="lobby-featured-head">
-              <strong>{displayGameName(entry)}</strong>
-              <span>{displayRulesReadiness(entry)}</span>
-            </span>
-            <span className="lobby-featured-body">{entry.winConditions[0]}</span>
-          </Link>
-        ))}
+        {entries.map((entry) => {
+          const gameName = displayGameName(entry);
+          const readiness = displayRulesReadiness(entry);
+          const winCondition = entry.winConditions[0];
+
+          return (
+            <Link key={entry.id} href={playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) as never} className="panel lobby-featured-card focus-ring" aria-label={`${gameName}. ${readiness}. ${winCondition}.`}>
+              <span className="lobby-featured-head">
+                <strong>{gameName}</strong>
+                <span>{readiness}</span>
+              </span>
+              <span className="lobby-featured-body">{winCondition}</span>
+            </Link>
+          );
+        })}
       </div>
     </section>
   );

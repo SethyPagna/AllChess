@@ -5034,7 +5034,7 @@ option {
   display: grid;
   align-items: start;
   gap: clamp(0.9rem, 1.8vw, 1.25rem);
-  grid-template-columns: minmax(0, 1fr) minmax(15rem, 20rem);
+  grid-template-columns: minmax(0, 1fr) minmax(13.5rem, 17rem);
 }
 
 .lobby-main-stack {
@@ -5361,7 +5361,9 @@ option {
 
 .lobby-featured-card {
   display: grid;
-  gap: 0.5rem;
+  min-height: 7.25rem;
+  align-content: start;
+  gap: 0.62rem;
   padding: 0.85rem;
   text-decoration: none;
   transition: transform var(--motion-fast), border-color var(--motion-fast), background var(--motion-fast), box-shadow var(--motion-fast);
@@ -5377,8 +5379,8 @@ option {
 .lobby-featured-head {
   display: grid;
   min-width: 0;
-  gap: 0.45rem;
-  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  grid-template-columns: 1fr;
   align-items: start;
 }
 
@@ -5392,20 +5394,28 @@ option {
 }
 
 .lobby-featured-head span {
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
   border-radius: 999px;
   background: var(--surface-soft);
   color: var(--muted);
   font-size: 0.72rem;
   font-weight: 950;
   padding: 0.22rem 0.5rem;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .lobby-featured-body {
+  display: -webkit-box;
+  overflow: hidden;
   color: var(--muted);
   font-size: 0.82rem;
   font-weight: 750;
   line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .watch-empty-state {
