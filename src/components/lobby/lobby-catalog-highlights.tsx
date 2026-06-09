@@ -22,18 +22,18 @@ type FamilyHighlightsProps = {
 export function LobbyCatalogStats({ stats }: LobbyStatsProps) {
   return (
     <div className="lobby-stat-grid">
-      <div className="panel lobby-stat-card">
-        <BarChart3 size={18} />
+      <div className="panel lobby-stat-card" role="group" aria-label={`${stats.totalGames} games and rules`}>
+        <BarChart3 size={18} aria-hidden="true" />
         <strong>{stats.totalGames}</strong>
         <span>games & rules</span>
       </div>
-      <div className="panel lobby-stat-card">
-        <Swords size={18} />
+      <div className="panel lobby-stat-card" role="group" aria-label={`${stats.playableGames} playable games`}>
+        <Swords size={18} aria-hidden="true" />
         <strong>{stats.playableGames}</strong>
         <span>playable now</span>
       </div>
-      <div className="panel lobby-stat-card">
-        <Radio size={18} />
+      <div className="panel lobby-stat-card" role="group" aria-label={`${stats.learnGames + stats.comingSoonGames} guides and drafts`}>
+        <Radio size={18} aria-hidden="true" />
         <strong>{stats.learnGames + stats.comingSoonGames}</strong>
         <span>guides & drafts</span>
       </div>
