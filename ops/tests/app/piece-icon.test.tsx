@@ -1,8 +1,12 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, test } from "vitest";
 
 import { BoardPlayerCard } from "@/components/board/board-player-card";
 import { PieceIcon, getPieceSkinOptions } from "@/components/board/piece-icon";
+
+const repoRoot = process.cwd();
 
 describe("PieceIcon", () => {
   test("renders visually distinct full-size western king and queen icons", () => {
@@ -164,6 +168,7 @@ describe("PieceIcon", () => {
     );
 
     expect(card).toContain('class="captured-piece"');
+    expect(card).toContain('data-captured-owner="black"');
     expect(card).toContain('data-capture-index="1"');
     expect(card).toContain('title="Captured Pawn"');
     expect(card).toContain('aria-label="White captured pieces. Material advantage plus 7"');
@@ -171,6 +176,58 @@ describe("PieceIcon", () => {
     expect(card).toContain('class="captured-material"');
     expect(card).toContain('aria-label="Material advantage plus 7"');
     expect(card).toContain("+7");
+  });
+
+  test("uses guest labels without restoring generic profile copy", () => {
+    const customGuestCard = renderToStaticMarkup(
+      <BoardPlayerCard
+        botLevelLabel="Normal"
+        botModeActive={false}
+        botStrengthDisplay="1300-1600"
+        capturedPieces={[]}
+        opponentCapturedPieces={[]}
+        clock={{ color: "white", remainingMs: 600000, incrementMs: 0 }}
+        color="white"
+        humanColor="white"
+        isActive
+        placement="bottom"
+        playerAvatarLabel="G1"
+        playerLabel="Guest E129"
+        thinking={false}
+        timeControl="rapid"
+        variantKey="classic"
+      />
+    );
+    const fallbackGuestCard = renderToStaticMarkup(
+      <BoardPlayerCard
+        botLevelLabel="Normal"
+        botModeActive={false}
+        botStrengthDisplay="1300-1600"
+        capturedPieces={[]}
+        opponentCapturedPieces={[]}
+        clock={{ color: "white", remainingMs: 600000, incrementMs: 0 }}
+        color="white"
+        humanColor="white"
+        isActive
+        placement="bottom"
+        thinking={false}
+        timeControl="rapid"
+        variantKey="classic"
+      />
+    );
+
+    expect(customGuestCard).toContain("<strong>Guest E129</strong>");
+    expect(customGuestCard).toContain('class="player-avatar" aria-hidden="true">G1</div>');
+    expect(customGuestCard).not.toContain("Your profile");
+    expect(fallbackGuestCard).toContain("<strong>Guest player</strong>");
+    expect(fallbackGuestCard).not.toContain("Your profile");
+  });
+
+  test("keeps captured material plain and black captures on a light backing", () => {
+    const styles = readFileSync(join(repoRoot, "src", "styles", "globals.css"), "utf8");
+
+    expect(styles).toMatch(/\.captured-piece\[data-captured-owner="black"\][\s\S]*?background:\s*linear-gradient\(145deg,\s*#f8f0cf,\s*#cdbb86\);/);
+    expect(styles).toMatch(/\.captured-material\s*\{[\s\S]*?border:\s*0;[\s\S]*?background:\s*transparent;[\s\S]*?padding:\s*0;/);
   });
 
   test("summarizes hidden captured pieces when the stack is full", () => {
