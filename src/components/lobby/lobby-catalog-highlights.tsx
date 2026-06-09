@@ -79,12 +79,16 @@ export function LobbyFamilyHighlights({ locale, stats }: FamilyHighlightsProps) 
         <InfoHint text="Browse related games together, then open a short rule guide or a verified board." />
       </div>
       <div className="panel lobby-family-strip">
-        {familyHighlights.map((family) => (
-          <Link key={family.key} href={`/${locale}/variants?family=${family.key}`} className="focus-ring">
-            <strong>{family.label}</strong>
-            <span>{stats.familyCounts[family.key]} games</span>
-          </Link>
-        ))}
+        {familyHighlights.map((family) => {
+          const gameCount = stats.familyCounts[family.key];
+
+          return (
+            <Link key={family.key} href={`/${locale}/variants?family=${family.key}`} className="focus-ring" aria-label={`${family.label}. ${gameCount} games.`}>
+              <strong>{family.label}</strong>
+              <span>{gameCount} games</span>
+            </Link>
+          );
+        })}
       </div>
     </section>
   );

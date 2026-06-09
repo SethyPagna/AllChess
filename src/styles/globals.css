@@ -5347,16 +5347,45 @@ option {
 
 .lobby-family-strip a {
   display: grid;
-  gap: 0.15rem;
+  min-height: 4.95rem;
+  align-content: space-between;
+  gap: 0.45rem;
   min-width: 0;
   border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
   border-radius: 8px;
   background: var(--surface);
   padding: 0.6rem;
+  text-decoration: none;
+  transition: transform var(--motion-fast), border-color var(--motion-fast), background var(--motion-fast);
 }
 
 .lobby-family-strip a:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--border));
   background: var(--surface-soft);
+}
+
+.lobby-family-strip strong {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--foreground);
+  font-size: 0.95rem;
+  font-weight: 950;
+  line-height: 1.12;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.lobby-family-strip span {
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-soft);
+  padding: 0.18rem 0.48rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .lobby-featured-card {
