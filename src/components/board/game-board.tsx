@@ -49,11 +49,49 @@ type BotMode = "human" | "opponent" | "both";
 type SeatChoice = "random" | "first" | "second";
 type BoardOrientation = "auto" | "first" | "second";
 const appearanceStoragePrefix = "allchess-appearance-set:";
+const guestIdentityStorageKey = "allchess-local-guest-identity";
+const defaultGuestIdentity: GuestIdentity = {
+  bottom: "Guest player",
+  top: "Guest opponent"
+};
+
+type GuestIdentity = {
+  bottom: string;
+  top: string;
+};
 
 function initialAppearancePreset(variantKey: string): AppearancePresetPreference {
   if (typeof window === "undefined") return "default";
   const stored = window.localStorage.getItem(`${appearanceStoragePrefix}${variantKey}`);
   return isAppearancePresetPreference(variantKey, stored) ? stored : "default";
+}
+
+function initialGuestIdentity(): GuestIdentity {
+  const fallback = createGuestIdentity();
+  if (typeof window === "undefined") return fallback;
+  try {
+    const stored = window.localStorage.getItem(guestIdentityStorageKey);
+    if (stored) {
+      const parsed = JSON.parse(stored) as Partial<GuestIdentity>;
+      if (parsed.bottom && parsed.top) return { bottom: parsed.bottom, top: parsed.top };
+    }
+    window.localStorage.setItem(guestIdentityStorageKey, JSON.stringify(fallback));
+  } catch {
+    return fallback;
+  }
+  return fallback;
+}
+
+function createGuestIdentity(): GuestIdentity {
+  return {
+    bottom: `Guest ${createGuestSuffix()}`,
+    top: `Guest ${createGuestSuffix()}`
+  };
+}
+
+function createGuestSuffix() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID().slice(0, 4).toUpperCase();
+  return Math.random().toString(36).slice(2, 6).toUpperCase();
 }
 
 type ThinkingState = {
@@ -293,6 +331,7 @@ export function GameBoard({
   const [botDifficulty, setBotDifficulty] = useState<BotDifficultyKey>(() => getBotDifficultyLevel(initialBotDifficulty).key);
   const [botMode, setBotMode] = useState<BotMode>(initialBotMode);
   const [appearancePreset, setAppearancePreset] = useState<AppearancePresetPreference>(() => initialAppearancePreset(variantKey));
+  const [guestIdentity, setGuestIdentity] = useState<GuestIdentity>(defaultGuestIdentity);
   const [seatChoice, setSeatChoice] = useState<SeatChoice>("random");
   const [boardOrientation, setBoardOrientation] = useState<BoardOrientation>("auto");
   const [humanColor, setHumanColor] = useState(() => pickHumanColor(withTimeControl(initialState ?? createInitialState(variantKey), initialTimeControl), "first"));
@@ -310,6 +349,26 @@ export function GameBoard({
   const activeBotRequestRef = useRef<string | null>(null);
   const resolvedRandomSeatRef = useRef(false);
   const outcomeModalKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      try {
+        const stored = window.localStorage.getItem(guestIdentityStorageKey);
+        if (stored) {
+          const parsed = JSON.parse(stored) as Partial<GuestIdentity>;
+          if (parsed.bottom && parsed.top) {
+            setGuestIdentity({ bottom: parsed.bottom, top: parsed.top });
+            return;
+          }
+        }
+        const nextIdentity = initialGuestIdentity();
+        setGuestIdentity(nextIdentity);
+        window.localStorage.setItem(guestIdentityStorageKey, JSON.stringify(nextIdentity));
+      } catch {
+        // Guest labels are cosmetic; storage can be unavailable in restricted browsers.
+      }
+    });
+  }, []);
 
   const timeline = useMemo(() => (history.length ? [...history, state] : [state]), [history, state]);
   const reviewMoves = useMemo(() => analyzeMoveList(state.moves), [state.moves]);
@@ -402,10 +461,13 @@ export function GameBoard({
   function playerCard(color: Piece["owner"], placement: "top" | "bottom") {
     const handCounts = state.hands?.[color] ?? {};
     const canUseHand = canHumanMove(color) && Object.values(handCounts).some((count) => count > 0);
+    const isBotSeat = color === botColor && botMode !== "human";
+    const isHumanSeat = color === humanColor;
+    const guestName = isHumanSeat ? guestIdentity.bottom : guestIdentity.top;
     return (
       <BoardPlayerCard
         botLevelLabel={botLevel.label}
-        botModeActive={color === botColor && botMode !== "human"}
+        botModeActive={isBotSeat}
         botStrengthDisplay={botStrength.display}
         canUseHand={canUseHand}
         capturedPieces={capturedBy(color)}
@@ -418,6 +480,8 @@ export function GameBoard({
         locale={locale}
         onHandPieceClick={(code) => chooseHandPiece(color, code)}
         pieceSkin={pieceSkin}
+        playerAvatarLabel={isBotSeat ? "AI" : isHumanSeat ? "YOU" : "G2"}
+        playerLabel={isBotSeat ? undefined : guestName}
         placement={placement}
         selectedHandCode={color === state.turn ? selectedHandCode : null}
         supportsDrops={supportsDrops}

@@ -22,6 +22,8 @@ type BoardPlayerCardProps = {
   locale?: string;
   onHandPieceClick?: (code: string) => void;
   pieceSkin?: PieceSkinPreference;
+  playerAvatarLabel?: string;
+  playerLabel?: string;
   placement: "top" | "bottom";
   selectedHandCode?: string | null;
   supportsDrops?: boolean;
@@ -48,6 +50,8 @@ export function BoardPlayerCard({
   locale = "en",
   onHandPieceClick,
   pieceSkin = "default",
+  playerAvatarLabel,
+  playerLabel,
   placement,
   selectedHandCode = null,
   supportsDrops = false,
@@ -70,13 +74,15 @@ export function BoardPlayerCard({
   const handStatus = selectedHandLabel && canUseHand ? `${vocabulary.actions.drop} ${selectedHandLabel}` : String(handTotal);
   const handTitle = selectedHandLabel && canUseHand ? `${vocabulary.actions.drop} ${selectedHandLabel} to a highlighted square.` : `${handLabel}: ${handTotal} ${handTotal === 1 ? "piece" : "pieces"} available.`;
   const showHandTray = supportsDrops || handEntries.length > 0;
+  const displayName = isBot ? `${botLevelLabel} bot` : playerLabel ?? (isHuman ? "Guest player" : `${colorLabel(color)} player`);
+  const avatarLabel = playerAvatarLabel ?? (isBot ? "AI" : isHuman ? "YOU" : colorLabel(color).slice(0, 2));
 
   return (
     <div className={`board-player-card board-player-card-${placement} ${isActive ? "is-active" : ""}`} aria-label={`${colorLabel(color)} player card`}>
-      <div className="player-avatar" aria-hidden="true">{isBot ? "AI" : isHuman ? "You" : colorLabel(color).slice(0, 2)}</div>
+      <div className="player-avatar" aria-hidden="true">{avatarLabel}</div>
       <div className="player-card-main">
         <div className="player-card-row">
-          <strong>{isHuman ? "Your profile" : isBot ? `${botLevelLabel} bot` : `${colorLabel(color)} player`}</strong>
+          <strong>{displayName}</strong>
           <span aria-label={`${colorLabel(color)} clock`}>{clock ? formatClock(clock.remainingMs, { untimed: timeControl === "freestyle" }) : "--:--"}</span>
         </div>
         <p>{isBot ? `${botStrengthDisplay}${thinking ? " - thinking" : ""}` : `${colorLabel(color)} side`}</p>
@@ -128,7 +134,7 @@ export function BoardPlayerCard({
           {visibleCaptures.length ? (
             <>
               {visibleCaptures.map((piece, index) => (
-                <span key={`${piece.id}-${index}`} className="captured-piece" data-capture-index={index} style={{ zIndex: index + 1 }} title={`Captured ${getPieceDisplayName(piece.code, variantKey, locale, piece.promoted)}`}>
+                <span key={`${piece.id}-${index}`} className="captured-piece" data-capture-index={index} data-captured-owner={piece.owner} style={{ zIndex: index + 1 }} title={`Captured ${getPieceDisplayName(piece.code, variantKey, locale, piece.promoted)}`}>
                   <PieceIcon code={piece.code} owner={piece.owner} pieceSkin={pieceSkin} variantKey={variantKey} locale={locale} promoted={piece.promoted} />
                 </span>
               ))}
