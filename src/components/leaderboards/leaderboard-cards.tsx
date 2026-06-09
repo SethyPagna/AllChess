@@ -32,7 +32,7 @@ export function EmptyLeaderboardScopes({ scopes }: EmptyLeaderboardScopesProps) 
   return (
     <div className="leaderboard-feature-grid">
       {scopes.map((scope) => (
-        <article key={scope.id} className="panel leaderboard-card">
+        <article key={scope.id} className="panel leaderboard-card" role="group" aria-label={`${scope.label}. No rated results yet.`}>
           <Trophy size={24} />
           <h2>{scope.label}</h2>
           <p>No rated results yet.</p>
@@ -46,7 +46,7 @@ export function PopulatedLeaderboards({ leaderboards }: PopulatedLeaderboardsPro
   return (
     <div className="leaderboard-feature-grid">
       {leaderboards.slice(0, 4).map((leaderboard) => (
-        <article key={leaderboard.id} className="panel leaderboard-card">
+        <article key={leaderboard.id} className="panel leaderboard-card" role="group" aria-label={`${leaderboard.id.replace(/-/g, " ")} leaderboard with ${leaderboard.entries.length} rated entries.`}>
           <Trophy size={24} />
           <h2>{leaderboard.id.replace(/-/g, " ")}</h2>
           <ol className="leaderboard-entry-list">

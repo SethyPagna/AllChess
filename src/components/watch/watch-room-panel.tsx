@@ -35,7 +35,12 @@ export function WatchRoomPanel({ hasRooms, locale, requestedVariant, roomList }:
           <p>Public rooms from Cloudflare D1. Search by room, game, status, or rated state.</p>
           <div className="watch-room-list" aria-label="Public rooms">
             {roomList.rooms.map((room) => (
-              <Link key={room.roomId} href={`/${locale}/play/${room.variantKey}?mode=spectate&room=${encodeURIComponent(room.roomId)}`} className="focus-ring watch-room-card">
+              <Link
+                key={room.roomId}
+                href={`/${locale}/play/${room.variantKey}?mode=spectate&room=${encodeURIComponent(room.roomId)}`}
+                className="focus-ring watch-room-card"
+                aria-label={`Spectate ${room.variantKey} room ${room.roomId}. ${room.status}, ${room.rated ? "rated" : "casual"}, ${room.moveVersion} plies, ${room.spectators} watching.`}
+              >
                 <span>
                   <strong>{room.variantKey}</strong>
                   <small>{room.status} / {room.rated ? "rated" : "casual"}</small>
