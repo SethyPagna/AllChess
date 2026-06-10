@@ -612,6 +612,12 @@ test("right-click planning arrows persist until normal play interaction", async 
   await rightDragSquare(page, board, "g1", "f3");
   await rightDragSquare(page, board, "b1", "c3");
   await expect(board.locator(".board-planning-layer line")).toHaveCount(3);
+  await page.mouse.click(12, 12);
+  await expect(board.locator(".board-planning-layer line")).toHaveCount(0);
+
+  await rightDragSquare(page, board, "g1", "f3");
+  await rightDragSquare(page, board, "b1", "c3");
+  await expect(board.locator(".board-planning-layer line")).toHaveCount(2);
   await board.locator('[data-coordinate="e2"]').click();
   await expect(board.locator(".board-planning-layer line")).toHaveCount(0);
   expect(runtimeErrors).toEqual([]);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, type CSSProperties, type DragEvent, type PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type DragEvent, type PointerEvent } from "react";
 
 import { PieceIcon, getPieceDisplayName, type PieceSkinPreference } from "@/components/board/piece-icon";
 import { squareName } from "@/components/board/game-board-utils";
@@ -66,6 +66,31 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
   const [planningDraft, setPlanningDraft] = useState<PlanningDraft | null>(null);
   const planningDraftRef = useRef<PlanningDraft | null>(null);
   const squareCenters = useMemo(() => buildSquareCenters(orientedRows, cols, rows), [cols, orientedRows, rows]);
+
+  useEffect(() => {
+    function handleDocumentPointerDown(event: globalThis.PointerEvent) {
+      if (event.button === 2) return;
+      if (event.target instanceof Node && gridRef.current?.contains(event.target)) return;
+      clearPlanningLayer();
+    }
+
+    function handleDocumentKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") clearPlanningLayer();
+    }
+
+    document.addEventListener("pointerdown", handleDocumentPointerDown, true);
+    document.addEventListener("keydown", handleDocumentKeyDown, true);
+    return () => {
+      document.removeEventListener("pointerdown", handleDocumentPointerDown, true);
+      document.removeEventListener("keydown", handleDocumentKeyDown, true);
+    };
+  }, []);
+
+  function clearPlanningLayer() {
+    planningDraftRef.current = null;
+    setPlanningDraft(null);
+    setPlanningArrows([]);
+  }
 
   function flashInvalid(square: Square) {
     setInvalidDrop(square);
@@ -179,7 +204,7 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
           return;
         }
         if (event.button !== 0) return;
-        setPlanningArrows([]);
+        clearPlanningLayer();
         pointerDragMovedRef.current = false;
         const piece = pieceAt(square);
         if (piece) {
@@ -210,10 +235,9 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
       }}
       onPointerCancel={() => {
         pointerDragSquareRef.current = null;
-        planningDraftRef.current = null;
         setPointerDragSquare(null);
         setDragGhost(null);
-        setPlanningDraft(null);
+        clearPlanningLayer();
       }}
       onContextMenu={(event) => event.preventDefault()}
     >
