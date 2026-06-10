@@ -274,6 +274,7 @@ test("online setup disables bot controls and shows automatic ranked queue", asyn
   await expect(page.getByLabel("Online matchmaking status")).toContainText("Auto-matching opponent");
   await expect(page.getByLabel("Online matchmaking status")).toContainText("Rapid 10+0");
   await expect(page.getByLabel("Online matchmaking status")).toContainText("Ranked");
+  await expect(page.getByLabel("Online queue details")).toContainText("Ticket");
   await expect(page.getByRole("button", { name: "Bot Mode" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Apply move" })).toHaveCount(0);
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Suggest" })).toBeDisabled();

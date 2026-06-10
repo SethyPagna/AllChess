@@ -439,6 +439,7 @@ export function GameBoard({
   }, [displayState.board, isBoardFlipped]);
   const modeDetails = playModeOptions.find((option) => option.key === playMode) ?? playModeOptions[2];
   const chatRoomId = initialRoomId?.trim() || (matchmaking.status === "matched" ? matchmaking.roomId : "") || `${displayState.variantKey}-local`;
+  const onlineTicketLabel = matchmaking.status === "queued" ? `Ticket ${matchmaking.ticketId.slice(0, 8)}` : null;
   const statusHeading = playMode === "room" && gameStarted
     ? "Invite room ready"
     : isSearchingOnline
@@ -883,7 +884,6 @@ export function GameBoard({
     setReviewPly(null);
     setReviewPlaying(false);
     setMatchmaking({ status: "idle" });
-    setMatchmaking({ status: "idle" });
   }
 
   function changeTimeControl(nextControl: TimeControlKey) {
@@ -1241,6 +1241,7 @@ export function GameBoard({
                         <div className="online-queue-tags" aria-label="Online queue details">
                           <span>{getTimeControl(timeControl).label}</span>
                           <span>{timeControl === "rapid" ? "Ranked" : "Casual"}</span>
+                          {onlineTicketLabel ? <span>{onlineTicketLabel}</span> : null}
                           <span>{displayState.variantKey}</span>
                         </div>
                       ) : null}
