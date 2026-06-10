@@ -51,8 +51,8 @@ type BoardOrientation = "auto" | "first" | "second";
 const appearanceStoragePrefix = "allchess-appearance-set:";
 const guestIdentityStorageKey = "allchess-local-guest-identity";
 const defaultGuestIdentity: GuestIdentity = {
-  bottom: "Guest player",
-  top: "Guest opponent"
+  bottom: "Guest White",
+  top: "Guest Black"
 };
 
 type GuestIdentity = {

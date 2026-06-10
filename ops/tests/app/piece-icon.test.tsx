@@ -219,14 +219,15 @@ describe("PieceIcon", () => {
     expect(customGuestCard).toContain("<strong>Guest E129</strong>");
     expect(customGuestCard).toContain('class="player-avatar" aria-hidden="true">G1</div>');
     expect(customGuestCard).not.toContain("Your profile");
-    expect(fallbackGuestCard).toContain("<strong>Guest player</strong>");
+    expect(fallbackGuestCard).toContain("<strong>Guest White</strong>");
     expect(fallbackGuestCard).not.toContain("Your profile");
   });
 
   test("keeps captured material plain and black captures on a light backing", () => {
     const styles = readFileSync(join(repoRoot, "src", "styles", "globals.css"), "utf8");
 
-    expect(styles).toMatch(/\.captured-piece\[data-captured-owner="black"\][\s\S]*?background:\s*linear-gradient\(145deg,\s*#f8f0cf,\s*#cdbb86\);/);
+    expect(styles).toMatch(/\.captured-piece\[data-captured-owner="black"\][\s\S]*?background:\s*linear-gradient\(145deg,\s*#fff9da\s*0%,\s*#ead99e\s*56%,\s*#c3aa66\s*100%\);/);
+    expect(styles).toMatch(/\.captured-piece\[data-captured-owner="white"\][\s\S]*?background:\s*linear-gradient\(145deg,\s*#3c372d\s*0%,\s*#242019\s*54%,\s*#100f0d\s*100%\);/);
     expect(styles).toMatch(/\.captured-material\s*\{[\s\S]*?border:\s*0;[\s\S]*?background:\s*transparent;[\s\S]*?padding:\s*0;/);
   });
 

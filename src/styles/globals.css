@@ -1336,24 +1336,30 @@ option {
   height: 1.36rem;
   place-items: center;
   flex: 0 0 auto;
-  border: 1px solid rgb(255 255 255 / 54%);
+  border: 1px solid color-mix(in srgb, var(--border) 34%, #fff8dc);
   border-radius: 0.32rem;
-  background: linear-gradient(145deg, #f2ecd5, #c9b684);
+  background: linear-gradient(145deg, #fff8dc 0%, #e3d39e 58%, #bba166 100%);
   box-shadow:
-    inset 0 0 0 1px rgb(255 255 255 / 28%),
-    0 0.08rem 0.16rem rgb(0 0 0 / 30%);
+    inset 0 0 0 1px rgb(255 255 255 / 42%),
+    0 0.08rem 0.18rem rgb(0 0 0 / 26%);
 }
 
 .captured-piece[data-captured-owner="white"] {
-  border-color: rgb(255 255 255 / 18%);
-  background: linear-gradient(145deg, #3d3a33, #171613);
+  border-color: color-mix(in srgb, var(--border) 40%, #3b3325);
+  background: linear-gradient(145deg, #3c372d 0%, #242019 54%, #100f0d 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 12%),
+    0 0.08rem 0.18rem rgb(0 0 0 / 28%);
 }
 
 .captured-piece[data-captured-owner="black"],
 .captured-piece[data-captured-owner="blue"],
 .captured-piece[data-captured-owner="gote"] {
-  border-color: rgb(255 255 255 / 62%);
-  background: linear-gradient(145deg, #f8f0cf, #cdbb86);
+  border-color: color-mix(in srgb, var(--border) 24%, #fff3bf);
+  background: linear-gradient(145deg, #fff9da 0%, #ead99e 56%, #c3aa66 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 54%),
+    0 0.08rem 0.18rem rgb(0 0 0 / 26%);
 }
 
 .captured-piece + .captured-piece {
@@ -1367,6 +1373,13 @@ option {
   height: 1.28rem;
   font-size: 1.08rem;
   stroke-width: 5px;
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 28%));
+}
+
+.captured-piece[data-captured-owner="white"] .piece-symbol,
+.captured-piece[data-captured-owner="white"] .piece-svg,
+.captured-piece[data-captured-owner="white"] .native-piece-symbol {
+  filter: drop-shadow(0 1px 0 rgb(0 0 0 / 34%));
 }
 
 .captured-material {

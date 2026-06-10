@@ -74,7 +74,7 @@ export function BoardPlayerCard({
   const handStatus = selectedHandLabel && canUseHand ? `${vocabulary.actions.drop} ${selectedHandLabel}` : String(handTotal);
   const handTitle = selectedHandLabel && canUseHand ? `${vocabulary.actions.drop} ${selectedHandLabel} to a highlighted square.` : `${handLabel}: ${handTotal} ${handTotal === 1 ? "piece" : "pieces"} available.`;
   const showHandTray = supportsDrops || handEntries.length > 0;
-  const displayName = isBot ? `${botLevelLabel} bot` : playerLabel ?? (isHuman ? "Guest player" : `${colorLabel(color)} player`);
+  const displayName = isBot ? `${botLevelLabel} bot` : playerLabel ?? `Guest ${colorLabel(color)}`;
   const avatarLabel = playerAvatarLabel ?? (isBot ? "AI" : isHuman ? "YOU" : colorLabel(color).slice(0, 2));
 
   return (
