@@ -53,7 +53,6 @@ export function PlayMatchHeader({
   const shareRef = useRef<HTMLDivElement>(null);
   const roomHref = playGameHref(locale, currentVariantKey, { mode: "room", time: timeControl, room: roomId });
   const spectateHref = playGameHref(locale, currentVariantKey, { mode: "spectate", time: timeControl, room: roomId });
-  const watchHref = `/${locale}/watch?q=${encodeURIComponent(roomId)}&variant=${encodeURIComponent(currentVariantKey)}`;
   const targetMode = modeFilter === "current" ? playMode : modeFilter;
   const playableGames = useMemo(() => gameCatalog.filter((entry) => entry.variantKey), []);
   const filteredGames = useMemo(() => {
@@ -222,27 +221,20 @@ export function PlayMatchHeader({
                   <ShareOptionRow
                     href={roomHref}
                     icon={<LinkIcon size={15} />}
-                    label="Play link"
-                    note="Opponent joins"
-                    onCopy={() => void copyShare(roomHref, "Play link")}
+                    label="Invite link"
+                    note="Player joins"
+                    onCopy={() => void copyShare(roomHref, "Invite link")}
                   />
                   <ShareOptionRow
                     href={spectateHref}
                     icon={<Eye size={15} />}
-                    label="Spectate link"
+                    label="Spectator link"
                     note="View only"
-                    onCopy={() => void copyShare(spectateHref, "Spectate link")}
+                    onCopy={() => void copyShare(spectateHref, "Spectator link")}
                     onOpen={() => {
                       onSelectWatch();
                       setShareOpen(false);
                     }}
-                  />
-                  <ShareOptionRow
-                    href={watchHref}
-                    icon={<Search size={15} />}
-                    label="Find room"
-                    note="Watch list"
-                    onCopy={() => void copyShare(watchHref, "Watch search")}
                   />
                   {shareNotice ? <p role="status">{shareNotice}</p> : null}
                 </div>

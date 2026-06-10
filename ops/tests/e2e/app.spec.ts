@@ -90,12 +90,11 @@ test("localized game hub can open variants and a playable board", async ({ page 
   const shareDialog = page.getByRole("dialog", { name: "Share game options" });
   await expect(shareDialog).toContainText("Room code");
   await expect(shareDialog.getByRole("button", { name: "Copy room code" })).toBeVisible();
-  await expect(shareDialog.getByRole("link", { name: /Play link/ })).toHaveAttribute("href", /mode=room/);
-  await expect(shareDialog.getByRole("button", { name: "Copy play link" })).toBeVisible();
-  await expect(shareDialog.getByRole("link", { name: /Spectate link/ })).toHaveAttribute("href", /mode=spectate/);
-  await expect(shareDialog.getByRole("button", { name: "Copy spectate link" })).toBeVisible();
-  await expect(shareDialog.getByRole("link", { name: /Find room/ })).toHaveAttribute("href", /\/watch\?/);
-  await expect(shareDialog.getByRole("button", { name: "Copy find room" })).toBeVisible();
+  await expect(shareDialog.getByRole("link", { name: /Invite link/ })).toHaveAttribute("href", /mode=room/);
+  await expect(shareDialog.getByRole("button", { name: "Copy invite link" })).toBeVisible();
+  await expect(shareDialog.getByRole("link", { name: /Spectator link/ })).toHaveAttribute("href", /mode=spectate/);
+  await expect(shareDialog.getByRole("button", { name: "Copy spectator link" })).toBeVisible();
+  await expect(shareDialog.getByRole("link", { name: /Find room/ })).toHaveCount(0);
   await page.getByRole("button", { name: /Room setup/ }).click();
   await expect(page.getByLabel("Play modes").getByRole("button", { name: "Create Room" })).toHaveClass(/is-selected/);
   await expect(page.getByLabel("Bot difficulty")).toHaveCount(0);
