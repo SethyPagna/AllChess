@@ -280,6 +280,10 @@ test("online setup disables bot controls and shows automatic ranked queue", asyn
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Suggest" })).toBeDisabled();
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();
+  await page.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByLabel("Online queue details")).toHaveCount(0);
+  await expect(page.getByLabel("Play modes").getByRole("button", { name: "Play Online" })).toHaveClass(/is-selected/);
+  await expect(page.getByRole("button", { name: "Start Game" })).toBeVisible();
   expect(runtimeErrors).toEqual([]);
 });
 

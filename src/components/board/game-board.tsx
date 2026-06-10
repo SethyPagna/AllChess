@@ -943,6 +943,26 @@ export function GameBoard({
     );
   }
 
+  async function cancelOnlineSearch() {
+    const ticketId = matchmaking.status === "queued" ? matchmaking.ticketId : null;
+    try {
+      if (ticketId) {
+        await fetch("/api/matchmaking/leave", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ ticketId })
+        });
+      }
+      setMatchmaking({ status: "idle" });
+      setGameStarted(false);
+      setState((current) => ({ ...current, status: "waiting" }));
+      setPanelTab("setup");
+      setNotice("Online search cancelled. Start again when ready.");
+    } catch {
+      setNotice("Could not cancel the online search. Check the network and try again.");
+    }
+  }
+
   function selectPlayMode(nextMode: PlayMode) {
     if (!modeSupport[nextMode].enabled) {
       setNotice(modeSupport[nextMode].reason);
@@ -1246,6 +1266,12 @@ export function GameBoard({
                         </div>
                       ) : null}
                     </div>
+                    {playMode === "online" && matchmaking.status === "queued" ? (
+                      <button type="button" className="focus-ring online-search-cancel" onClick={() => void cancelOnlineSearch()}>
+                        <X size={14} />
+                        <span>Cancel</span>
+                      </button>
+                    ) : null}
                   </div>
                 ) : isBotMode ? (
                   <>
