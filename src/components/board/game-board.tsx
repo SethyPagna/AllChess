@@ -446,7 +446,7 @@ export function GameBoard({
     ? "Searching for opponent"
     : isWatchingMode
       ? "Watching rooms"
-      : "Live position";
+      : "Current position";
   const botSearchDetail = lastBotResult
     ? `Bot: ${lastBotResult.knowledgeSource ?? lastBotResult.engine} ${lastBotResult.depthReached}/${lastBotResult.nodesSearched}.`
     : isBotMode
@@ -1006,7 +1006,7 @@ export function GameBoard({
     setReviewPly(null);
     setReviewPlaying(false);
     setSelectedHandCode(null);
-    setNotice("Back to live board.");
+    setNotice("Back to current board.");
   }
 
   function setReviewCursor(nextPly: number) {
@@ -1311,7 +1311,7 @@ export function GameBoard({
           {panelTab === "status" ? (
             <div className="play-review-card play-review-compact">
               <div className="review-engine-row">
-                <span className="inline-flex items-center gap-2">
+                <span className="review-title">
                   <Brain size={16} className="text-[var(--accent)]" />
                   Moves
                 </span>
@@ -1393,7 +1393,7 @@ export function GameBoard({
                 </button>
                 {isReviewing ? (
                   <button type="button" onClick={jumpToLive} className="focus-ring action-secondary">
-                    Back to live
+                    Back to current
                   </button>
                 ) : null}
               </div>

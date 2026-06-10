@@ -35,7 +35,9 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await expect(controls.getByLabel("Utility controls")).toHaveCount(0);
   await expect(controls.getByRole("button", { name: "Bot Mode" })).toBeDisabled();
   await expect(page.getByLabel("Local play status")).toContainText("Offline Local");
-  await expect(page.locator(".review-position-card")).toContainText("Live position");
+  await expect(page.locator(".review-position-card")).toContainText("Current position");
+  await expect(page.getByLabel("Move review summary")).toBeVisible();
+  await expect(page.locator(".review-engine-row")).not.toContainText("Live");
   await expect(page.locator(".review-move-list")).toHaveCSS("overflow-y", "auto");
   await expect(page.locator(".review-move-list")).not.toContainText("Info");
   await expect(page.locator(".review-move-side").first()).toBeVisible();

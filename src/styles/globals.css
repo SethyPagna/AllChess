@@ -4837,6 +4837,16 @@ option {
   font-weight: 800;
 }
 
+.review-title {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 0.42rem;
+  color: var(--foreground);
+  font-weight: 950;
+  white-space: nowrap;
+}
+
 .review-summary-pills {
   display: flex;
   min-width: 0;
