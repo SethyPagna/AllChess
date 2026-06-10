@@ -48,7 +48,7 @@ export function PlayPregameSetupCard({
 }: PlayPregameSetupCardProps) {
   const timeControlLabel = getTimeControl(timeControl).label;
   const secondaryModes = [
-    { key: "online" as const, label: "Play Online", Icon: Flag },
+    { key: "online" as const, label: "Quick Match", Icon: Flag },
     { key: "room" as const, label: "Play a Friend", Icon: Users },
     { key: "spectate" as const, label: "Watch Games", Icon: Eye },
     { key: "offline" as const, label: "Offline Local", Icon: MonitorSmartphone }

@@ -35,7 +35,7 @@ describe("compact page copy", () => {
     expect(markup).toContain("Classic Chess");
     expect(markup).toContain("Choose setup first");
     expect(markup).toContain('aria-label="Play modes"');
-    expect(markup).toContain("Play Online");
+    expect(markup).toContain("Quick Match");
     expect(markup).toContain("Bot Mode");
     expect(markup).not.toContain("Matchmaking");
     expect(markup).toContain("Blitz 5+0");

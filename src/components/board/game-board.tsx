@@ -976,8 +976,10 @@ export function GameBoard({
       setBotMode("human");
       setLastBotResult(null);
     }
-    if (nextMode === "online" || nextMode === "room") {
-      setNotice("Online play selected. Bot controls are disabled while player pairing or room setup is active.");
+    if (nextMode === "online") {
+      setNotice("Quick Match selected. Start Game will queue an automatic ranked search.");
+    } else if (nextMode === "room") {
+      setNotice("Room setup selected. Bot controls are disabled while waiting for a player.");
     } else if (nextMode === "spectate") {
       setNotice("Spectate mode selected. Bot controls are disabled while you watch rooms.");
     } else {

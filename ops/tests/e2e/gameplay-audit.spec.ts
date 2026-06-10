@@ -169,8 +169,8 @@ test("game picker exposes bot-capable preview variants without enabling live mod
   await expect(page).toHaveURL(/\/en\/play\/shogi\?bot=normal&mode=bot&time=rapid$/);
   await expect(page.getByRole("heading", { name: "Shogi" })).toBeVisible();
   await expect(page.getByLabel("Bot difficulty")).toBeEnabled();
-  await expect(page.getByRole("button", { name: "Play Online" })).toBeEnabled();
-  await expect(page.getByRole("button", { name: "Play Online" })).toHaveAttribute("title", /Available for live and room setup/i);
+  await expect(page.getByRole("button", { name: "Quick Match" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Quick Match" })).toHaveAttribute("title", /Available for live and room setup/i);
   expect(runtimeErrors).toEqual([]);
 });
 
@@ -274,7 +274,8 @@ test("online setup disables bot controls and shows automatic ranked queue", asyn
   });
 
   await page.goto("/en/play/classic");
-  await page.getByRole("button", { name: "Play Online" }).click();
+  await page.getByRole("button", { name: "Quick Match" }).click();
+  await expect(page.getByLabel("Play modes").getByRole("button", { name: "Quick Match" })).toHaveClass(/is-selected/);
   await expect(page.getByLabel("Bot difficulty")).toHaveCount(0);
   await page.getByRole("button", { name: "Start Game" }).click();
 
@@ -290,7 +291,7 @@ test("online setup disables bot controls and shows automatic ranked queue", asyn
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();
   await page.getByRole("button", { name: "Cancel" }).click();
   await expect(page.getByLabel("Online queue details")).toHaveCount(0);
-  await expect(page.getByLabel("Play modes").getByRole("button", { name: "Play Online" })).toHaveClass(/is-selected/);
+  await expect(page.getByLabel("Play modes").getByRole("button", { name: "Quick Match" })).toHaveClass(/is-selected/);
   await expect(page.getByRole("button", { name: "Start Game" })).toBeVisible();
   expect(runtimeErrors).toEqual([]);
 });
