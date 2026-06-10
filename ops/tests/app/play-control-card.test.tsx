@@ -43,6 +43,8 @@ describe("PlayControlCard", () => {
     );
 
     expect(markup).toContain("Look");
+    expect(markup).toContain("Setup");
+    expect(markup).not.toContain("Live");
     expect(markup).toContain("Appearance set");
     expect(markup).toContain("<select");
     expect(markup).toContain('value="tablet"');

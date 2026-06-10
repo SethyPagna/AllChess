@@ -76,7 +76,7 @@ export function PlayControlCard({
       <div className="play-control-heading">
         <SlidersHorizontal size={17} />
         <strong>Board controls</strong>
-        <span>{gameStarted ? "Live" : "Start first"}</span>
+        <span>{gameStarted ? "Ready" : "Setup"}</span>
       </div>
       <div className="play-control-groups" aria-label="Board command groups">
         <section className="play-control-section" aria-label="Assist controls">
@@ -165,7 +165,7 @@ export function PlayControlCard({
         <section className="play-control-section" aria-label="Match controls">
           <div className="play-control-group-label">
             <span>Match</span>
-            <small>{canUseBots ? botLevelLabel : canEndGame ? "Live" : "Start"}</small>
+            <small>{canUseBots ? botLevelLabel : canEndGame ? "Active" : "Setup"}</small>
           </div>
           <div className="play-control-group play-control-group-match">
             <button type="button" aria-label="Bot Mode" title={canUseBots ? "Toggle bot opponent. You move your selected side; the bot replies for the other side." : "Bot opponent is only available in Bot Mode during an active local game."} onClick={onToggleBot} disabled={!canUseBots} className={`focus-ring action-secondary play-control-button ${botMode === "opponent" ? "is-selected" : ""}`}>

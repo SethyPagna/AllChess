@@ -27,6 +27,8 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await expect(page.getByRole("heading", { name: "Game Tools" })).toHaveCount(0);
   await expect(page.getByText("Review hook")).toHaveCount(0);
   const controls = page.getByLabel("Board controls");
+  await expect(controls.locator(".play-control-heading")).toContainText("Ready");
+  await expect(controls).not.toContainText("Live");
   await expect(controls.getByLabel("Assist controls")).toContainText("Suggest");
   await expect(controls.getByRole("button", { name: "Apply move" })).toHaveCount(0);
   await expect(controls.getByLabel("Assist controls").getByRole("button")).toHaveCount(7);
