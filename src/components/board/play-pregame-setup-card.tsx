@@ -54,7 +54,6 @@ export function PlayPregameSetupCard({
     { key: "offline" as const, label: "Offline Local", Icon: MonitorSmartphone }
   ];
   const modeAccessibleNames: Partial<Record<PlayMode, string>> = {
-    room: "Create Room",
     spectate: "Spectate"
   };
   const startActionLabel = startLabelForMode(playMode);

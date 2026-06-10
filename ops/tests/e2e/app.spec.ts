@@ -96,7 +96,8 @@ test("localized game hub can open variants and a playable board", async ({ page 
   await expect(shareDialog.getByRole("button", { name: "Copy spectator link" })).toBeVisible();
   await expect(shareDialog.getByRole("link", { name: /Find room/ })).toHaveCount(0);
   await page.getByRole("button", { name: /Room setup/ }).click();
-  await expect(page.getByLabel("Play modes").getByRole("button", { name: "Create Room" })).toHaveClass(/is-selected/);
+  await expect(page.getByLabel("Play modes").getByRole("button", { name: "Play a Friend" })).toHaveClass(/is-selected/);
+  await expect(page.getByRole("button", { name: "Create Room" })).toBeVisible();
   await expect(page.getByLabel("Bot difficulty")).toHaveCount(0);
   await page.getByLabel("Play modes").getByRole("button", { name: "Spectate" }).click();
   await expect(page.getByLabel("Play modes").getByRole("button", { name: "Spectate" })).toHaveClass(/is-selected/);
