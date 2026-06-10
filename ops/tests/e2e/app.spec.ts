@@ -87,8 +87,15 @@ test("localized game hub can open variants and a playable board", async ({ page 
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();
   await page.locator(".play-title-actions").getByRole("button", { name: "Share game" }).click();
-  await expect(page.getByRole("dialog", { name: "Share game options" })).toContainText("Room code");
-  await expect(page.getByRole("link", { name: /Spectate link/ })).toHaveAttribute("href", /mode=spectate/);
+  const shareDialog = page.getByRole("dialog", { name: "Share game options" });
+  await expect(shareDialog).toContainText("Room code");
+  await expect(shareDialog.getByRole("button", { name: "Copy room code" })).toBeVisible();
+  await expect(shareDialog.getByRole("link", { name: /Play link/ })).toHaveAttribute("href", /mode=room/);
+  await expect(shareDialog.getByRole("button", { name: "Copy play link" })).toBeVisible();
+  await expect(shareDialog.getByRole("link", { name: /Spectate link/ })).toHaveAttribute("href", /mode=spectate/);
+  await expect(shareDialog.getByRole("button", { name: "Copy spectate link" })).toBeVisible();
+  await expect(shareDialog.getByRole("link", { name: /Find room/ })).toHaveAttribute("href", /\/watch\?/);
+  await expect(shareDialog.getByRole("button", { name: "Copy find room" })).toBeVisible();
   await page.getByRole("button", { name: /Room setup/ }).click();
   await expect(page.getByLabel("Play modes").getByRole("button", { name: "Create Room" })).toHaveClass(/is-selected/);
   await expect(page.getByLabel("Bot difficulty")).toHaveCount(0);
@@ -217,7 +224,7 @@ test("games and rules shows compact bot training status", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Games & rules" })).toBeVisible();
   await expect(page.getByLabel("Bot training status")).toContainText("Book & tactics");
   await expect(page.getByLabel("Bot training status")).toContainText("tactics");
-  await expect(page.getByLabel("Bot training status")).toContainText("3900-4000 Elo-style");
+  await expect(page.getByLabel("Bot training status")).toContainText("3900-4000 Elo");
   await expect(page.getByLabel("Bot training status")).toContainText("ready / 0 gated");
   await expect(page.getByRole("link", { name: "Play" }).first()).toBeVisible();
   await expect(page.locator(".catalog-status").filter({ hasText: "Ready to play" }).first()).toBeVisible();
@@ -261,7 +268,7 @@ test("watch rooms and catalog filters land on honest real-data views", async ({ 
   await page.goto("/en/leaderboards?scope=family:asian-chess");
   await expect(page.getByRole("heading", { name: "Leaderboards" })).toBeVisible();
   await expect(page.getByLabel("Leaderboard scope")).toBeEnabled();
-  await expect(page.getByLabel("Leaderboard scope").getByRole("button", { name: "Asian chess" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByLabel("Leaderboard scope")).toHaveValue("family:asian-chess");
   await expectHorizontallyWithinViewport(page, page.getByRole("main").getByRole("link", { name: "Play rated" }));
   await expectHorizontallyWithinViewport(page, page.getByRole("main").getByRole("link", { name: "Back to lobby" }));
   await expectNoHorizontalOverflow(page);

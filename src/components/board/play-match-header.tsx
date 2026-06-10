@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { BookOpen, ChevronDown, Copy, Eye, LinkIcon, Search, Share2, Users } from "lucide-react";
 
 import {
@@ -219,32 +219,31 @@ export function PlayMatchHeader({
                     <span>Room setup</span>
                     <small>Create invite</small>
                   </button>
-                  <Link href={roomHref as never} className="focus-ring play-share-option">
-                    <LinkIcon size={15} />
-                    <span>Play link</span>
-                    <small>Opponent joins</small>
-                  </Link>
-                  <Link
-                    href={spectateHref as never}
-                    className="focus-ring play-share-option"
-                    onClick={() => {
+                  <ShareOptionRow
+                    href={roomHref}
+                    icon={<LinkIcon size={15} />}
+                    label="Play link"
+                    note="Opponent joins"
+                    onCopy={() => void copyShare(roomHref, "Play link")}
+                  />
+                  <ShareOptionRow
+                    href={spectateHref}
+                    icon={<Eye size={15} />}
+                    label="Spectate link"
+                    note="View only"
+                    onCopy={() => void copyShare(spectateHref, "Spectate link")}
+                    onOpen={() => {
                       onSelectWatch();
                       setShareOpen(false);
                     }}
-                  >
-                    <Eye size={15} />
-                    <span>Spectate link</span>
-                    <small>View only</small>
-                  </Link>
-                  <Link href={watchHref as never} className="focus-ring play-share-option">
-                    <Search size={15} />
-                    <span>Find room</span>
-                    <small>Watch list</small>
-                  </Link>
-                  <button type="button" className="focus-ring play-share-copy-link" onClick={() => void copyShare(spectateHref, "Spectate link")}>
-                    <Copy size={14} />
-                    Copy spectator link
-                  </button>
+                  />
+                  <ShareOptionRow
+                    href={watchHref}
+                    icon={<Search size={15} />}
+                    label="Find room"
+                    note="Watch list"
+                    onCopy={() => void copyShare(watchHref, "Watch search")}
+                  />
                   {shareNotice ? <p role="status">{shareNotice}</p> : null}
                 </div>
               ) : null}
@@ -252,6 +251,30 @@ export function PlayMatchHeader({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+type ShareOptionRowProps = {
+  href: string;
+  icon: ReactNode;
+  label: string;
+  note: string;
+  onCopy: () => void;
+  onOpen?: () => void;
+};
+
+function ShareOptionRow({ href, icon, label, note, onCopy, onOpen }: ShareOptionRowProps) {
+  return (
+    <div className="play-share-option-row">
+      <Link href={href as never} className="focus-ring play-share-option" onClick={onOpen}>
+        {icon}
+        <span>{label}</span>
+        <small>{note}</small>
+      </Link>
+      <button type="button" className="focus-ring play-share-copy-button" onClick={onCopy} aria-label={`Copy ${label.toLowerCase()}`}>
+        <Copy size={14} />
+      </button>
     </div>
   );
 }

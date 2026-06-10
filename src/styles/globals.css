@@ -2809,7 +2809,7 @@ option {
 
 .play-share-code,
 .play-share-option,
-.play-share-copy-link {
+.play-share-copy-button {
   display: grid;
   min-width: 0;
   align-items: center;
@@ -2854,30 +2854,38 @@ option {
   padding: 0.2rem;
 }
 
+.play-share-option-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2.35rem;
+  gap: 0.35rem;
+}
+
 .play-share-option {
   grid-template-columns: auto minmax(0, 1fr) auto;
   text-decoration: none;
 }
 
 .play-share-option svg,
-.play-share-copy-link svg {
+.play-share-copy-button svg {
   color: var(--accent);
 }
 
 .play-share-option span,
-.play-share-copy-link {
+.play-share-copy-button {
   font-size: 0.78rem;
   font-weight: 950;
 }
 
 .play-share-option:hover,
-.play-share-copy-link:hover {
+.play-share-copy-button:hover {
   border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
   background: color-mix(in srgb, var(--accent) 10%, var(--surface));
 }
 
-.play-share-copy-link {
-  grid-template-columns: auto minmax(0, 1fr);
+.play-share-copy-button {
+  justify-content: center;
+  min-height: 2.45rem;
+  padding: 0;
 }
 
 .play-share-menu-panel p {
