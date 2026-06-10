@@ -5,6 +5,7 @@ import { BoardGrid } from "@/components/board/board-grid";
 import type { BoardCell, Square } from "@/lib/variants";
 
 type RenderGridOptions = {
+  files?: string[];
   legalTargetMode?: "move" | "drop";
   legalTargets?: ReadonlySet<string>;
   locale?: string;
@@ -17,7 +18,7 @@ function renderGrid(orientedRows: BoardCell[][], options: RenderGridOptions = {}
   return renderToStaticMarkup(
     <BoardGrid
       cols={orientedRows[0]?.length ?? 0}
-      files={["a", "b"]}
+      files={options.files ?? ["a", "b"]}
       legalTargets={options.legalTargets ?? new Set()}
       legalTargetMode={options.legalTargetMode}
       locale={options.locale ?? "en"}
@@ -52,6 +53,27 @@ describe("BoardGrid", () => {
     expect(markup).toContain('class="board-coordinate board-file"');
     expect(markup).toContain('aria-label="b1"');
     expect(markup).not.toContain('data-piece-label=""');
+  });
+
+  test("renders file coordinate labels in lowercase without changing square metadata", () => {
+    const markup = renderGrid(
+      [
+        [
+          { square: { row: 0, col: 0 }, piece: null },
+          { square: { row: 0, col: 1 }, piece: null }
+        ],
+        [
+          { square: { row: 1, col: 0 }, piece: null },
+          { square: { row: 1, col: 1 }, piece: null }
+        ]
+      ],
+      { files: ["A", "B"] }
+    );
+
+    expect(markup).toContain('data-coordinate="A1"');
+    expect(markup).toContain('class="board-coordinate board-file">a</span>');
+    expect(markup).toContain('class="board-coordinate board-file">b</span>');
+    expect(markup).not.toContain('class="board-coordinate board-file">A</span>');
   });
 
   test("keeps localized variant piece names on square metadata", () => {

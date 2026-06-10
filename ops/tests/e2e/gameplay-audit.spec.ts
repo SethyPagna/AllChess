@@ -531,6 +531,24 @@ test("right-click planning arrows persist until normal play interaction", async 
     return styles;
   });
   expect(previewChrome).toEqual({ backgroundColor: "rgba(0, 0, 0, 0)", borderTopWidth: "0px", boxShadow: "none" });
+  const draggingPieceOpacity = await page.evaluate(() => {
+    const square = document.createElement("span");
+    square.className = "board-square";
+    square.dataset.dragging = "true";
+    const piece = document.createElement("span");
+    piece.className = "piece-icon";
+    square.appendChild(piece);
+    document.body.appendChild(square);
+    const computed = getComputedStyle(piece);
+    const styles = {
+      opacity: computed.opacity,
+      transform: computed.transform
+    };
+    square.remove();
+    return styles;
+  });
+  expect(draggingPieceOpacity.opacity).toBe("0");
+  expect(draggingPieceOpacity.transform).not.toBe("none");
   await page.getByRole("button", { name: "Start Game" }).click();
   await expect(page.getByText("Choose setup first")).toHaveCount(0);
 

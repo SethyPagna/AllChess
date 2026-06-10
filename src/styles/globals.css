@@ -2151,6 +2151,9 @@ option {
 .board-drag-ghost .piece-icon {
   width: 100%;
   height: 100%;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   font-size: calc(var(--drag-piece-size, calc(var(--board-fixed-size) / var(--board-cols))) * 0.95);
 }
 
@@ -2159,7 +2162,7 @@ option {
 }
 
 .board-square[data-dragging="true"] .piece-icon {
-  opacity: 0.24;
+  opacity: 0;
   transform: scale(0.9);
   transition: opacity 150ms ease, transform 150ms ease;
 }

@@ -239,6 +239,7 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
           const dark = (cell.square.row + cell.square.col) % 2 === 1;
           const isDarkPiece = cell.piece?.owner === "black" || cell.piece?.owner === "blue" || cell.piece?.owner === "gote";
           const name = squareName(cell.square, files, rows);
+          const fileLabel = String(files[cell.square.col] ?? cell.square.col).toLowerCase();
           const label = cell.piece ? getPieceDisplayName(cell.piece.code, variantKey, locale, cell.piece.promoted) : null;
           const terrainLabel = labelTerrain(cell.terrain, terrainLabels);
           const squareState = isInvalidDrop
@@ -315,7 +316,7 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
             >
               {cell.piece ? <PieceIcon code={cell.piece.code} owner={cell.piece.owner} pieceSkin={pieceSkin} variantKey={variantKey} locale={locale} promoted={cell.piece.promoted} /> : null}
               {visualCol === 0 ? <span className="board-coordinate board-rank">{rows - cell.square.row}</span> : null}
-              {visualRow === rows - 1 ? <span className="board-coordinate board-file">{files[cell.square.col]}</span> : null}
+              {visualRow === rows - 1 ? <span className="board-coordinate board-file">{fileLabel}</span> : null}
             </button>
           );
         })
