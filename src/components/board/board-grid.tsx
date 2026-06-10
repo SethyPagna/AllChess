@@ -349,8 +349,16 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
               }}
             >
               {cell.piece ? <PieceIcon code={cell.piece.code} owner={cell.piece.owner} pieceSkin={pieceSkin} variantKey={variantKey} locale={locale} promoted={cell.piece.promoted} /> : null}
-              {visualCol === 0 ? <span className="board-coordinate board-rank">{rows - cell.square.row}</span> : null}
-              {visualRow === rows - 1 ? <span className="board-coordinate board-file">{fileLabel}</span> : null}
+              {visualCol === 0 ? (
+                <span className="board-coordinate board-rank" data-coordinate-kind="rank" data-coordinate-label={rows - cell.square.row}>
+                  {rows - cell.square.row}
+                </span>
+              ) : null}
+              {visualRow === rows - 1 ? (
+                <span className="board-coordinate board-file" data-coordinate-kind="file" data-coordinate-label={fileLabel}>
+                  {fileLabel}
+                </span>
+              ) : null}
             </button>
           );
         })
