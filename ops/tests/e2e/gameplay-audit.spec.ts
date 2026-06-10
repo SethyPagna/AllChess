@@ -559,12 +559,22 @@ test("right-click planning arrows persist until normal play interaction", async 
 
   const e2Box = await board.locator('[data-coordinate="e2"]').boundingBox();
   const e3Box = await board.locator('[data-coordinate="e3"]').boundingBox();
+  const e2PieceBox = await board.locator('[data-coordinate="e2"] .piece-icon').boundingBox();
   expect(e2Box).not.toBeNull();
   expect(e3Box).not.toBeNull();
-  if (e2Box && e3Box) {
-    await page.mouse.move(e2Box.x + e2Box.width / 2, e2Box.y + e2Box.height / 2);
+  expect(e2PieceBox).not.toBeNull();
+  if (e2Box && e3Box && e2PieceBox) {
+    const dragStart = {
+      x: e2Box.x + e2Box.width * 0.32,
+      y: e2Box.y + e2Box.height * 0.68
+    };
+    const dragEnd = {
+      x: e3Box.x + e3Box.width * 0.62,
+      y: e3Box.y + e3Box.height * 0.4
+    };
+    await page.mouse.move(dragStart.x, dragStart.y);
     await page.mouse.down();
-    await page.mouse.move(e3Box.x + e3Box.width / 2, e3Box.y + e3Box.height / 2, { steps: 4 });
+    await page.mouse.move(dragEnd.x, dragEnd.y, { steps: 4 });
     await expect(page.locator(".board-drag-ghost")).toHaveCount(1);
     const ghost = await page.locator(".board-drag-ghost").evaluate((element) => {
       const computed = getComputedStyle(element);
@@ -573,13 +583,21 @@ test("right-click planning arrows persist until normal play interaction", async 
         backgroundColor: computed.backgroundColor,
         borderTopWidth: computed.borderTopWidth,
         boxShadow: computed.boxShadow,
+        left: Number.parseFloat(computed.left),
         pieceCode: piece?.dataset.code,
-        width: Math.round(element.getBoundingClientRect().width)
+        top: Number.parseFloat(computed.top),
+        width: Number.parseFloat(computed.width)
       };
     });
+    const expectedOffset = {
+      x: ((dragStart.x - e2PieceBox.x) / e2PieceBox.width) * ghost.width,
+      y: ((dragStart.y - e2PieceBox.y) / e2PieceBox.height) * ghost.width
+    };
     expect(ghost.backgroundColor).toBe("rgba(0, 0, 0, 0)");
     expect(ghost.borderTopWidth).toBe("0px");
     expect(ghost.boxShadow).toBe("none");
+    expect(Math.abs(dragEnd.x - ghost.left - expectedOffset.x)).toBeLessThanOrEqual(1.5);
+    expect(Math.abs(dragEnd.y - ghost.top - expectedOffset.y)).toBeLessThanOrEqual(1.5);
     expect(ghost.pieceCode).toBe("p");
     expect(ghost.width).toBeGreaterThan(28);
     await page.mouse.up();

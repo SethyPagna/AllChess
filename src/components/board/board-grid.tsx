@@ -18,8 +18,10 @@ type LegalTargetMode = "move" | "drop";
 type DragGhost = {
   piece: Piece;
   size: number;
-  x: number;
-  y: number;
+  left: number;
+  top: number;
+  offsetX: number;
+  offsetY: number;
 };
 
 type PlanningArrow = {
@@ -81,11 +83,19 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
     const rect = gridRef.current?.getBoundingClientRect();
     const cellSize = rect ? Math.min(rect.width / cols, rect.height / rows) : 72;
     const ghostSize = Math.max(28, Math.min(96, cellSize * 0.86));
+    const offset = pointerOffsetInDraggedPiece(event, ghostSize);
     setPlanningArrows([]);
     pointerDragMovedRef.current = false;
     pointerDragSquareRef.current = origin;
     setPointerDragSquare(origin);
-    setDragGhost({ piece, size: ghostSize, x: event.clientX, y: event.clientY });
+    setDragGhost({
+      piece,
+      size: ghostSize,
+      left: event.clientX - offset.x,
+      top: event.clientY - offset.y,
+      offsetX: offset.x,
+      offsetY: offset.y
+    });
     onChoose(origin);
   }
 
@@ -186,7 +196,7 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
         }
         if (!pointerDragSquareRef.current) return;
         pointerDragMovedRef.current = true;
-        setDragGhost((current) => (current ? { ...current, x: event.clientX, y: event.clientY } : current));
+        setDragGhost((current) => (current ? { ...current, left: event.clientX - current.offsetX, top: event.clientY - current.offsetY } : current));
       }}
       onPointerUpCapture={(event) => {
         const target = squareFromPoint(event.clientX, event.clientY);
@@ -328,8 +338,8 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
           style={
             {
               "--drag-piece-size": `${dragGhost.size}px`,
-              left: dragGhost.x,
-              top: dragGhost.y
+              left: dragGhost.left,
+              top: dragGhost.top
             } as CSSProperties
           }
         >
@@ -338,6 +348,19 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
       ) : null}
     </div>
   );
+}
+
+function pointerOffsetInDraggedPiece(event: PointerEvent<HTMLElement>, ghostSize: number) {
+  const squareElement = event.target instanceof HTMLElement ? event.target.closest<HTMLElement>("[data-square]") : null;
+  const pieceElement = squareElement?.querySelector<HTMLElement>(".piece-icon") ?? null;
+  const pieceRect = pieceElement?.getBoundingClientRect();
+  if (!pieceRect || pieceRect.width <= 0 || pieceRect.height <= 0) {
+    return { x: ghostSize / 2, y: ghostSize / 2 };
+  }
+  return {
+    x: ((event.clientX - pieceRect.left) / pieceRect.width) * ghostSize,
+    y: ((event.clientY - pieceRect.top) / pieceRect.height) * ghostSize
+  };
 }
 
 function buildSquareCenters(orientedRows: BoardCell[][], cols: number, rows: number) {

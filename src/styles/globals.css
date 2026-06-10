@@ -2143,7 +2143,6 @@ option {
   border: 0;
   background: transparent;
   box-shadow: none;
-  transform: translate(-50%, -50%) scale(1.03);
   filter: drop-shadow(0 0.42rem 0.55rem rgb(0 0 0 / 32%));
   pointer-events: none;
 }
