@@ -277,7 +277,8 @@ test("online setup disables bot controls and shows automatic ranked queue", asyn
   await page.getByRole("button", { name: "Quick Match" }).click();
   await expect(page.getByLabel("Play modes").getByRole("button", { name: "Quick Match" })).toHaveClass(/is-selected/);
   await expect(page.getByLabel("Bot difficulty")).toHaveCount(0);
-  await page.getByRole("button", { name: "Start Game" }).click();
+  await expect(page.getByRole("button", { name: "Find Match" })).toBeVisible();
+  await page.getByRole("button", { name: "Find Match" }).click();
 
   await expect(page.getByText("Searching for opponent").first()).toBeVisible();
   await expect(page.getByLabel("Online matchmaking status")).toContainText("Auto-matching opponent");
@@ -292,7 +293,7 @@ test("online setup disables bot controls and shows automatic ranked queue", asyn
   await page.getByRole("button", { name: "Cancel" }).click();
   await expect(page.getByLabel("Online queue details")).toHaveCount(0);
   await expect(page.getByLabel("Play modes").getByRole("button", { name: "Quick Match" })).toHaveClass(/is-selected/);
-  await expect(page.getByRole("button", { name: "Start Game" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Find Match" })).toBeVisible();
   expect(runtimeErrors).toEqual([]);
 });
 
@@ -305,7 +306,8 @@ test("spectate mode is read-only after start", async ({ page }) => {
 
   await page.goto("/en/play/classic");
   await page.getByLabel("Play modes").getByRole("button", { name: "Spectate" }).click();
-  await page.getByRole("button", { name: "Start Game" }).click();
+  await expect(page.getByRole("button", { name: "Start Watching" })).toBeVisible();
+  await page.getByRole("button", { name: "Start Watching" }).click();
   await expect(page.getByText("Watching rooms").first()).toBeVisible();
   await expect(page.getByText("Spectate mode is read-only. Watch rooms without moving pieces.")).toBeVisible();
 

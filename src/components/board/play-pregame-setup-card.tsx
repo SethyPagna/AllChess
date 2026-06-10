@@ -57,6 +57,7 @@ export function PlayPregameSetupCard({
     room: "Create Room",
     spectate: "Spectate"
   };
+  const startActionLabel = startLabelForMode(playMode);
 
   return (
     <div className="play-options-card play-setup-stack">
@@ -126,8 +127,15 @@ export function PlayPregameSetupCard({
       </label>
       <button type="button" onClick={onStartGame} className="focus-ring action-primary play-start-button">
         <PlayCircle size={18} />
-        Start Game
+        {startActionLabel}
       </button>
     </div>
   );
+}
+
+function startLabelForMode(playMode: PlayMode) {
+  if (playMode === "online") return "Find Match";
+  if (playMode === "room") return "Create Room";
+  if (playMode === "spectate") return "Start Watching";
+  return "Start Game";
 }

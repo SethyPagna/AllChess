@@ -977,7 +977,7 @@ export function GameBoard({
       setLastBotResult(null);
     }
     if (nextMode === "online") {
-      setNotice("Quick Match selected. Start Game will queue an automatic ranked search.");
+      setNotice("Quick Match selected. Find Match will queue an automatic ranked search.");
     } else if (nextMode === "room") {
       setNotice("Room setup selected. Bot controls are disabled while waiting for a player.");
     } else if (nextMode === "spectate") {
