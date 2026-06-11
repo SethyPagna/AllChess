@@ -114,8 +114,12 @@ export function PlayMatchHeader({
 
   async function copyShare(value: string, label: string) {
     const absoluteValue = value.startsWith("/") ? `${window.location.origin}${value}` : value;
+    if (!navigator.clipboard?.writeText) {
+      setShareNotice(`${label}: ${absoluteValue}`);
+      return;
+    }
     try {
-      await navigator.clipboard?.writeText(absoluteValue);
+      await navigator.clipboard.writeText(absoluteValue);
       setShareNotice(`${label} copied`);
     } catch {
       setShareNotice(`${label}: ${absoluteValue}`);

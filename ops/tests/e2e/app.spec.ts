@@ -68,6 +68,16 @@ test("localized game hub can open variants and a playable board", async ({ page 
   await page.getByRole("button", { name: "Close guide" }).click();
   await expectNoHorizontalOverflow(page);
 
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (value: string) => {
+          (window as typeof window & { __allChessCopiedText?: string }).__allChessCopiedText = value;
+        }
+      }
+    });
+  });
   await page.goto("/en/play");
   await expect(page.getByRole("heading", { name: "Classic Chess" })).toBeVisible();
   await expect(page.getByLabel("Game board")).toBeVisible();
@@ -92,6 +102,11 @@ test("localized game hub can open variants and a playable board", async ({ page 
   await expect(shareDialog.getByRole("button", { name: "Copy room code" })).toBeVisible();
   await expect(shareDialog.getByRole("link", { name: /Invite link/ })).toHaveAttribute("href", /mode=room/);
   await expect(shareDialog.getByRole("button", { name: "Copy invite link" })).toBeVisible();
+  await shareDialog.getByRole("button", { name: "Copy invite link" }).click();
+  await expect(shareDialog.getByRole("status")).toHaveText("Invite link copied");
+  const copiedInviteLink = await page.evaluate(() => (window as typeof window & { __allChessCopiedText?: string }).__allChessCopiedText);
+  expect(copiedInviteLink).toContain("/en/play/classic?mode=room");
+  expect(copiedInviteLink).toContain("room=classic-local");
   await expect(shareDialog.getByRole("link", { name: /Spectator link/ })).toHaveAttribute("href", /mode=spectate/);
   await expect(shareDialog.getByRole("button", { name: "Copy spectator link" })).toBeVisible();
   await expect(shareDialog.getByRole("link", { name: /Find room/ })).toHaveCount(0);
