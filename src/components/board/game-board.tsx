@@ -123,6 +123,12 @@ type MatchmakingState =
   | { status: "matched"; roomId: string }
   | { status: "failed"; message: string };
 
+type RoomCreationState =
+  | { status: "idle" }
+  | { status: "creating" }
+  | { status: "ready"; roomId: string }
+  | { status: "failed"; message: string };
+
 type DropSelectionHintProps = {
   legalTargetCount: number;
   onCancel: () => void;
@@ -345,6 +351,10 @@ export function GameBoard({
   const [reviewPly, setReviewPly] = useState<number | null>(null);
   const [reviewPlaying, setReviewPlaying] = useState(false);
   const [matchmaking, setMatchmaking] = useState<MatchmakingState>({ status: "idle" });
+  const [roomCreation, setRoomCreation] = useState<RoomCreationState>(() => {
+    const roomId = initialRoomId?.trim();
+    return roomId ? { status: "ready", roomId } : { status: "idle" };
+  });
   const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
   const activeBotRequestRef = useRef<string | null>(null);
   const resolvedRandomSeatRef = useRef(false);
@@ -438,7 +448,11 @@ export function GameBoard({
     return isBoardFlipped ? rowsToRender.reverse().map((row) => row.reverse()) : rowsToRender;
   }, [displayState.board, isBoardFlipped]);
   const modeDetails = playModeOptions.find((option) => option.key === playMode) ?? playModeOptions[2];
-  const chatRoomId = initialRoomId?.trim() || (matchmaking.status === "matched" ? matchmaking.roomId : "") || `${displayState.variantKey}-local`;
+  const chatRoomId =
+    initialRoomId?.trim() ||
+    (roomCreation.status === "ready" ? roomCreation.roomId : "") ||
+    (matchmaking.status === "matched" ? matchmaking.roomId : "") ||
+    `${displayState.variantKey}-local`;
   const onlineTicketLabel = matchmaking.status === "queued" ? `Ticket ${matchmaking.ticketId.slice(0, 8)}` : null;
   const statusHeading = playMode === "room" && gameStarted
     ? "Invite room ready"
@@ -884,6 +898,7 @@ export function GameBoard({
     setReviewPly(null);
     setReviewPlaying(false);
     setMatchmaking({ status: "idle" });
+    setRoomCreation({ status: "idle" });
   }
 
   function changeTimeControl(nextControl: TimeControlKey) {
@@ -908,6 +923,7 @@ export function GameBoard({
     setPanelTab("setup");
     setReviewPly(null);
     setReviewPlaying(false);
+    setRoomCreation({ status: "idle" });
   }
 
   function changeSeatChoice(nextChoice: SeatChoice) {
@@ -933,6 +949,13 @@ export function GameBoard({
     setGameStarted(true);
     setState((current) => (isOnlineMode || isSpectating ? { ...current, status: "waiting" } : { ...current, status: "active" }));
     setMatchmaking({ status: "idle" });
+    setRoomCreation(
+      playMode === "room"
+        ? initialRoomId?.trim()
+          ? { status: "ready", roomId: initialRoomId.trim() }
+          : { status: "creating" }
+        : { status: "idle" }
+    );
     setPanelTab("status");
     setNotice(
       playMode === "online"
@@ -972,6 +995,7 @@ export function GameBoard({
     }
     setPlayMode(nextMode);
     setMatchmaking({ status: "idle" });
+    if (nextMode !== "room") setRoomCreation({ status: "idle" });
     setSelected(null);
     setSelectedHandCode(null);
     if (nextMode !== "bot") {
@@ -1036,6 +1060,48 @@ export function GameBoard({
     }, 80);
     return () => window.clearTimeout(timer);
   }, [botColor, botMode, gameStarted, isReviewing, playBotMove, state, thinking.status]);
+
+  useEffect(() => {
+    if (!gameStarted || playMode !== "room" || roomCreation.status !== "creating") return;
+    const controller = new AbortController();
+    let cancelled = false;
+
+    async function createFriendRoom() {
+      try {
+        const response = await fetch("/api/rooms", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ variantKey, rated: false, visibility: "public" }),
+          signal: controller.signal
+        });
+        const data = (await response.json().catch(() => ({}))) as {
+          snapshot?: { roomId?: string };
+          error?: string;
+        };
+        if (cancelled) return;
+        const roomId = data.snapshot?.roomId;
+        if (!response.ok || !roomId) {
+          const message = data.error ?? "Could not create a room code. Share can still use the local room code.";
+          setRoomCreation({ status: "failed", message });
+          setNotice(message);
+          return;
+        }
+        setRoomCreation({ status: "ready", roomId });
+        setNotice(`Invite room ${roomId} is ready. Share can copy the invite or spectator link.`);
+      } catch (error) {
+        if (cancelled || controller.signal.aborted) return;
+        const message = error instanceof Error ? error.message : "Could not create a room code.";
+        setRoomCreation({ status: "failed", message });
+        setNotice(`${message} Share can still use the local room code.`);
+      }
+    }
+
+    void createFriendRoom();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [gameStarted, playMode, roomCreation.status, variantKey]);
 
   useEffect(() => {
     if (!gameStarted || playMode !== "online" || state.status !== "waiting" || matchmaking.status !== "idle") return;
@@ -1249,10 +1315,24 @@ export function GameBoard({
                   <div className="online-search-card" role="status" aria-label="Online matchmaking status">
                     <Swords size={18} />
                     <div>
-                      <strong>{playMode === "room" ? "Invite room ready" : matchmaking.status === "matched" ? "Opponent matched" : "Auto-matching opponent"}</strong>
+                      <strong>
+                        {playMode === "room"
+                          ? roomCreation.status === "creating"
+                            ? "Creating room code"
+                            : "Invite room ready"
+                          : matchmaking.status === "matched"
+                            ? "Opponent matched"
+                            : "Auto-matching opponent"}
+                      </strong>
                       <span>
                         {playMode === "room"
-                          ? "Use Share to copy an invite link, spectator link, or room code."
+                          ? roomCreation.status === "creating"
+                            ? "Generating a room code for invites and spectator links."
+                            : roomCreation.status === "ready"
+                              ? `Room ${roomCreation.roomId} is ready. Use Share for invite and spectator links.`
+                              : roomCreation.status === "failed"
+                                ? roomCreation.message
+                                : "Use Share to copy an invite link, spectator link, or room code."
                           : matchmaking.status === "matched"
                             ? `Room ${matchmaking.roomId} is active.`
                             : matchmaking.status === "queued"

@@ -303,6 +303,31 @@ test("friend room setup creates invite-ready status without matchmaking copy", a
   page.on("console", (message) => {
     if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
   });
+  await page.route("**/api/rooms", async (route) => {
+    if (route.request().method() !== "POST") {
+      await route.fallback();
+      return;
+    }
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        mode: "demo",
+        snapshot: {
+          roomId: "room-e2e",
+          gameId: "classic",
+          variantKey: "classic",
+          status: "waiting",
+          players: [],
+          spectators: 0,
+          clocks: [],
+          state: {},
+          moveVersion: 0,
+          rated: false,
+          chatPolicy: "players"
+        }
+      })
+    });
+  });
 
   await page.goto("/en/play/classic");
   await page.getByLabel("Play modes").getByRole("button", { name: "Play a Friend" }).click();
@@ -312,9 +337,12 @@ test("friend room setup creates invite-ready status without matchmaking copy", a
   await page.getByRole("button", { name: "Create Room" }).click();
 
   await expect(page.getByText("Invite room ready").first()).toBeVisible();
-  await expect(page.getByText("Share the invite link, spectator link, or room code.")).toBeVisible();
-  await expect(page.getByLabel("Online matchmaking status")).toContainText("Use Share to copy an invite link, spectator link, or room code.");
+  await expect(page.getByText("Invite room room-e2e is ready. Share can copy the invite or spectator link.")).toBeVisible();
+  await expect(page.getByLabel("Online matchmaking status")).toContainText("Room room-e2e is ready. Use Share for invite and spectator links.");
   await expect(page.getByText("Searching for opponent")).toHaveCount(0);
+  await page.getByRole("button", { name: "Share game" }).click();
+  await expect(page.getByRole("dialog", { name: "Share game options" }).getByText("room-e2e")).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Share game options" }).getByRole("link", { name: /Invite link/ })).toHaveAttribute("href", /room=room-e2e/);
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Suggest" })).toBeDisabled();
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
   expect(runtimeErrors).toEqual([]);
