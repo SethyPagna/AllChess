@@ -935,11 +935,13 @@ export function GameBoard({
     setMatchmaking({ status: "idle" });
     setPanelTab("status");
     setNotice(
-      isOnlineMode
+      playMode === "online"
         ? `Searching for opponent in ${modeDetails.label}. You will play ${colorLabel(nextColor)} when paired.`
-        : isSpectating
-          ? "Spectate mode is read-only. Watch rooms without moving pieces."
-          : null
+        : playMode === "room"
+          ? "Invite room ready. Share the invite link, spectator link, or room code."
+          : isSpectating
+            ? "Spectate mode is read-only. Watch rooms without moving pieces."
+            : null
     );
   }
 
@@ -1250,7 +1252,7 @@ export function GameBoard({
                       <strong>{playMode === "room" ? "Invite room ready" : matchmaking.status === "matched" ? "Opponent matched" : "Auto-matching opponent"}</strong>
                       <span>
                         {playMode === "room"
-                          ? "Use Share to copy a play link, spectator link, or room code."
+                          ? "Use Share to copy an invite link, spectator link, or room code."
                           : matchmaking.status === "matched"
                             ? `Room ${matchmaking.roomId} is active.`
                             : matchmaking.status === "queued"

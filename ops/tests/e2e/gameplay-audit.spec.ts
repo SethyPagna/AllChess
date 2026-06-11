@@ -297,6 +297,29 @@ test("online setup disables bot controls and shows automatic ranked queue", asyn
   expect(runtimeErrors).toEqual([]);
 });
 
+test("friend room setup creates invite-ready status without matchmaking copy", async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
+  });
+
+  await page.goto("/en/play/classic");
+  await page.getByLabel("Play modes").getByRole("button", { name: "Play a Friend" }).click();
+  await expect(page.getByLabel("Play modes").getByRole("button", { name: "Play a Friend" })).toHaveClass(/is-selected/);
+  await expect(page.getByLabel("Bot difficulty")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Create Room" })).toBeVisible();
+  await page.getByRole("button", { name: "Create Room" }).click();
+
+  await expect(page.getByText("Invite room ready").first()).toBeVisible();
+  await expect(page.getByText("Share the invite link, spectator link, or room code.")).toBeVisible();
+  await expect(page.getByLabel("Online matchmaking status")).toContainText("Use Share to copy an invite link, spectator link, or room code.");
+  await expect(page.getByText("Searching for opponent")).toHaveCount(0);
+  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Suggest" })).toBeDisabled();
+  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
+  expect(runtimeErrors).toEqual([]);
+});
+
 test("spectate mode is read-only after start", async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));

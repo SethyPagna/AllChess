@@ -7,7 +7,7 @@ export const playModeOptions: Array<{ key: PlayMode; label: string; description:
   { key: "online", label: "Quick Match", description: "Auto-match by rating", Icon: Swords },
   { key: "bot", label: "Bot Mode", description: "Train by tier", Icon: Bot },
   { key: "offline", label: "Offline Local", description: "Same device", Icon: Crown },
-  { key: "room", label: "Create Room", description: "Invite by code", Icon: Flag },
+  { key: "room", label: "Play a Friend", description: "Invite by code", Icon: Flag },
   { key: "spectate", label: "Spectate", description: "Watch rooms", Icon: Eye }
 ];
 
