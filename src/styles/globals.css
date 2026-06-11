@@ -2156,8 +2156,9 @@ option {
   border: 0;
   background: transparent;
   box-shadow: none;
-  filter: drop-shadow(0 0.42rem 0.55rem rgb(0 0 0 / 32%));
   pointer-events: none;
+  transform: translate(-50%, -50%);
+  will-change: left, top, transform;
 }
 
 .board-drag-ghost .piece-icon {
@@ -2167,6 +2168,7 @@ option {
   background: transparent;
   box-shadow: none;
   font-size: calc(var(--drag-piece-size, calc(var(--board-fixed-size) / var(--board-cols))) * 0.95);
+  filter: drop-shadow(0 0.34rem 0.36rem rgb(0 0 0 / 26%));
 }
 
 .board-square[data-dragging="true"] {
