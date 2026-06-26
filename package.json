@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prepare:stockfish": "node ops/scripts/assets/prepare-stockfish.ts",
+    "prepare:stockfish": "npx tsx ops/scripts/assets/prepare-stockfish.ts",
     "dev": "npm run prepare:stockfish && next dev",
     "dev:lan": "npm run prepare:stockfish && next dev -H 0.0.0.0",
     "build": "npm run prepare:stockfish && next build --webpack",
@@ -62,6 +62,7 @@
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.2.7",
     "tailwindcss": "^4.3.0",
+    "tsx": "^4.22.4",
     "typescript": "^6.0.3",
     "vitest": "^4.1.8",
     "wrangler": "^4.98.0"
