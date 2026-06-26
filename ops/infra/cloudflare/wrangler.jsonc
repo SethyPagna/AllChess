@@ -119,9 +119,10 @@
         "binding": "AI"
       },
       "vars": {
-        "DEPLOYMENT_TARGET": "cloudflare",
-        "OBJECT_STORAGE_DRIVER": "r2",
-        "DATABASE_DRIVER": "d1"
+          "DEPLOYMENT_TARGET": "cloudflare",
+          "OBJECT_STORAGE_DRIVER": "r2",
+          "DATABASE_DRIVER": "d1",
+          "R2_CACHE_BINDING_NAME": "R2_CACHE"
       }
     }
   }
