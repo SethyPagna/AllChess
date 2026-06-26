@@ -44,8 +44,8 @@
   ],
   "r2_buckets": [
     {
-    "binding": "R2_CACHE",
-    "bucket_name": "allchess-opennext-cache"
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "allchess-opennext-cache"
     },
     {
       "binding": "ALLCHESS_OBJECTS",
