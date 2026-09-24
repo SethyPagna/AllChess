@@ -89,7 +89,7 @@ export type RulesAdapter = {
 export type VariantDefinition = {
   key: string;
   nameKey: string;
-  rulesAdapter: "chessops" | "xiangqiops" | "shogiops" | "makruk-js" | "allchess-janggi" | "allchess-jungle" | "draughts-engine" | "konane-engine";
+  rulesAdapter: "chessops" | "xiangqiops" | "shogiops" | "makruk-js" | "allchess-ouk" | "allchess-janggi" | "allchess-jungle" | "draughts-engine" | "konane-engine";
   engineProtocol: "uci" | "usi" | "internal";
   family: "western" | "east-asian" | "southeast-asian" | "abstract" | "draughts" | "regional";
   board: {

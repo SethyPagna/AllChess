@@ -13,7 +13,7 @@ import { playGameHref } from "@/lib/routing/play-links";
 const favoritesKey = "allchess-favorite-games";
 const filters = ["Discover", "All games", "Favorites", "Chess", "Asian", "Checkers"] as const;
 type Filter = typeof filters[number];
-const featured = ["classic", "shogi", "xiangqi", "english-draughts", "makruk", "crazyhouse", "jungle", "chess960"];
+const featured = ["classic", "ouk-chaktrang", "shogi", "xiangqi", "english-draughts", "makruk", "jungle", "chess960"];
 
 export function GameLibrary({ entries, locale }: { entries: GameCatalogEntry[]; locale: string }) {
   const [query, setQuery] = useState("");
@@ -54,9 +54,7 @@ export function GameLibrary({ entries, locale }: { entries: GameCatalogEntry[]; 
         <div className="library-mode" role="group" aria-label="Library play mode">
           <button type="button" className="focus-ring" aria-pressed={mode === "bot"} onClick={() => setMode("bot")}><Bot size={16} /> Play a bot</button>
           <button type="button" className="focus-ring" aria-pressed={mode === "offline"} onClick={() => setMode("offline")}><Users size={16} /> Local two-player</button>
-          <select aria-label="More play modes" value={mode === "bot" || mode === "offline" ? "" : mode} onChange={(event) => setMode(event.target.value as CatalogPlayMode)}>
-            <option value="" disabled>More modes</option><option value="online">Quick match</option><option value="room">Private room</option><option value="spectate">Watch</option>
-          </select>
+          {([{ key: "room", label: "Friend" }, { key: "online", label: "Quick match" }, { key: "spectate", label: "Watch" }] as const).map(item => <button type="button" className="focus-ring" key={item.key} aria-pressed={mode === item.key} onClick={() => setMode(item.key)}>{item.label}</button>)}
         </div>
       </div>
       <div className="library-toolbar">

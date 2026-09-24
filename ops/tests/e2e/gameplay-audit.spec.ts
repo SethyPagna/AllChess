@@ -80,7 +80,7 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   expect(afterSuggestion?.height).toBeCloseTo(before!.height, 1);
 
   await page.getByLabel("Board controls").getByRole("button", { name: "Reset" }).click();
-  await page.getByLabel("Side").selectOption("first");
+  await page.getByRole("group", { name: "Side", exact: true }).getByRole("button", { name: "White", exact: true }).click();
   await page.getByRole("button", { name: /Bot Mode/ }).last().click();
   await page.getByRole("button", { name: "Start Game" }).click();
   await expect(page.getByText(/1400-1500 Elo bot/i).first()).toBeVisible();
@@ -104,7 +104,7 @@ test("bot thinking time is charged to the bot clock", async ({ page }) => {
   await page.goto("/en/play/classic?mode=bot&bot=grandmaster&time=bullet");
   const blackClock = page.getByLabel("Black clock");
   await expect(blackClock).toHaveText("1:00");
-  await page.getByLabel("Side").selectOption("first");
+  await page.getByRole("group", { name: "Side", exact: true }).getByRole("button", { name: "White", exact: true }).click();
   await page.getByRole("button", { name: "Start Game" }).click();
   const before = clockSeconds(await blackClock.textContent());
 
@@ -230,8 +230,9 @@ test("setup flow supports Bot Mode as black with an automatic first reply", asyn
   const before = await board.boundingBox();
   expect(before).toBeTruthy();
 
-  await page.getByLabel("Side").selectOption("second");
-  await page.getByLabel("Bot difficulty").first().selectOption("elo-2800-2900");
+  await page.getByRole("group", { name: "Side", exact: true }).getByRole("button", { name: "Black", exact: true }).click();
+  await page.getByLabel("Bot difficulty", { exact: true }).first().click();
+  await page.getByRole("group", { name: "Bot difficulty options" }).getByRole("button", { name: "2800-2900 Elo", exact: true }).click();
   await page.getByRole("button", { name: "Start Game" }).click();
 
   await expect(page.getByText("Black side").first()).toBeVisible();
@@ -255,8 +256,9 @@ test("classic grandmaster replies quickly with engine or bounded fallback", asyn
   const board = page.getByLabel("Game board");
   await expect(board).toBeVisible();
 
-  await page.getByLabel("Side").selectOption("first");
-  await page.getByLabel("Bot difficulty").first().selectOption("elo-2800-2900");
+  await page.getByRole("group", { name: "Side", exact: true }).getByRole("button", { name: "White", exact: true }).click();
+  await page.getByLabel("Bot difficulty", { exact: true }).first().click();
+  await page.getByRole("group", { name: "Bot difficulty options" }).getByRole("button", { name: "2800-2900 Elo", exact: true }).click();
   await page.getByRole("button", { name: "Start Game" }).click();
   await page.getByRole("button", { name: /h2.*white.*pawn/i }).click();
   await page.getByRole("button", { name: "h3" }).click();
@@ -303,31 +305,6 @@ test("friend room setup creates invite-ready status without matchmaking copy", a
   page.on("console", (message) => {
     if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
   });
-  await page.route("**/api/rooms", async (route) => {
-    if (route.request().method() !== "POST") {
-      await route.fallback();
-      return;
-    }
-    await route.fulfill({
-      contentType: "application/json",
-      body: JSON.stringify({
-        mode: "demo",
-        snapshot: {
-          roomId: "room-e2e",
-          gameId: "classic",
-          variantKey: "classic",
-          status: "waiting",
-          players: [],
-          spectators: 0,
-          clocks: [],
-          state: {},
-          moveVersion: 0,
-          rated: false,
-          chatPolicy: "players"
-        }
-      })
-    });
-  });
 
   await page.goto("/en/play/classic");
   await page.getByLabel("Play modes").getByRole("button", { name: "Play a Friend" }).click();
@@ -337,12 +314,14 @@ test("friend room setup creates invite-ready status without matchmaking copy", a
   await page.getByRole("button", { name: "Create Room" }).click();
 
   await expect(page.getByText("Invite room ready").first()).toBeVisible();
-  await expect(page.getByText("Invite room room-e2e is ready. Share can copy the invite or spectator link.")).toBeVisible();
-  await expect(page.getByLabel("Online matchmaking status")).toContainText("Room room-e2e is ready. Use Share for invite and spectator links.");
+  await expect(page).toHaveURL(/room=[a-f0-9-]{36}/);
+  const roomId = new URL(page.url()).searchParams.get("room")!;
+  await expect(page.getByText(`Invite room ${roomId} is ready. Share can copy the invite or spectator link.`)).toBeVisible();
+  await expect(page.getByLabel("Online matchmaking status")).toContainText(`Room ${roomId} is ready. Use Share for invite and spectator links.`);
   await expect(page.getByText("Searching for opponent")).toHaveCount(0);
   await page.getByRole("button", { name: "Share game" }).click();
-  await expect(page.getByRole("dialog", { name: "Share game options" }).getByText("room-e2e")).toBeVisible();
-  await expect(page.getByRole("dialog", { name: "Share game options" }).getByRole("link", { name: /Invite link/ })).toHaveAttribute("href", /room=room-e2e/);
+  await expect(page.getByRole("dialog", { name: "Share game options" }).getByText(roomId)).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Share game options" }).getByRole("link", { name: /Invite link/ })).toHaveAttribute("href", new RegExp(`room=${roomId}`));
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Suggest" })).toBeDisabled();
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
   expect(runtimeErrors).toEqual([]);
@@ -515,7 +494,7 @@ test("drop-variant hand rails stay compact on Mini Shogi", async ({ page }) => {
   await expect(page.getByLabel("Board terrain key")).toContainText("Promo zone");
   await page.getByRole("tab", { name: "Status" }).click();
   await page.getByText("Look").click();
-  await page.getByLabel("Appearance set", { exact: true }).selectOption("tablet");
+  await page.getByRole("button", { name: "Use Tablets appearance set", exact: true }).click();
   await expect(page.getByLabel("Game board").locator(".piece-icon").first()).toHaveAttribute("data-skin", "tile");
 
   await page.getByRole("tab", { name: "Setup" }).click();

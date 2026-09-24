@@ -56,8 +56,9 @@ const maxPlanningArrows = 12;
 export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move", locale = "en", onChoose, onDragMove, onDropHandPiece, orientedRows, pieceSkin = "default", rows, selected, suggestedMove, lastMove, variantKey }: BoardGridProps) {
   const terrainLabels = getVocabulary(normalizeLocale(locale)).terrain;
   const intersectionBoard = variantKey === "xiangqi" || variantKey === "janggi";
-  const plainBoard = intersectionBoard || variantKey === "shogi" || variantKey === "mini-shogi" || variantKey === "makruk";
+  const plainBoard = variantKey === "ouk-chaktrang" || intersectionBoard || variantKey === "shogi" || variantKey === "mini-shogi" || variantKey === "makruk";
   const gridRef = useRef<HTMLDivElement>(null);
+  const [keyboardSquare, setKeyboardSquare] = useState<string | null>(null);
   const [pointerDragSquare, setPointerDragSquare] = useState<Square | null>(null);
   const pointerDragSquareRef = useRef<Square | null>(null);
   const pointerDragMovedRef = useRef(false);
@@ -319,6 +320,15 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
             <button
               type="button"
               key={serializeSquare(cell.square)}
+              tabIndex={serializeSquare(cell.square) === (keyboardSquare ?? serializeSquare(orientedRows[0][0].square)) ? 0 : -1}
+              onFocus={() => setKeyboardSquare(serializeSquare(cell.square))}
+              onKeyDown={event => {
+                const delta = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }[event.key];
+                if (!delta) return;
+                event.preventDefault();
+                const next = orientedRows[Math.max(0, Math.min(rows - 1, visualRow + delta[0]))]?.[Math.max(0, Math.min(cols - 1, visualCol + delta[1]))];
+                if (next) gridRef.current?.querySelector<HTMLButtonElement>(`[data-square="${squareName(next.square, files, rows)}"]`)?.focus();
+              }}
               onClick={() => {
                 if (!pointerDragMovedRef.current) onChoose(cell.square);
               }}

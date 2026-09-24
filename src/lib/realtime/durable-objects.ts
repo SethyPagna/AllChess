@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import { friendActionSchema, transitionFriendRoom, type FriendRoom } from "./friend-room";
 import type { DurableObjectState } from "@cloudflare/workers-types";
 
 import { applyAuthoritativeRoomMove, areMatchmakingTicketsCompatible, createDemoLiveStats, createMatchmakingMatch, createMatchmakingTicket, createRoomSnapshot } from "@/lib/realtime/rooms";
@@ -21,6 +22,21 @@ export class GameRoomDO extends DurableObject {
 
   async fetch(request: Request) {
     const url = new URL(request.url);
+    if (url.pathname.startsWith("/friends/") && request.method === "POST") {
+      const action = friendActionSchema.safeParse(await request.json().catch(() => null));
+      if (!action.success) return json({ error: "Invalid room action." }, { status: 400 });
+      const id = url.pathname.split("/").at(-1)!;
+      return this.ctx.blockConcurrencyWhile(async () => {
+        const stored = await this.ctx.storage.get<FriendRoom>("friend-room") ?? null;
+        const result = await transitionFriendRoom(stored, id, action.data);
+        if (result.stored) {
+          await this.ctx.storage.put("friend-room", result.stored);
+          if (action.data.action === "create") await this.ctx.storage.setAlarm(result.stored.createdAt + 7 * 86400000);
+        }
+        else await this.ctx.storage.delete("friend-room");
+        return json(result.body, { status: result.status, headers: { "cache-control": "no-store" } });
+      });
+    }
     const pathRoomId = roomIdFromPath(url.pathname);
     if (request.headers.get("upgrade") === "websocket") return this.handleSocket(url.searchParams.get("variantKey") ?? "classic", pathRoomId ?? undefined);
     if (request.method === "GET") return json(await this.getSnapshot(url.searchParams.get("variantKey") ?? "classic", pathRoomId ?? undefined));
@@ -37,6 +53,11 @@ export class GameRoomDO extends DurableObject {
       return json({ type: "move_applied", snapshot: this.snapshot, move: body.move } satisfies ServerRealtimeMessage);
     }
     return json({ error: "Unsupported room operation." }, { status: 404 });
+  }
+
+  async alarm() {
+    const room = await this.ctx.storage.get<FriendRoom>("friend-room");
+    if (room && Date.now() >= room.createdAt + 7 * 86400000) await this.ctx.storage.delete("friend-room");
   }
 
   private async getSnapshot(variantKey = "classic", roomId?: string) {

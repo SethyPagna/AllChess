@@ -48,14 +48,10 @@ async function expectNoVisibleUnnamedControls(page: Page) {
 
 test("localized game hub can open variants and a playable board", async ({ page }) => {
   await page.goto("/en");
-  await expect(page.getByRole("heading", { name: "AllChess" })).toBeVisible();
-  await expect(page.getByLabel("AllChess intro")).toContainText("Play first");
-  await expect(page.getByRole("link", { name: "Start playing" })).toHaveAttribute("href", "/en/play?mode=online&time=rapid");
-  await expect(page.getByLabel("AllChess intro").getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/en/login");
-  await expect(page.getByLabel("How AllChess works")).toContainText("Pick a board");
-  await expect(page.getByRole("link", { name: /Pick a board/ })).toHaveAttribute("href", "/en/play?mode=online&time=rapid");
-  await expect(page.getByRole("link", { name: /Train fast/ })).toHaveAttribute("href", "/en/play?mode=bot&time=rapid");
-  await expect(page.getByRole("link", { name: /Watch or review/ })).toHaveAttribute("href", "/en/watch");
+  await expect(page.getByRole("heading", { name: "Your board. Your next move." })).toBeVisible();
+  await expect(page.getByLabel("AllChess intro").getByRole("link", { name: "Quick match" })).toHaveAttribute("href", "/en/play?mode=online&time=rapid");
+  await expect(page.getByLabel("AllChess intro").getByRole("link", { name: "Play a bot" })).toHaveAttribute("href", "/en/play?mode=bot&time=rapid");
+  await expect(page.getByRole("region", { name: "Game library", exact: true })).toContainText("Ouk Chaktrang");
   await expect(page.getByLabel("Classic chess board preview")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
@@ -89,8 +85,10 @@ test("localized game hub can open variants and a playable board", async ({ page 
   await page.getByRole("button", { name: "Bot Mode" }).click();
   await expect(page.getByRole("heading", { name: "Classic Chess" })).toBeVisible();
   await expect(page.getByLabel("Game board")).toBeVisible();
-  await expect(page.getByLabel("Bot difficulty")).toContainText("100-200 Elo");
-  await expect(page.getByLabel("Bot difficulty")).toContainText("3900-4000 Elo");
+  await page.getByLabel("Bot difficulty", { exact: true }).click();
+  await expect(page.getByRole("group", { name: "Bot difficulty options" })).toContainText("100-200 Elo");
+  await expect(page.getByRole("group", { name: "Bot difficulty options" })).toContainText("3900-4000 Elo");
+  await page.keyboard.press("Escape");
   await expect(page.getByLabel("Game guide")).toBeVisible();
   await expect(page.locator(".play-title-actions").getByRole("button", { name: "Share game" })).toBeVisible();
   await page.getByRole("tab", { name: "Status" }).click();
@@ -98,18 +96,8 @@ test("localized game hub can open variants and a playable board", async ({ page 
   await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();
   await page.locator(".play-title-actions").getByRole("button", { name: "Share game" }).click();
   const shareDialog = page.getByRole("dialog", { name: "Share game options" });
-  await expect(shareDialog).toContainText("Room code");
-  await expect(shareDialog.getByRole("button", { name: "Copy room code" })).toBeVisible();
-  await expect(shareDialog.getByRole("link", { name: /Invite link/ })).toHaveAttribute("href", /mode=room/);
-  await expect(shareDialog.getByRole("button", { name: "Copy invite link" })).toBeVisible();
-  await shareDialog.getByRole("button", { name: "Copy invite link" }).click();
-  await expect(shareDialog.getByRole("status")).toHaveText("Invite link copied");
-  const copiedInviteLink = await page.evaluate(() => (window as typeof window & { __allChessCopiedText?: string }).__allChessCopiedText);
-  expect(copiedInviteLink).toContain("/en/play/classic?mode=room");
-  expect(copiedInviteLink).toContain("room=classic-local");
-  await expect(shareDialog.getByRole("link", { name: /Spectator link/ })).toHaveAttribute("href", /mode=spectate/);
-  await expect(shareDialog.getByRole("button", { name: "Copy spectator link" })).toBeVisible();
-  await expect(shareDialog.getByRole("link", { name: /Find room/ })).toHaveCount(0);
+  await expect(shareDialog).toContainText("Create a friend room to get an invite.");
+  await expect(shareDialog.getByRole("link", { name: /Invite link/ })).toHaveCount(0);
   await page.getByRole("button", { name: /Room setup/ }).click();
   await expect(page.getByLabel("Play modes").getByRole("button", { name: "Play a Friend" })).toHaveClass(/is-selected/);
   await expect(page.getByRole("button", { name: "Create Room" })).toBeVisible();

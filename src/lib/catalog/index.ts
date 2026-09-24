@@ -70,6 +70,7 @@ const presentationByVariant: Record<string, PiecePresentationPack> = {
   "mini-shogi": "shogi-koma",
   janggi: "xiangqi-disk",
   makruk: "makruk-carved",
+  "ouk-chaktrang": "khmer-carved",
   jungle: "jungle-animals",
   "english-draughts": "draughts-stacks",
   "international-draughts": "draughts-stacks",
@@ -87,6 +88,7 @@ const localizedPlayableNames: Record<string, GameCatalogEntry["name"]> = {
   shogi: { english: "Shogi", native: "将棋", romanization: "Shōgi" },
   "mini-shogi": { english: "Mini Shogi", native: "五五将棋", romanization: "Gogo Shōgi" },
   janggi: { english: "Janggi", native: "장기", romanization: "Janggi" },
+  "ouk-chaktrang": { english: "Ouk Chaktrang", native: "អុកចត្រង្គ", short: "Cambodian Chess", romanization: "Ouk Chaktrang" },
   makruk: { english: "Thai Makruk", native: "หมากรุก", romanization: "Makruk" },
   jungle: { english: "Jungle", native: "鬥獸棋", romanization: "Dòu Shòu Qí", short: "Jungle / Dou Shou Qi" },
   "english-draughts": { english: "English Draughts", short: "Checkers" },
@@ -164,6 +166,7 @@ function playableEntryFromVariant(variant: VariantDefinition): GameCatalogEntry 
 
 function playableRegion(key: string) {
   if (["xiangqi", "shogi", "mini-shogi", "janggi", "jungle"].includes(key)) return ["East Asia"];
+  if (key === "ouk-chaktrang") return ["Cambodia", "Khmer"];
   if (key === "makruk") return ["Southeast Asia", "Thailand"];
   if (key === "english-draughts") return ["United Kingdom", "United States"];
   if (key === "international-draughts") return ["Global", "Europe"];
@@ -307,21 +310,6 @@ const learningCatalogEntries: GameCatalogEntry[] = [
     ruleSourceLinks: [{ name: "Chess Variant Pages Sittuyin", url: "https://www.chessvariants.com/oriental.dir/burmese.html" }],
     shortRules: ["Players place major pieces freely in their halves.", "Piece movement is related to Makruk and Shatranj.", "Setup phase must be supported before playability."],
     winConditions: ["Checkmate"]
-  }),
-  catalogEntry({
-    id: "ouk-chaktrang",
-    name: { english: "Ouk Chaktrang", native: "អុកចត្រង្គ", romanization: "Ouk Chaktrang" },
-    aliases: ["khmer-chess", "cambodian-chess", "ouk"],
-    family: "asian-chess",
-    region: ["Khmer", "Cambodia"],
-    board: { kind: "square-grid", rows: 8, cols: 8, description: "Khmer chess family board." },
-    piecePresentation: "makruk-carved",
-    playability: "learn",
-    rulesAdapter: "planned-rules-engine",
-    botAdapter: "none",
-    ruleSourceLinks: [{ name: "Cambodian Chess Federation", url: "https://www.cambodianchess.com/" }],
-    shortRules: ["Khmer Ouk Chaktrang movement with local opening rules.", "Named pieces need Khmer and romanized presentation.", "Counting and tournament profile must be explicit."],
-    winConditions: ["Checkmate", "Counting decision in selected profile"]
   }),
   catalogEntry({
     id: "oware",
@@ -728,6 +716,7 @@ export function displayPlayabilityStatus(status: PlayabilityStatus) {
 
 export function displayPiecePresentation(entry: GameCatalogEntry) {
   const labels: Record<PiecePresentationPack, string> = {
+    "khmer-carved": "Khmer carved pieces",
     "staunton-svg": "Western chess pieces",
     "shogi-koma": "Native shogi pieces",
     "xiangqi-disk": "Chinese chess disks",

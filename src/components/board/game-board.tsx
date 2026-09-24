@@ -1,5 +1,10 @@
 "use client";
 
+import { FriendChat } from "./friend-chat";
+import { useFriendRoom, saveFriendToken } from "./use-friend-room";
+import type { FriendRoomView } from "@/lib/realtime/friend-room";
+import dynamic from "next/dynamic";
+import { ChoicePicker } from "./choice-buttons";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   Bot,
@@ -45,6 +50,8 @@ import { PlayPregameSetupCard } from "@/components/board/play-pregame-setup-card
 import { playModeOptions, type PanelTab, type PlayMode } from "@/components/board/game-board-options";
 import { colorLabel, formatMove, pickHumanColor, quickSuggestionMove, squareName, withTimeControl } from "@/components/board/game-board-utils";
 import { PlaySectionTabs } from "@/components/board/play-section-tabs";
+
+const KhmerBoard3D = dynamic(() => import("./khmer-board-3d"), { ssr: false, loading: () => <div className="board-3d" role="status">Loading 3D board…</div> });
 
 type BotMode = "human" | "opponent" | "both";
 type SeatChoice = "random" | "first" | "second";
@@ -333,6 +340,7 @@ export function GameBoard({
   const [state, setState] = useState(() => withTimeControl(initialState ?? createInitialState(variantKey), initialTimeControl));
   const [history, setHistory] = useState<GameState[]>([]);
   const [future, setFuture] = useState<GameState[]>([]);
+  const [boardView, setBoardView] = useState<"2d" | "3d">("2d");
   const [selected, setSelected] = useState<Square | null>(null);
   const [selectedHandCode, setSelectedHandCode] = useState<string | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
@@ -355,10 +363,29 @@ export function GameBoard({
   const [reviewPly, setReviewPly] = useState<number | null>(null);
   const [reviewPlaying, setReviewPlaying] = useState(false);
   const [matchmaking, setMatchmaking] = useState<MatchmakingState>({ status: "idle" });
+  const [ignoreInitialRoom, setIgnoreInitialRoom] = useState(false);
+  const inviteRoomId = ignoreInitialRoom ? undefined : initialRoomId;
   const [roomCreation, setRoomCreation] = useState<RoomCreationState>(() => {
     const roomId = initialRoomId?.trim();
     return roomId ? { status: "ready", roomId } : { status: "idle" };
   });
+  const friendHistoryRef = useRef("");
+  const friendId = (playMode === "room" || playMode === "spectate") && roomCreation.status === "ready" ? roomCreation.roomId : null;
+  const syncFriendRoom = useCallback((room: FriendRoomView) => {
+    if (room.state.variantKey !== variantKey) { setNotice("This invite belongs to another game. Open the original invite link."); return; }
+    setState(current => current.id === room.state.id && (room.state.ply < current.ply || (current.status === "completed" && room.state.status !== "completed")) ? current : room.state);
+    const historyKey = room.state.id + ":" + room.state.ply;
+    if (friendHistoryRef.current !== historyKey) {
+      friendHistoryRef.current = historyKey;
+      let position = createInitialState(variantKey, room.state.id);
+      const frames: GameState[] = [];
+      for (const move of room.state.moves) { frames.push(position); position = applyMove(position, move); }
+      setHistory(frames);
+    }
+    setTimeControl(getTimeControl(room.time).key);
+    if (room.seat) setHumanColor(room.seat);
+  }, [variantKey]);
+  const friend = useFriendRoom(friendId, gameStarted, playMode === "spectate", syncFriendRoom);
   const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
   const activeBotRequestRef = useRef<string | null>(null);
   const resolvedRandomSeatRef = useRef(false);
@@ -366,7 +393,10 @@ export function GameBoard({
   const sidePanelRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    queueMicrotask(() => setAppearancePreset(initialAppearancePreset(variantKey)));
+    queueMicrotask(() => {
+      setAppearancePreset(initialAppearancePreset(variantKey));
+      try { setBoardView(variantKey === "ouk-chaktrang" && localStorage.getItem(`allchess-board-view:${variantKey}`) === "3d" ? "3d" : "2d"); } catch { /* Keep the accessible 2D default. */ }
+    });
   }, [variantKey]);
 
   useEffect(() => {
@@ -449,7 +479,7 @@ export function GameBoard({
   const isOnlineMode = playMode === "online" || playMode === "room";
   const isBotMode = playMode === "bot";
   const isSpectating = playMode === "spectate";
-  const isMatchedOnlineGame = playMode === "online" && matchmaking.status === "matched";
+  const isMatchedOnlineGame = (playMode === "room" && friend.room?.playerCount === 2) || (playMode === "online" && matchmaking.status === "matched");
   const isSearchingOnline = gameStarted && isOnlineMode && state.status !== "completed" && !isMatchedOnlineGame;
   const isWatchingMode = gameStarted && isSpectating && state.status !== "completed";
   const canUseAssist = gameStarted && state.status === "active" && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
@@ -465,7 +495,7 @@ export function GameBoard({
   }, [displayState.board, isBoardFlipped]);
   const modeDetails = playModeOptions.find((option) => option.key === playMode) ?? playModeOptions[2];
   const chatRoomId =
-    initialRoomId?.trim() ||
+    inviteRoomId?.trim() ||
     (roomCreation.status === "ready" ? roomCreation.roomId : "") ||
     (matchmaking.status === "matched" ? matchmaking.roomId : "") ||
     `${displayState.variantKey}-local`;
@@ -529,6 +559,8 @@ export function GameBoard({
       state.status === "active" &&
       !isReviewing &&
       !isThinking &&
+      !friend.busy &&
+      (playMode !== "room" || (friend.room?.seat === color && friend.room.state.variantKey === variantKey)) &&
       (!isOnlineMode || isMatchedOnlineGame) &&
       !isSpectating &&
       color === state.turn &&
@@ -543,7 +575,16 @@ export function GameBoard({
     try { window.localStorage.setItem(`${appearanceStoragePrefix}${variantKey}`, validPreset); } catch { /* Keep the selected look for this session. */ }
   }
 
+  function changeBoardView(view: "2d" | "3d") {
+    setBoardView(view);
+    try { localStorage.setItem(`allchess-board-view:${variantKey}`, view); } catch { /* Keep the view for this session. */ }
+  }
+
   function commitPlayerMove(move: Move) {
+    if (playMode === "room") {
+      void friend.send({ action: "move", move, version: state.ply });
+      setSelected(null); setSelectedHandCode(null); setPendingPromotion(null); return;
+    }
     setHistory((current) => [...current, state]);
     setFuture([]);
     setState((current) => applyMove(current, move));
@@ -812,6 +853,7 @@ export function GameBoard({
 
   function offerDraw() {
     if (!canEndGame) return;
+    if (playMode === "room") { void friend.send({ action: "draw" }); return; }
     const requestId = activeBotRequestRef.current;
     if (requestId) cancelRuntimeBotMove(requestId);
     activeBotRequestRef.current = null;
@@ -833,6 +875,7 @@ export function GameBoard({
 
   function resignGame() {
     if (!canEndGame) return;
+    if (playMode === "room") { void friend.send({ action: "resign" }); return; }
     const requestId = activeBotRequestRef.current;
     if (requestId) cancelRuntimeBotMove(requestId);
     activeBotRequestRef.current = null;
@@ -892,6 +935,7 @@ export function GameBoard({
   }
 
   function reset() {
+    if (playMode === "room") { setIgnoreInitialRoom(true); const url = new URL(window.location.href); url.searchParams.delete("room"); window.history.replaceState(null, "", url); }
     const requestId = activeBotRequestRef.current;
     if (requestId) cancelRuntimeBotMove(requestId);
     activeBotRequestRef.current = null;
@@ -966,9 +1010,9 @@ export function GameBoard({
     setState((current) => (isOnlineMode || isSpectating ? { ...current, status: "waiting" } : { ...current, status: "active" }));
     setMatchmaking({ status: "idle" });
     setRoomCreation(
-      playMode === "room"
-        ? initialRoomId?.trim()
-          ? { status: "ready", roomId: initialRoomId.trim() }
+      (playMode === "room" || (playMode === "spectate" && inviteRoomId))
+        ? inviteRoomId?.trim()
+          ? { status: "ready", roomId: inviteRoomId.trim() }
           : { status: "creating" }
         : { status: "idle" }
     );
@@ -1083,32 +1127,35 @@ export function GameBoard({
     let cancelled = false;
 
     async function createFriendRoom() {
+      const seatToken = crypto.randomUUID() + crypto.randomUUID();
       try {
-        const response = await fetch("/api/rooms", {
+        const response = await fetch("/api/friends/rooms", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ variantKey, rated: false, visibility: "public" }),
+          body: JSON.stringify({ action: "create", variantKey, time: timeControl, side: seatChoice, token: seatToken }),
           signal: controller.signal
         });
         const data = (await response.json().catch(() => ({}))) as {
-          snapshot?: { roomId?: string };
+          room?: FriendRoomView;
           error?: string;
         };
         if (cancelled) return;
-        const roomId = data.snapshot?.roomId;
+        const roomId = data.room?.roomId;
         if (!response.ok || !roomId) {
-          const message = data.error ?? "Could not create a room code. Share can still use the local room code.";
+          const message = data.error ?? "Could not create a friend room. Please retry.";
           setRoomCreation({ status: "failed", message });
           setNotice(message);
           return;
         }
+        saveFriendToken(roomId, seatToken);
+        const url = new URL(window.location.href); url.searchParams.set("room", roomId); url.searchParams.set("mode", "room"); window.history.replaceState(null, "", url);
         setRoomCreation({ status: "ready", roomId });
         setNotice(`Invite room ${roomId} is ready. Share can copy the invite or spectator link.`);
       } catch (error) {
         if (cancelled || controller.signal.aborted) return;
         const message = error instanceof Error ? error.message : "Could not create a room code.";
         setRoomCreation({ status: "failed", message });
-        setNotice(`${message} Share can still use the local room code.`);
+        setNotice(message);
       }
     }
 
@@ -1117,7 +1164,7 @@ export function GameBoard({
       cancelled = true;
       controller.abort();
     };
-  }, [gameStarted, playMode, roomCreation.status, variantKey]);
+  }, [gameStarted, playMode, roomCreation.status, variantKey, timeControl, seatChoice]);
 
   useEffect(() => {
     if (!gameStarted || playMode !== "online" || state.status !== "waiting" || matchmaking.status !== "idle") return;
@@ -1198,20 +1245,22 @@ export function GameBoard({
       const now = Date.now();
       const elapsed = now - lastTick;
       lastTick = now;
-      if (!gameStarted || isSearchingOnline || isWatchingMode) return;
+      if (!gameStarted || isSearchingOnline || isWatchingMode || playMode === "room") return;
       setState((current) => tickGameClock(current, elapsed));
     }, 250);
     return () => window.clearInterval(timer);
-  }, [gameStarted, isSearchingOnline, isWatchingMode]);
+  }, [gameStarted, isSearchingOnline, isWatchingMode, playMode]);
 
   return (
     <div className="game-board-layout game-studio grid gap-4" data-focus={focusMode && gameStarted ? "true" : undefined} style={{ "--board-ratio": cols / rows } as CSSProperties}>
       <div className="board-column grid gap-3">
         <BoardToolbar variantKey={variantKey} appearancePreset={appearancePreset} onAppearanceChange={changeAppearancePreset} onFlip={flipBoard} onGuide={rulesSummary ? () => setShowRules(true) : undefined} focusMode={focusMode && gameStarted} onFocusChange={() => setFocusMode((current) => !current)} canFocus={gameStarted} />
+        {variantKey === "ouk-chaktrang" ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>3D carved</button></div> : null}
+        {friendId && gameStarted ? <div className="room-live-status" role="status">{friend.error ?? (state.status === "completed" ? "Game finished" : friend.room?.playerCount === 2 ? (playMode === "spectate" ? "Watching live" : friend.room.seat === state.turn ? "Your turn" : "Friend’s turn") : "Waiting for your friend · share the invite link")}{friend.room?.drawOffer ? <button type="button" className="focus-ring action-secondary" disabled={friend.busy || playMode === "spectate" || friend.room.drawOffer === friend.room.seat} onClick={() => void friend.send({ action: "draw" })}>{friend.room.drawOffer === friend.room.seat ? "Draw offered" : "Accept draw"}</button> : null}</div> : null}
         {playerCard(topPlayerColor, "top")}
         <div className="board-shell" data-variant={displayState.variantKey} data-board-theme={boardTheme} data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
-            <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} lastMove={displayState.moves.at(-1)} variantKey={displayState.variantKey} />
+            {boardView === "3d" && variantKey === "ouk-chaktrang" ? <KhmerBoard3D orientedRows={orientedRows} legalTargets={legalTargets} selected={selected} onChoose={choose} boardTheme={boardTheme} /> : <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} lastMove={displayState.moves.at(-1)} variantKey={displayState.variantKey} />}
             {selectedHandCode && selectedHandLabel ? <DropSelectionHint legalTargetCount={legalTargets.size} locale={locale} onCancel={cancelHandDrop} pieceCode={selectedHandCode} pieceLabel={selectedHandLabel} pieceOwner={state.turn} pieceSkin={pieceSkin} variantKey={displayState.variantKey} /> : null}
             {pendingPromotion ? (
               <PromotionChoiceCard locale={locale} onChoose={choosePromotion} pieceCode={pendingPromotion.pieceCode} pieceLabel={pendingPromotion.pieceLabel} pieceOwner={pendingPromotion.pieceOwner} pieceSkin={pieceSkin} promotedPieceLabel={pendingPromotion.promotedPieceLabel} variantKey={displayState.variantKey} />
@@ -1266,6 +1315,7 @@ export function GameBoard({
               <PlayActiveSetupCard modeLabel={modeDetails.label} onReset={reset} onShowStatus={() => setPanelTab("status")} timeControlLabel={getTimeControl(timeControl).label} />
             ) : (
               <PlayPregameSetupCard
+                joiningRoom={Boolean(inviteRoomId)}
                 botDifficulty={botDifficulty}
                 botLevelLabel={botLevel.label}
                 botStrengthDisplay={botStrength.display}
@@ -1336,7 +1386,7 @@ export function GameBoard({
                         {playMode === "room"
                           ? roomCreation.status === "creating"
                             ? "Creating room code"
-                            : "Invite room ready"
+                            : friend.room?.playerCount === 2 ? "Friend connected" : "Invite room ready"
                           : matchmaking.status === "matched"
                             ? "Opponent matched"
                             : "Auto-matching opponent"}
@@ -1376,20 +1426,14 @@ export function GameBoard({
                   </div>
                 ) : isBotMode ? (
                   <>
-                    <label className="studio-bot-choice" title={`${botStrength.display} · ${botCalibrationLabel}`}>
+                    <div className="studio-bot-choice" title={`${botStrength.display} · ${botCalibrationLabel}`}>
                       <Bot size={18} />
                       <div>
                         <strong>Opponent strength</strong>
                         <span title={botStrength.basis}>{botStrength.display}</span>
                       </div>
-                      <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)}>
-                        {botDifficultyLevels.map((level) => (
-                          <option key={level.key} value={level.key}>
-                            {level.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                      <ChoicePicker label="Bot difficulty" value={botDifficulty} onChange={setBotDifficulty} options={botDifficultyLevels.map(level => ({ key: level.key, label: level.label }))} />
+                    </div>
                   </>
                 ) : (
                   <div className="bot-profile-card status-mode-card" aria-label="Local play status">
@@ -1500,11 +1544,11 @@ export function GameBoard({
             </div>
           ) : null}
         </div>
-        <details className="studio-chat-disclosure">
+        {playMode === "room" ? <FriendChat room={friend.room} busy={friend.busy} onSend={text => friend.send({ action: "chat", text })} /> : <details className="studio-chat-disclosure">
           <summary className="focus-ring">{playMode === "bot" || playMode === "offline" ? "Local chat" : "Room chat"}<span>Open conversation</span></summary>
           <p className="studio-chat-note">Messages stay on this device.</p>
           <PlayChatPanel key={`${playMode}-${chatRoomId}`} gameStarted={gameStarted} isSpectating={isSpectating} locale={locale} playMode={playMode} roomId={chatRoomId} title={title} variantKey={displayState.variantKey} />
-        </details>
+        </details>}
       </aside>
       <GameGuideModal show={showRules} rulesSummary={rulesSummary} onClose={() => setShowRules(false)} />
     </div>

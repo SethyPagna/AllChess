@@ -44,6 +44,7 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "stockfish": "^18.0.7",
+    "three": "^0.186.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -57,6 +58,7 @@
     "@types/node": "^25.9.1",
     "@types/react": "^19.2.16",
     "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.186.0",
     "daisyui": "^5.5.20",
     "esbuild": "^0.27.3",
     "eslint": "^9.0.0",

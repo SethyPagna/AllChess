@@ -123,16 +123,6 @@ export function PlayControlCard({
               <small>{selectedAppearance?.label ?? "Matched set"}</small>
             </summary>
             <div className="play-look-grid">
-              <label>
-                <span>Appearance set</span>
-                <select className="focus-ring" aria-label="Appearance set" value={appearancePreset} onChange={(event) => onAppearancePresetChange(event.target.value as AppearancePresetPreference)}>
-                  {appearanceOptions.map((option) => (
-                    <option key={option.key} value={option.key}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
               <div className="play-look-option-row play-look-set-row" role="group" aria-label="Appearance set options">
                 {appearanceOptions.map((option) => (
                   <button

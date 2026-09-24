@@ -156,6 +156,15 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     drawConditions: ["Repetition/pass scoring according to AllChess rules mode", "Mutual agreement"],
     illegalMoveNotes: ["Generals may not face directly.", "Cannon movement requires the correct screen behavior.", "A player may not remain in check."]
   },
+  "ouk-chaktrang": {
+    variantKey: "ouk-chaktrang",
+    sourceLinks: [{ name: "PyChess Ouk Chaktrang rules and championship reference", url: "https://www.pychess.org/variants/cambodian" }],
+    numberedBasics: ["Khon (king) starts to each player’s left of Neang (queen).", "Trey pawns start on the third rank and promote to Neang on the sixth.", "Khon may leap to the second rank once; Neang may leap two squares forward once. Neither leap captures.", "Checkmate wins. This local preview does not yet adjudicate tournament counting claims."],
+    specialRules: ["Khon opening leap", "Neang opening leap", "Rook alignment permanently removes Khon’s leap", "Sixth-rank promotion"],
+    winConditions: ["Checkmate", "Resignation"],
+    drawConditions: ["Stalemate", "Mutual agreement; tournament counting claims are not yet automated"],
+    illegalMoveNotes: ["No castling, pawn double-step, or en passant.", "Khon cannot leap after being checked or after an opposing rook aligns with its rank or file."]
+  },
   makruk: {
     variantKey: "makruk",
     sourceLinks: [{ name: "GNU XBoard Makruk rules", url: "https://www.gnu.org/software/xboard/whats_new/rules/Makruk.html" }],
@@ -320,6 +329,11 @@ const verifiedChessEdgeCases = [
 ];
 
 const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
+  "ouk-chaktrang": {
+    status: "rules-gated",
+    verifiedEdgeCases: ["Native setup, first-move rights, non-capturing leaps, rook alignment and sixth-rank promotion."],
+    remainingGates: ["Tournament board-honor and piece-honor counting claims require a dedicated adjudication flow.", "Online competitive verification and calibrated bot benchmarks are pending."]
+  },
   classic: {
     status: "verified-playable",
     verifiedEdgeCases: verifiedChessEdgeCases,

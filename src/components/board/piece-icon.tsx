@@ -1,3 +1,4 @@
+import { KhmerPiece } from "./khmer-piece";
 import { normalizeLocale, type LocaleCode } from "@/lib/i18n/locales";
 import { getVocabulary } from "@/lib/i18n/vocabulary";
 import type { PlayerColor } from "@/lib/variants";
@@ -11,7 +12,7 @@ type PieceIconProps = {
   promoted?: boolean;
 };
 
-export type PieceSkin = "western" | "silhouette" | "glyph" | "monogram" | "castle" | "pirate" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
+export type PieceSkin = "khmer" | "western" | "silhouette" | "glyph" | "monogram" | "castle" | "pirate" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
 export type PieceSkinPreference = "default" | PieceSkin;
 
 export type PieceSkinOption = {
@@ -36,6 +37,7 @@ export function PieceIcon({ code, owner, pieceSkin = "default", variantKey, loca
   const normalized = code.toLowerCase();
   const label = getPieceDisplayName(normalized, variantKey, locale, promoted);
   const skin = resolvePieceSkin(variantKey, pieceSkin);
+  if (variantKey === "ouk-chaktrang" && skin === "khmer") return <KhmerPiece code={normalized} owner={owner} label={label} promoted={promoted} />;
   if (isDraughtsPresentation(variantKey)) {
     return <DraughtsPieceIcon code={normalized} owner={owner} promoted={promoted} variantKey={variantKey} label={label} skin={skin} />;
   }
@@ -543,6 +545,7 @@ function PawnPaths() {
 }
 
 function getNativeGlyph({ code, owner, variantKey, promoted }: { code: string; owner: PlayerColor; variantKey: string; promoted: boolean }) {
+  if (variantKey === "ouk-chaktrang") return ({ k: "ខ", m: "ន", s: "គ", n: "ស", r: "ទ", p: "ត" } as Record<string, string>)[code] ?? code;
   if (variantKey === "xiangqi") {
     const red: Record<string, string> = { g: "\u5e25", a: "\u4ed5", e: "\u76f8", h: "\u508c", r: "\u4fe5", c: "\u70ae", p: "\u5175" };
     const black: Record<string, string> = { g: "\u5c07", a: "\u58eb", e: "\u8c61", h: "\u99ac", r: "\u8eca", c: "\u7832", p: "\u5352" };
@@ -566,6 +569,7 @@ function getNativeGlyph({ code, owner, variantKey, promoted }: { code: string; o
 }
 
 export function getPieceSkin(variantKey: string): PieceSkin {
+  if (variantKey === "ouk-chaktrang") return "khmer";
   if (variantKey === "makruk") return "makruk";
   if (isDraughtsPresentation(variantKey)) return "checker";
   if (isStonePresentation(variantKey)) return "stone";
@@ -577,6 +581,7 @@ export function getPieceSkin(variantKey: string): PieceSkin {
 }
 
 export function getPieceSkinOptions(variantKey: string): PieceSkinOption[] {
+  if (variantKey === "ouk-chaktrang") return [{ key: "default", label: "Khmer carved" }, { key: "khmer", label: "Khmer carved" }, { key: "tile", label: "Khmer letters" }];
   const defaultSkin = getPieceSkin(variantKey);
   const defaults: PieceSkinOption[] = [{ key: "default", label: `Auto (${pieceSkinLabel(defaultSkin)})` }];
   if (variantKey === "shogi" || variantKey === "mini-shogi") {
@@ -607,6 +612,10 @@ export function resolvePieceSkin(variantKey: string, preference: PieceSkinPrefer
 }
 
 export function getPieceDisplayName(code: string, variantKey: string, locale = "en", promoted = false) {
+  if (variantKey === "ouk-chaktrang") {
+    const names: Record<string, string> = locale === "km" ? { k: "ខុន", m: "នាង", s: "គោល", n: "សេះ", r: "ទូក", p: "ត្រី" } : { k: "Khon · King", m: "Neang · Queen", s: "Koul · General", n: "Ses · Horse", r: "Touk · Boat", p: "Trey · Fish" };
+    return (promoted ? (locale === "km" ? "ត្រីបក · " : "Promoted fish · ") : "") + (names[code] ?? code);
+  }
   const normalizedLocale = normalizeLocale(locale);
   const vocabulary = getVocabulary(normalizedLocale);
   const promotedKey = promoted ? promotedPieceVocabularyKey(code, variantKey) : null;
@@ -696,7 +705,9 @@ function option(key: PieceSkin): PieceSkinOption {
 }
 
 function pieceSkinLabel(key: PieceSkin) {
+  if (key === "khmer") return "Khmer carved";
   const labels: Record<PieceSkin, string> = {
+    khmer: "Khmer carved",
     western: "Classic",
     silhouette: "Carved",
     glyph: "Glyph",

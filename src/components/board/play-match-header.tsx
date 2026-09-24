@@ -1,5 +1,6 @@
 "use client";
 
+import { ChoicePicker } from "./choice-buttons";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { BookOpen, ChevronDown, Copy, Eye, LinkIcon, Search, Share2, Users } from "lucide-react";
@@ -52,6 +53,7 @@ export function PlayMatchHeader({
   const gamePickerButtonRef = useRef<HTMLButtonElement>(null);
   const shareRef = useRef<HTMLDivElement>(null);
   const roomHref = playGameHref(locale, currentVariantKey, { mode: "room", time: timeControl, room: roomId });
+  const hasInvite = /^[a-f0-9-]{36}$/.test(roomId);
   const spectateHref = playGameHref(locale, currentVariantKey, { mode: "spectate", time: timeControl, room: roomId });
   const targetMode = modeFilter === "current" ? playMode : modeFilter;
   const playableGames = useMemo(() => gameCatalog.filter((entry) => entry.variantKey), []);
@@ -156,17 +158,7 @@ export function PlayMatchHeader({
                       </button>
                     ))}
                   </div>
-                  <label className="play-title-picker-family">
-                    <span className="sr-only">Game family</span>
-                    <select value={familyFilter} onChange={(event) => setFamilyFilter(event.target.value as "all" | GameFamilyKey)}>
-                      <option value="all">All families</option>
-                      {gameFamilies.map((family) => (
-                        <option key={family.key} value={family.key}>
-                          {family.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <ChoicePicker label="Game family" value={familyFilter} onChange={setFamilyFilter} options={[{ key: "all", label: "All families" }, ...gameFamilies.map(family => ({ key: family.key, label: family.label }))]} />
                 </div>
                 <div className="play-title-picker-list">
                   {filteredGames.map((entry) => {
@@ -203,13 +195,13 @@ export function PlayMatchHeader({
               </button>
               {shareOpen ? (
                 <div id="play-share-menu" className="play-share-menu-panel" role="dialog" aria-label="Share game options">
-                  <div className="play-share-code">
+                  {hasInvite ? <div className="play-share-code">
                     <span>Room code</span>
                     <code>{roomId}</code>
                     <button type="button" className="focus-ring" onClick={() => void copyShare(roomId, "Room code")} aria-label="Copy room code">
                       <Copy size={14} />
                     </button>
-                  </div>
+                  </div> : <p>Create a friend room to get an invite.</p>}
                   <button
                     type="button"
                     className="focus-ring play-share-option"
@@ -222,7 +214,7 @@ export function PlayMatchHeader({
                     <span>Room setup</span>
                     <small>Create invite</small>
                   </button>
-                  <ShareOptionRow
+                  {hasInvite ? <><ShareOptionRow
                     href={roomHref}
                     icon={<LinkIcon size={15} />}
                     label="Invite link"
@@ -240,6 +232,7 @@ export function PlayMatchHeader({
                       setShareOpen(false);
                     }}
                   />
+                  </> : null}
                   {shareNotice ? <p role="status">{shareNotice}</p> : null}
                 </div>
               ) : null}
@@ -280,5 +273,5 @@ function normalize(value: string) {
     .normalize("NFKD")
     .toLowerCase()
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]+/g, "");
+    .replace(/[^\p{L}\p{M}\p{N}]+/gu, "");
 }

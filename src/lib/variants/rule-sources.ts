@@ -1,4 +1,5 @@
 export const ruleSources = {
+  "ouk-chaktrang": [{ name: "PyChess Cambodian rules and championship reference", url: "https://www.pychess.org/variants/cambodian", scope: ["Native setup", "Opening leaps", "Promotion", "Counting rules"] }],
   classic: [
     {
       name: "FIDE Laws of Chess",

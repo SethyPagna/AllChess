@@ -9,6 +9,7 @@ const presentations: Record<string, GamePresentation> = {
   "mini-shogi": { tone: "sand", subtitle: "Small board. Big possibilities.", motif: "5 × 5", pieces: ["s", "k", "g"] },
   xiangqi: { tone: "clay", subtitle: "A battle across the river", motif: "China", pieces: ["h", "g", "c"] },
   janggi: { tone: "slate", subtitle: "Command the palace", motif: "Korea", pieces: ["h", "g", "c"] },
+  "ouk-chaktrang": { tone: "khmer", subtitle: "Cambodia’s own chess tradition", motif: "កម្ពុជា · Cambodia", pieces: ["n", "k", "m"] },
   makruk: { tone: "sand", subtitle: "A slower, deeper kind of chess", motif: "Thailand", pieces: ["n", "k", "m"] },
   chaturanga: { tone: "sand", subtitle: "Meet the ancestor of chess", motif: "India", pieces: ["n", "k", "e"] },
   shatranj: { tone: "clay", subtitle: "Rediscover an ancient classic", motif: "Persia", pieces: ["n", "k", "f"] },

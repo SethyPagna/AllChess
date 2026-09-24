@@ -1,9 +1,11 @@
-import { Bot, Eye, Flag, MonitorSmartphone, PlayCircle, Timer, Users } from "lucide-react";
+import { Bot, Eye, Flag, MonitorSmartphone, PlayCircle, Users } from "lucide-react";
 
 import { botDifficultyLevels, type BotDifficultyKey } from "@/lib/bot/config";
 import type { CatalogModeSupport } from "@/lib/catalog";
 import { timeControls, type TimeControlKey } from "@/lib/game/time-controls";
 import type { PlayMode } from "@/components/board/game-board-options";
+
+import { ChoiceButtons, ChoicePicker } from "./choice-buttons";
 
 type SeatChoice = "random" | "first" | "second";
 
@@ -25,6 +27,7 @@ type PlayPregameSetupCardProps = {
   seatChoice: SeatChoice;
   secondColorLabel: string;
   timeControl: TimeControlKey;
+  joiningRoom?: boolean;
 };
 
 export function PlayPregameSetupCard({
@@ -44,7 +47,8 @@ export function PlayPregameSetupCard({
   modeSupport,
   seatChoice,
   secondColorLabel,
-  timeControl
+  timeControl,
+  joiningRoom = false
 }: PlayPregameSetupCardProps) {
   const secondaryModes = [
     { key: "online" as const, label: "Quick Match", Icon: Flag },
@@ -55,23 +59,11 @@ export function PlayPregameSetupCard({
   const modeAccessibleNames: Partial<Record<PlayMode, string>> = {
     spectate: "Spectate"
   };
-  const startActionLabel = startLabelForMode(playMode);
+  const startActionLabel = joiningRoom && playMode === "room" ? "Join game" : startLabelForMode(playMode);
 
   return (
     <div className="play-options-card play-setup-stack">
-      <label className="play-setup-select-card">
-        <Timer size={18} />
-        <select aria-label="Time control" value={timeControl} onChange={(event) => onTimeControlChange(event.target.value as TimeControlKey)}>
-          {timeControls.slice(0, 6).map((control) => (
-            <option key={control.key} value={control.key}>
-              {control.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <div className="studio-time-shortcuts" role="group" aria-label="Quick time controls">
-        {(["blitz", "rapid", "freestyle"] as const).map((key) => <button key={key} type="button" className="focus-ring" aria-pressed={timeControl === key} onClick={() => onTimeControlChange(key)}>{key === "blitz" ? "5 min" : key === "rapid" ? "10 min" : "Untimed"}</button>)}
-      </div>
+      <ChoiceButtons label="Time control" value={timeControl} onChange={onTimeControlChange} options={timeControls.slice(0, 6).map(control => ({ key: control.key, label: control.key === "freestyle" ? "Untimed" : control.label }))} />
       <div className="play-mode-stack" aria-label="Play modes">
         <button
           type="button"
@@ -101,29 +93,12 @@ export function PlayPregameSetupCard({
         ))}
       </div>
       {isBotMode ? (
-        <label className="studio-bot-choice" title={`${botLevelLabel} bot · ${botStrengthLabel} · target ${botTargetElo}`}>
-          <Bot size={18} />
-          <div>
-            <strong>Opponent strength</strong>
-            <span>{botStrengthDisplay}</span>
-          </div>
-          <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => onBotDifficultyChange(event.target.value as BotDifficultyKey)}>
-            {botDifficultyLevels.map((level) => (
-              <option key={level.key} value={level.key}>
-                {level.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="choice-field" title={`${botLevelLabel} · ${botStrengthLabel} · target ${botTargetElo}`}>
+          <ChoicePicker label="Bot difficulty" value={botDifficulty} onChange={onBotDifficultyChange} options={botDifficultyLevels.map(level => ({ key: level.key, label: level.label }))} />
+          <small className="choice-help">{botStrengthDisplay}</small>
+        </div>
       ) : null}
-      <label className="play-setup-field">
-        <span>Side</span>
-        <select aria-label="Side" value={seatChoice} onChange={(event) => onSeatChoiceChange(event.target.value as SeatChoice)}>
-          <option value="random">Random side</option>
-          <option value="first">{firstColorLabel}</option>
-          <option value="second">{secondColorLabel}</option>
-        </select>
-      </label>
+      <ChoiceButtons label="Side" value={seatChoice} onChange={onSeatChoiceChange} options={[{ key: "random", label: "Random" }, { key: "first", label: firstColorLabel }, { key: "second", label: secondColorLabel }]} />
       <button type="button" onClick={onStartGame} className="focus-ring action-primary play-start-button">
         <PlayCircle size={18} />
         {startActionLabel}

@@ -108,6 +108,7 @@ const en = {
   "variant.shogi": "Shogi",
   "variant.mini-shogi": "Mini Shogi",
   "variant.janggi": "Janggi",
+  "variant.ouk-chaktrang": "Ouk Chaktrang",
   "variant.makruk": "Thai Makruk",
   "variant.jungle": "Jungle Chess",
   "variant.english-draughts": "English Draughts",
@@ -139,6 +140,7 @@ const packs: Record<LocaleCode, Partial<FlatDictionary>> = {
     "settings.light": "ភ្លឺ",
     "settings.dark": "ងងឹត",
     "variant.classic": "អុកសកល",
+    "variant.ouk-chaktrang": "អុកចត្រង្គ",
     "variant.xiangqi": "អុកចិន",
     "variant.jungle": "អុកព្រៃ"
   },

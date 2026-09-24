@@ -164,6 +164,7 @@ function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
   if (isShogiFamily(variant.key)) {
     return shogiPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
   }
+  if (variant.key === "ouk-chaktrang") return oukPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
   if (variant.key === "makruk") {
     return makrukPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
   }
@@ -299,6 +300,35 @@ function shogiSilverDirections(owner: PlayerColor): Array<[number, number]> {
 function shogiKnightDirections(owner: PlayerColor): Array<[number, number]> {
   const forward = shogiForward(owner);
   return [[forward * 2, -1], [forward * 2, 1]];
+}
+
+// Opening leaps never attack occupied squares. Keep them out of check detection to
+// avoid recursion while using the ordinary Cambodian movement for attacks.
+function oukPieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
+  const moves = makrukPieceMoves(state, piece, from);
+  if (piece.promoted || !["k", "m"].includes(piece.code)) return moves;
+  const homeRow = piece.owner === "white" ? 7 : 0;
+  const homeCol = piece.code === "k" ? (piece.owner === "white" ? 3 : 4) : (piece.owner === "white" ? 4 : 3);
+  if (from.row !== homeRow || from.col !== homeCol || hasMovedFrom(state, from)) return moves;
+  const used = (state.variantState?.oukLeapUsed ?? {}) as Record<string, boolean>;
+  if (used[piece.owner + piece.code]) return moves;
+  if (piece.code === "k" && ((state.checks[piece.owner] ?? 0) > 0 || oukRookAligned(state, piece.owner) || isInCheck(state, piece.owner))) return moves;
+  const forward = orient(piece.owner, -1);
+  const targets = piece.code === "k" ? [{ row: from.row + forward, col: from.col - 2 }, { row: from.row + forward, col: from.col + 2 }] : [{ row: from.row + forward * 2, col: from.col }];
+  for (const to of targets) if (cellAt(state, to) && !cellAt(state, to)?.piece) moves.push({ from, to });
+  return moves;
+}
+
+function oukRookAligned(state: GameState, owner: PlayerColor) {
+  const king = findRoyal(state, owner);
+  return Boolean(king && state.board.flat().some(cell => cell.piece?.code === "r" && cell.piece.owner !== owner && (cell.square.row === king.square.row || cell.square.col === king.square.col)));
+}
+
+function updateOukLeapRights(state: GameState, piece: Piece) {
+  const used = { ...(state.variantState?.oukLeapUsed as Record<string, boolean> ?? {}) };
+  if (!piece.promoted && ["k", "m"].includes(piece.code)) used[piece.owner + piece.code] = true;
+  for (const owner of getVariant(state.variantKey).players) if (oukRookAligned(state, owner) || isInCheck(state, owner)) used[owner + "k"] = true;
+  state.variantState = { ...state.variantState, oukLeapUsed: used };
 }
 
 function makrukPieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
@@ -1114,6 +1144,7 @@ export function applyMove(state: GameState, move: Move): GameState {
     return withRacingKingsOutcome(next, movingPiece.owner, move.to);
   }
 
+  if (variant.key === "ouk-chaktrang") updateOukLeapRights(next, movingPiece);
   if (variant.key === "makruk") {
     updateMakrukCounting(next);
   }
@@ -1786,7 +1817,7 @@ function shouldPromote(variant: VariantDefinition, piece: Piece, to: Square, req
     return mustPromoteShogiPiece(piece, to, variant.board.rows) || Boolean(requested && canPromoteShogiPiece(piece));
   }
   if (piece.code !== "p") return false;
-  if (variant.key === "makruk") {
+  if (variant.key === "makruk" || variant.key === "ouk-chaktrang") {
     return piece.owner === "white" ? to.row <= 2 : to.row >= variant.board.rows - 3;
   }
   if (variant.family === "western") {
@@ -1848,7 +1879,7 @@ function promotionCodeFor(variant: VariantDefinition, piece: Piece) {
   if (variant.key === "chaturanga" && piece.code === "p") return "m";
   if (variant.key === "shatranj" && piece.code === "p") return "f";
   if (variant.family === "western" && piece.code === "p") return "q";
-  if (variant.key === "makruk" && piece.code === "p") return "m";
+  if ((variant.key === "makruk" || variant.key === "ouk-chaktrang") && piece.code === "p") return "m";
   return piece.code;
 }
 
@@ -1904,7 +1935,8 @@ function isSquareAttacked(state: GameState, square: Square, byColor: PlayerColor
   for (const row of state.board) {
     for (const cell of row) {
       if (cell.piece?.owner !== byColor) continue;
-      if (getPseudoLegalMoves(state, cell.square).some((move) => sameSquare(move.to, square))) {
+      const attacks = state.variantKey === "ouk-chaktrang" ? makrukPieceMoves(state, cell.piece, cell.square) : getPseudoLegalMoves(state, cell.square);
+      if (attacks.some((move) => sameSquare(move.to, square))) {
         return true;
       }
     }
@@ -2101,7 +2133,7 @@ function terrainFor(variant: VariantDefinition, square: Square): BoardCell["terr
   if (variant.key === "shogi" && (square.row <= 2 || square.row >= variant.board.rows - 3)) {
     return "promotion-zone";
   }
-  if (variant.key === "makruk") return square.row === 2 || square.row === 5 ? "promotion-zone" : "land";
+  if (variant.key === "makruk" || variant.key === "ouk-chaktrang") return square.row === 2 || square.row === 5 ? "promotion-zone" : "land";
   if (variant.supportsPromotion && (square.row === 0 || square.row === variant.board.rows - 1)) return "promotion-zone";
   return "land";
 }

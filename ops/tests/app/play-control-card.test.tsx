@@ -46,8 +46,8 @@ describe("PlayControlCard", () => {
     expect(markup).toContain("Setup");
     expect(markup).not.toContain("Live");
     expect(markup).toContain("Appearance set");
-    expect(markup).toContain("<select");
-    expect(markup).toContain('value="tablet"');
+    expect(markup).not.toContain("<select");
+    expect(markup).toContain('aria-label="Appearance set options"');
     expect(markup).toContain('data-appearance-option="tablet"');
     expect(markup).toContain('data-board-theme-option="jade"');
     expect(markup).toContain('data-piece-skin-option="tile"');

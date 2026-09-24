@@ -74,6 +74,12 @@ const familyPresets: Record<string, AppearancePresetOption[]> = {
     preset("stone", "Stone set", "contrast", "stone"),
     preset("classic", "Checker set", "classic", "checker")
   ],
+  khmer: [
+    preset("default", "Khmer sandstone", "wood", "khmer"),
+    preset("carved", "Rosewood & ivory", "wood", "khmer"),
+    preset("contrast", "Clear Khmer", "contrast", "khmer"),
+    preset("tablet", "Khmer letters", "jade", "tile")
+  ],
   makruk: [
     preset("default", "Auto matched", "wood", "default"),
     preset("carved", "Carved set", "wood", "silhouette"),
@@ -103,6 +109,7 @@ const defaultBoards: Record<string, { label: string; boardTheme: BoardThemePrefe
   "mini-shogi": { label: "Mini kaya", boardTheme: "wood" },
   xiangqi: { label: "River wood", boardTheme: "wood" },
   janggi: { label: "Palace blue", boardTheme: "ocean" },
+  "ouk-chaktrang": { label: "Khmer sandstone", boardTheme: "wood" },
   makruk: { label: "Thai wood", boardTheme: "wood" },
   jungle: { label: "Forest jade", boardTheme: "jade" },
   "international-draughts": { label: "Tournament slate", boardTheme: "slate" },
@@ -135,6 +142,7 @@ function appearanceFamily(variantKey: string) {
   if (variantKey === "jungle") return "jungle";
   if (variantKey === "english-draughts" || variantKey === "international-draughts" || variantKey === "turkish-draughts") return "checker";
   if (variantKey === "konane") return "stone";
+  if (variantKey === "ouk-chaktrang") return "khmer";
   if (variantKey === "makruk") return "makruk";
   return "western";
 }

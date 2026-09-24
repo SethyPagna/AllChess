@@ -163,6 +163,22 @@ export const variantCatalog: VariantDefinition[] = [
     aliases: ["thai-chess"]
   },
   {
+    key: "ouk-chaktrang",
+    nameKey: "variant.ouk-chaktrang",
+    rulesAdapter: "allchess-ouk",
+    engineProtocol: "internal",
+    family: "southeast-asian",
+    board: { rows: 8, cols: 8, coordinates: "orthodox" },
+    players: ["white", "black"],
+    supportsDrops: false,
+    supportsPromotion: true,
+    supportsCastling: false,
+    supportsCheck: true,
+    objective: "Checkmate in Cambodian Ouk Chaktrang with native opening leaps.",
+    setup: ["rnsmksnr", "........", "pppppppp", "........", "........", "PPPPPPPP", "........", "RNSKMSNR"],
+    aliases: ["khmer-chess", "cambodian-chess", "cambodian", "ouk"]
+  },
+  {
     key: "jungle",
     nameKey: "variant.jungle",
     rulesAdapter: "allchess-jungle",

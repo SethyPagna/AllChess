@@ -10,6 +10,7 @@ import { createAppNavGroups } from "@/components/shell/navigation-config";
 import { NotificationCenter } from "@/components/shell/notification-center";
 import { ThemeProvider } from "@/components/shell/theme-provider";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
+import { InstallApp } from "@/components/shell/install-app";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { locales, normalizeLocale, rtlLocales, type LocaleCode } from "@/lib/i18n/locales";
 
@@ -90,6 +91,7 @@ export default async function LocaleLayout({
                   <LocaleSwitcher active={locale as LocaleCode} />
                 </Suspense>
                 <NotificationCenter />
+                <InstallApp />
               </div>
             </aside>
             <div className="app-main">
