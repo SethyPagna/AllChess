@@ -269,3 +269,17 @@ button:disabled { cursor: not-allowed; }
 .library-mode { flex-wrap: wrap; }
 .library-mode .choice-picker { width: auto; }
 .game-studio .play-title-block h1 { font-size: 1.2rem; white-space: normal; overflow-wrap: anywhere; line-height: 1.15; }
+.ouk-count-panel { display: grid; gap: .45rem; padding: .75rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.ouk-count-heading { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .4rem; font-size: .8rem; }
+.ouk-count-heading [role="status"] { font-variant-numeric: tabular-nums; color: var(--accent); font-weight: 800; }
+.ouk-count-panel p, .ouk-endgame-picker p { margin: 0; font-size: .74rem; color: var(--muted); }
+.ouk-count-actions { display: flex; flex-wrap: wrap; gap: .4rem; }
+.ouk-count-actions button { min-height: 40px; padding: .45rem .7rem; font-size: .75rem; }
+.ouk-count-actions:empty { display: none; }
+.ouk-endgame-picker { margin-top: .75rem; border-top: 1px solid var(--border); padding-top: .65rem; }
+.ouk-endgame-picker summary { cursor: pointer; padding: .3rem 0; font-size: .8rem; font-weight: 750; }
+.ouk-endgame-picker > div { display: grid; gap: .4rem; margin-top: .55rem; }
+.ouk-endgame-picker button { display: grid; gap: .1rem; min-height: 50px; padding: .5rem .65rem; border: 1px solid var(--border); border-radius: 8px; text-align: left; background: var(--surface); }
+.ouk-endgame-picker button:hover { background: var(--surface-soft); }
+.ouk-endgame-picker button strong { font-size: .8rem; }
+.ouk-endgame-picker button span { color: var(--muted); font-size: .7rem; }

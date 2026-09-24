@@ -107,7 +107,7 @@ function nativeReviewContext(variantKey?: string) {
   if (variantKey === "shogi") {
     return " Also inspect drops, promotion zones, king exposure, and pieces in hand.";
   }
-  if (variantKey === "makruk") {
+  if (variantKey === "makruk" || variantKey === "ouk-chaktrang") {
     return " Also inspect slow-piece coordination, promotion timing, and counting-draw pressure.";
   }
   return "";
@@ -118,6 +118,6 @@ function nativeBestLinePrompt(variantKey?: string) {
   if (variantKey === "jungle") return " Compare den-race, trap-control, and animal-rank replies.";
   if (variantKey === "antichess") return " Compare every legal capture first.";
   if (variantKey === "shogi") return " Include candidate drops and promotion choices.";
-  if (variantKey === "makruk") return " Include counting-rule and promotion alternatives.";
+  if (variantKey === "makruk" || variantKey === "ouk-chaktrang") return " Include counting-rule and promotion alternatives.";
   return " Include variant-specific tactical replies, not only western chess checks.";
 }

@@ -1,4 +1,5 @@
 import { getVariant } from "./catalog";
+import { advanceOukCount, settleOukCount } from "./ouk-counting";
 import type { BoardCell, GameState, Move, Piece, PlayerColor, Square, VariantDefinition } from "./types";
 
 const pieceLabels: Record<string, string> = {
@@ -312,7 +313,7 @@ function oukPieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
   if (from.row !== homeRow || from.col !== homeCol || hasMovedFrom(state, from)) return moves;
   const used = (state.variantState?.oukLeapUsed ?? {}) as Record<string, boolean>;
   if (used[piece.owner + piece.code]) return moves;
-  if (piece.code === "k" && ((state.checks[piece.owner] ?? 0) > 0 || oukRookAligned(state, piece.owner) || isInCheck(state, piece.owner))) return moves;
+  if (piece.code === "k" && (oukRookAligned(state, piece.owner) || isInCheck(state, piece.owner))) return moves;
   const forward = orient(piece.owner, -1);
   const targets = piece.code === "k" ? [{ row: from.row + forward, col: from.col - 2 }, { row: from.row + forward, col: from.col + 2 }] : [{ row: from.row + forward * 2, col: from.col }];
   for (const to of targets) if (cellAt(state, to) && !cellAt(state, to)?.piece) moves.push({ from, to });
@@ -327,7 +328,7 @@ function oukRookAligned(state: GameState, owner: PlayerColor) {
 function updateOukLeapRights(state: GameState, piece: Piece) {
   const used = { ...(state.variantState?.oukLeapUsed as Record<string, boolean> ?? {}) };
   if (!piece.promoted && ["k", "m"].includes(piece.code)) used[piece.owner + piece.code] = true;
-  for (const owner of getVariant(state.variantKey).players) if (oukRookAligned(state, owner) || isInCheck(state, owner)) used[owner + "k"] = true;
+  for (const owner of getVariant(state.variantKey).players) if (oukRookAligned(state, owner)) used[owner + "k"] = true;
   state.variantState = { ...state.variantState, oukLeapUsed: used };
 }
 
@@ -1144,7 +1145,10 @@ export function applyMove(state: GameState, move: Move): GameState {
     return withRacingKingsOutcome(next, movingPiece.owner, move.to);
   }
 
-  if (variant.key === "ouk-chaktrang") updateOukLeapRights(next, movingPiece);
+  if (variant.key === "ouk-chaktrang") {
+    updateOukLeapRights(next, movingPiece);
+    advanceOukCount(next, movingPiece.owner);
+  }
   if (variant.key === "makruk") {
     updateMakrukCounting(next);
   }
@@ -1162,7 +1166,8 @@ export function applyMove(state: GameState, move: Move): GameState {
   if (isShogiFamily(variant.key)) {
     return withShogiOutcome(next, movingPiece.owner, move.to);
   }
-  return withOutcome(next, movingPiece.owner, move.to);
+  const outcome = withOutcome(next, movingPiece.owner, move.to);
+  return variant.key === "ouk-chaktrang" ? settleOukCount(outcome) : outcome;
 }
 
 function withHistoricalBareKingOutcome(state: GameState, mover: PlayerColor, destination?: Square): GameState {

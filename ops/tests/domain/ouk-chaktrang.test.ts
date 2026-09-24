@@ -18,6 +18,13 @@ describe("Cambodian Ouk Chaktrang", () => {
     put(state, 6, 1, "p", "black"); expect(destinations(state, 7, 3)).not.toContain("6,1");
     put(state, 5, 2, "n", "black"); expect(destinations(state, 7, 3)).not.toContain("6,5");
   });
+  test("a resolved knight check does not remove an unmoved king's leap", () => {
+    const state = empty(); put(state, 7, 3, "k", "white"); put(state, 0, 4, "k", "black"); put(state, 5, 2, "n", "black"); put(state, 6, 2, "r", "white");
+    state.checks.white = 1;
+    const escaped = applyMove(state, { from: { row: 6, col: 2 }, to: { row: 5, col: 2 } });
+    const reply = applyMove(escaped, { from: { row: 0, col: 4 }, to: { row: 1, col: 4 } });
+    expect(destinations(reply, 7, 3)).toContain("6,5");
+  });
   test("king leaps cannot expose the king to an attack", () => {
     const state = empty(); put(state, 7, 3, "k", "white"); put(state, 0, 4, "k", "black"); put(state, 4, 4, "n", "black");
     expect(destinations(state, 7, 3)).not.toContain("6,5");

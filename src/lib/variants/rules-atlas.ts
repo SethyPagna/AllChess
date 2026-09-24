@@ -158,12 +158,12 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
   },
   "ouk-chaktrang": {
     variantKey: "ouk-chaktrang",
-    sourceLinks: [{ name: "PyChess Ouk Chaktrang rules and championship reference", url: "https://www.pychess.org/variants/cambodian" }],
-    numberedBasics: ["Khon (king) starts to each player’s left of Neang (queen).", "Trey pawns start on the third rank and promote to Neang on the sixth.", "Khon may leap to the second rank once; Neang may leap two squares forward once. Neither leap captures.", "Checkmate wins. This local preview does not yet adjudicate tournament counting claims."],
-    specialRules: ["Khon opening leap", "Neang opening leap", "Rook alignment permanently removes Khon’s leap", "Sixth-rank promotion"],
+    sourceLinks: [{ name: "PyChess Ouk Chaktrang digital rules", url: "https://www.pychess.org/variants/cambodian" }, { name: "Cambodia federation: 2022 championship regulations, Article 5", url: "https://docs.google.com/document/d/1adppJ66vonM27UYwC-KyldXl7oZ_5Pb0/edit" }],
+    numberedBasics: ["Khon (king) starts to each player’s left of Neang (queen).", "Trey pawns start on the third rank and promote to Neang on the sixth.", "Khon may leap to the second rank once; Neang may leap two squares forward once. Neither leap captures.", "Checkmate wins unless the winner still claims a board count. Endgame counting follows the published PyChess digital profile."],
+    specialRules: ["Khon opening leap", "Neang opening leap", "Rook alignment permanently removes Khon’s leap", "Sixth-rank promotion", "With at most three pieces, claim a board count from 1 to 64 on your turn. Stop it to play for a win; restarting begins at 1.", "A bare king with no unpromoted pawns anywhere may choose a piece count. Start at the total pieces plus one; use the shortest material limit: two boats 8, one boat 16, two generals 22, two horses 32, one general 44, otherwise 64.", "Only the claimant’s moves count. A piece count stays fixed after captures and cannot be restarted. A bare king may replace a board count with a piece count."],
     winConditions: ["Checkmate", "Resignation"],
-    drawConditions: ["Stalemate", "Mutual agreement; tournament counting claims are not yet automated"],
-    illegalMoveNotes: ["No castling, pawn double-step, or en passant.", "Khon cannot leap after being checked or after an opposing rook aligns with its rank or file."]
+    drawConditions: ["Stalemate or only two kings", "Counting limit reached", "Chasing player accepts a board-count draw", "Board-count claimant mates without first stopping their count", "Mutual agreement"],
+    illegalMoveNotes: ["No castling, pawn double-step, or en passant.", "Khon cannot leap while checked or after an opposing rook aligns with its rank or file."]
   },
   makruk: {
     variantKey: "makruk",
@@ -331,8 +331,8 @@ const verifiedChessEdgeCases = [
 const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
   "ouk-chaktrang": {
     status: "rules-gated",
-    verifiedEdgeCases: ["Native setup, first-move rights, non-capturing leaps, rook alignment and sixth-rank promotion."],
-    remainingGates: ["Tournament board-honor and piece-honor counting claims require a dedicated adjudication flow.", "Online competitive verification and calibrated bot benchmarks are pending."]
+    verifiedEdgeCases: ["Native setup, first-move rights, non-capturing leaps, rook alignment and sixth-rank promotion.", "Explicit board/piece counting, fixed limits, claimant-only moves, stop/restart, accepted draws, counter-mate draws, and bare-king priority."],
+    remainingGates: ["The digital counting profile is implemented; referee-dependent tournament interpretations still require separate verification.", "Online competitive verification and calibrated bot benchmarks are pending."]
   },
   classic: {
     status: "verified-playable",

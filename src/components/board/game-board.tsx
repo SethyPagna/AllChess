@@ -5,6 +5,10 @@ import { useFriendRoom, saveFriendToken } from "./use-friend-room";
 import type { FriendRoomView } from "@/lib/realtime/friend-room";
 import dynamic from "next/dynamic";
 import { ChoicePicker } from "./choice-buttons";
+import { OukCountingPanel, OukEndgamePicker } from "./ouk-counting-panel";
+import { applyOukCountAction, readOukCount, type OukCountAction } from "@/lib/variants/ouk-counting";
+import { prepareOukBotTurn } from "@/lib/bot/ouk-counting";
+import { createOukEndgame, oukEndgames, type OukEndgameKey } from "@/lib/variants/ouk-endgames";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   Bot,
@@ -597,6 +601,28 @@ export function GameBoard({
     setPendingPromotion(null);
   }
 
+  function changeOukCount(action: OukCountAction) {
+    if (!gameStarted || isReviewing || isOnlineMode || isSpectating || botMode === "both") return;
+    const count = readOukCount(state);
+    const actor = botMode === "opponent" ? humanColor : action === "stop" && count ? count.side : action === "claim-draw" && count ? count.side === "white" ? "black" : "white" : state.turn;
+    const requestId = activeBotRequestRef.current;
+    if (requestId) cancelRuntimeBotMove(requestId);
+    activeBotRequestRef.current = null;
+    setThinking({ status: "idle", label: "" });
+    setState(current => { try { return applyOukCountAction(current, actor, action); } catch { return current; } });
+    setFuture([]);
+    setSuggestedMove(null);
+    setNotice(action === "stop" ? "Counting stopped. A new board count starts from 1." : action === "claim-draw" ? "Draw accepted under the counting rule." : "Counting begins on your next move.");
+  }
+
+  function loadOukEndgame(key: OukEndgameKey) {
+    reset();
+    setPlayMode("offline"); setBotMode("human"); setTimeControl("freestyle");
+    setSeatChoice("first"); setHumanColor("white");
+    setState(createOukEndgame(key));
+    setNotice(`Practice: ${oukEndgames.find(item => item.key === key)?.label}. White moves first.`);
+  }
+
   function commitMoveChoice(candidates: Move[], piece?: Piece | null) {
     const promoteMove = candidates.find((candidate) => candidate.promotion === true);
     const keepMove = candidates.find((candidate) => candidate.promotion !== true);
@@ -757,15 +783,17 @@ export function GameBoard({
       if (snapshot.status !== "active" || activeBotRequestRef.current) return;
       const requestId = crypto.randomUUID();
       activeBotRequestRef.current = requestId;
+      const prepared = prepareOukBotTurn(snapshot);
+      if (prepared !== snapshot) setState(current => current.id === snapshot.id && current.ply === snapshot.ply ? { ...current, variantState: prepared.variantState } : current);
       setThinking({ status: "thinking", label: source === "auto" ? "Bot is replying..." : "Bot is thinking..." });
       setNotice(null);
 
-      const result = await requestRuntimeBotMove(snapshot, botDifficulty, {
+      const result = await requestRuntimeBotMove(prepared, botDifficulty, {
         requestId,
         delayMs: source === "auto" ? 80 : 0,
         maxSearchTimeMs: Math.min(botLevel.moveTimeMs, MAX_BOT_REPLY_MS - 180)
       });
-      finishBotRequest(snapshot, result, source);
+      finishBotRequest(prepared, result, source);
     },
     [botDifficulty, botLevel.moveTimeMs, finishBotRequest, state]
   );
@@ -965,7 +993,8 @@ export function GameBoard({
     const requestId = activeBotRequestRef.current;
     if (requestId) cancelRuntimeBotMove(requestId);
     activeBotRequestRef.current = null;
-    const nextState = withTimeControl(createInitialState(variantKey), nextControl);
+    const exercise = oukEndgames.find(item => item.key === state.variantState?.oukExercise);
+    const nextState = withTimeControl(exercise ? createOukEndgame(exercise.key) : createInitialState(variantKey), nextControl);
     resolvedRandomSeatRef.current = false;
     setTimeControl(nextControl);
     setHistory([]);
@@ -1258,6 +1287,7 @@ export function GameBoard({
         {variantKey === "ouk-chaktrang" ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>3D carved</button></div> : null}
         {friendId && gameStarted ? <div className="room-live-status" role="status">{friend.error ?? (state.status === "completed" ? "Game finished" : friend.room?.playerCount === 2 ? (playMode === "spectate" ? "Watching live" : friend.room.seat === state.turn ? "Your turn" : "Friend’s turn") : "Waiting for your friend · share the invite link")}{friend.room?.drawOffer ? <button type="button" className="focus-ring action-secondary" disabled={friend.busy || playMode === "spectate" || friend.room.drawOffer === friend.room.seat} onClick={() => void friend.send({ action: "draw" })}>{friend.room.drawOffer === friend.room.seat ? "Draw offered" : "Accept draw"}</button> : null}</div> : null}
         {playerCard(topPlayerColor, "top")}
+        {variantKey === "ouk-chaktrang" && gameStarted ? <OukCountingPanel state={displayState} actor={botMode === "opponent" ? humanColor : state.turn} localTwoPlayer={!isOnlineMode && !isSpectating && botMode === "human"} disabled={isReviewing || isOnlineMode || isSpectating || botMode === "both"} onAction={changeOukCount} /> : null}
         <div className="board-shell" data-variant={displayState.variantKey} data-board-theme={boardTheme} data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
             {boardView === "3d" && variantKey === "ouk-chaktrang" ? <KhmerBoard3D orientedRows={orientedRows} legalTargets={legalTargets} selected={selected} onChoose={choose} boardTheme={boardTheme} /> : <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} lastMove={displayState.moves.at(-1)} variantKey={displayState.variantKey} />}
@@ -1314,7 +1344,7 @@ export function GameBoard({
             gameStarted ? (
               <PlayActiveSetupCard modeLabel={modeDetails.label} onReset={reset} onShowStatus={() => setPanelTab("status")} timeControlLabel={getTimeControl(timeControl).label} />
             ) : (
-              <PlayPregameSetupCard
+              <><PlayPregameSetupCard
                 joiningRoom={Boolean(inviteRoomId)}
                 botDifficulty={botDifficulty}
                 botLevelLabel={botLevel.label}
@@ -1334,6 +1364,7 @@ export function GameBoard({
                 secondColorLabel={colorLabel(secondColor)}
                 timeControl={timeControl}
               />
+              {variantKey === "ouk-chaktrang" && (playMode === "offline" || playMode === "bot") ? <OukEndgamePicker onChoose={loadOukEndgame} /> : null}</>
             )
           ) : null}
           {panelTab === "status" ? (

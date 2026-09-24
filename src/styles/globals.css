@@ -2552,7 +2552,7 @@ option {
 }
 
 .match-result-modal {
-  position: absolute;
+  position: fixed;
   z-index: 95;
 }
 
@@ -2580,20 +2580,24 @@ option {
 }
 
 .match-result-modal {
-  left: 50%;
-  top: 50%;
-  width: min(88%, 26rem);
-  max-height: min(88vh, 34rem);
+  inset: 0;
+  margin: auto;
+  width: min(calc(100vw - 2rem), 26rem);
+  max-height: calc(100dvh - 2rem);
   overflow: auto;
-  transform: translate(-50%, -50%);
+  color: var(--foreground);
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  background: var(--surface);
   box-shadow: var(--shadow);
   padding: clamp(1rem, 3vw, 1.4rem);
   text-align: center;
   pointer-events: auto;
 }
+
+.match-result-modal::backdrop { background: rgb(10 24 17 / 32%); backdrop-filter: blur(2px); }
+.match-result-details { margin-top: .8rem; text-align: left; }
+.match-result-details summary { cursor: pointer; color: var(--muted); font-size: .8rem; padding: .35rem 0; }
 
 .match-result-close {
   position: absolute;
