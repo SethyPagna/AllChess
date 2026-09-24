@@ -55,7 +55,9 @@ import { playModeOptions, type PanelTab, type PlayMode } from "@/components/boar
 import { colorLabel, formatMove, pickHumanColor, quickSuggestionMove, squareName, withTimeControl } from "@/components/board/game-board-utils";
 import { PlaySectionTabs } from "@/components/board/play-section-tabs";
 
-const KhmerBoard3D = dynamic(() => import("./khmer-board-3d"), { ssr: false, loading: () => <div className="board-3d" role="status">Loading 3D board…</div> });
+import { get3DCollection, isCameraView, isPieceFinish, type CameraView, type PieceFinish } from "./board-3d-config";
+
+const Board3D = dynamic(() => import("./board-3d"), { ssr: false, loading: () => <div className="board-3d" role="status">Loading 3D board…</div> });
 
 type BotMode = "human" | "opponent" | "both";
 type SeatChoice = "random" | "first" | "second";
@@ -345,6 +347,9 @@ export function GameBoard({
   const [history, setHistory] = useState<GameState[]>([]);
   const [future, setFuture] = useState<GameState[]>([]);
   const [boardView, setBoardView] = useState<"2d" | "3d">("2d");
+  const [pieceFinish, setPieceFinish] = useState<PieceFinish>("original");
+  const [cameraView, setCameraView] = useState<CameraView>("angled");
+  const collection3D = get3DCollection(variantKey);
   const [selected, setSelected] = useState<Square | null>(null);
   const [selectedHandCode, setSelectedHandCode] = useState<string | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
@@ -404,7 +409,12 @@ export function GameBoard({
   useEffect(() => {
     queueMicrotask(() => {
       setAppearancePreset(initialAppearancePreset(variantKey));
-      try { setBoardView(variantKey === "ouk-chaktrang" && localStorage.getItem(`allchess-board-view:${variantKey}`) === "3d" ? "3d" : "2d"); } catch { /* Keep the accessible 2D default. */ }
+      try {
+        setBoardView(get3DCollection(variantKey) && localStorage.getItem(`allchess-board-view:${variantKey}`) === "3d" ? "3d" : "2d");
+        const finish = localStorage.getItem(`allchess-piece-finish:${variantKey}`);
+        const camera = localStorage.getItem(`allchess-camera-view:${variantKey}`);
+        setPieceFinish(isPieceFinish(finish) ? finish : "original"); setCameraView(isCameraView(camera) ? camera : "angled");
+      } catch { /* Keep the accessible 2D default. */ }
     });
   }, [variantKey]);
 
@@ -588,6 +598,16 @@ export function GameBoard({
   function changeBoardView(view: "2d" | "3d") {
     setBoardView(view);
     try { localStorage.setItem(`allchess-board-view:${variantKey}`, view); } catch { /* Keep the view for this session. */ }
+  }
+
+  function changeCameraView(view: CameraView) {
+    setCameraView(view);
+    try { localStorage.setItem(`allchess-camera-view:${variantKey}`, view); } catch { /* Session fallback. */ }
+  }
+
+  function changePieceFinish(finish: PieceFinish) {
+    setPieceFinish(finish);
+    try { localStorage.setItem(`allchess-piece-finish:${variantKey}`, finish); } catch { /* Session fallback. */ }
   }
 
   function commitPlayerMove(move: Move) {
@@ -1289,8 +1309,8 @@ export function GameBoard({
   return (
     <div className="game-board-layout game-studio grid gap-4" data-focus={focusMode && gameStarted ? "true" : undefined} style={{ "--board-ratio": cols / rows } as CSSProperties}>
       <div className="board-column grid gap-3">
-        <BoardToolbar variantKey={variantKey} appearancePreset={appearancePreset} onAppearanceChange={changeAppearancePreset} onFlip={flipBoard} onGuide={rulesSummary ? () => setShowRules(true) : undefined} focusMode={focusMode && gameStarted} onFocusChange={() => setFocusMode((current) => !current)} canFocus={gameStarted} />
-        {variantKey === "ouk-chaktrang" ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>3D carved</button></div> : null}
+        <BoardToolbar is3D={boardView === "3d" && !!collection3D} variantKey={variantKey} appearancePreset={appearancePreset} onAppearanceChange={changeAppearancePreset} onFlip={flipBoard} onGuide={rulesSummary ? () => setShowRules(true) : undefined} focusMode={focusMode && gameStarted} onFocusChange={() => setFocusMode((current) => !current)} canFocus={gameStarted} />
+        {collection3D ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>3D carved</button>{boardView === "3d" ? <div role="group" aria-label="Piece material" className="board-finish-buttons">{(["original", "porcelain", "slate"] as const).map(finish => <button key={finish} type="button" className="focus-ring" aria-pressed={pieceFinish === finish} onClick={() => changePieceFinish(finish)}>{finish === "original" ? "Original" : finish === "porcelain" ? "Porcelain" : "Slate"}</button>)}</div> : null}</div> : null}
         {friendId && gameStarted ? <div className="room-live-status" role="status">
           <span>{friend.connection !== "connected"
             ? friend.connection === "offline" ? timeControl === "freestyle" ? "You’re offline · waiting for a connection" : "You’re offline · the room clock continues" : friend.connection === "connecting" ? "Connecting to your room…" : friend.connection === "unavailable" ? friend.error : "Reconnecting · checking the latest board…"
@@ -1305,7 +1325,7 @@ export function GameBoard({
         {variantKey === "ouk-chaktrang" && gameStarted ? <OukCountingPanel state={displayState} actor={botMode === "opponent" ? humanColor : state.turn} localTwoPlayer={!isOnlineMode && !isSpectating && botMode === "human"} disabled={isReviewing || isOnlineMode || isSpectating || botMode === "both"} onAction={changeOukCount} /> : null}
         <div className="board-shell" data-variant={displayState.variantKey} data-board-theme={boardTheme} data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
-            {boardView === "3d" && variantKey === "ouk-chaktrang" ? <KhmerBoard3D orientedRows={orientedRows} legalTargets={legalTargets} selected={selected} onChoose={choose} boardTheme={boardTheme} /> : <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} lastMove={displayState.moves.at(-1)} variantKey={displayState.variantKey} />}
+            {boardView === "3d" && collection3D ? <Board3D key={variantKey} collection={collection3D} variantKey={variantKey} orientedRows={orientedRows} legalTargets={legalTargets} selected={selected} onChoose={choose} boardTheme={boardTheme} lastMove={displayState.moves.at(-1)} finish={pieceFinish} cameraView={cameraView} onCameraChange={changeCameraView} onFallback={() => changeBoardView("2d")} /> : <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} lastMove={displayState.moves.at(-1)} variantKey={displayState.variantKey} />}
             {selectedHandCode && selectedHandLabel ? <DropSelectionHint legalTargetCount={legalTargets.size} locale={locale} onCancel={cancelHandDrop} pieceCode={selectedHandCode} pieceLabel={selectedHandLabel} pieceOwner={state.turn} pieceSkin={pieceSkin} variantKey={displayState.variantKey} /> : null}
             {pendingPromotion ? (
               <PromotionChoiceCard locale={locale} onChoose={choosePromotion} pieceCode={pendingPromotion.pieceCode} pieceLabel={pendingPromotion.pieceLabel} pieceOwner={pendingPromotion.pieceOwner} pieceSkin={pieceSkin} promotedPieceLabel={pendingPromotion.promotedPieceLabel} variantKey={displayState.variantKey} />
@@ -1388,6 +1408,7 @@ export function GameBoard({
           {panelTab === "status" ? (
             <div className="grid gap-3">
               <PlayControlCard
+              showAppearance={boardView !== "3d" || !collection3D}
                 botLevelLabel={botLevel.label}
                 botMode={botMode}
                 appearancePreset={appearancePreset}

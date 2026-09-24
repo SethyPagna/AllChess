@@ -14,4 +14,6 @@ Original Cambodian-inspired carved study made for AllChess with Blender 5.2 thro
 
 Creation brief: readable small silhouettes, progressively taller royal/general shapes, a sculpted horse, an open boat-shaped rook, and low fish counters; warm sandstone versus polished rosewood with brass accents. Keep the collection editable, portable, and light enough for browser play.
 
-The Blender render and the browser board were visually inspected. Native first-move and promotion rules use https://www.pychess.org/variants/cambodian and its linked championship reference. Tournament counting claims remain an explicit rules gate.
+The Blender render and the browser board were visually inspected. Native first-move and promotion rules use https://www.pychess.org/variants/cambodian and its linked championship reference. Published digital counting is implemented; referee-dependent tournament interpretations and competitive verification remain an explicit rules gate (see `ops/docs/roadmap/ouk-counting-profile.md`).
+
+The collection now uses the shared renderer with classic chess: material choices, top/angled cameras, reset view, coordinate labels, promoted-piece rings, and direct recovery to 2D. Its board remains plain and its six native model identities are unchanged.
