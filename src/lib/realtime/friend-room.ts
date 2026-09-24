@@ -6,20 +6,23 @@ import { getGameCatalogEntry, getCatalogModeSupport } from "@/lib/catalog";
 
 // Piece drops and passes use an off-board source sentinel; the engine validates destinations.
 const square = z.object({ row: z.number().int().min(-1).max(19), col: z.number().int().min(-1).max(19) });
+const gameId = z.string().min(1).max(100);
 const token = z.string().regex(/^[a-f0-9-]{36,80}$/);
 export const friendActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("create"), token, variantKey: z.string().max(64), time: z.enum(["bullet", "blitz", "rapid", "classical", "correspondence", "freestyle"]), side: z.enum(["first", "second", "random"]) }),
   z.object({ action: z.literal("join"), token }),
   z.object({ action: z.literal("read"), token: token.optional() }),
-  z.object({ action: z.literal("move"), token, version: z.number().int().min(0), move: z.object({ from: square, to: square, kind: z.enum(["move", "drop", "pass", "remove"]).optional(), promotion: z.boolean().optional(), drop: z.object({ id: z.string().max(100), code: z.string().max(8), labelKey: z.string().max(64), owner: z.enum(["white", "black", "red", "blue", "sente", "gote"]), promoted: z.boolean().optional() }).optional() }) }),
-  z.object({ action: z.literal("resign"), token }),
+  z.object({ action: z.literal("move"), token, gameId, version: z.number().int().min(0), move: z.object({ from: square, to: square, kind: z.enum(["move", "drop", "pass", "remove"]).optional(), promotion: z.boolean().optional(), drop: z.object({ id: z.string().max(100), code: z.string().max(8), labelKey: z.string().max(64), owner: z.enum(["white", "black", "red", "blue", "sente", "gote"]), promoted: z.boolean().optional() }).optional() }) }),
+  z.object({ action: z.literal("resign"), token, gameId }),
   z.object({ action: z.literal("chat"), token, text: z.string().trim().min(1).max(280) }),
-  z.object({ action: z.literal("draw"), token })
+  z.object({ action: z.literal("draw"), token, gameId }),
+  z.object({ action: z.literal("rematch"), token, gameId }),
+  z.object({ action: z.literal("cancel-rematch"), token, gameId })
 ]);
 export type FriendAction = z.infer<typeof friendActionSchema>;
-export type FriendMessage = { id: string; color: PlayerColor; text: string; at: number };
-export type FriendRoom = { id: string; revision?: number; state: GameState; seats: Array<{ digest: string; color: PlayerColor }>; updatedAt: number; createdAt: number; time: string; drawOffer?: PlayerColor; messages?: FriendMessage[] };
-export type FriendRoomView = { roomId: string; revision: number; state: GameState; seat: PlayerColor | null; playerCount: number; time: string; drawOffer?: PlayerColor; messages?: FriendMessage[] };
+export type FriendMessage = { id: string; color: PlayerColor; sender?: number; text: string; at: number };
+export type FriendRoom = { id: string; revision?: number; state: GameState; seats: Array<{ digest: string; color: PlayerColor; lastSeenAt?: number }>; updatedAt: number; createdAt: number; time: string; rematchOffer?: PlayerColor; drawOffer?: PlayerColor; messages?: FriendMessage[] };
+export type FriendRoomView = { roomId: string; revision: number; state: GameState; seat: PlayerColor | null; member: number | null; friendConnected: boolean; playerCount: number; time: string; rematchOffer?: PlayerColor; drawOffer?: PlayerColor; messages?: FriendMessage[] };
 export type FriendResult = { status: number; body: { room?: FriendRoomView; error?: string }; stored: FriendRoom | null };
 
 async function digestToken(value: string) {
@@ -56,6 +59,12 @@ export async function transitionFriendRoom(stored: FriendRoom | null, id: string
     seat = getVariant(room.state.variantKey).players.find(color => !room!.seats.some(item => item.color === color))!;
     room.seats.push({ digest, color: seat }); room.state.status = "active";
   }
+  const member = room.seats.findIndex(item => item.digest === digest);
+  if (member >= 0) room.seats[member].lastSeenAt = now;
+  if ("gameId" in action) {
+    if (!seat) return fail(403, "Only a seated player can act.");
+    if (action.gameId !== room.state.id) return fail(409, "A new game has started. Your board will refresh.");
+  }
   if (["move", "resign", "draw"].includes(action.action)) {
     if (!seat) return fail(403, "Only a seated player can act.");
     if (room.state.status !== "active") return fail(409, "The game is not active.");
@@ -68,13 +77,31 @@ export async function transitionFriendRoom(stored: FriendRoom | null, id: string
   }
   if (action.action === "chat") {
     if (!seat) return fail(403, "Only players can send room messages.");
-    if ((room.messages ?? []).some(message => message.color === seat && now - message.at < 1000)) return fail(429, "Please wait a moment before sending again.");
-    room.messages = [...(room.messages ?? []), { id: crypto.randomUUID(), color: seat, text: action.text, at: now }].slice(-100);
+    if ((room.messages ?? []).some(message => (message.sender === member || (message.sender === undefined && message.color === seat)) && now - message.at < 1000)) return fail(429, "Please wait a moment before sending again.");
+    room.messages = [...(room.messages ?? []), { id: crypto.randomUUID(), color: seat, sender: member, text: action.text, at: now }].slice(-100);
   }
   if (action.action === "resign") { room.state.status = "completed"; room.state.result = getVariant(room.state.variantKey).players.find(color => color !== seat); room.state.outcomeReason = "resignation"; }
   if (action.action === "draw") {
     if (room.drawOffer && room.drawOffer !== seat) { room.state.status = "completed"; room.state.result = "draw"; room.state.outcomeReason = "draw"; delete room.drawOffer; }
     else room.drawOffer = seat!;
   }
-  return { status: 200, stored: room, body: { room: { roomId: id, revision: room.revision, state: room.state, seat, playerCount: room.seats.length, time: room.time, drawOffer: room.drawOffer, messages: seat ? room.messages ?? [] : [] } } };
+  if (action.action === "rematch" || action.action === "cancel-rematch") {
+    if (room.state.status !== "completed" || room.seats.length !== 2) return fail(409, "Finish this game before starting a rematch.");
+    if (action.action === "cancel-rematch") {
+      if (room.rematchOffer !== seat) return fail(403, "Only the player who offered can cancel.");
+      delete room.rematchOffer;
+    } else if (room.rematchOffer && room.rematchOffer !== seat) {
+      // Preserve each participant's identity in the room chat while the sides swap.
+      room.messages = room.messages?.map(message => ({ ...message, sender: message.sender ?? room!.seats.findIndex(item => item.color === message.color) }));
+      const players = getVariant(room.state.variantKey).players;
+      for (const participant of room.seats) participant.color = players.find(color => color !== participant.color)!;
+      seat = room.seats[member].color;
+      const control = getTimeControl(room.time);
+      room.state = createInitialState(room.state.variantKey);
+      room.state.clocks = room.state.clocks.map(clock => ({ ...clock, remainingMs: control.baseSeconds * 1000, incrementMs: control.incrementSeconds * 1000 }));
+      delete room.drawOffer;
+      delete room.rematchOffer;
+    } else room.rematchOffer = seat!;
+  }
+  return { status: 200, stored: room, body: { room: { roomId: id, revision: room.revision, state: room.state, seat, member: member >= 0 ? member : null, friendConnected: room.seats.some(item => item.digest !== digest && item.lastSeenAt !== undefined && now - item.lastSeenAt < 15000), playerCount: room.seats.length, time: room.time, rematchOffer: room.rematchOffer, drawOffer: room.drawOffer, messages: seat ? room.messages ?? [] : [] } } };
 }

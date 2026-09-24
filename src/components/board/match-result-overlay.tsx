@@ -11,9 +11,12 @@ type MatchResultOverlayProps = {
   onClose: () => void;
   onPlayAgain: () => void;
   onReview: () => void;
+  playAgainLabel?: string;
+  playAgainDisabled?: boolean;
+  onCancelRematch?: () => void;
 };
 
-export function MatchResultOverlay({ outcome, showModal, onClose, onPlayAgain, onReview }: MatchResultOverlayProps) {
+export function MatchResultOverlay({ outcome, showModal, onClose, onPlayAgain, onReview, playAgainLabel = "Play again", playAgainDisabled = false, onCancelRematch }: MatchResultOverlayProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const descriptionId = useId();
   useEffect(() => {
@@ -52,9 +55,10 @@ export function MatchResultOverlay({ outcome, showModal, onClose, onPlayAgain, o
           </ul>
           </details>
           <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <button type="button" onClick={onPlayAgain} className="focus-ring action-primary px-4 py-2 text-sm">
-              Play again
+            <button type="button" onClick={onPlayAgain} disabled={playAgainDisabled} className="focus-ring action-primary px-4 py-2 text-sm">
+              {playAgainLabel}
             </button>
+            {onCancelRematch ? <button type="button" onClick={onCancelRematch} className="focus-ring action-secondary px-4 py-2 text-sm">Cancel offer</button> : null}
             <button type="button" onClick={onReview} className="focus-ring action-secondary px-4 py-2 text-sm">
               Review moves
             </button>

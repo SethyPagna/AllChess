@@ -373,11 +373,17 @@ export function GameBoard({
     const roomId = initialRoomId?.trim();
     return roomId ? { status: "ready", roomId } : { status: "idle" };
   });
+  const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
   const friendHistoryRef = useRef("");
+  const friendGameRef = useRef("");
   const friendId = (playMode === "room" || playMode === "spectate") && roomCreation.status === "ready" ? roomCreation.roomId : null;
   const syncFriendRoom = useCallback((room: FriendRoomView) => {
     if (room.state.variantKey !== variantKey) { setNotice("This invite belongs to another game. Open the original invite link."); return; }
     setState(current => current.id === room.state.id && (room.state.ply < current.ply || (current.status === "completed" && room.state.status !== "completed")) ? current : room.state);
+    if (friendGameRef.current !== room.state.id) {
+      friendGameRef.current = room.state.id;
+      setReviewPly(null); setReviewPlaying(false); setFuture([]); setSelected(null); setSelectedHandCode(null); setNotice(null); setPendingPromotion(null);
+    }
     const historyKey = room.state.id + ":" + room.state.ply;
     if (friendHistoryRef.current !== historyKey) {
       friendHistoryRef.current = historyKey;
@@ -390,7 +396,6 @@ export function GameBoard({
     if (room.seat) setHumanColor(room.seat);
   }, [variantKey]);
   const friend = useFriendRoom(friendId, gameStarted, playMode === "spectate", syncFriendRoom);
-  const [pendingPromotion, setPendingPromotion] = useState<PendingPromotion | null>(null);
   const activeBotRequestRef = useRef<string | null>(null);
   const resolvedRandomSeatRef = useRef(false);
   const outcomeModalKeyRef = useRef<string | null>(null);
@@ -465,7 +470,7 @@ export function GameBoard({
   const botCalibrationLabel = botStrength.calibrationStatus.replace(/-/g, " ");
   const botResponseBudget = Math.min(botLevel.moveTimeMs, MAX_BOT_REPLY_MS - 180);
   const outcome = useMemo(() => describeGameOutcome(state, humanColor), [humanColor, state]);
-  const outcomeKey = state.status === "completed" ? `${state.moves.length}:${state.result ?? ""}:${state.outcomeReason ?? ""}` : null;
+  const outcomeKey = state.status === "completed" ? `${state.id}:${state.moves.length}:${state.result ?? ""}:${state.outcomeReason ?? ""}` : null;
   const firstColor = (state.clocks[0]?.color ?? "white") as Piece["owner"];
   const secondColor = (state.clocks[1]?.color ?? "black") as Piece["owner"];
   const catalogEntry = useMemo(() => getGameCatalogEntry(variantKey), [variantKey]);
@@ -564,6 +569,7 @@ export function GameBoard({
       !isReviewing &&
       !isThinking &&
       !friend.busy &&
+      (playMode !== "room" || friend.connection === "connected") &&
       (playMode !== "room" || (friend.room?.seat === color && friend.room.state.variantKey === variantKey)) &&
       (!isOnlineMode || isMatchedOnlineGame) &&
       !isSpectating &&
@@ -586,7 +592,7 @@ export function GameBoard({
 
   function commitPlayerMove(move: Move) {
     if (playMode === "room") {
-      void friend.send({ action: "move", move, version: state.ply });
+      void friend.send({ gameId: state.id, action: "move", move, version: state.ply });
       setSelected(null); setSelectedHandCode(null); setPendingPromotion(null); return;
     }
     setHistory((current) => [...current, state]);
@@ -881,7 +887,7 @@ export function GameBoard({
 
   function offerDraw() {
     if (!canEndGame) return;
-    if (playMode === "room") { void friend.send({ action: "draw" }); return; }
+    if (playMode === "room") { void friend.send({ gameId: state.id, action: "draw" }); return; }
     const requestId = activeBotRequestRef.current;
     if (requestId) cancelRuntimeBotMove(requestId);
     activeBotRequestRef.current = null;
@@ -903,7 +909,7 @@ export function GameBoard({
 
   function resignGame() {
     if (!canEndGame) return;
-    if (playMode === "room") { void friend.send({ action: "resign" }); return; }
+    if (playMode === "room") { void friend.send({ gameId: state.id, action: "resign" }); return; }
     const requestId = activeBotRequestRef.current;
     if (requestId) cancelRuntimeBotMove(requestId);
     activeBotRequestRef.current = null;
@@ -1285,7 +1291,16 @@ export function GameBoard({
       <div className="board-column grid gap-3">
         <BoardToolbar variantKey={variantKey} appearancePreset={appearancePreset} onAppearanceChange={changeAppearancePreset} onFlip={flipBoard} onGuide={rulesSummary ? () => setShowRules(true) : undefined} focusMode={focusMode && gameStarted} onFocusChange={() => setFocusMode((current) => !current)} canFocus={gameStarted} />
         {variantKey === "ouk-chaktrang" ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>3D carved</button></div> : null}
-        {friendId && gameStarted ? <div className="room-live-status" role="status">{friend.error ?? (state.status === "completed" ? "Game finished" : friend.room?.playerCount === 2 ? (playMode === "spectate" ? "Watching live" : friend.room.seat === state.turn ? "Your turn" : "Friend’s turn") : "Waiting for your friend · share the invite link")}{friend.room?.drawOffer ? <button type="button" className="focus-ring action-secondary" disabled={friend.busy || playMode === "spectate" || friend.room.drawOffer === friend.room.seat} onClick={() => void friend.send({ action: "draw" })}>{friend.room.drawOffer === friend.room.seat ? "Draw offered" : "Accept draw"}</button> : null}</div> : null}
+        {friendId && gameStarted ? <div className="room-live-status" role="status">
+          <span>{friend.connection !== "connected"
+            ? friend.connection === "offline" ? timeControl === "freestyle" ? "You’re offline · waiting for a connection" : "You’re offline · the room clock continues" : friend.connection === "connecting" ? "Connecting to your room…" : friend.connection === "unavailable" ? friend.error : "Reconnecting · checking the latest board…"
+            : friend.error ?? (state.status === "completed" ? "Game finished" : friend.room?.playerCount === 2 ? (playMode === "spectate" ? "Watching live" : friend.room.seat === state.turn ? "Your turn" : "Friend’s turn") : "Waiting for your friend · share the invite link")}
+            {friend.connection === "connected" && playMode === "room" && friend.room?.playerCount === 2 && !friend.room.friendConnected ? " · Friend disconnected" : ""}
+          </span>
+          {friend.connection === "reconnecting" || friend.connection === "unavailable" ? <button type="button" className="focus-ring action-secondary" onClick={friend.reconnect}>Reconnect now</button> : null}
+          {friend.room?.drawOffer && state.status === "active" ? <button type="button" className="focus-ring action-secondary" disabled={friend.busy || friend.connection !== "connected" || playMode === "spectate" || friend.room.drawOffer === friend.room.seat} onClick={() => void friend.send({ gameId: state.id, action: "draw" })}>{friend.room.drawOffer === friend.room.seat ? "Draw offered" : "Accept draw"}</button> : null}
+          {state.status === "completed" && playMode === "room" ? <button type="button" className="focus-ring action-secondary" disabled={friend.busy || friend.connection !== "connected"} onClick={() => void friend.send({ gameId: state.id, action: friend.room?.rematchOffer === friend.room?.seat ? "cancel-rematch" : "rematch" })}>{friend.room?.rematchOffer ? friend.room.rematchOffer === friend.room.seat ? "Cancel rematch offer" : "Accept rematch" : "Rematch"}</button> : null}
+        </div> : null}
         {playerCard(topPlayerColor, "top")}
         {variantKey === "ouk-chaktrang" && gameStarted ? <OukCountingPanel state={displayState} actor={botMode === "opponent" ? humanColor : state.turn} localTwoPlayer={!isOnlineMode && !isSpectating && botMode === "human"} disabled={isReviewing || isOnlineMode || isSpectating || botMode === "both"} onAction={changeOukCount} /> : null}
         <div className="board-shell" data-variant={displayState.variantKey} data-board-theme={boardTheme} data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
@@ -1305,7 +1320,10 @@ export function GameBoard({
                 outcome={outcome}
                 showModal={showOutcome}
                 onClose={() => setShowOutcome(false)}
-                onPlayAgain={reset}
+                onPlayAgain={playMode === "room" ? () => { void friend.send({ gameId: state.id, action: "rematch" }); } : reset}
+                playAgainLabel={playMode === "room" ? friend.room?.rematchOffer ? friend.room.rematchOffer === friend.room.seat ? "Waiting for friend…" : "Accept rematch · swap sides" : "Rematch · swap sides" : undefined}
+                playAgainDisabled={playMode === "room" && (friend.busy || friend.connection !== "connected" || friend.room?.rematchOffer === friend.room?.seat)}
+                onCancelRematch={playMode === "room" && friend.room?.rematchOffer && friend.room.rematchOffer === friend.room.seat && !friend.busy && friend.connection === "connected" ? () => { void friend.send({ gameId: state.id, action: "cancel-rematch" }); } : undefined}
                 onReview={() => {
                   setShowOutcome(false);
                   startReview();
@@ -1575,7 +1593,7 @@ export function GameBoard({
             </div>
           ) : null}
         </div>
-        {playMode === "room" ? <FriendChat room={friend.room} busy={friend.busy} onSend={text => friend.send({ action: "chat", text })} /> : <details className="studio-chat-disclosure">
+        {playMode === "room" ? <FriendChat room={friend.room} busy={friend.busy || friend.connection !== "connected"} onSend={text => friend.send({ action: "chat", text })} /> : <details className="studio-chat-disclosure">
           <summary className="focus-ring">{playMode === "bot" || playMode === "offline" ? "Local chat" : "Room chat"}<span>Open conversation</span></summary>
           <p className="studio-chat-note">Messages stay on this device.</p>
           <PlayChatPanel key={`${playMode}-${chatRoomId}`} gameStarted={gameStarted} isSpectating={isSpectating} locale={locale} playMode={playMode} roomId={chatRoomId} title={title} variantKey={displayState.variantKey} />
