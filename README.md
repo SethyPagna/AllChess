@@ -9,7 +9,7 @@ The active app is a Next.js 16 application deployed as the Cloudflare Worker `al
 - Next.js: `^16.2.7`
 - React: `^19.2.7`
 - TypeScript: `^6.0.3`
-- ESLint: `^10.4.1`
+- ESLint: `^9.0.0`
 - Lucide React: `^1.17.0`
 - Vitest: `^4.1.8`
 - Playwright: `^1.60.0`
@@ -18,7 +18,7 @@ The active app is a Next.js 16 application deployed as the Cloudflare Worker `al
 - Wrangler: `^4.98.0`
 - OpenNext Cloudflare: `^1.19.11`
 
-The package ranges are current for the verified latest-version lane. ESLint 10 uses `@eslint/compat` so the Next.js lint presets can continue running while their bundled plugins finish their ESLint 10 peer updates. Vercel deploy scripts call `vercel@latest` through `npx` instead of keeping the CLI dependency tree in local installs.
+Package ranges above match `package.json`. The lint configuration uses `@eslint/compat` with the Next.js presets. Vercel deploy scripts call `vercel@latest` through `npx` instead of keeping the CLI dependency tree in local installs.
 
 Project configuration is grouped under `config/` for linting, TypeScript, tests, environment examples, and optional Python bot-training probes. Root-discovered framework files stay at the top level so Next.js, Vercel, PostCSS, and package managers can find them without loaders or indirection.
 

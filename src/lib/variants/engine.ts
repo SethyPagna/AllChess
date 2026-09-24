@@ -2098,9 +2098,11 @@ function terrainFor(variant: VariantDefinition, square: Square): BoardCell["terr
   if (variant.key === "mini-shogi") {
     return square.row === 0 || square.row === variant.board.rows - 1 ? "promotion-zone" : "land";
   }
-  if (variant.supportsPromotion && (square.row <= 2 || square.row >= variant.board.rows - 3)) {
+  if (variant.key === "shogi" && (square.row <= 2 || square.row >= variant.board.rows - 3)) {
     return "promotion-zone";
   }
+  if (variant.key === "makruk") return square.row === 2 || square.row === 5 ? "promotion-zone" : "land";
+  if (variant.supportsPromotion && (square.row === 0 || square.row === variant.board.rows - 1)) return "promotion-zone";
   return "land";
 }
 

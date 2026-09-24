@@ -8,6 +8,8 @@ dist/
 coverage/
 playwright-report/
 test-results/
+.playwright-cli/
+output/playwright/
 .vercel/
 .open-next/
 .wrangler/

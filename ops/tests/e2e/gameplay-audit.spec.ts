@@ -381,6 +381,7 @@ test("play chat keeps player and public rooms separate", async ({ page }) => {
 
   await page.goto("/en/play/classic");
   const chat = page.getByLabel("Classic Chess chat room");
+  await page.locator(".studio-chat-disclosure > summary").click();
   await expect(chat).toBeVisible();
   await expect(chat.getByText("Private 1v1 room")).toBeVisible();
 

@@ -127,7 +127,7 @@ function StonePieceIcon({ owner, variantKey, label, skin }: { owner: PlayerColor
 }
 
 function usesWesternPresentation(variantKey: string) {
-  return ["classic", "chess960", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings", "makruk"].includes(variantKey);
+  return ["classic", "crazyhouse", "chaturanga", "shatranj", "chess960", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings", "makruk"].includes(variantKey);
 }
 
 function WesternPieceIcon({ code, owner, variantKey, promoted, label, skin }: { code: string; owner: PlayerColor; variantKey: string; promoted: boolean; label: string; skin: PieceSkin }) {
@@ -544,7 +544,7 @@ function PawnPaths() {
 
 function getNativeGlyph({ code, owner, variantKey, promoted }: { code: string; owner: PlayerColor; variantKey: string; promoted: boolean }) {
   if (variantKey === "xiangqi") {
-    const red: Record<string, string> = { g: "\u5e25", a: "\u4ed5", e: "\u76f8", h: "\u509c", r: "\u4fe5", c: "\u70ae", p: "\u5175" };
+    const red: Record<string, string> = { g: "\u5e25", a: "\u4ed5", e: "\u76f8", h: "\u508c", r: "\u4fe5", c: "\u70ae", p: "\u5175" };
     const black: Record<string, string> = { g: "\u5c07", a: "\u58eb", e: "\u8c61", h: "\u99ac", r: "\u8eca", c: "\u7832", p: "\u5352" };
     return (owner === "red" ? red : black)[code] ?? nativeGlyphs[code] ?? code.toUpperCase();
   }
@@ -715,6 +715,10 @@ function pieceSkinLabel(key: PieceSkin) {
 }
 
 function westernPieceName(code: string, variantKey: string) {
+  if (variantKey === "chaturanga" || variantKey === "shatranj") {
+    if (code === "e" || code === "a") return "bishop";
+    if (code === "m" || code === "f") return "queen";
+  }
   if (variantKey === "makruk") {
     const makrukNames: Record<string, string> = {
       k: "king",

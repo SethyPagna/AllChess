@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import "@/styles/globals.css";
+import "@/styles/studio.css";
 
 export const metadata: Metadata = {
   title: "AllChess Multiplayer",

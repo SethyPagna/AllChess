@@ -35,7 +35,7 @@ export function PlayGamePicker({
             .some((value) => normalize(value ?? "").includes(normalized))
         )
       : entries;
-    return matches.filter((entry) => getCatalogModeSupport(entry, selectedMode).enabled).slice(0, 12);
+    return matches.filter((entry) => getCatalogModeSupport(entry, selectedMode).enabled);
   }, [entries, query, selectedMode]);
 
   return (

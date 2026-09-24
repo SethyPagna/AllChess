@@ -66,7 +66,7 @@ export function PlayMatchHeader({
         .some((value) => normalize(value ?? "").includes(normalized));
     });
 
-    return matches.slice(0, 10);
+    return matches;
   }, [familyFilter, playableGames, query, targetMode]);
   const modeFilters: Array<{ key: "current" | CatalogPlayMode; label: string }> = [
     { key: "current", label: "Current" },

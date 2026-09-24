@@ -27,8 +27,8 @@ describe("public routing shortcuts", () => {
     }
   });
 });
-const ignoredDirectories = new Set([".git", ".next", ".open-next", ".vercel", ".wrangler", "node_modules"]);
-const ignoredRootDirectories = new Set([".next", ".open-next", ".vercel", ".wrangler", "coverage", "playwright-report", "public", "test-results"]);
+const ignoredDirectories = new Set([".git", ".next", ".open-next", ".vercel", ".wrangler", "node_modules", ".playwright-cli", "output"]);
+const ignoredRootDirectories = new Set([".next", ".open-next", ".vercel", ".wrangler", "coverage", "playwright-report", "public", "test-results", ".playwright-cli", "output"]);
 const ignoredFilePrefixes = ["public/engines/"];
 const allowedJavaScriptFiles = new Set(["next.config.mjs"]);
 const allowedRootFiles = new Set([
@@ -42,7 +42,8 @@ const allowedRootFiles = new Set([
   "package.json",
   "postcss.config.ts",
   "tsconfig.json",
-  "vercel.json"
+  "vercel.json",
+  "wrangler.jsonc"
 ]);
 const allowedRootDirectories = new Set([".git", ".github", "config", "data", "node_modules", "ops", "src"]);
 

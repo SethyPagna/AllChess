@@ -2,7 +2,7 @@ import { Bot, Eye, Flag, MonitorSmartphone, PlayCircle, Timer, Users } from "luc
 
 import { botDifficultyLevels, type BotDifficultyKey } from "@/lib/bot/config";
 import type { CatalogModeSupport } from "@/lib/catalog";
-import { getTimeControl, timeControls, type TimeControlKey } from "@/lib/game/time-controls";
+import { timeControls, type TimeControlKey } from "@/lib/game/time-controls";
 import type { PlayMode } from "@/components/board/game-board-options";
 
 type SeatChoice = "random" | "first" | "second";
@@ -46,7 +46,6 @@ export function PlayPregameSetupCard({
   secondColorLabel,
   timeControl
 }: PlayPregameSetupCardProps) {
-  const timeControlLabel = getTimeControl(timeControl).label;
   const secondaryModes = [
     { key: "online" as const, label: "Quick Match", Icon: Flag },
     { key: "room" as const, label: "Play a Friend", Icon: Users },
@@ -70,12 +69,13 @@ export function PlayPregameSetupCard({
           ))}
         </select>
       </label>
-      <div className="play-time-grid play-time-grid-compact" aria-hidden="true">
-        <span className="is-selected">{timeControlLabel}</span>
+      <div className="studio-time-shortcuts" role="group" aria-label="Quick time controls">
+        {(["blitz", "rapid", "freestyle"] as const).map((key) => <button key={key} type="button" className="focus-ring" aria-pressed={timeControl === key} onClick={() => onTimeControlChange(key)}>{key === "blitz" ? "5 min" : key === "rapid" ? "10 min" : "Untimed"}</button>)}
       </div>
       <div className="play-mode-stack" aria-label="Play modes">
         <button
           type="button"
+          aria-pressed={playMode === "bot"}
           onClick={() => onModeChange("bot")}
           className={`focus-ring play-mode-stack-button ${playMode === "bot" ? "is-selected" : ""}`}
           disabled={!modeSupport.bot.enabled}
@@ -89,6 +89,7 @@ export function PlayPregameSetupCard({
             key={key}
             type="button"
             aria-label={modeAccessibleNames[key] ?? label}
+            aria-pressed={playMode === key}
             onClick={() => onModeChange(key)}
             className={`focus-ring play-mode-stack-button ${playMode === key ? "is-selected" : ""}`}
             disabled={!modeSupport[key].enabled}
@@ -100,13 +101,12 @@ export function PlayPregameSetupCard({
         ))}
       </div>
       {isBotMode ? (
-        <label className="bot-profile-card bot-profile-card-with-select play-setup-bot-card" title="Choose how strong the bot should be.">
+        <label className="studio-bot-choice" title={`${botLevelLabel} bot · ${botStrengthLabel} · target ${botTargetElo}`}>
           <Bot size={18} />
           <div>
-            <strong>{botLevelLabel} bot</strong>
-            <span title={botStrengthLabel}>{botStrengthDisplay} - {botStrengthLabel}</span>
+            <strong>Opponent strength</strong>
+            <span>{botStrengthDisplay}</span>
           </div>
-          <small title={botStrengthLabel}>target {botTargetElo}</small>
           <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => onBotDifficultyChange(event.target.value as BotDifficultyKey)}>
             {botDifficultyLevels.map((level) => (
               <option key={level.key} value={level.key}>

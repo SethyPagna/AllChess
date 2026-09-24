@@ -9,6 +9,25 @@ import { PieceIcon, getPieceSkinOptions } from "@/components/board/piece-icon";
 const repoRoot = process.cwd();
 
 describe("PieceIcon", () => {
+  test("uses the red horse character on Xiangqi discs", () => {
+    const horse = renderToStaticMarkup(<PieceIcon code="h" owner="red" variantKey="xiangqi" />);
+    expect(horse).toContain("傌");
+    expect(horse).not.toContain("傜");
+  });
+  test.each(["crazyhouse", "chaturanga", "shatranj"])("renders recognizable chess silhouettes for %s", (variantKey) => {
+    const king = renderToStaticMarkup(<PieceIcon code="k" owner="white" variantKey={variantKey} />);
+    const rook = renderToStaticMarkup(<PieceIcon code="r" owner="black" variantKey={variantKey} />);
+    expect(king).toContain('data-piece="king"');
+    expect(rook).toContain('data-piece="rook"');
+    expect(king).toContain("<svg");
+    expect(rook).not.toContain('data-piece="native"');
+  });
+
+  test.each([["chaturanga", "e"], ["shatranj", "a"]])("keeps ancient elephant pieces distinct from pawns in %s", (variantKey, code) => {
+    const piece = renderToStaticMarkup(<PieceIcon code={code} owner="white" variantKey={variantKey} />);
+    expect(piece).toContain('data-piece="bishop"');
+    expect(piece).not.toContain('data-piece="pawn"');
+  });
   test("renders visually distinct full-size western king and queen icons", () => {
     const king = renderToStaticMarkup(<PieceIcon code="k" owner="white" variantKey="classic" />);
     const queen = renderToStaticMarkup(<PieceIcon code="q" owner="white" variantKey="classic" />);

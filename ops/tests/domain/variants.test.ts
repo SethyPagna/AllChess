@@ -4,6 +4,14 @@ import { applyMove, createInitialState, formatVariantPlayMeta, getLegalMoves, ge
 import { ruleSources } from "@/lib/variants/rule-sources";
 
 describe("variant catalog", () => {
+  test("promotion markings match each game's promotion ranks", () => {
+    const ranks = (key: string) => createInitialState(key).board.flatMap((row, index) => row.some((cell) => cell.terrain === "promotion-zone") ? [index] : []);
+    expect(ranks("classic")).toEqual([0, 7]);
+    expect(ranks("shogi")).toEqual([0, 1, 2, 6, 7, 8]);
+    expect(ranks("mini-shogi")).toEqual([0, 4]);
+    expect(ranks("makruk")).toEqual([2, 5]);
+    expect(ranks("xiangqi")).toEqual([]);
+  });
   test("contains the planned global launch variants", () => {
     expect(variantCatalog.map((variant) => variant.key)).toEqual([
       "classic",

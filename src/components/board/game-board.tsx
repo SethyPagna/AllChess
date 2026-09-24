@@ -30,6 +30,7 @@ import type { VariantRuleSummary } from "@/lib/variants/rules-atlas";
 import { getTimeControl, type TimeControlKey } from "@/lib/game/time-controls";
 import { applyMove, createInitialState, getLegalMoves, getVariant, sameSquare, serializeSquare, type GameState, type Move, type Piece, type Square } from "@/lib/variants";
 import { BoardGrid } from "@/components/board/board-grid";
+import { BoardToolbar } from "@/components/board/board-toolbar";
 import { BoardPlayerCard } from "@/components/board/board-player-card";
 import { getDropRuleNote } from "@/components/board/drop-guidance";
 import { GameGuideModal } from "@/components/board/game-guide-modal";
@@ -62,8 +63,10 @@ type GuestIdentity = {
 
 function initialAppearancePreset(variantKey: string): AppearancePresetPreference {
   if (typeof window === "undefined") return "default";
-  const stored = window.localStorage.getItem(`${appearanceStoragePrefix}${variantKey}`);
-  return isAppearancePresetPreference(variantKey, stored) ? stored : "default";
+  try {
+    const stored = window.localStorage.getItem(`${appearanceStoragePrefix}${variantKey}`);
+    return isAppearancePresetPreference(variantKey, stored) ? stored : "default";
+  } catch { return "default"; }
 }
 
 function initialGuestIdentity(): GuestIdentity {
@@ -336,7 +339,8 @@ export function GameBoard({
   const [playMode, setPlayMode] = useState<PlayMode>(() => resolveSupportedPlayMode(variantKey, initialPlayMode ?? (initialBotMode === "opponent" ? "bot" : "offline")));
   const [botDifficulty, setBotDifficulty] = useState<BotDifficultyKey>(() => getBotDifficultyLevel(initialBotDifficulty).key);
   const [botMode, setBotMode] = useState<BotMode>(initialBotMode);
-  const [appearancePreset, setAppearancePreset] = useState<AppearancePresetPreference>(() => initialAppearancePreset(variantKey));
+  const [appearancePreset, setAppearancePreset] = useState<AppearancePresetPreference>("default");
+  const [focusMode, setFocusMode] = useState(false);
   const [guestIdentity, setGuestIdentity] = useState<GuestIdentity>(defaultGuestIdentity);
   const [seatChoice, setSeatChoice] = useState<SeatChoice>("random");
   const [boardOrientation, setBoardOrientation] = useState<BoardOrientation>("auto");
@@ -359,6 +363,18 @@ export function GameBoard({
   const activeBotRequestRef = useRef<string | null>(null);
   const resolvedRandomSeatRef = useRef(false);
   const outcomeModalKeyRef = useRef<string | null>(null);
+  const sidePanelRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    queueMicrotask(() => setAppearancePreset(initialAppearancePreset(variantKey)));
+  }, [variantKey]);
+
+  useEffect(() => {
+    if (!focusMode) return;
+    function exitFocus(event: KeyboardEvent) { if (event.key === "Escape") setFocusMode(false); }
+    document.addEventListener("keydown", exitFocus);
+    return () => document.removeEventListener("keydown", exitFocus);
+  }, [focusMode]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -524,7 +540,7 @@ export function GameBoard({
   function changeAppearancePreset(nextPreset: AppearancePresetPreference) {
     const validPreset = isAppearancePresetPreference(variantKey, nextPreset) ? nextPreset : "default";
     setAppearancePreset(validPreset);
-    window.localStorage.setItem(`${appearanceStoragePrefix}${variantKey}`, validPreset);
+    try { window.localStorage.setItem(`${appearanceStoragePrefix}${variantKey}`, validPreset); } catch { /* Keep the selected look for this session. */ }
   }
 
   function commitPlayerMove(move: Move) {
@@ -1189,19 +1205,20 @@ export function GameBoard({
   }, [gameStarted, isSearchingOnline, isWatchingMode]);
 
   return (
-    <div className="game-board-layout grid gap-4">
+    <div className="game-board-layout game-studio grid gap-4" data-focus={focusMode && gameStarted ? "true" : undefined} style={{ "--board-ratio": cols / rows } as CSSProperties}>
       <div className="board-column grid gap-3">
+        <BoardToolbar variantKey={variantKey} appearancePreset={appearancePreset} onAppearanceChange={changeAppearancePreset} onFlip={flipBoard} onGuide={rulesSummary ? () => setShowRules(true) : undefined} focusMode={focusMode && gameStarted} onFocusChange={() => setFocusMode((current) => !current)} canFocus={gameStarted} />
         {playerCard(topPlayerColor, "top")}
         <div className="board-shell" data-variant={displayState.variantKey} data-board-theme={boardTheme} data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
-            <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} variantKey={displayState.variantKey} />
+            <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} lastMove={displayState.moves.at(-1)} variantKey={displayState.variantKey} />
             {selectedHandCode && selectedHandLabel ? <DropSelectionHint legalTargetCount={legalTargets.size} locale={locale} onCancel={cancelHandDrop} pieceCode={selectedHandCode} pieceLabel={selectedHandLabel} pieceOwner={state.turn} pieceSkin={pieceSkin} variantKey={displayState.variantKey} /> : null}
             {pendingPromotion ? (
               <PromotionChoiceCard locale={locale} onChoose={choosePromotion} pieceCode={pendingPromotion.pieceCode} pieceLabel={pendingPromotion.pieceLabel} pieceOwner={pendingPromotion.pieceOwner} pieceSkin={pieceSkin} promotedPieceLabel={pendingPromotion.promotedPieceLabel} variantKey={displayState.variantKey} />
             ) : null}
             {!gameStarted ? (
               <div className="pregame-board-overlay" role="status">
-                <strong>Choose setup first</strong>
+                <button type="button" className="focus-ring" aria-label="Open game setup" onClick={() => { setPanelTab("setup"); sidePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}><strong>Choose setup first</strong></button>
               </div>
             ) : null}
             {outcome && !isReviewing ? (
@@ -1222,7 +1239,7 @@ export function GameBoard({
         {playerCard(bottomPlayerColor, "bottom")}
       </div>
 
-      <aside className="game-side-panel play-panel grid content-start gap-4 p-4">
+      <aside ref={sidePanelRef} className="game-side-panel play-panel grid content-start gap-4 p-4">
         <PlayMatchHeader
           currentVariantKey={variantKey}
           locale={locale}
@@ -1359,13 +1376,12 @@ export function GameBoard({
                   </div>
                 ) : isBotMode ? (
                   <>
-                    <label className="bot-profile-card bot-profile-card-with-select">
+                    <label className="studio-bot-choice" title={`${botStrength.display} · ${botCalibrationLabel}`}>
                       <Bot size={18} />
                       <div>
-                        <strong>{botLevel.label} bot</strong>
-                        <span title={botStrength.basis}>{botStrength.display} - {botCalibrationLabel}</span>
+                        <strong>Opponent strength</strong>
+                        <span title={botStrength.basis}>{botStrength.display}</span>
                       </div>
-                      <small title={botStrength.basis}>target {botStrength.targetElo}</small>
                       <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => setBotDifficulty(event.target.value as BotDifficultyKey)}>
                         {botDifficultyLevels.map((level) => (
                           <option key={level.key} value={level.key}>
@@ -1484,7 +1500,11 @@ export function GameBoard({
             </div>
           ) : null}
         </div>
-        <PlayChatPanel key={`${playMode}-${chatRoomId}`} gameStarted={gameStarted} isSpectating={isSpectating} locale={locale} playMode={playMode} roomId={chatRoomId} title={title} variantKey={displayState.variantKey} />
+        <details className="studio-chat-disclosure">
+          <summary className="focus-ring">{playMode === "bot" || playMode === "offline" ? "Local chat" : "Room chat"}<span>Open conversation</span></summary>
+          <p className="studio-chat-note">Messages stay on this device.</p>
+          <PlayChatPanel key={`${playMode}-${chatRoomId}`} gameStarted={gameStarted} isSpectating={isSpectating} locale={locale} playMode={playMode} roomId={chatRoomId} title={title} variantKey={displayState.variantKey} />
+        </details>
       </aside>
       <GameGuideModal show={showRules} rulesSummary={rulesSummary} onClose={() => setShowRules(false)} />
     </div>
