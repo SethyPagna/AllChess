@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Crown, WifiOff } from "lucide-react";
 import { GameBoard } from "@/components/board/game-board";
+import { SavedMatches } from "@/components/board/saved-matches";
 import { OfflinePack } from "@/components/shell/offline-pack";
 import { gameCatalog, getCatalogModeSupport } from "@/lib/catalog";
 import { normalizeLocale, rtlLocales } from "@/lib/i18n/locales";
@@ -29,9 +30,11 @@ export function OfflinePlay() {
       <OfflinePack />
     </header>
     <p className="offline-play-note">Local and bot games on this device. Connect to the internet for friend rooms and accounts.</p>
+    <SavedMatches locale={locale} offline />
     {query ? <section className="play-arena"><div className="play-core grid gap-3"><GameBoard
       key={entry.variantKey} variantKey={entry.variantKey!} locale={locale} title={createTranslator(locale)(getVariant(entry.variantKey!).nameKey)}
       rulesSummary={getVariantRuleSummary(entry.variantKey!)} localOnly
+      initialSavedMatchId={query.get("resume") ?? undefined}
       initialPlayMode={mode} initialBotMode={mode === "bot" ? "opponent" : "human"}
       initialBotDifficulty={parseBotDifficulty(query.get("bot") ?? undefined)}
       initialTimeControl={parseTimeControl(query.get("time") ?? undefined) ?? "freestyle"}

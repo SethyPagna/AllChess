@@ -65,8 +65,8 @@ describe("public offline play pack", () => {
     sw.offline();
     expect(await (await sw.request("/offline?game=classic"))!.text()).toBe("Public board shell");
     expect(await (await sw.request("/_next/static/chunks/board.123.js?dpl=build123", "cors"))!.text()).toBe("board code");
-    const redirect = await sw.request("/km/play/ouk-chaktrang?mode=room&room=private&token=secret&time=rapid");
-    expect(redirect!.headers.get("location")).toBe(origin + "/offline?locale=km&game=ouk-chaktrang&time=rapid");
+    const redirect = await sw.request("/km/play/ouk-chaktrang?mode=room&room=private&token=secret&time=rapid&resume=local-save");
+    expect(redirect!.headers.get("location")).toBe(origin + "/offline?locale=km&game=ouk-chaktrang&time=rapid&resume=local-save");
     expect((await sw.message("OFFLINE_STATUS")).at(-1)).toEqual({ ready: true });
   });
 

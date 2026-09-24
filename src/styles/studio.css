@@ -312,3 +312,20 @@ button:disabled { cursor: not-allowed; }
 .app-responsive-tools .offline-pack-toggle { width: 100%; padding: 8px 12px; justify-content: center; }
 .app-mobile-tools .offline-pack-toggle { justify-content: center; }
 @media(max-width: 600px) { .offline-play { padding: 12px; } .offline-play-header { gap: 10px; } .offline-play-header .app-brand strong, .app-mobile-tools .offline-pack-toggle span { display: none; } }
+
+.local-save-bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 7px 10px; border-radius: 10px; background: var(--surface); color: var(--muted); font-size: 12px; }
+.local-save-bar > span { flex: 1 1 180px; }
+.local-save-bar button { padding: 6px 9px; border: 1px solid var(--border); border-radius: 8px; color: var(--text); white-space: nowrap; }
+.local-save-error { font-size: 13px; color: var(--text); }
+.saved-matches { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); margin-bottom: 12px; }
+.saved-matches > summary { display: flex; align-items: center; gap: 8px; padding: 12px; cursor: pointer; font-size: 13px; font-weight: 650; }
+.saved-matches > summary small { margin-inline-start: auto; color: var(--muted); font-size: 11px; font-weight: 400; }
+.saved-match-list { max-height: 360px; overflow-y: auto; padding: 0 12px 8px; }
+.saved-match-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 9px 0; border-top: 1px solid var(--border); }
+.saved-match-row > div:first-child { flex: 1 1 130px; min-width: 0; }
+.saved-match-row strong { font-size: 13px; display: block; }
+.saved-match-row small { display: block; color: var(--muted); font-size: 11px; margin-top: 3px; }
+.saved-match-row > button, .saved-match-row > a { display: inline-flex; align-items: center; gap: 5px; padding: 8px 10px; border-radius: 8px; font-size: 12px; }
+.saved-match-delete { color: var(--muted); }
+.saved-match-remove { display: flex; gap: 8px; align-items: center; font-size: 12px; flex-wrap: wrap; }
+.saved-match-remove button { padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; }

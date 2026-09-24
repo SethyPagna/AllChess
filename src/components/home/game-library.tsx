@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, BookOpen, Bot, Search, Star, Users, X } from "lucide-react";
 
+import { SavedMatches } from "@/components/board/saved-matches";
 import { PieceIcon } from "@/components/board/piece-icon";
 import { displayGameName, getCatalogModeSupport, type CatalogPlayMode, type GameCatalogEntry } from "@/lib/catalog";
 import { getGamePresentation } from "@/lib/variants/presentation";
@@ -49,6 +50,7 @@ export function GameLibrary({ entries, locale }: { entries: GameCatalogEntry[]; 
 
   return (
     <section className="game-library" aria-label="Game library">
+      <SavedMatches locale={locale} />
       <div className="library-heading">
         <div><span className="studio-eyebrow">A world of strategy</span><h2>Find your next move.</h2></div>
         <div className="library-mode" role="group" aria-label="Library play mode">

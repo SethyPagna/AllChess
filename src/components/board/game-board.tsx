@@ -1,5 +1,9 @@
 "use client";
 
+import { useLocalMatch } from "./use-local-match";
+import { SavedMatches } from "./saved-matches";
+import { readLocalMatch } from "@/lib/game/local-match-store";
+import type { LocalMatchSnapshot } from "@/lib/game/local-match";
 import { FriendChat } from "./friend-chat";
 import { useFriendRoom, saveFriendToken } from "./use-friend-room";
 import type { FriendRoomView } from "@/lib/realtime/friend-room";
@@ -332,6 +336,7 @@ export function GameBoard({
   initialPlayMode,
   initialTimeControl = "rapid",
   initialRoomId,
+  initialSavedMatchId,
   localOnly = false,
   locale = "en",
   title = "Game"
@@ -344,6 +349,7 @@ export function GameBoard({
   initialPlayMode?: PlayMode;
   initialTimeControl?: TimeControlKey;
   initialRoomId?: string;
+  initialSavedMatchId?: string;
   localOnly?: boolean;
   locale?: string;
   title?: string;
@@ -358,6 +364,8 @@ export function GameBoard({
   const [selected, setSelected] = useState<Square | null>(null);
   const [selectedHandCode, setSelectedHandCode] = useState<string | null>(null);
   const [gameStarted, setGameStarted] = useState(false);
+  const [localPaused, setLocalPaused] = useState(false);
+  const [restoreError, setRestoreError] = useState("");
   const [playMode, setPlayMode] = useState<PlayMode>(() => resolveSupportedPlayMode(variantKey, initialPlayMode ?? (initialBotMode === "opponent" ? "bot" : "offline")));
   const [botDifficulty, setBotDifficulty] = useState<BotDifficultyKey>(() => getBotDifficultyLevel(initialBotDifficulty).key);
   const [botMode, setBotMode] = useState<BotMode>(initialBotMode);
@@ -410,6 +418,59 @@ export function GameBoard({
   const resolvedRandomSeatRef = useRef(false);
   const outcomeModalKeyRef = useRef<string | null>(null);
   const sidePanelRef = useRef<HTMLElement>(null);
+
+  const localSnapshot = useMemo<LocalMatchSnapshot>(() => ({ state, history, future, settings: { playMode: playMode === "bot" ? "bot" : "offline", botMode, botDifficulty: getBotDifficultyLevel(botDifficulty).key, timeControl, humanColor, seatChoice, boardOrientation } }), [state, history, future, playMode, botMode, botDifficulty, timeControl, humanColor, seatChoice, boardOrientation]);
+  const localGame = playMode === "offline" || playMode === "bot";
+  const localSave = useLocalMatch(gameStarted && localGame && !localPaused ? localSnapshot : null);
+  const { flush: flushLocalSave, adopt: adoptLocalSave } = localSave;
+  const pauseLocalGame = useCallback(() => {
+    flushLocalSave();
+    const requestId = activeBotRequestRef.current;
+    if (requestId) cancelRuntimeBotMove(requestId);
+    activeBotRequestRef.current = null;
+    setThinking({ status: "idle", label: "" }); setLocalPaused(true);
+  }, [flushLocalSave]);
+  const restoreLocalGame = useCallback((saved: LocalMatchSnapshot, revision: number, paused = false) => {
+    if (saved.state.variantKey !== variantKey) { setRestoreError("This save belongs to another game."); return; }
+    const entry = getGameCatalogEntry(variantKey);
+    if (!entry || !getCatalogModeSupport(entry, saved.settings.playMode).enabled) { setRestoreError("This saved mode is unavailable for this game."); return; }
+    const requestId = activeBotRequestRef.current;
+    if (requestId) cancelRuntimeBotMove(requestId);
+    activeBotRequestRef.current = null;
+    adoptLocalSave(saved.state.id, revision);
+    resolvedRandomSeatRef.current = true;
+    outcomeModalKeyRef.current = saved.state.status === "completed" ? `${saved.state.id}:${saved.state.moves.length}:${saved.state.result ?? ""}:${saved.state.outcomeReason ?? ""}` : null;
+    setState(saved.state); setHistory(saved.history); setFuture(saved.future);
+    setPlayMode(saved.settings.playMode); setBotMode(saved.settings.botMode); setBotDifficulty(saved.settings.botDifficulty);
+    setTimeControl(saved.settings.timeControl); setHumanColor(saved.settings.humanColor); setSeatChoice(saved.settings.seatChoice); setBoardOrientation(saved.settings.boardOrientation);
+    setGameStarted(true); setLocalPaused(paused && saved.state.status === "active");
+    setSelected(null); setSelectedHandCode(null); setPendingPromotion(null); setSuggestedMove(null); setLastBotResult(null);
+    setThinking({ status: "idle", label: "" }); setReviewPly(null); setReviewPlaying(false); setShowOutcome(false); setPanelTab("status"); setNotice(null); setRestoreError("");
+    setIgnoreInitialRoom(true); setRoomCreation({ status: "idle" }); setMatchmaking({ status: "idle" });
+  }, [variantKey, adoptLocalSave]);
+  useEffect(() => {
+    if (!initialSavedMatchId || initialRoomId || (initialPlayMode && !["offline", "bot"].includes(initialPlayMode))) return;
+    let cancelled = false;
+    void readLocalMatch(initialSavedMatchId).then(saved => { if (!cancelled) restoreLocalGame(saved.snapshot, saved.revision, true); }).catch(cause => { if (!cancelled) setRestoreError(cause instanceof Error ? cause.message : "This save could not be opened."); });
+    return () => { cancelled = true; };
+  }, [initialSavedMatchId, initialRoomId, initialPlayMode, restoreLocalGame]);
+  useEffect(() => {
+    if (!gameStarted || !localGame || state.status !== "active") return;
+    const hidden = () => { if (document.visibilityState === "hidden") pauseLocalGame(); };
+    document.addEventListener("visibilitychange", hidden); window.addEventListener("pagehide", pauseLocalGame);
+    return () => { document.removeEventListener("visibilitychange", hidden); window.removeEventListener("pagehide", pauseLocalGame); };
+  }, [gameStarted, localGame, state.status, pauseLocalGame]);
+  useEffect(() => { if (localSave.status === "conflict") queueMicrotask(pauseLocalGame); }, [localSave.status, pauseLocalGame]);
+
+  async function reloadLocalSave() {
+    try { const saved = await readLocalMatch(state.id); restoreLocalGame(saved.snapshot, saved.revision, true); }
+    catch (cause) { setRestoreError(cause instanceof Error ? cause.message : "This save could not be opened."); }
+  }
+  function keepLocalCopy() {
+    const id = crypto.randomUUID();
+    const copy = { ...localSnapshot, state: { ...state, id }, history: history.map(frame => ({ ...frame, id })), future: future.map(frame => ({ ...frame, id })) };
+    localSave.adopt(id, 0); setState(copy.state); setHistory(copy.history); setFuture(copy.future); localSave.enqueue(copy);
+  }
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -505,11 +566,11 @@ export function GameBoard({
   const isMatchedOnlineGame = (playMode === "room" && friend.room?.playerCount === 2) || (playMode === "online" && matchmaking.status === "matched");
   const isSearchingOnline = gameStarted && isOnlineMode && state.status !== "completed" && !isMatchedOnlineGame;
   const isWatchingMode = gameStarted && isSpectating && state.status !== "completed";
-  const canUseAssist = gameStarted && state.status === "active" && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
-  const canUseBots = gameStarted && state.status === "active" && isBotMode && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
-  const canUndo = history.length > 0 && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
-  const canRedo = future.length > 0 && !isThinking && !isReviewing && !isOnlineMode && !isSpectating;
-  const canEndGame = gameStarted && state.status === "active" && !isReviewing && !isSpectating && !isSearchingOnline;
+  const canUseAssist = gameStarted && state.status === "active" && !isThinking && !localPaused && !isReviewing && !isOnlineMode && !isSpectating;
+  const canUseBots = gameStarted && state.status === "active" && isBotMode && !isThinking && !localPaused && !isReviewing && !isOnlineMode && !isSpectating;
+  const canUndo = history.length > 0 && !isThinking && !localPaused && !isReviewing && !isOnlineMode && !isSpectating;
+  const canRedo = future.length > 0 && !isThinking && !localPaused && !isReviewing && !isOnlineMode && !isSpectating;
+  const canEndGame = gameStarted && state.status === "active" && !localPaused && !isReviewing && !isSpectating && !isSearchingOnline;
   const visualOrientation = boardOrientation === "auto" ? (humanColor === secondColor ? "second" : "first") : boardOrientation;
   const isBoardFlipped = visualOrientation === "second";
   const orientedRows = useMemo(() => {
@@ -582,6 +643,7 @@ export function GameBoard({
       state.status === "active" &&
       !isReviewing &&
       !isThinking &&
+      !localPaused &&
       !friend.busy &&
       (playMode !== "room" || friend.connection === "connected") &&
       (playMode !== "room" || (friend.room?.seat === color && friend.room.state.variantKey === variantKey)) &&
@@ -627,7 +689,7 @@ export function GameBoard({
   }
 
   function changeOukCount(action: OukCountAction) {
-    if (!gameStarted || isReviewing || isOnlineMode || isSpectating || botMode === "both") return;
+    if (!gameStarted || localPaused || isReviewing || isOnlineMode || isSpectating || botMode === "both") return;
     const count = readOukCount(state);
     const actor = botMode === "opponent" ? humanColor : action === "stop" && count ? count.side : action === "claim-draw" && count ? count.side === "white" ? "black" : "white" : state.turn;
     const requestId = activeBotRequestRef.current;
@@ -999,6 +1061,7 @@ export function GameBoard({
     setState(nextState);
     setHumanColor(pickHumanColor(nextState, seatChoice));
     setGameStarted(false);
+    setLocalPaused(false);
     setSelected(null);
     setSelectedHandCode(null);
     setPendingPromotion(null);
@@ -1027,6 +1090,7 @@ export function GameBoard({
     setState(nextState);
     setHumanColor(pickHumanColor(nextState, seatChoice));
     setGameStarted(false);
+    setLocalPaused(false);
     setSelected(null);
     setSelectedHandCode(null);
     setSuggestedMove(null);
@@ -1061,6 +1125,8 @@ export function GameBoard({
     setSelectedHandCode(null);
     setLastBotResult(null);
     setGameStarted(true);
+    setLocalPaused(false);
+    setRestoreError("");
     setState((current) => (isOnlineMode || isSpectating ? { ...current, status: "waiting" } : { ...current, status: "active" }));
     setMatchmaking({ status: "idle" });
     setRoomCreation(
@@ -1165,7 +1231,7 @@ export function GameBoard({
   }, [gameStarted, seatChoice, state]);
 
   useEffect(() => {
-    if (!gameStarted || isReviewing || state.status !== "active" || thinking.status === "thinking") return;
+    if (!gameStarted || localPaused || isReviewing || state.status !== "active" || thinking.status === "thinking") return;
     const shouldMove = botMode === "both" || (botMode === "opponent" && state.turn === botColor);
     if (!shouldMove) return;
     const snapshot = state;
@@ -1173,7 +1239,7 @@ export function GameBoard({
       void playBotMove("auto", snapshot);
     }, 80);
     return () => window.clearTimeout(timer);
-  }, [botColor, botMode, gameStarted, isReviewing, playBotMove, state, thinking.status]);
+  }, [botColor, botMode, gameStarted, localPaused, isReviewing, playBotMove, state, thinking.status]);
 
   useEffect(() => {
     if (!gameStarted || playMode !== "room" || roomCreation.status !== "creating") return;
@@ -1299,15 +1365,23 @@ export function GameBoard({
       const now = Date.now();
       const elapsed = now - lastTick;
       lastTick = now;
-      if (!gameStarted || isSearchingOnline || isWatchingMode || playMode === "room") return;
+      if (!gameStarted || localPaused || isSearchingOnline || isWatchingMode || playMode === "room") return;
       setState((current) => tickGameClock(current, elapsed));
     }, 250);
     return () => window.clearInterval(timer);
-  }, [gameStarted, isSearchingOnline, isWatchingMode, playMode]);
+  }, [gameStarted, localPaused, isSearchingOnline, isWatchingMode, playMode]);
 
   return (
     <div className="game-board-layout game-studio grid gap-4" data-focus={focusMode && gameStarted ? "true" : undefined} style={{ "--board-ratio": cols / rows } as CSSProperties}>
       <div className="board-column grid gap-3">
+        {restoreError ? <p className="local-save-error" role="alert">{restoreError}</p> : null}
+        {gameStarted && localGame ? <div className="local-save-bar" role="status" aria-label="Local save status">
+          <span>{localSave.status === "error" || localSave.status === "conflict" ? localSave.error : localPaused ? "Paused · your clock waits for you" : (localSave.status === "saving" || localSave.status === "idle") ? "Saving on this device…" : "Saved on this device"}</span>
+          {localSave.status === "conflict" ? <><button type="button" className="focus-ring" onClick={() => void reloadLocalSave()}>Open latest save</button><button type="button" className="focus-ring" onClick={keepLocalCopy}>Keep this board as a copy</button></> : <>
+            {localSave.status === "error" ? <button type="button" className="focus-ring" onClick={() => localSave.retry(localSnapshot)}>Retry save</button> : null}
+            {state.status === "active" ? <button type="button" className="focus-ring" onClick={() => localPaused ? setLocalPaused(false) : pauseLocalGame()}>{localPaused ? "Resume game" : "Pause"}</button> : null}
+          </>}
+        </div> : null}
         <BoardToolbar is3D={boardView === "3d" && !!collection3D} variantKey={variantKey} appearancePreset={appearancePreset} onAppearanceChange={changeAppearancePreset} onFlip={flipBoard} onGuide={rulesSummary ? () => setShowRules(true) : undefined} focusMode={focusMode && gameStarted} onFocusChange={() => setFocusMode((current) => !current)} canFocus={gameStarted} />
         {collection3D ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>3D carved</button>{boardView === "3d" ? <div role="group" aria-label="Piece material" className="board-finish-buttons">{(["original", "porcelain", "slate"] as const).map(finish => <button key={finish} type="button" className="focus-ring" aria-pressed={pieceFinish === finish} onClick={() => changePieceFinish(finish)}>{finish === "original" ? "Original" : finish === "porcelain" ? "Porcelain" : "Slate"}</button>)}</div> : null}</div> : null}
         {friendId && gameStarted ? <div className="room-live-status" role="status">
@@ -1321,7 +1395,7 @@ export function GameBoard({
           {state.status === "completed" && playMode === "room" ? <button type="button" className="focus-ring action-secondary" disabled={friend.busy || friend.connection !== "connected"} onClick={() => void friend.send({ gameId: state.id, action: friend.room?.rematchOffer === friend.room?.seat ? "cancel-rematch" : "rematch" })}>{friend.room?.rematchOffer ? friend.room.rematchOffer === friend.room.seat ? "Cancel rematch offer" : "Accept rematch" : "Rematch"}</button> : null}
         </div> : null}
         {playerCard(topPlayerColor, "top")}
-        {variantKey === "ouk-chaktrang" && gameStarted ? <OukCountingPanel state={displayState} actor={botMode === "opponent" ? humanColor : state.turn} localTwoPlayer={!isOnlineMode && !isSpectating && botMode === "human"} disabled={isReviewing || isOnlineMode || isSpectating || botMode === "both"} onAction={changeOukCount} /> : null}
+        {variantKey === "ouk-chaktrang" && gameStarted ? <OukCountingPanel state={displayState} actor={botMode === "opponent" ? humanColor : state.turn} localTwoPlayer={!isOnlineMode && !isSpectating && botMode === "human"} disabled={localPaused || isReviewing || isOnlineMode || isSpectating || botMode === "both"} onAction={changeOukCount} /> : null}
         <div className="board-shell" data-view={boardView === "3d" && collection3D ? "3d" : "2d"} data-variant={displayState.variantKey} data-board-theme={boardTheme} data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
             {boardView === "3d" && collection3D ? <Board3D key={variantKey} collection={collection3D} variantKey={variantKey} orientedRows={orientedRows} legalTargets={legalTargets} selected={selected} onChoose={choose} boardTheme={boardTheme} lastMove={displayState.moves.at(-1)} finish={pieceFinish} onFallback={() => changeBoardView("2d")} /> : <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} lastMove={displayState.moves.at(-1)} variantKey={displayState.variantKey} />}
@@ -1376,6 +1450,7 @@ export function GameBoard({
           timeControl={timeControl}
           title={title}
         />
+        {!gameStarted && localGame && !localOnly ? <SavedMatches locale={locale} variantKey={variantKey} onResume={restoreLocalGame} /> : null}
         <PlaySectionTabs activeTab={panelTab} onChange={setPanelTab} />
         <div className="play-tab-panel">
           {panelTab === "setup" ? (

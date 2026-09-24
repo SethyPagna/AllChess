@@ -115,7 +115,7 @@ self.addEventListener("fetch", event => {
         const parts = url.pathname.match(/^\/([^/]+)\/play\/([^/]+)$/);
         const destination = new URL("/offline", url.origin);
         if (parts) { destination.searchParams.set("locale", parts[1]); destination.searchParams.set("game", parts[2]); }
-        for (const key of ["time", "bot"]) if (url.searchParams.has(key)) destination.searchParams.set(key, url.searchParams.get(key));
+        for (const key of ["time", "bot", "resume"]) if (url.searchParams.has(key)) destination.searchParams.set(key, url.searchParams.get(key));
         if (url.searchParams.get("mode") === "bot") destination.searchParams.set("mode", "bot");
         return Response.redirect(destination.href, 302);
       }
