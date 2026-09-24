@@ -7,13 +7,15 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { BoardCell, Square } from "@/lib/variants";
 import { sameSquare, serializeSquare } from "@/lib/variants";
 import type { BoardThemePreference } from "./appearance";
-import { board3DPalettes, cameraPositions, collectionPieces, type CameraView, type PieceCollection, type PieceFinish } from "./board-3d-config";
+import { board3DPalettes, tabletopAspect, tabletopFieldOfView, tabletopCameraPosition, tabletopCameraTarget, collectionPieces, type PieceCollection, type PieceFinish } from "./board-3d-config";
+
+import { createTabletopScene } from "./tabletop-scene";
 
 type Props = {
   collection: PieceCollection; variantKey: string; orientedRows: BoardCell[][]; legalTargets: Set<string>;
   selected: Square | null; lastMove?: { from: Square; to: Square }; onChoose: (square: Square) => void;
-  boardTheme: BoardThemePreference; finish: PieceFinish; cameraView: CameraView;
-  onCameraChange: (view: CameraView) => void; onFallback: () => void;
+  boardTheme: BoardThemePreference; finish: PieceFinish;
+  onFallback: () => void;
 };
 
 export default function Board3D(props: Props) {
@@ -33,53 +35,48 @@ export default function Board3D(props: Props) {
     try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); }
     catch { queueMicrotask(() => fail("3D is unavailable on this device.")); return; }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0xded8cd, 1);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     renderer.toneMapping = THREE.NeutralToneMapping;
     element.prepend(renderer.domElement);
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(42, 1, .01, 10);
+    const camera = new THREE.PerspectiveCamera(tabletopFieldOfView, tabletopAspect, .01, 10);
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, .01, 0); controls.enablePan = false;
+    controls.target.set(...tabletopCameraTarget); controls.enablePan = false;
     controls.minDistance = .55; controls.maxDistance = 1.3;
-    controls.minPolarAngle = .001; controls.maxPolarAngle = Math.PI / 2.6;
-    let appliedCamera: CameraView | null = null;
+    controls.minPolarAngle = .45; controls.maxPolarAngle = Math.PI / 2.35;
     function applyCamera() {
-      appliedCamera = latest.current.cameraView;
-      camera.position.set(...cameraPositions[appliedCamera]);
-      controls.target.set(0, .01, 0); controls.update();
+      camera.position.set(...tabletopCameraPosition);
+      controls.target.set(...tabletopCameraTarget); controls.update();
     }
     resetCamera.current = applyCamera; applyCamera();
-    scene.add(new THREE.HemisphereLight(0xfff7e7, 0x635345, 1.7));
-    const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(-.3, .6, .4); scene.add(key);
+    const tabletop = createTabletopScene(scene, renderer);
     const meshes = new THREE.Group(); scene.add(meshes);
     const tileGeometry = new THREE.BoxGeometry(.0525, .004, .0525);
-    const baseGeometry = new THREE.BoxGeometry(.46, .014, .46);
     const dotGeometry = new THREE.CircleGeometry(.0065, 24);
     const ringGeometry = new THREE.RingGeometry(.018, .021, 32);
     const promotionGeometry = new THREE.RingGeometry(.0155, .017, 32);
-    const baseMaterial = new THREE.MeshStandardMaterial({ color: 0x553f2e, roughness: .6 });
     const markerMaterial = new THREE.MeshBasicMaterial({ color: 0x316a50, side: THREE.DoubleSide });
     const promotionMaterial = new THREE.MeshBasicMaterial({ color: 0xc9a246, side: THREE.DoubleSide });
-    const base = new THREE.Mesh(baseGeometry, baseMaterial); base.position.y = -.009; scene.add(base);
+
     const raycaster = new THREE.Raycaster(); const pointer = new THREE.Vector2();
     let model: THREE.Group | null = null;
     let modelReady = false;
     const disposableMaterials: THREE.Material[] = [];
     const textures: THREE.Texture[] = [];
-    const labelGeometry = new THREE.PlaneGeometry(.014, .014);
+    const labelGeometry = new THREE.PlaneGeometry(.012, .012);
     let lastPosition = "";
     const render = () => { if (!disposed && !contextLost) renderer.render(scene, camera); };
     function label(text: string, x: number, z: number) {
       const canvas = document.createElement("canvas"); canvas.width = 96; canvas.height = 96;
       const ctx = canvas.getContext("2d"); if (!ctx) return;
-      ctx.fillStyle = "#fff4da"; ctx.font = "bold 64px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(text, 48, 50);
+      ctx.fillStyle = "#dbcbaa"; ctx.font = "500 58px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(text, 48, 50);
       const texture = new THREE.CanvasTexture(canvas); textures.push(texture);
-      const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false }); disposableMaterials.push(material);
-      const plane = new THREE.Mesh(labelGeometry, material); plane.rotation.x = -Math.PI/2; plane.position.set(x, .002, z); meshes.add(plane);
+      const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, toneMapped: false }); disposableMaterials.push(material);
+      const plane = new THREE.Mesh(labelGeometry, material); plane.rotation.x = -Math.PI/2; plane.position.set(x, .006, z); plane.userData.coordinate = true; plane.scale.setScalar(Math.min(1.5, Math.max(1, 560 / element!.clientWidth))); meshes.add(plane);
     }
     function redraw() {
       const current = latest.current;
-      if (appliedCamera !== current.cameraView) applyCamera();
       const position = JSON.stringify([Boolean(model), current.boardTheme, current.finish, current.selected, current.lastMove, [...current.legalTargets], current.orientedRows.map(row => row.map(cell => [cell.square, cell.piece?.owner, cell.piece?.code, cell.piece?.promoted]))]);
       if (position === lastPosition) return;
       lastPosition = position;
@@ -95,8 +92,8 @@ export default function Board3D(props: Props) {
         if (objective) color.lerp(new THREE.Color(0xd6a648), .4);
         if (last) color.lerp(new THREE.Color(0xd9bb45), .35);
         if (isSelected) color.set(0xd5b64b);
-        const material = new THREE.MeshStandardMaterial({ color, roughness: .82 }); disposableMaterials.push(material);
-        const tile = new THREE.Mesh(tileGeometry, material); tile.position.set((c-3.5)*.053, 0, (r-3.5)*.053); tile.userData.square = cell.square; meshes.add(tile);
+        const material = new THREE.MeshPhysicalMaterial({ color, map: tabletop.grain, bumpMap: tabletop.grain, bumpScale: .000025, roughness: .34, clearcoat: .4, clearcoatRoughness: .28 }); disposableMaterials.push(material);
+        const tile = new THREE.Mesh(tileGeometry, material); tile.position.set((c-3.5)*.053, 0, (r-3.5)*.053); tile.userData.square = cell.square; tile.receiveShadow = true; meshes.add(tile);
         if (legal || cell.piece?.promoted) {
           const marker = new THREE.Mesh(legal ? cell.piece ? ringGeometry : dotGeometry : promotionGeometry, legal ? markerMaterial : promotionMaterial);
           marker.rotation.x = -Math.PI/2; marker.position.set(tile.position.x, .0028, tile.position.z); marker.userData.square = cell.square; meshes.add(marker);
@@ -110,7 +107,9 @@ export default function Board3D(props: Props) {
             if (current.collection === "classic") piece.rotation.y = ((light !== (current.orientedRows[0][0].square.row === 0)) ? Math.PI : 0) + (cell.piece.code === "n" ? Math.PI/4 : 0);
             piece.traverse(child => {
               child.userData.square = cell.square;
-              if (current.finish === "original" || !(child instanceof THREE.Mesh)) return;
+              if (!(child instanceof THREE.Mesh)) return;
+              child.castShadow = true; child.receiveShadow = true;
+              if (current.finish === "original") return;
               const finish = (original: THREE.Material) => {
                 if (!(original instanceof THREE.MeshStandardMaterial) || /brass|inlay|felt/i.test(original.name)) return original;
                 const id = `${original.uuid}:${light}`;
@@ -127,13 +126,13 @@ export default function Board3D(props: Props) {
             }); meshes.add(piece);
           }
         }
-        if (r === 7) label(String.fromCharCode(97+cell.square.col), tile.position.x, .222);
-        if (c === 0) label(String(8-cell.square.row), -.222, tile.position.z);
+        if (r === 7) label(String.fromCharCode(97+cell.square.col), tile.position.x, .227);
+        if (c === 0) label(String(8-cell.square.row), -.227, tile.position.z);
       }));
       render();
     }
     update.current = redraw;
-    const resize = new ResizeObserver(() => { const width = element.clientWidth; renderer.setSize(width, width); camera.aspect = 1; camera.updateProjectionMatrix(); render(); }); resize.observe(element);
+    const resize = new ResizeObserver(() => { const width = element.clientWidth; renderer.setSize(width, Math.round(width / tabletopAspect)); camera.aspect = tabletopAspect; camera.updateProjectionMatrix(); meshes.children.filter(mesh => mesh.userData.coordinate).forEach(mesh => mesh.scale.setScalar(Math.min(1.5, Math.max(1, 560 / width)))); render(); }); resize.observe(element);
     controls.addEventListener("change", render);
     const pointers = new Map<number, { x: number; y: number }>(); let gesture = false;
     function down(event: PointerEvent) {
@@ -168,15 +167,13 @@ export default function Board3D(props: Props) {
       disposed = true; update.current = null; resetCamera.current = null; resize.disconnect(); controls.dispose();
       renderer.domElement.removeEventListener("pointerdown", down); renderer.domElement.removeEventListener("pointerup", up); renderer.domElement.removeEventListener("pointercancel", cancel); renderer.domElement.removeEventListener("webglcontextlost", lost);
       disposableMaterials.forEach(material => material.dispose()); textures.forEach(texture => texture.dispose());
-      [tileGeometry, baseGeometry, dotGeometry, ringGeometry, promotionGeometry, labelGeometry].forEach(geometry => geometry.dispose());
-      [baseMaterial, markerMaterial, promotionMaterial].forEach(material => material.dispose());
-      if (model) disposeModel(model); renderer.dispose(); renderer.domElement.remove();
+      [tileGeometry, dotGeometry, ringGeometry, promotionGeometry, labelGeometry].forEach(geometry => geometry.dispose());
+      [markerMaterial, promotionMaterial].forEach(material => material.dispose());
+      if (model) disposeModel(model); tabletop.dispose(); renderer.dispose(); renderer.domElement.remove();
     };
   }, [props.collection]);
   return <div className="board-3d-stage">
     <div className="board-3d-camera" role="group" aria-label="3D camera">
-      <button type="button" className="focus-ring" aria-pressed={props.cameraView === "angled"} onClick={() => { props.onCameraChange("angled"); if (props.cameraView === "angled") resetCamera.current?.(); }}>Angled</button>
-      <button type="button" className="focus-ring" aria-pressed={props.cameraView === "top"} onClick={() => { props.onCameraChange("top"); if (props.cameraView === "top") resetCamera.current?.(); }}>Top</button>
       <button type="button" className="focus-ring" onClick={() => resetCamera.current?.()}>Reset view</button>
     </div>
     <div className="board-3d" ref={host} />

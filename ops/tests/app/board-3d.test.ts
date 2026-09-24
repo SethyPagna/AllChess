@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 import { Box3, PerspectiveCamera, Vector3 } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { cameraPositions, collectionPieces, get3DCollection } from "@/components/board/board-3d-config";
+import { tabletopCameraPosition, tabletopCameraTarget, tabletopAspect, tabletopFieldOfView, collectionPieces, get3DCollection } from "@/components/board/board-3d-config";
 import { createInitialState, variantCatalog } from "@/lib/variants";
 
 describe("playable 3D collections", () => {
@@ -43,12 +43,12 @@ describe("playable 3D collections", () => {
     });
   }
 
-  test("default cameras keep the board frame and tallest edge pieces inside the viewport", () => {
-    for (const position of Object.values(cameraPositions)) {
-      const camera = new PerspectiveCamera(42, 1, .01, 10);
-      camera.position.set(...position); camera.lookAt(0, .01, 0); camera.updateMatrixWorld();
-      for (const x of [-.23,.23]) for (const z of [-.23,.23]) {
-        const projected = new Vector3(x,0,z).project(camera);
+  test("angled camera keeps the board frame and tallest edge pieces inside the viewport", () => {
+    for (const position of [tabletopCameraPosition]) {
+      const camera = new PerspectiveCamera(tabletopFieldOfView, tabletopAspect, .01, 10);
+      camera.position.set(...position); camera.lookAt(...tabletopCameraTarget); camera.updateMatrixWorld();
+      for (const x of [-.245,.245]) for (const z of [-.245,.245]) {
+        const projected = new Vector3(x,-.049,z).project(camera);
         expect(Math.abs(projected.x)).toBeLessThan(.99); expect(Math.abs(projected.y)).toBeLessThan(.94);
       }
       for (const x of [-.195,.195]) for (const z of [-.195,.195]) {
