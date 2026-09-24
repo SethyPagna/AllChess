@@ -121,10 +121,10 @@ describe("bot difficulty ladder", () => {
     }
   }, 20_000);
 
-  test("every launch variant covers every Elo band with a legal bounded bot move", () => {
+  test.each(variantCatalog)("$key covers every Elo band with a legal bounded bot move", (variant) => {
     const failures: string[] = [];
 
-    for (const variant of variantCatalog) {
+    {
       const state = createInitialState(variant.key, `${variant.key}-all-elo-smoke`);
       for (const level of botDifficultyLevels) {
         const result = chooseBotMoveSafe(state, level.key, { engine: "internal", maxSearchTimeMs: 8 });
@@ -142,7 +142,7 @@ describe("bot difficulty ladder", () => {
     }
 
     expect(failures).toEqual([]);
-  }, 120_000);
+  }, 60_000);
 
   test("always chooses a legal move for every launch variant", () => {
     const variants = ["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "shogi", "mini-shogi", "janggi", "makruk", "jungle", "english-draughts", "international-draughts", "turkish-draughts", "konane", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"];

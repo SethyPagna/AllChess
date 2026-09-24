@@ -430,12 +430,26 @@ function westernPawnMoves(state: GameState, piece: Piece, from: Square, allowDou
   for (const dc of [-1, 1]) {
     const capture = { row: from.row + forward, col: from.col + dc };
     const target = cellAt(state, capture);
-    if (target?.piece && target.piece.owner !== piece.owner) {
+    if ((target?.piece && target.piece.owner !== piece.owner) || (allowDouble && enPassantCapturedSquare(state, { from, to: capture }))) {
       moves.push({ from, to: capture });
     }
   }
 
   return moves;
+}
+
+function enPassantCapturedSquare(state: GameState, move: Move): Square | null {
+  if (getVariant(state.variantKey).family !== "western" || (move.kind && move.kind !== "move")) return null;
+  const pawn = cellAt(state, move.from)?.piece, last = state.moves.at(-1);
+  if (pawn?.code !== "p" || pawn.promoted || !last || (last.kind && last.kind !== "move") || cellAt(state, move.to)?.piece) return null;
+  const forward = orient(pawn.owner, -1);
+  if (move.to.row !== move.from.row + forward || Math.abs(move.to.col - move.from.col) !== 1 || !isInside(state, move.to)) return null;
+  const captured = cellAt(state, last.to)?.piece;
+  if (captured?.code !== "p" || captured.promoted || captured.owner === pawn.owner) return null;
+  const originalRow = captured.owner === "black" ? 1 : state.board.length - 2;
+  // Horde first-rank double steps are deliberately not en-passant eligible.
+  if (last.from.row !== originalRow || last.from.col !== last.to.col || last.to.row - last.from.row !== orient(captured.owner, -2)) return null;
+  return last.to.row === move.from.row && last.to.col === move.to.col && move.to.row === (last.from.row + last.to.row) / 2 ? last.to : null;
 }
 
 function draughtsPieceMoves(state: GameState, piece: Piece, from: Square) {
@@ -1082,16 +1096,15 @@ export function applyMove(state: GameState, move: Move): GameState {
     if (!fromCell?.piece) throw new Error("errors.invalidMove");
 
     movingPiece = fromCell.piece;
-    const jumpedSquare = isDraughtsVariant(variant.key) ? draughtsCapturedSquare(next, move, movingPiece) : variant.key === "konane" ? konaneCapturedSquare(next, move, movingPiece) : null;
+    const jumpedSquare = isDraughtsVariant(variant.key) ? draughtsCapturedSquare(next, move, movingPiece) : variant.key === "konane" ? konaneCapturedSquare(next, move, movingPiece) : enPassantCapturedSquare(next, move);
     const jumpedCell = jumpedSquare ? cellAt(next, jumpedSquare) : null;
     captured = jumpedCell?.piece ?? toCell!.piece;
     if (captured) {
       next.captured.push(captured);
       if (jumpedCell?.piece) {
         jumpedCell.piece = null;
-      } else {
-        addCapturedPieceToHand(next, movingPiece.owner, captured);
       }
+      addCapturedPieceToHand(next, movingPiece.owner, captured);
     }
     const promoted = shouldPromote(variant, movingPiece, move.to, move.promotion);
     toCell!.piece = {
@@ -1905,6 +1918,8 @@ function wouldLeaveRoyalInCheck(state: GameState, move: Move, owner: PlayerColor
   const fromCell = cellAt(next, move.from);
   const toCell = cellAt(next, move.to);
   if (!fromCell?.piece || !toCell) return true;
+  const enPassant = enPassantCapturedSquare(state, move);
+  if (enPassant) cellAt(next, enPassant)!.piece = null;
   toCell.piece = { ...fromCell.piece, promoted: move.promotion || fromCell.piece.promoted };
   fromCell.piece = null;
   return isInCheck(next, owner);
@@ -1915,6 +1930,8 @@ function wouldGiveRoyalCheck(state: GameState, move: Move, owner: PlayerColor) {
   const fromCell = cellAt(next, move.from);
   const toCell = cellAt(next, move.to);
   if (!fromCell?.piece || !toCell) return true;
+  const enPassant = enPassantCapturedSquare(state, move);
+  if (enPassant) cellAt(next, enPassant)!.piece = null;
   toCell.piece = { ...fromCell.piece, promoted: move.promotion || fromCell.piece.promoted };
   fromCell.piece = null;
   return isInCheck(next, opponentOf(owner));
@@ -2005,7 +2022,7 @@ function hasAnyCaptureMove(state: GameState, color: PlayerColor) {
 function isCaptureMove(state: GameState, move: Move) {
   const movingPiece = cellAt(state, move.from)?.piece;
   const targetPiece = cellAt(state, move.to)?.piece;
-  return Boolean(movingPiece && targetPiece && targetPiece.owner !== movingPiece.owner);
+  return Boolean(movingPiece && ((targetPiece && targetPiece.owner !== movingPiece.owner) || enPassantCapturedSquare(state, move)));
 }
 
 function countPieces(state: GameState, owner: PlayerColor) {
