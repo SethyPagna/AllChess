@@ -25,3 +25,5 @@ public/engines/stockfish/
 .vercel
 data/local/
 supabase/
+
+public/offline-pack.json

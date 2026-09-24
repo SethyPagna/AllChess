@@ -292,6 +292,10 @@ function resolveSupportedPlayMode(variantKey: string, requestedMode: PlayMode): 
   return getCatalogModeSupport(entry, "offline").enabled ? "offline" : "spectate";
 }
 
+function offlineModeSupport(mode: PlayMode): CatalogModeSupport {
+  return { enabled: false, level: "guide-only", mode, reason: "Connect to the internet and return to the main app for this mode." };
+}
+
 function unavailableModeSupport(mode: PlayMode): CatalogModeSupport {
   return {
     enabled: false,
@@ -328,6 +332,7 @@ export function GameBoard({
   initialPlayMode,
   initialTimeControl = "rapid",
   initialRoomId,
+  localOnly = false,
   locale = "en",
   title = "Game"
 }: {
@@ -339,6 +344,7 @@ export function GameBoard({
   initialPlayMode?: PlayMode;
   initialTimeControl?: TimeControlKey;
   initialRoomId?: string;
+  localOnly?: boolean;
   locale?: string;
   title?: string;
 }) {
@@ -484,13 +490,13 @@ export function GameBoard({
   const catalogEntry = useMemo(() => getGameCatalogEntry(variantKey), [variantKey]);
   const modeSupport = useMemo(
     () => ({
-      online: catalogEntry ? getCatalogModeSupport(catalogEntry, "online") : unavailableModeSupport("online"),
+      online: localOnly ? offlineModeSupport("online") : catalogEntry ? getCatalogModeSupport(catalogEntry, "online") : unavailableModeSupport("online"),
       bot: catalogEntry ? getCatalogModeSupport(catalogEntry, "bot") : unavailableModeSupport("bot"),
       offline: catalogEntry ? getCatalogModeSupport(catalogEntry, "offline") : unavailableModeSupport("offline"),
-      room: catalogEntry ? getCatalogModeSupport(catalogEntry, "room") : unavailableModeSupport("room"),
-      spectate: catalogEntry ? getCatalogModeSupport(catalogEntry, "spectate") : unavailableModeSupport("spectate")
+      room: localOnly ? offlineModeSupport("room") : catalogEntry ? getCatalogModeSupport(catalogEntry, "room") : unavailableModeSupport("room"),
+      spectate: localOnly ? offlineModeSupport("spectate") : catalogEntry ? getCatalogModeSupport(catalogEntry, "spectate") : unavailableModeSupport("spectate")
     }),
-    [catalogEntry]
+    [catalogEntry, localOnly]
   );
   const isThinking = thinking.status === "thinking";
   const isOnlineMode = playMode === "online" || playMode === "room";
@@ -1351,6 +1357,7 @@ export function GameBoard({
 
       <aside ref={sidePanelRef} className="game-side-panel play-panel grid content-start gap-4 p-4">
         <PlayMatchHeader
+          localOnly={localOnly}
           currentVariantKey={variantKey}
           locale={locale}
           onOpenGuide={() => setShowRules(true)}

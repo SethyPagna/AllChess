@@ -19,6 +19,7 @@ import { playGameHref } from "@/lib/routing/play-links";
 import type { PlayMode } from "@/components/board/game-board-options";
 
 type PlayMatchHeaderProps = {
+  localOnly?: boolean;
   currentVariantKey: string;
   locale: string;
   onOpenGuide: () => void;
@@ -32,6 +33,7 @@ type PlayMatchHeaderProps = {
 };
 
 export function PlayMatchHeader({
+  localOnly = false,
   currentVariantKey,
   locale,
   onOpenGuide,
@@ -74,7 +76,7 @@ export function PlayMatchHeader({
     { key: "current", label: "Current" },
     { key: "bot", label: "Bot" },
     { key: "offline", label: "Local" },
-    { key: "online", label: "Online" }
+    ...(!localOnly ? [{ key: "online" as const, label: "Online" }] : [])
   ];
 
   useEffect(() => {
@@ -163,6 +165,7 @@ export function PlayMatchHeader({
                 <div className="play-title-picker-list">
                   {filteredGames.map((entry) => {
                     const support = getCatalogModeSupport(entry, targetMode);
+                    if (localOnly) return <a key={entry.id} href={`/offline?game=${encodeURIComponent(entry.variantKey!)}&locale=${encodeURIComponent(locale)}&mode=${targetMode}&time=${timeControl}`} className={`focus-ring play-title-picker-row ${entry.variantKey === currentVariantKey ? "is-current" : ""}`}><span>{displayGameName(entry)}</span><small>{displayModeReadiness(entry, targetMode)}</small></a>;
                     return (
                       <Link
                         key={entry.id}
@@ -188,7 +191,7 @@ export function PlayMatchHeader({
                 <span className="button-label">Guide</span>
               </button>
             ) : null}
-            <div ref={shareRef} className="play-share-menu">
+            {!localOnly ? <div ref={shareRef} className="play-share-menu">
               <button type="button" onClick={() => setShareOpen((current) => !current)} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Create a room code, invite link, or spectator link." aria-label="Share game" aria-expanded={shareOpen} aria-controls="play-share-menu">
                 <Share2 size={16} />
                 <span className="button-label">Share</span>
@@ -236,7 +239,7 @@ export function PlayMatchHeader({
                   {shareNotice ? <p role="status">{shareNotice}</p> : null}
                 </div>
               ) : null}
-            </div>
+            </div> : null}
           </div>
         </div>
       </div>

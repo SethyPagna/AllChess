@@ -58,7 +58,7 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await expect(coordinate).toHaveCSS("box-shadow", "none");
   await expect(coordinate).toHaveCSS("border-radius", "0px");
   await expect(coordinate).not.toHaveCSS("color", "rgba(0, 0, 0, 0)");
-  await expect(coordinate).not.toHaveCSS("text-shadow", "none");
+  await expect(coordinate).toHaveCSS("text-shadow", "none");
   const firstFileLabel = (await board.locator(".board-file").first().textContent())?.trim() ?? "";
   const firstFileDataLabel = await board.locator(".board-file").first().getAttribute("data-coordinate-label");
   expect(firstFileLabel).toMatch(/^[a-z]$/);
@@ -427,10 +427,10 @@ test("non-classic boards use clean coordinate labels too", async ({ page }) => {
   await expect(page.getByLabel("Board terrain key")).toContainText("Palace");
   const coordinate = board.locator(".board-coordinate").first();
   await expect(coordinate).toBeVisible();
-  await expect(coordinate).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-  await expect(coordinate).not.toHaveCSS("border-radius", "0px");
+  await expect(coordinate).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(coordinate).toHaveCSS("border-radius", "0px");
   await expect(coordinate).not.toHaveCSS("color", "rgba(0, 0, 0, 0)");
-  await expect(coordinate).not.toHaveCSS("text-shadow", "none");
+  await expect(coordinate).toHaveCSS("text-shadow", "none");
   await expect(board.locator(".board-file").first()).toHaveText("a");
   await expect(board.locator(".board-file").first()).toHaveCSS("text-transform", "lowercase");
 

@@ -1,0 +1,21 @@
+# Offline play pack
+
+Choose **Play offline → Download play pack** in the production app's quick settings. The download is about 22 MiB before compression. Once **Offline ready** appears, the app can close and reopen without a connection. The same control opens the dedicated offline studio and can refresh its download after an app update.
+
+The offline studio reuses `GameBoard`, the 21 locally playable variants, rules/guide data, native pieces, themes, internal bots, Stockfish JavaScript/WASM, and the two playable 3D collections. Cambodia retains its local preview gate. Game switching makes a document navigation to the cached shell; it does not depend on an uncached Next.js RSC request. Friend, matchmaking, and spectator controls are unavailable in this studio. Opening a friend URL offline offers a fresh local board, without carrying its room ID or credentials into the offline URL.
+
+## Build and cache contract
+
+- `npm run build` generates the static `/offline` shell, then runs `prepare:offline`. `npm run cf:build` does the same before OpenNext copies public assets. The generated `public/offline-pack.json` is ignored by Git and must be deployed with the matching build. Development mode does not register the service worker or advertise downloads.
+- The manifest contains public Next.js JavaScript/CSS/font assets, the shell, models, icons, and Stockfish. Each file has a byte count and SHA-256 digest. No account or play-page HTML is stored. Static application code for other routes may be included; it contains no server-supplied account data.
+- The service worker fetches download files without credentials, checks an asset-path allowlist, verifies their contents, and only then switches the saved-pack pointer. Concurrent download buttons share one job. Interrupted or corrupt updates leave the previous complete pack available. One previous version is retained for already-open boards.
+- Ordinary page requests remain network-first. On a failed document navigation, a complete pack redirects to the offline studio; without a pack, the small reconnect page is shown. API calls, room actions, account responses, and RSC payloads are never cached or replayed.
+- Cached static assets support deployment query parameters and remain available when an older build chunk returns 404 after a deployment. Browser storage eviction clears the ready status on the next check. Cache storage is not a guaranteed permanent download; this follows the [service-worker offline application pattern documented by MDN](https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Offline_and_background_operation).
+
+## Evidence and remaining work
+
+Eight worker tests exercise actual worker handlers: verified downloads, cold navigation, query-bearing static assets, stripped room credentials, corrupt-update recovery, account/API exclusions, three path-traversal forms, eviction fallback, and shared concurrent downloads.
+
+A production browser audit saved the pack in a persistent Chrome profile, closed the browser, and relaunched it with networking disabled. It opened all 21 locally playable games, made Cambodia's opening king leap, received a classic bot reply, and loaded both 3D sets. Runtime errors were empty. Download menus and boards were checked at desktop, 390, and 320-pixel widths, including viewport bounds and Escape/focus restoration. Four existing desktop/mobile browser cases for moves, bot replies, board geometry, and unboxed coordinates also pass. Audit helpers and screenshots are ignored under `output/playwright/`.
+
+Local positions are currently session-only: cold starts open a new game, not an autosaved match. Account contacts, live friend games, rankings, and server analysis require connectivity. Physical iOS/Android installation, deployed-host asset delivery, and broader offline localization still need validation. No production deployment is included in this milestone.

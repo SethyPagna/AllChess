@@ -293,3 +293,22 @@ button:disabled { cursor: not-allowed; }
 @media (max-width: 400px) { .board-finish-buttons { margin-left: 0; } .board-3d-status { font-size: 10px; } }
 
 .board-shell[data-view="3d"], .board-shell[data-view="3d"] > .board-stage { aspect-ratio: auto; }
+
+/* Public offline play uses the same boards in a compact standalone shell. */
+.offline-play { max-width: 1480px; margin: auto; padding: 20px; }
+.offline-play-header { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
+.offline-play-header .offline-pack { margin-left: auto; }
+.offline-play-label { display: flex; gap: 7px; align-items: center; color: var(--muted); font-size: 13px; }
+.offline-play-note { color: var(--muted); font-size: 13px; margin: 0 0 18px; }
+.offline-pack { position: relative; }
+.offline-pack-toggle { display: inline-flex; gap: 6px; align-items: center; padding: 9px; font-size: 12px; white-space: nowrap; }
+.offline-pack-panel { position: fixed; z-index: 1000; max-height: calc(100dvh - 24px); overflow: auto; width: min(320px, calc(100vw - 32px)); padding: 16px; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 12px 36px #162e2526; border-radius: 16px; }
+.offline-pack-panel p { font-size: 13px; line-height: 1.5; color: var(--muted); margin: 8px 0 12px; }
+.offline-pack-panel progress { width: 100%; accent-color: #294c39; }
+.offline-pack-panel [role="status"] > span { display: block; font-size: 12px; }
+.offline-pack-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.offline-pack-actions > * { padding: 10px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+.app-responsive-tools .offline-pack { grid-column: 1 / -1; }
+.app-responsive-tools .offline-pack-toggle { width: 100%; padding: 8px 12px; justify-content: center; }
+.app-mobile-tools .offline-pack-toggle { justify-content: center; }
+@media(max-width: 600px) { .offline-play { padding: 12px; } .offline-play-header { gap: 10px; } .offline-play-header .app-brand strong, .app-mobile-tools .offline-pack-toggle span { display: none; } }
