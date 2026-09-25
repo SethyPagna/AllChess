@@ -2,7 +2,7 @@ import { z } from "zod";
 import { getGameCatalogEntry, getCatalogModeSupport } from "@/lib/catalog";
 import { createInitialState, getVariant } from "@/lib/variants";
 import { getTimeControl } from "@/lib/game/time-controls";
-import type { FriendRoom } from "./friend-room";
+import { matchArrivalWindowMs, type FriendRoom } from "./friend-room";
 
 export const quickMatchSchema = z.object({
   token: z.string().regex(/^[a-f0-9-]{36,80}$/),
@@ -60,5 +60,5 @@ export function createMatchedRoom(plan: MatchedRoomPlan): FriendRoom {
   const state = createInitialState(plan.variantKey, plan.id), control = getTimeControl(plan.time);
   state.status = "waiting";
   state.clocks = state.clocks.map(clock => ({ ...clock, remainingMs: control.baseSeconds * 1000, incrementMs: control.incrementSeconds * 1000 }));
-  return { id: plan.id, state, seats: getVariant(plan.variantKey).players.map((color, index) => ({ color, digest: plan.digests[index] })), time: plan.time, createdAt: plan.createdAt, updatedAt: plan.createdAt, matched: true };
+  return { id: plan.id, state, seats: getVariant(plan.variantKey).players.map((color, index) => ({ color, digest: plan.digests[index] })), time: plan.time, createdAt: plan.createdAt, updatedAt: plan.createdAt, matched: true, arrival: { deadline: plan.createdAt + matchArrivalWindowMs, status: "waiting" } };
 }

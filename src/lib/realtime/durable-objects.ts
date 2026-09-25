@@ -1,6 +1,6 @@
 import { createMatchedRoom, hashSeatToken, quickMatchSchema, transitionQuickMatch, type MatchedRoomPlan, type QuickQueue } from "./quick-match";
 import { DurableObject } from "cloudflare:workers";
-import { friendActionSchema, transitionFriendRoom, type FriendRoom } from "./friend-room";
+import { friendActionSchema, transitionFriendRoom, settleMatchArrival, nextFriendRoomAlarm, type FriendRoom } from "./friend-room";
 import type { DurableObjectState } from "@cloudflare/workers-types";
 
 import { applyAuthoritativeRoomMove, createDemoLiveStats, createRoomSnapshot } from "@/lib/realtime/rooms";
@@ -28,8 +28,9 @@ export class GameRoomDO extends DurableObject {
       const plan = await request.json() as MatchedRoomPlan;
       await this.ctx.storage.transaction(async storage => {
         if (!await storage.get("friend-room")) {
-          await storage.put("friend-room", createMatchedRoom(plan));
-          await storage.setAlarm(plan.createdAt + 7 * 86400000);
+          const room = createMatchedRoom(plan);
+          await storage.put("friend-room", room);
+          await storage.setAlarm(nextFriendRoomAlarm(room));
         }
       });
       return json({ ready: true });
@@ -43,7 +44,7 @@ export class GameRoomDO extends DurableObject {
         const result = await transitionFriendRoom(stored, id, action.data);
         if (result.stored) {
           await this.ctx.storage.put("friend-room", result.stored);
-          if (action.data.action === "create") await this.ctx.storage.setAlarm(result.stored.createdAt + 7 * 86400000);
+          await this.ctx.storage.setAlarm(nextFriendRoomAlarm(result.stored));
         }
         else await this.ctx.storage.delete("friend-room");
         return json(result.body, { status: result.status, headers: { "cache-control": "no-store" } });
@@ -68,8 +69,17 @@ export class GameRoomDO extends DurableObject {
   }
 
   async alarm() {
-    const room = await this.ctx.storage.get<FriendRoom>("friend-room");
-    if (room && Date.now() >= room.createdAt + 7 * 86400000) await this.ctx.storage.delete("friend-room");
+    await this.ctx.storage.transaction(async storage => {
+      const room = await storage.get<FriendRoom>("friend-room");
+      if (!room) return;
+      const now = Date.now();
+      if (now >= room.createdAt + 7 * 86400000) { await storage.delete("friend-room"); return; }
+      if (settleMatchArrival(room, now)) {
+        room.revision = (room.revision ?? 0) + 1;
+        await storage.put("friend-room", room);
+      }
+      await storage.setAlarm(nextFriendRoomAlarm(room));
+    });
   }
 
   private async getSnapshot(variantKey = "classic", roomId?: string) {

@@ -5,6 +5,7 @@ import { SavedMatches } from "./saved-matches";
 import { readLocalMatch } from "@/lib/game/local-match-store";
 import type { LocalMatchSnapshot } from "@/lib/game/local-match";
 import { FriendChat } from "./friend-chat";
+import { MatchArrivalPanel } from "./match-arrival-panel";
 import { useFriendRoom, saveFriendToken } from "./use-friend-room";
 import type { FriendRoomView } from "@/lib/realtime/friend-room";
 import dynamic from "next/dynamic";
@@ -1107,6 +1108,23 @@ export function GameBoard({
     setRoomCreation({ status: "idle" });
   }
 
+  function leaveUnplayedMatch() {
+    if (!friend.room?.matched || !friend.room.arrival || !friend.room.seat) return;
+    void friend.send({ action: "leave-before-start", gameId: state.id });
+  }
+
+  function findAnotherOpponent(search: boolean) {
+    if (!friend.room?.seat || !friend.room.arrival || friend.room.arrival.status === "waiting") return;
+    reset();
+    const url = new URL(window.location.href); url.searchParams.set("mode", "online"); url.searchParams.delete("room"); window.history.replaceState(null, "", url);
+    setPlayMode("online"); setBotMode("human"); setSeatChoice("random"); setBoardOrientation("auto");
+    if (search) {
+      quickMatchToken.current = crypto.randomUUID() + crypto.randomUUID();
+      setState(current => ({ ...current, status: "waiting" })); setGameStarted(true); setPanelTab("status");
+      setNotice("Finding another opponent with the same game and clock…");
+    }
+  }
+
   function changeTimeControl(nextControl: TimeControlKey) {
     const requestId = activeBotRequestRef.current;
     if (requestId) cancelRuntimeBotMove(requestId);
@@ -1403,7 +1421,7 @@ export function GameBoard({
         </div> : null}
         <BoardToolbar is3D={boardView === "3d" && !!collection3D} variantKey={variantKey} appearancePreset={appearancePreset} onAppearanceChange={changeAppearancePreset} onFlip={flipBoard} onGuide={rulesSummary ? () => setShowRules(true) : undefined} focusMode={focusMode && gameStarted} onFocusChange={() => setFocusMode((current) => !current)} canFocus={gameStarted} />
         {collection3D ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>{collection3D === "xiangqi" ? "3D discs" : collection3D === "shogi" || collection3D === "janggi" ? "3D tiles" : "3D carved"}</button>{boardView === "3d" ? <div role="group" aria-label="Piece material" className="board-finish-buttons">{(["original", "porcelain", "slate"] as const).map(finish => <button key={finish} type="button" className="focus-ring" aria-pressed={pieceFinish === finish} onClick={() => changePieceFinish(finish)}>{finish === "original" ? collection3D === "shogi" || collection3D === "xiangqi" ? "Boxwood" : collection3D === "janggi" ? "Ivory" : collection3D === "makruk" ? "Thai lacquer" : "Original" : finish === "porcelain" ? "Porcelain" : "Slate"}</button>)}</div> : null}</div> : null}
-        {friendId && gameStarted ? <div className="room-live-status" role="status">
+        {friendId && gameStarted ? friend.room?.arrival ? <MatchArrivalPanel room={friend.room} connected={friend.connection === "connected"} busy={friend.busy} error={friend.error} onCancel={leaveUnplayedMatch} onFindAnother={() => findAnotherOpponent(true)} onSetup={() => findAnotherOpponent(false)} onReconnect={friend.reconnect} /> : <div className="room-live-status" role="status">
           <span>{friend.connection !== "connected"
             ? friend.connection === "offline" ? timeControl === "freestyle" ? "You’re offline · waiting for a connection" : "You’re offline · the room clock continues" : friend.connection === "connecting" ? "Connecting to your room…" : friend.connection === "unavailable" ? friend.error : "Reconnecting · checking the latest board…"
             : friend.error ?? (state.status === "completed" ? "Game finished" : friend.room?.matched && state.status === "waiting" ? "Opponent found · waiting for both players to connect" : friend.room?.playerCount === 2 ? (playMode === "spectate" ? "Watching live" : friend.room.seat === state.turn ? "Your turn" : friend.room?.matched ? "Opponent’s turn" : "Friend’s turn") : "Waiting for your friend · share the invite link")}
@@ -1552,7 +1570,7 @@ export function GameBoard({
                         {playMode === "room"
                           ? roomCreation.status === "creating"
                             ? "Creating room code"
-                            : friend.room?.playerCount === 2 ? friend.room.matched ? "Opponent connected" : "Friend connected" : "Invite room ready"
+                            : friend.room?.arrival ? friend.room.arrival.status === "waiting" ? "Waiting for arrival" : "Match closed" : friend.room?.playerCount === 2 ? friend.room.matched ? "Opponent connected" : "Friend connected" : "Invite room ready"
                           : matchmaking.status === "matched"
                             ? "Opponent matched"
                             : "Auto-matching opponent"}
@@ -1562,7 +1580,7 @@ export function GameBoard({
                           ? roomCreation.status === "creating"
                             ? "Generating a room code for invites and spectator links."
                             : roomCreation.status === "ready"
-                              ? friend.room?.matched ? "Casual match · both seats are reserved. Share the spectator link to invite viewers." : `Room ${roomCreation.roomId} is ready. Use Share for invite and spectator links.`
+                              ? friend.room?.arrival ? friend.room.arrival.status === "waiting" ? "Play begins when both players connect." : "No game was played. Choose another opponent above." : friend.room?.matched ? "Casual match · both seats are reserved. Share the spectator link to invite viewers." : `Room ${roomCreation.roomId} is ready. Use Share for invite and spectator links.`
                               : roomCreation.status === "failed"
                                 ? roomCreation.message
                                 : "Use Share to copy an invite link, spectator link, or room code."
