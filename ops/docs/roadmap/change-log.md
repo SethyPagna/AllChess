@@ -4,6 +4,12 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ---
 
+## 2026-09-25 — Jungle tabletop and rules
+
+- Add original Blender animal miniatures, recessed enamel rivers, physical wood banks, native traps/dens and compact rank/movement hints. All 21 playable games now have native 3D.
+- Version new Jungle games with correct trap placement/ownership, Dog/Wolf ranks and rat river-boundary captures; retain old saved behavior and correct room replay.
+- Verify native clicks, saves, fallback, bot legality, room rules and cold offline play. See [validation and remaining scope](jungle-tabletop.md).
+
 ## 2026-09-25 — Historical tabletops
 
 - Add distinct original Shatranj ceramic and Chaturanga sculpted-army collections, editable Blender sources, plain wooden grids and coordinated physical frames.

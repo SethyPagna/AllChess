@@ -139,3 +139,8 @@ The presentation is a contemporary wooden papamū with modeled bowls and origina
 ## 2026-09-25: Separate historical piece vocabularies
 
 Use original abstract ceramic forms for Shatranj and a distinct sculpted army for Chaturanga, on plain gridded physical boards. Match those identities in 2D and explain selected-piece movement in a compact line below the board. Retain the existing documented rule profiles, promotion codes and room/save contracts; visual research is not evidence of universal historical rules. Source context and originality boundaries are recorded in [the delivery notes](historical-tabletops.md).
+
+
+## 2026-09-25: Jungle physical terrain and rule compatibility
+
+Use original animal miniatures on a physical board whose rivers are recessed below its banks. Terrain markers follow the actual state's cells rather than a separate visual map. New `standard-v1` games correct trap layout/ownership, Dog/Wolf ranks and rat bank captures, and resolve immobilization as a draw. Preserve unversioned saved behavior and reconstruct old room openings for review. Sources and explicit app conventions are documented in [the delivery notes](jungle-tabletop.md); 3D coverage does not imply complete bot calibration, localization or tournament certification.

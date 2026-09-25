@@ -4,6 +4,7 @@ import { Box3, Mesh, MeshStandardMaterial, PerspectiveCamera, Vector3 } from "th
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { tabletopCameraPosition, tabletopCameraTarget, tabletopAspect, tabletopFieldOfView, collectionPieces, get3DCollection, board3DLayout, pieceModelName, shogiPromotedCodes } from "@/components/board/board-3d-config";
 import { createKonaneCellGeometry } from "@/components/board/konane-board";
+import { createJungleTerrainKit } from "@/components/board/jungle-board";
 import { createInitialState, variantCatalog } from "@/lib/variants";
 
 describe("playable 3D collections", () => {
@@ -11,15 +12,15 @@ describe("playable 3D collections", () => {
     for (const variant of variantCatalog) {
       const collection = get3DCollection(variant.key);
       if (!collection) continue;
-      expect(variant.board).toMatchObject(variant.key === "international-draughts" ? { rows: 10, cols: 10 } : collection === "shogi" ? { rows: variant.key === "mini-shogi" ? 5 : 9, cols: variant.key === "mini-shogi" ? 5 : 9 } : collection === "xiangqi" || collection === "janggi" ? { rows: 10, cols: 9 } : { rows: 8, cols: 8 });
+      expect(variant.board).toMatchObject(variant.key === "international-draughts" ? { rows: 10, cols: 10 } : collection === "jungle" ? { rows: 9, cols: 7 } : collection === "shogi" ? { rows: variant.key === "mini-shogi" ? 5 : 9, cols: variant.key === "mini-shogi" ? 5 : 9 } : collection === "xiangqi" || collection === "janggi" ? { rows: 10, cols: 9 } : { rows: 8, cols: 8 });
       for (const cell of createInitialState(variant.key).board.flat()) {
         if (cell.piece) expect(collectionPieces[collection][cell.piece.code], `${variant.key}: ${cell.piece.code}`).toBeTruthy();
       }
     }
-    expect(get3DCollection("jungle")).toBeNull();
+    expect(variantCatalog.every(variant => get3DCollection(variant.key))).toBe(true);
   });
 
-  for (const collection of ["classic", "khmer", "shogi", "xiangqi", "janggi", "makruk", "draughts", "konane", "shatranj", "chaturanga"] as const) {
+  for (const collection of ["classic", "khmer", "shogi", "xiangqi", "janggi", "makruk", "draughts", "konane", "shatranj", "chaturanga", "jungle"] as const) {
     test(`${collection} GLB has complete named pieces at playable scale without external dependencies`, async () => {
       const bytes = readFileSync(`public/assets/${collection}/collection.glb`);
       expect(bytes.length).toBeLessThan(1_000_000);
@@ -73,7 +74,7 @@ describe("playable 3D collections", () => {
     expect(pieceModelName("makruk", "p", true)).toBe("light_bia");
   });
 
-  test.each(["classic", "ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi", "makruk", "english-draughts", "international-draughts", "turkish-draughts", "konane", "shatranj", "chaturanga"])("%s angled camera contains its physical board and edge pieces", key => {
+  test.each(["classic", "ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi", "makruk", "english-draughts", "international-draughts", "turkish-draughts", "konane", "shatranj", "chaturanga", "jungle"])("%s angled camera contains its physical board and edge pieces", key => {
     const variant = variantCatalog.find(variant => variant.key === key)!;
     const collection = get3DCollection(key)!;
     const layout = board3DLayout(collection, variant.board.rows, variant.board.cols);
@@ -102,4 +103,17 @@ test("papamū wells are real recessed geometry with flush square edges and upwar
     if (Math.max(Math.abs(position.getX(i)),Math.abs(position.getZ(i)))>.026) expect(position.getY(i)).toBeCloseTo(.002,6);
   }
   geometry.dispose();
+});
+
+test("Jungle river surfaces are recessed beneath the banks and terrain stays tied to board squares", () => {
+  const kit=createJungleTerrainKit(.053);
+  kit.land.computeBoundingBox();kit.water.computeBoundingBox();
+  expect(kit.land.boundingBox!.max.y).toBeCloseTo(.002,6);
+  expect(kit.water.boundingBox!.max.y).toBeCloseTo(-.006,6);
+  for(const cell of createInitialState("jungle").board.flat()) {
+    const marks=kit.decorate(cell);
+    expect(marks.children).toHaveLength(cell.terrain==="river"?3:cell.terrain==="trap"||cell.terrain==="den"?2:0);
+    for(const mark of marks.children)expect(mark.userData.square).toEqual(cell.square);
+  }
+  kit.dispose();
 });

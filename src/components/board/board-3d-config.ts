@@ -1,10 +1,11 @@
 import type { BoardThemePreference } from "./appearance";
 
-export type PieceCollection = "khmer" | "classic" | "shogi" | "xiangqi" | "janggi" | "makruk" | "draughts" | "konane" | "chaturanga" | "shatranj";
+export type PieceCollection = "khmer" | "classic" | "shogi" | "xiangqi" | "janggi" | "makruk" | "draughts" | "konane" | "chaturanga" | "shatranj" | "jungle";
 export type PieceFinish = "original" | "porcelain" | "slate";
 
 const classicVariants = new Set(["classic", "chess960", "crazyhouse", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"]);
 export function get3DCollection(variantKey: string): PieceCollection | null {
+  if (variantKey === "jungle") return "jungle";
   if (variantKey === "shatranj" || variantKey === "chaturanga") return variantKey;
   if (variantKey === "konane") return "konane";
   if (variantKey === "ouk-chaktrang") return "khmer";
@@ -15,6 +16,7 @@ export function get3DCollection(variantKey: string): PieceCollection | null {
 }
 
 export const collectionPieces: Record<PieceCollection, Record<string, string>> = {
+  jungle: {r:"rat",c:"cat",w:"wolf",d:"dog",p:"leopard",t:"tiger",l:"lion",e:"elephant"},
   chaturanga: { k: "raja", m: "minister", e: "elephant", n: "horse", r: "chariot", p: "infantry" },
   shatranj: { k: "shah", f: "ferz", a: "alfil", n: "horse", r: "rukh", p: "pawn" },
   konane: { p: "stone" },

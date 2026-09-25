@@ -1555,9 +1555,9 @@ describe("variant engine", () => {
       board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
       turn: "white"
     };
-    state.board[1][1].piece = { id: "white-cat", code: "c", owner: "white", labelKey: "chess.pawn" };
-    state.board[1][2].piece = { id: "black-elephant-trapped", code: "e", owner: "black", labelKey: "chess.elephant" };
-    expect(getLegalMoves(state, { row: 1, col: 1 })).toContainEqual({ from: { row: 1, col: 1 }, to: { row: 1, col: 2 } });
+    state.board[8][1].piece = { id: "white-cat", code: "c", owner: "white", labelKey: "chess.pawn" };
+    state.board[8][2].piece = { id: "black-elephant-trapped", code: "e", owner: "black", labelKey: "chess.elephant" };
+    expect(getLegalMoves(state, { row: 8, col: 1 })).toContainEqual({ from: { row: 8, col: 1 }, to: { row: 8, col: 2 } });
 
     state = {
       ...state,

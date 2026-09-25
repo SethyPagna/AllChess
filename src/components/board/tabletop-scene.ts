@@ -35,7 +35,7 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
   scene.fog = new THREE.Fog(0x171b1a, 1.8, 4);
   const group = new THREE.Group(); scene.add(group);
   const geometries: THREE.BufferGeometry[] = [], materials: THREE.Material[] = [];
-  const walnut = new THREE.MeshPhysicalMaterial({ color: japanese ? 0xc79b57 : collection === "janggi" ? 0x21433a : collection === "xiangqi" ? 0x512d25 : collection === "makruk" ? 0x654028 : collection === "shatranj" ? 0x17434b : collection === "chaturanga" ? 0x63392b : 0x493022, map: grain, bumpMap: grain, bumpScale: .00015, roughness: japanese ? .48 : .32, clearcoat: japanese ? .2 : .6, clearcoatRoughness: .28 });
+  const walnut = new THREE.MeshPhysicalMaterial({ color: japanese ? 0xc79b57 : collection === "jungle" ? 0x17473b : collection === "janggi" ? 0x21433a : collection === "xiangqi" ? 0x512d25 : collection === "makruk" ? 0x654028 : collection === "shatranj" ? 0x17434b : collection === "chaturanga" ? 0x63392b : 0x493022, map: grain, bumpMap: grain, bumpScale: .00015, roughness: japanese ? .48 : .32, clearcoat: japanese ? .2 : .6, clearcoatRoughness: .28 });
   const edge = new THREE.MeshPhysicalMaterial({ color: 0x251b16, map: grain, roughness: .28, clearcoat: .7, clearcoatRoughness: .25 });
   const brass = new THREE.MeshStandardMaterial({ color: 0xb69757, metalness: .82, roughness: .3 });
   const felt = new THREE.MeshStandardMaterial({ color: japanese ? 0x202521 : 0x142620, roughness: .96 });
@@ -54,6 +54,12 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
       block([.034,.063,.034], [stand.x,-.0475,stand.z], walnut, .004);
       block([.112,.012,.112], [stand.x,-.085,stand.z], walnut, .004);
     }
+  } else if (collection === "jungle") {
+    // The supporting case ends below the pools; no top plate fills the recesses.
+    block([width+.066,.032,depth+.066], [0,-.033,0], edge, .005);
+    for (const z of [-depth/2-.015,depth/2+.015]) block([width+.062,.019,.031], [0,-.0045,z], walnut, .002);
+    for (const x of [-width/2-.015,width/2+.015]) block([.031,.019,depth+.002], [x,-.0045,0], walnut, .002);
+    for (const x of [-width*.436,width*.436]) for (const z of [-depth*.436,depth*.436]) block([.043,.012,.043], [x,-.055,z], edge, .004);
   } else if (collection === "konane") {
     // A solid wooden papamū with actual recessed bowls. The supporting block
     // ends below their bottoms; a full-height top plate would fill the holes.

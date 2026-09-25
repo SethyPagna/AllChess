@@ -4,6 +4,7 @@ import { useLocalMatch } from "./use-local-match";
 import { SavedMatches } from "./saved-matches";
 import { readLocalMatch } from "@/lib/game/local-match-store";
 import { historicalPieceHint } from "./historical-piece";
+import { jungleRank, jungleTrapOwner, restoreJungleOpening, usesJungleStandardRules } from "@/lib/variants/jungle-profile";
 import { restoreKonaneOpening, usesKonaneNpsRules } from "@/lib/variants/konane-profile";
 import type { LocalMatchSnapshot } from "@/lib/game/local-match";
 import { downloadLocalMatch } from "@/lib/game/local-match-transfer";
@@ -418,7 +419,7 @@ export function GameBoard({
     const historyKey = room.state.id + ":" + room.state.ply + ":" + makrukCountVersion(room.state);
     if (friendHistoryRef.current !== historyKey) {
       friendHistoryRef.current = historyKey;
-      let position = restoreKonaneOpening(restoreJanggiOpening(createInitialState(variantKey, room.state.id), room.state), room.state);
+      let position = restoreJungleOpening(restoreKonaneOpening(restoreJanggiOpening(createInitialState(variantKey, room.state.id), room.state), room.state), room.state);
       if (variantKey === "makruk" && !usesMakrukHonorCount(room.state)) delete position.variantState;
       const frames: GameState[] = [];
       for (const move of room.state.moves) { position = replayMakrukCountActions(position, room.state); frames.push(position); position = applyMove(position, move); }
@@ -1419,6 +1420,9 @@ export function GameBoard({
   }, [gameStarted, localPaused, isSearchingOnline, isWatchingMode, playMode]);
 
   const historicalHint = historicalPieceHint(variantKey, selected ? displayState.board[selected.row]?.[selected.col]?.piece?.code : undefined);
+  const selectedAnimal = variantKey === "jungle" && selected ? displayState.board[selected.row]?.[selected.col]?.piece : null;
+  const trappedAnimal = selectedAnimal && selected && usesJungleStandardRules(displayState) && jungleTrapOwner(selected) && jungleTrapOwner(selected) !== selectedAnimal.owner;
+  const animalHint = selectedAnimal ? `${getPieceDisplayName(selectedAnimal.code, variantKey, locale)} · ${trappedAnimal ? "in enemy trap · any animal can capture it" : `rank ${jungleRank(selectedAnimal.code, usesJungleStandardRules(displayState))} · ${selectedAnimal.code === "r" ? "swims · captures elephants on land" : ["l", "t"].includes(selectedAnimal.code) ? "jumps rivers unless a rat blocks the way" : "one square horizontally or vertically"}`}` : "";
 
   return (
     <div className="game-board-layout game-studio grid gap-4" data-focus={focusMode && gameStarted ? "true" : undefined} style={{ "--board-ratio": cols / rows } as CSSProperties}>
@@ -1433,7 +1437,7 @@ export function GameBoard({
           <button type="button" className="focus-ring" onClick={() => { try { downloadLocalMatch(localSnapshot); setRestoreError(""); } catch (cause) { setRestoreError(cause instanceof Error ? cause.message : "This game could not be exported."); } }}>Export game</button>
         </div> : null}
         <BoardToolbar is3D={boardView === "3d" && !!collection3D} variantKey={variantKey} appearancePreset={appearancePreset} onAppearanceChange={changeAppearancePreset} onFlip={flipBoard} onGuide={rulesSummary ? () => setShowRules(true) : undefined} focusMode={focusMode && gameStarted} onFocusChange={() => setFocusMode((current) => !current)} canFocus={gameStarted} />
-        {collection3D ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>{collection3D === "shatranj" ? "3D ceramic" : collection3D === "konane" ? "3D stones" : collection3D === "draughts" ? "3D counters" : collection3D === "xiangqi" ? "3D discs" : collection3D === "shogi" || collection3D === "janggi" ? "3D tiles" : "3D carved"}</button>{boardView === "3d" ? <div role="group" aria-label="Piece material" className="board-finish-buttons">{(["original", "porcelain", "slate"] as const).map(finish => <button key={finish} type="button" className="focus-ring" aria-pressed={pieceFinish === finish} onClick={() => changePieceFinish(finish)}>{finish === "original" ? collection3D === "shatranj" ? "Stonepaste" : collection3D === "chaturanga" ? "Sandalwood & rosewood" : collection3D === "konane" ? "Natural stone" : collection3D === "shogi" || collection3D === "xiangqi" ? "Boxwood" : collection3D === "draughts" ? "Maple & wenge" : collection3D === "janggi" ? "Ivory" : collection3D === "makruk" ? "Thai lacquer" : "Original" : finish === "porcelain" ? "Porcelain" : "Slate"}</button>)}</div> : null}</div> : null}
+        {collection3D ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>{collection3D === "jungle" ? "3D animals" : collection3D === "shatranj" ? "3D ceramic" : collection3D === "konane" ? "3D stones" : collection3D === "draughts" ? "3D counters" : collection3D === "xiangqi" ? "3D discs" : collection3D === "shogi" || collection3D === "janggi" ? "3D tiles" : "3D carved"}</button>{boardView === "3d" ? <div role="group" aria-label="Piece material" className="board-finish-buttons">{(["original", "porcelain", "slate"] as const).map(finish => <button key={finish} type="button" className="focus-ring" aria-pressed={pieceFinish === finish} onClick={() => changePieceFinish(finish)}>{finish === "original" ? collection3D === "jungle" ? "Ivory & jade" : collection3D === "shatranj" ? "Stonepaste" : collection3D === "chaturanga" ? "Sandalwood & rosewood" : collection3D === "konane" ? "Natural stone" : collection3D === "shogi" || collection3D === "xiangqi" ? "Boxwood" : collection3D === "draughts" ? "Maple & wenge" : collection3D === "janggi" ? "Ivory" : collection3D === "makruk" ? "Thai lacquer" : "Original" : finish === "porcelain" ? "Porcelain" : "Slate"}</button>)}</div> : null}</div> : null}
         {friendId && gameStarted ? friend.room?.arrival ? <MatchArrivalPanel room={friend.room} connected={friend.connection === "connected"} busy={friend.busy} error={friend.error} onCancel={leaveUnplayedMatch} onFindAnother={() => findAnotherOpponent(true)} onSetup={() => findAnotherOpponent(false)} onReconnect={friend.reconnect} /> : <div className="room-live-status" role="status">
           <span>{friend.connection !== "connected"
             ? friend.connection === "offline" ? state.status === "waiting" || timeControl === "freestyle" ? "You’re offline · waiting for a connection" : "You’re offline · the room clock continues" : friend.connection === "connecting" ? "Connecting to your room…" : friend.connection === "unavailable" ? friend.error : "Reconnecting · checking the latest board…"
@@ -1479,7 +1483,8 @@ export function GameBoard({
           </div>
         </div>
         {boardView === "3d" && collection3D ? null : <TerrainKeyLegend terrainKeys={terrainKeys} locale={locale} />}
-        {historicalHint ? <p className="historical-piece-hint" role="status">{historicalHint}</p> : null}
+        {historicalHint || animalHint ? <p className="historical-piece-hint" role="status">{historicalHint || animalHint}</p> : null}
+        {variantKey === "jungle" && (boardView === "3d" || !usesJungleStandardRules(displayState)) ? <p className="historical-piece-hint" aria-label="Board terrain key">{boardView === "3d" ? "≈ River · × Trap · ○ Den" : ""}{!usesJungleStandardRules(displayState) ? `${boardView === "3d" ? " · " : ""}Legacy saved rules` : ""}</p> : null}
         {playerCard(bottomPlayerColor, "bottom")}
       </div>
 

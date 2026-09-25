@@ -1,6 +1,7 @@
 import { expect, test } from "vitest";
 import { createInitialState, applyMove, getLegalMoves, type GameState } from "@/lib/variants";
 import { withJanggiFormation } from "@/lib/variants/janggi-formations";
+import { restoreJungleOpening } from "@/lib/variants/jungle-profile";
 import { encodeLocalMatch, type LocalMatchSnapshot } from "@/lib/game/local-match";
 import { exportLocalMatch, importLocalMatch, maxMatchFileBytes } from "@/lib/game/local-match-transfer";
 import { botDifficultyLevels } from "@/lib/bot/config";
@@ -11,6 +12,16 @@ function snapshot(state: GameState): LocalMatchSnapshot {
 function rawFile(value: LocalMatchSnapshot) {
   return { format: "allchess-save", version: 1, exportedAt: new Date().toISOString(), game: { id: value.state.id, variantKey: value.state.variantKey, payload: encodeLocalMatch(value) } };
 }
+
+test.each([false,true])("Jungle transfer preserves new/legacy terrain, capture rules and redo frames (legacy %s)", legacy=>{
+  let start=createInitialState("jungle");if(legacy)start=restoreJungleOpening(start,{...start,variantState:{}});
+  start.board.flat().forEach(cell=>{cell.piece=null;});
+  for(const [row,col,owner,code] of [[8,1,"white","c"],[8,2,"black","e"],[0,0,"black","l"]] as const)start.board[row][col].piece={id:`${row}-${col}`,owner,code,labelKey:"chess.pawn"};
+  const next=applyMove(start,{from:{row:8,col:1},to:{row:7,col:1}});
+  const saved=importLocalMatch(exportLocalMatch({...snapshot(start),future:[next]}).contents);
+  expect(saved.state.board).toEqual(start.board);expect(saved.future[0].variantState).toEqual(next.variantState);
+  expect(getLegalMoves(saved.state,{row:8,col:1}).some(move=>move.to.row===8&&move.to.col===2)).toBe(!legacy);
+});
 
 test("separate imports keep Janggi formations, redo history, and clocks without reusing any game IDs", () => {
   const start = withJanggiFormation(withJanggiFormation(createInitialState("janggi"), "red", "outer"), "blue", "left");

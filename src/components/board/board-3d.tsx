@@ -10,6 +10,7 @@ import type { BoardThemePreference } from "./appearance";
 import { board3DPalettes, tabletopAspect, tabletopFieldOfView, tabletopCameraPosition, tabletopCameraTarget, collectionPieces, pieceModelName, shogiPromotedCodes, board3DLayout, type PieceCollection, type PieceFinish } from "./board-3d-config";
 
 import { createKonaneCellGeometry } from "./konane-board";
+import { createJungleTerrainKit, jungleWaterTop } from "./jungle-board";
 import { intersectionBoardLines } from "./intersection-board";
 import { createTabletopScene } from "./tabletop-scene";
 import { shogiHandSlots, shogiStandTop } from "./shogi-stands";
@@ -49,6 +50,8 @@ export default function Board3D(props: Props) {
     const layout = board3DLayout(props.collection, rows, cols);
     const japanese = props.collection === "shogi";
     const papamu = props.collection === "konane";
+    const jungle = props.collection === "jungle";
+    const jungleTerrain = jungle ? createJungleTerrainKit(layout.pitchX) : null;
     const historical = props.collection === "shatranj" || props.collection === "chaturanga";
     const thai = props.collection === "makruk";
     const draughts = props.collection === "draughts";
@@ -103,6 +106,7 @@ export default function Board3D(props: Props) {
     const riverGeometry = new THREE.PlaneGeometry(.32, .032);
     const promotionGeometry = new THREE.RingGeometry(.0155, .017, 32);
     const markerMaterial = new THREE.MeshBasicMaterial({ color: 0x316a50, side: THREE.DoubleSide });
+    const waterMarkerMaterial = new THREE.MeshBasicMaterial({ color: 0xf0d597, side: THREE.DoubleSide });
     const promotionMaterial = new THREE.MeshBasicMaterial({ color: 0xc9a246, side: THREE.DoubleSide });
 
     const raycaster = new THREE.Raycaster(); const pointer = new THREE.Vector2();
@@ -124,7 +128,7 @@ export default function Board3D(props: Props) {
     }
     function redraw() {
       const current = latest.current;
-      const position = JSON.stringify([Boolean(model), current.boardTheme, current.finish, current.selected, current.lastMove, current.hands, current.selectedHand, [...current.legalTargets], current.orientedRows.map(row => row.map(cell => [cell.square, cell.piece?.owner, cell.piece?.code, cell.piece?.promoted]))]);
+      const position = JSON.stringify([Boolean(model), current.boardTheme, current.finish, current.selected, current.lastMove, current.hands, current.selectedHand, [...current.legalTargets], current.orientedRows.map(row => row.map(cell => [cell.square, cell.terrain, cell.piece?.owner, cell.piece?.code, cell.piece?.promoted]))]);
       if (position === lastPosition) return;
       lastPosition = position;
       meshes.clear(); disposableMaterials.splice(0).forEach(material => material.dispose()); textures.splice(0).forEach(texture => texture.dispose());
@@ -168,32 +172,36 @@ export default function Board3D(props: Props) {
         }
       }
       current.orientedRows.forEach((row, r) => row.forEach((cell, c) => {
+        const water = jungle && cell.terrain === "river";
+        const surfaceY = water ? jungleWaterTop : .002;
         const isSelected = current.selected && sameSquare(current.selected, cell.square);
         const legal = current.legalTargets.has(serializeSquare(cell.square));
         const last = current.lastMove && (sameSquare(current.lastMove.from, cell.square) || sameSquare(current.lastMove.to, cell.square));
         const color = new THREE.Color((japanese || (draughts && plainGrid)) && current.boardTheme === "wood" ? 0xd9b77d : palette[checkered ? (cell.square.row + cell.square.col) % 2 : 0]);
+        if (water) color.set(0x236e78);
         const objective = current.variantKey === "king-of-the-hill" && [3,4].includes(cell.square.row) && [3,4].includes(cell.square.col) || current.variantKey === "racing-kings" && cell.square.row === 0;
         if (objective) color.lerp(new THREE.Color(0xd6a648), .4);
         if (last) color.lerp(new THREE.Color(0xd9bb45), .35);
         if (isSelected) color.set(0xd5b64b);
-        const material = intersection ? hitMaterial : new THREE.MeshPhysicalMaterial({ color, map: tabletop.grain, bumpMap: tabletop.grain, bumpScale: .000025, roughness: papamu ? .55 : .34, clearcoat: papamu ? .12 : .4, clearcoatRoughness: .28 }); if (!intersection) disposableMaterials.push(material);
-        const tile = new THREE.Mesh(plainTiles?.[r][c] ?? tileGeometry, material); tile.position.set((c-(cols-1)/2)*layout.pitchX, 0, (r-(rows-1)/2)*layout.pitchZ); tile.userData.square = cell.square; tile.receiveShadow = !intersection; meshes.add(tile);
+        const material = intersection ? hitMaterial : new THREE.MeshPhysicalMaterial({ color, map: water ? null : tabletop.grain, bumpMap: water ? null : tabletop.grain, bumpScale: .000025, roughness: water ? .16 : papamu ? .55 : .34, clearcoat: water ? .9 : papamu ? .12 : .4, clearcoatRoughness: .28 }); if (!intersection) disposableMaterials.push(material);
+        const tile = new THREE.Mesh(jungleTerrain ? water ? jungleTerrain.water : jungleTerrain.land : plainTiles?.[r][c] ?? tileGeometry, material); tile.position.set((c-(cols-1)/2)*layout.pitchX, 0, (r-(rows-1)/2)*layout.pitchZ); tile.userData.square = cell.square; tile.receiveShadow = !intersection; meshes.add(tile);
+        if (jungleTerrain) {const marks=jungleTerrain.decorate(cell);marks.position.copy(tile.position);meshes.add(marks);}
         if (intersection && (isSelected || last)) {
           const material = new THREE.MeshBasicMaterial({ color: isSelected ? 0x9b5e00 : 0xb08a36, side: THREE.DoubleSide }); disposableMaterials.push(material);
           const halo = new THREE.Mesh(ringGeometry, material); halo.rotation.x = -Math.PI/2; halo.position.set(tile.position.x,.0027,tile.position.z); meshes.add(halo);
         }
         if (legal || (cell.piece?.promoted && !japanese && !draughts)) {
-          const marker = new THREE.Mesh(legal ? (cell.piece || papamu) ? ringGeometry : dotGeometry : promotionGeometry, legal ? markerMaterial : promotionMaterial);
-          marker.rotation.x = -Math.PI/2; marker.position.set(tile.position.x, .0028, tile.position.z); marker.userData.square = cell.square; meshes.add(marker);
+          const marker = new THREE.Mesh(legal ? (cell.piece || papamu) ? ringGeometry : dotGeometry : promotionGeometry, legal ? water ? waterMarkerMaterial : markerMaterial : promotionMaterial);
+          marker.rotation.x = -Math.PI/2; marker.position.set(tile.position.x, surfaceY+.001, tile.position.z); marker.userData.square = cell.square; meshes.add(marker);
         }
         if (cell.piece && model) {
           const light = cell.piece.owner === getVariant(current.variantKey).players[0];
           const name = pieceModelName(current.collection, cell.piece.code, light, cell.piece.promoted);
           const source = model.getObjectByName(name);
           if (source) {
-            const piece = source.clone(true); piece.position.set(tile.position.x, papamu ? -.006 : .002, tile.position.z);
+            const piece = source.clone(true); piece.position.set(tile.position.x, papamu ? -.006 : surfaceY, tile.position.z);
             if (papamu) piece.rotation.y = (cell.square.row*17+cell.square.col*7)*.37;
-            if (current.collection === "classic" || lettered || thai || historical) piece.rotation.y = ((light !== (current.orientedRows[0][0].square.row === 0)) ? Math.PI : 0) + ((current.collection === "classic" || thai) && cell.piece.code === "n" ? (thai ? -Math.PI/4 : Math.PI/4) : 0);
+            if (current.collection === "classic" || lettered || thai || historical || jungle) piece.rotation.y = ((light !== (current.orientedRows[0][0].square.row === 0)) ? Math.PI : 0) + ((current.collection === "classic" || thai) && cell.piece.code === "n" ? (thai ? -Math.PI/4 : Math.PI/4) : 0);
             addPiece(piece, light, { square: cell.square });
           }
         }
@@ -256,7 +264,7 @@ export default function Board3D(props: Props) {
     function lost(event: Event) { event.preventDefault(); contextLost = true; fail("The 3D display was interrupted. Continue on the 2D board."); }
     renderer.domElement.addEventListener("pointerdown", down); renderer.domElement.addEventListener("pointerup", up); renderer.domElement.addEventListener("pointercancel", cancel);
     renderer.domElement.addEventListener("webglcontextlost", lost);
-    renderer.domElement.setAttribute("aria-label", `${props.collection === "khmer" ? "Cambodian" : japanese ? props.variantKey === "mini-shogi" ? "Mini Shogi" : "Shogi" : intersection ? props.collection === "xiangqi" ? "Xiangqi" : "Janggi" : historical ? props.collection === "shatranj" ? "Shatranj" : "Chaturanga" : thai ? "Makruk" : papamu ? "Kōnane papamū" : draughts ? props.variantKey === "international-draughts" ? "International draughts" : props.variantKey === "turkish-draughts" ? "Turkish draughts" : "English draughts" : "Classic"} 3D board. Tap pieces and marked squares to move.${japanese ? " Tap captured tiles on the side stands to drop them." : ""} Drag to orbit. Use 2D for keyboard play.`);
+    renderer.domElement.setAttribute("aria-label", `${props.collection === "khmer" ? "Cambodian" : japanese ? props.variantKey === "mini-shogi" ? "Mini Shogi" : "Shogi" : intersection ? props.collection === "xiangqi" ? "Xiangqi" : "Janggi" : jungle ? "Jungle" : historical ? props.collection === "shatranj" ? "Shatranj" : "Chaturanga" : thai ? "Makruk" : papamu ? "Kōnane papamū" : draughts ? props.variantKey === "international-draughts" ? "International draughts" : props.variantKey === "turkish-draughts" ? "Turkish draughts" : "English draughts" : "Classic"} 3D board. Tap pieces and marked squares to move.${japanese ? " Tap captured tiles on the side stands to drop them." : ""} Drag to orbit. Use 2D for keyboard play.`);
     function disposeModel(group: THREE.Group) { group.traverse(object => { if (object instanceof THREE.Mesh) { object.geometry.dispose(); const materials = Array.isArray(object.material) ? object.material : [object.material]; materials.forEach(material => material.dispose()); } }); }
     new GLTFLoader().load(`/assets/${props.collection}/collection.glb`, gltf => {
       if (disposed) { disposeModel(gltf.scene); return; }
@@ -272,10 +280,10 @@ export default function Board3D(props: Props) {
       renderer.domElement.removeEventListener("pointerdown", down); renderer.domElement.removeEventListener("pointerup", up); renderer.domElement.removeEventListener("pointercancel", cancel); renderer.domElement.removeEventListener("webglcontextlost", lost);
       disposableMaterials.forEach(material => material.dispose()); textures.forEach(texture => texture.dispose());
       [surfaceGeometry, riverGeometry, tileGeometry, dotGeometry, ringGeometry, promotionGeometry, labelGeometry, handHitGeometry].forEach(geometry => geometry.dispose());
-      [hitMaterial, markerMaterial, promotionMaterial].forEach(material => material.dispose());
+      [hitMaterial, markerMaterial, waterMarkerMaterial, promotionMaterial].forEach(material => material.dispose());
       plainTiles?.flat().forEach(geometry => geometry.dispose());
       gridGeometries.forEach(geometry => geometry.dispose()); gridMaterial.dispose();
-      if (model) disposeModel(model); tabletop.dispose(); renderer.dispose(); renderer.domElement.remove();
+      if (model) disposeModel(model); jungleTerrain?.dispose(); tabletop.dispose(); renderer.dispose(); renderer.domElement.remove();
     };
   }, [props.collection, props.variantKey]);
   return <div className="board-3d-stage">

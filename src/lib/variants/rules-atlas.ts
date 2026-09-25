@@ -181,17 +181,17 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
   },
   jungle: {
     variantKey: "jungle",
-    sourceLinks: [{ name: "Yellow Mountain Imports Dou Shou Qi rules", url: "https://ymimports.onsitesupport.io/yellowmountainimports/knowledge-base/article/how-to-play-jungle-dou-shou-qi-%E9%AC%A5%E7%8D%B8%E6%A3%8B" }],
+    sourceLinks: [{ name: "Yellow Mountain Imports Dou Shou Qi rules", url: "https://www.ymimports.com/pages/how-to-play-jungle" }],
     numberedBasics: [
-      "Animals have ranks and capture by rank rules.",
-      "Rat, river, trap, and den rules are native to the game.",
-      "Win by entering the opponent den or eliminating all opponent animals.",
-      "No check/checkmate concept."
+      "Rank 1–8: Rat, Cat, Wolf, Dog, Leopard, Tiger, Lion, Elephant. Capture equal or lower ranks.",
+      "Only rats swim. Lions and tigers jump rivers unless a rat blocks the path.",
+      "Three traps surround each den. An enemy in your trap can be captured by any of your animals.",
+      "No check/checkmate. Win by entering the opponent den or eliminating all opponent animals."
     ],
     specialRules: ["Animal ranks", "River movement", "Rat exceptions", "Trap weakening", "Den objective"],
     winConditions: ["Enter the opponent den", "Capture all opposing animals"],
-    drawConditions: ["Repetition or no-progress policy in AllChess rules mode"],
-    illegalMoveNotes: ["Most animals may not enter river squares.", "Pieces may not enter their own den.", "Trap and rank rules control captures."]
+    drawConditions: ["No legal move is a draw in new games", "Mutual agreement in friend rooms; no automatic repetition or no-progress draw"],
+    illegalMoveNotes: ["Most animals may not enter river squares.", "Pieces may not enter their own den.", "Rats cannot capture across the water–land boundary.", "Elephants cannot capture rats, except enemy rats weakened in your traps.", "White moves first in AllChess. Unversioned saved games retain their original rules."]
   },
   "english-draughts": {
     variantKey: "english-draughts",

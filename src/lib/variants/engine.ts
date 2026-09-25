@@ -2,6 +2,7 @@ import { getVariant } from "./catalog";
 import { advanceOukCount, settleOukCount } from "./ouk-counting";
 import { advanceMakrukHonorCount, settleMakrukHonorCount, usesMakrukHonorCount } from "./makruk-counting";
 import { usesKonaneNpsRules } from "./konane-profile";
+import { jungleRank, jungleTerrain, jungleTrapOwner, usesJungleStandardRules } from "./jungle-profile";
 import type { BoardCell, GameState, Move, Piece, PlayerColor, Square, VariantDefinition } from "./types";
 
 const pieceLabels: Record<string, string> = {
@@ -93,6 +94,7 @@ export function createInitialState(variantKey: string, id = crypto.randomUUID())
   if (variant.key === "janggi") state.variantState = { janggiProfile: "cho-first-v1" };
   if (variant.key === "makruk") state.variantState = { makrukProfile: "honor-v1" };
   if (variant.key === "konane") state.variantState = { konaneProfile: "nps-v1" };
+  if (variant.key === "jungle") state.variantState = { jungleProfile: "standard-v1" };
   if (variant.supportsDrops) {
     state.hands = Object.fromEntries(variant.players.map((player) => [player, {}])) as GameState["hands"];
   }
@@ -1056,12 +1058,18 @@ function canJungleMoveTo(state: GameState, piece: Piece, from: Square, to: Squar
 function canJungleCapture(state: GameState, attacker: Piece, from: Square, defender: Piece, to: Square) {
   const fromTerrain = cellAt(state, from)?.terrain;
   const toTerrain = cellAt(state, to)?.terrain;
+  const standard = usesJungleStandardRules(state);
+  if (standard) {
+    if ((fromTerrain === "river") !== (toTerrain === "river")) return false;
+    // A defender in the attacker's trap loses protection, including the rat exception.
+    if (jungleTrapOwner(to) === attacker.owner) return true;
+  }
   if (attacker.code === "r" && defender.code === "e" && fromTerrain !== "river" && toTerrain !== "river") return true;
   if (attacker.code === "e" && defender.code === "r") return false;
   if (defender.code === "r" && toTerrain === "river") return attacker.code === "r";
 
-  const defenderRank = isJungleOwnTrap(defender.owner, to) ? 0 : jungleRank(defender.code);
-  return jungleRank(attacker.code) >= defenderRank;
+  const defenderRank = !standard && isJungleOwnTrap(defender.owner, to) ? 0 : jungleRank(defender.code, standard);
+  return jungleRank(attacker.code, standard) >= defenderRank;
 }
 
 export function applyMove(state: GameState, move: Move): GameState {
@@ -1255,6 +1263,10 @@ function withJungleOutcome(state: GameState, mover: PlayerColor, destination: Sq
     state.status = "completed";
     state.result = mover;
     state.outcomeReason = "objective";
+  } else if (usesJungleStandardRules(state) && !hasAnyLegalMove(state, state.turn)) {
+    state.status = "completed";
+    state.result = "draw";
+    state.outcomeReason = "stalemate";
   }
 
   return state;
@@ -2126,10 +2138,6 @@ function isCenterSquare(state: GameState, square: Square) {
   return centerRows.includes(square.row) && centerCols.includes(square.col);
 }
 
-function jungleRank(code: string) {
-  return ({ r: 1, c: 2, d: 3, w: 4, p: 5, t: 6, l: 7, e: 8 } as Record<string, number>)[code] ?? 0;
-}
-
 function isJungleOwnDen(owner: PlayerColor, square: Square) {
   return owner === "white" ? square.row === 8 && square.col === 3 : owner === "black" && square.row === 0 && square.col === 3;
 }
@@ -2163,10 +2171,7 @@ function ownerForToken(token: string, variant: VariantDefinition): PlayerColor {
 
 function terrainFor(variant: VariantDefinition, square: Square): BoardCell["terrain"] {
   if (variant.key === "jungle") {
-    const river = square.row >= 3 && square.row <= 5 && [1, 2, 4, 5].includes(square.col);
-    if (river) return "river";
-    if ((square.row === 0 || square.row === 8) && square.col === 3) return "den";
-    if ((square.row <= 1 || square.row >= 7) && [2, 3, 4].includes(square.col)) return "trap";
+    return jungleTerrain(square);
   }
   if (variant.key === "xiangqi" || variant.key === "janggi") {
     if ((square.row <= 2 || square.row >= 7) && square.col >= 3 && square.col <= 5) return "palace";

@@ -43,7 +43,7 @@ export const ruleSources = {
   jungle: [
     {
       name: "Yellow Mountain Imports Dou Shou Qi rules",
-      url: "https://ymimports.onsitesupport.io/yellowmountainimports/knowledge-base/article/how-to-play-jungle-dou-shou-qi-%E9%AC%A5%E7%8D%B8%E6%A3%8B",
+      url: "https://www.ymimports.com/pages/how-to-play-jungle",
       scope: ["animal ranking", "river", "trap", "den"]
     }
   ]
