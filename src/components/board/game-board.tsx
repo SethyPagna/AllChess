@@ -3,6 +3,7 @@
 import { useLocalMatch } from "./use-local-match";
 import { SavedMatches } from "./saved-matches";
 import { readLocalMatch } from "@/lib/game/local-match-store";
+import { historicalPieceHint } from "./historical-piece";
 import { restoreKonaneOpening, usesKonaneNpsRules } from "@/lib/variants/konane-profile";
 import type { LocalMatchSnapshot } from "@/lib/game/local-match";
 import { downloadLocalMatch } from "@/lib/game/local-match-transfer";
@@ -1417,6 +1418,8 @@ export function GameBoard({
     return () => window.clearInterval(timer);
   }, [gameStarted, localPaused, isSearchingOnline, isWatchingMode, playMode]);
 
+  const historicalHint = historicalPieceHint(variantKey, selected ? displayState.board[selected.row]?.[selected.col]?.piece?.code : undefined);
+
   return (
     <div className="game-board-layout game-studio grid gap-4" data-focus={focusMode && gameStarted ? "true" : undefined} style={{ "--board-ratio": cols / rows } as CSSProperties}>
       <div className="board-column grid gap-3">
@@ -1430,7 +1433,7 @@ export function GameBoard({
           <button type="button" className="focus-ring" onClick={() => { try { downloadLocalMatch(localSnapshot); setRestoreError(""); } catch (cause) { setRestoreError(cause instanceof Error ? cause.message : "This game could not be exported."); } }}>Export game</button>
         </div> : null}
         <BoardToolbar is3D={boardView === "3d" && !!collection3D} variantKey={variantKey} appearancePreset={appearancePreset} onAppearanceChange={changeAppearancePreset} onFlip={flipBoard} onGuide={rulesSummary ? () => setShowRules(true) : undefined} focusMode={focusMode && gameStarted} onFocusChange={() => setFocusMode((current) => !current)} canFocus={gameStarted} />
-        {collection3D ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>{collection3D === "konane" ? "3D stones" : collection3D === "draughts" ? "3D counters" : collection3D === "xiangqi" ? "3D discs" : collection3D === "shogi" || collection3D === "janggi" ? "3D tiles" : "3D carved"}</button>{boardView === "3d" ? <div role="group" aria-label="Piece material" className="board-finish-buttons">{(["original", "porcelain", "slate"] as const).map(finish => <button key={finish} type="button" className="focus-ring" aria-pressed={pieceFinish === finish} onClick={() => changePieceFinish(finish)}>{finish === "original" ? collection3D === "konane" ? "Natural stone" : collection3D === "shogi" || collection3D === "xiangqi" ? "Boxwood" : collection3D === "draughts" ? "Maple & wenge" : collection3D === "janggi" ? "Ivory" : collection3D === "makruk" ? "Thai lacquer" : "Original" : finish === "porcelain" ? "Porcelain" : "Slate"}</button>)}</div> : null}</div> : null}
+        {collection3D ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>{collection3D === "shatranj" ? "3D ceramic" : collection3D === "konane" ? "3D stones" : collection3D === "draughts" ? "3D counters" : collection3D === "xiangqi" ? "3D discs" : collection3D === "shogi" || collection3D === "janggi" ? "3D tiles" : "3D carved"}</button>{boardView === "3d" ? <div role="group" aria-label="Piece material" className="board-finish-buttons">{(["original", "porcelain", "slate"] as const).map(finish => <button key={finish} type="button" className="focus-ring" aria-pressed={pieceFinish === finish} onClick={() => changePieceFinish(finish)}>{finish === "original" ? collection3D === "shatranj" ? "Stonepaste" : collection3D === "chaturanga" ? "Sandalwood & rosewood" : collection3D === "konane" ? "Natural stone" : collection3D === "shogi" || collection3D === "xiangqi" ? "Boxwood" : collection3D === "draughts" ? "Maple & wenge" : collection3D === "janggi" ? "Ivory" : collection3D === "makruk" ? "Thai lacquer" : "Original" : finish === "porcelain" ? "Porcelain" : "Slate"}</button>)}</div> : null}</div> : null}
         {friendId && gameStarted ? friend.room?.arrival ? <MatchArrivalPanel room={friend.room} connected={friend.connection === "connected"} busy={friend.busy} error={friend.error} onCancel={leaveUnplayedMatch} onFindAnother={() => findAnotherOpponent(true)} onSetup={() => findAnotherOpponent(false)} onReconnect={friend.reconnect} /> : <div className="room-live-status" role="status">
           <span>{friend.connection !== "connected"
             ? friend.connection === "offline" ? state.status === "waiting" || timeControl === "freestyle" ? "You’re offline · waiting for a connection" : "You’re offline · the room clock continues" : friend.connection === "connecting" ? "Connecting to your room…" : friend.connection === "unavailable" ? friend.error : "Reconnecting · checking the latest board…"
@@ -1476,6 +1479,7 @@ export function GameBoard({
           </div>
         </div>
         {boardView === "3d" && collection3D ? null : <TerrainKeyLegend terrainKeys={terrainKeys} locale={locale} />}
+        {historicalHint ? <p className="historical-piece-hint" role="status">{historicalHint}</p> : null}
         {playerCard(bottomPlayerColor, "bottom")}
       </div>
 

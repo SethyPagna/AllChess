@@ -56,7 +56,7 @@ const maxPlanningArrows = 12;
 export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move", locale = "en", onChoose, onDragMove, onDropHandPiece, orientedRows, pieceSkin = "default", rows, selected, suggestedMove, lastMove, variantKey }: BoardGridProps) {
   const terrainLabels = getVocabulary(normalizeLocale(locale)).terrain;
   const intersectionBoard = variantKey === "xiangqi" || variantKey === "janggi";
-  const plainBoard = variantKey === "ouk-chaktrang" || intersectionBoard || variantKey === "shogi" || variantKey === "mini-shogi" || variantKey === "makruk" || (variantKey === "turkish-draughts" || variantKey === "konane");
+  const plainBoard = variantKey === "shatranj" || variantKey === "chaturanga" || variantKey === "ouk-chaktrang" || intersectionBoard || variantKey === "shogi" || variantKey === "mini-shogi" || variantKey === "makruk" || (variantKey === "turkish-draughts" || variantKey === "konane");
   const gridRef = useRef<HTMLDivElement>(null);
   const [keyboardSquare, setKeyboardSquare] = useState<string | null>(null);
   const [pointerDragSquare, setPointerDragSquare] = useState<Square | null>(null);

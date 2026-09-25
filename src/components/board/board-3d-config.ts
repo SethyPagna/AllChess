@@ -1,10 +1,11 @@
 import type { BoardThemePreference } from "./appearance";
 
-export type PieceCollection = "khmer" | "classic" | "shogi" | "xiangqi" | "janggi" | "makruk" | "draughts" | "konane";
+export type PieceCollection = "khmer" | "classic" | "shogi" | "xiangqi" | "janggi" | "makruk" | "draughts" | "konane" | "chaturanga" | "shatranj";
 export type PieceFinish = "original" | "porcelain" | "slate";
 
 const classicVariants = new Set(["classic", "chess960", "crazyhouse", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"]);
 export function get3DCollection(variantKey: string): PieceCollection | null {
+  if (variantKey === "shatranj" || variantKey === "chaturanga") return variantKey;
   if (variantKey === "konane") return "konane";
   if (variantKey === "ouk-chaktrang") return "khmer";
   if (variantKey === "shogi" || variantKey === "mini-shogi") return "shogi";
@@ -14,6 +15,8 @@ export function get3DCollection(variantKey: string): PieceCollection | null {
 }
 
 export const collectionPieces: Record<PieceCollection, Record<string, string>> = {
+  chaturanga: { k: "raja", m: "minister", e: "elephant", n: "horse", r: "chariot", p: "infantry" },
+  shatranj: { k: "shah", f: "ferz", a: "alfil", n: "horse", r: "rukh", p: "pawn" },
   konane: { p: "stone" },
   draughts: { p: "man", x: "king" },
   makruk: { k: "khun", m: "met", s: "khon", n: "ma", r: "ruea", p: "bia" },

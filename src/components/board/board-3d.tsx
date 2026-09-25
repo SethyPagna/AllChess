@@ -49,9 +49,10 @@ export default function Board3D(props: Props) {
     const layout = board3DLayout(props.collection, rows, cols);
     const japanese = props.collection === "shogi";
     const papamu = props.collection === "konane";
+    const historical = props.collection === "shatranj" || props.collection === "chaturanga";
     const thai = props.collection === "makruk";
     const draughts = props.collection === "draughts";
-    const plainGrid = japanese || thai || props.variantKey === "turkish-draughts";
+    const plainGrid = japanese || thai || historical || props.variantKey === "turkish-draughts";
     const checkered = props.collection === "classic" || (draughts && !plainGrid);
     const intersection = props.collection === "xiangqi" || props.collection === "janggi";
     const lettered = japanese || intersection;
@@ -192,7 +193,7 @@ export default function Board3D(props: Props) {
           if (source) {
             const piece = source.clone(true); piece.position.set(tile.position.x, papamu ? -.006 : .002, tile.position.z);
             if (papamu) piece.rotation.y = (cell.square.row*17+cell.square.col*7)*.37;
-            if (current.collection === "classic" || lettered || thai) piece.rotation.y = ((light !== (current.orientedRows[0][0].square.row === 0)) ? Math.PI : 0) + ((current.collection === "classic" || thai) && cell.piece.code === "n" ? (thai ? -Math.PI/4 : Math.PI/4) : 0);
+            if (current.collection === "classic" || lettered || thai || historical) piece.rotation.y = ((light !== (current.orientedRows[0][0].square.row === 0)) ? Math.PI : 0) + ((current.collection === "classic" || thai) && cell.piece.code === "n" ? (thai ? -Math.PI/4 : Math.PI/4) : 0);
             addPiece(piece, light, { square: cell.square });
           }
         }
@@ -255,7 +256,7 @@ export default function Board3D(props: Props) {
     function lost(event: Event) { event.preventDefault(); contextLost = true; fail("The 3D display was interrupted. Continue on the 2D board."); }
     renderer.domElement.addEventListener("pointerdown", down); renderer.domElement.addEventListener("pointerup", up); renderer.domElement.addEventListener("pointercancel", cancel);
     renderer.domElement.addEventListener("webglcontextlost", lost);
-    renderer.domElement.setAttribute("aria-label", `${props.collection === "khmer" ? "Cambodian" : japanese ? props.variantKey === "mini-shogi" ? "Mini Shogi" : "Shogi" : intersection ? props.collection === "xiangqi" ? "Xiangqi" : "Janggi" : thai ? "Makruk" : papamu ? "Kōnane papamū" : draughts ? props.variantKey === "international-draughts" ? "International draughts" : props.variantKey === "turkish-draughts" ? "Turkish draughts" : "English draughts" : "Classic"} 3D board. Tap pieces and marked squares to move.${japanese ? " Tap captured tiles on the side stands to drop them." : ""} Drag to orbit. Use 2D for keyboard play.`);
+    renderer.domElement.setAttribute("aria-label", `${props.collection === "khmer" ? "Cambodian" : japanese ? props.variantKey === "mini-shogi" ? "Mini Shogi" : "Shogi" : intersection ? props.collection === "xiangqi" ? "Xiangqi" : "Janggi" : historical ? props.collection === "shatranj" ? "Shatranj" : "Chaturanga" : thai ? "Makruk" : papamu ? "Kōnane papamū" : draughts ? props.variantKey === "international-draughts" ? "International draughts" : props.variantKey === "turkish-draughts" ? "Turkish draughts" : "English draughts" : "Classic"} 3D board. Tap pieces and marked squares to move.${japanese ? " Tap captured tiles on the side stands to drop them." : ""} Drag to orbit. Use 2D for keyboard play.`);
     function disposeModel(group: THREE.Group) { group.traverse(object => { if (object instanceof THREE.Mesh) { object.geometry.dispose(); const materials = Array.isArray(object.material) ? object.material : [object.material]; materials.forEach(material => material.dispose()); } }); }
     new GLTFLoader().load(`/assets/${props.collection}/collection.glb`, gltf => {
       if (disposed) { disposeModel(gltf.scene); return; }

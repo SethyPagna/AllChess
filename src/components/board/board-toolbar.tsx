@@ -46,7 +46,7 @@ export function BoardToolbar({ variantKey, appearancePreset, onAppearanceChange,
         <div className="board-look-panel">
           <div className="board-look-heading"><strong>{is3D ? "Board colours" : "Make it yours"}</strong><span>Saved for this game</span></div>
           <div className="board-look-presets">{options.map((option) => <button type="button" className="focus-ring board-look-preset" key={option.key} aria-pressed={isSelected(option)} aria-label={`Choose ${option.label}`} onClick={() => onAppearanceChange(option.key)}>
-            <span className="board-look-preview board-shell" data-board-theme={option.boardTheme} aria-hidden="true" style={is3D && ["ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi", "makruk", "turkish-draughts", "konane"].includes(variantKey) ? { background: "var(--board-light)" } : undefined}>{!is3D ? <PieceIcon code={presentation.pieces[1]} owner={variant.players[0]} variantKey={variantKey} pieceSkin={option.pieceSkin} /> : null}</span>
+            <span className="board-look-preview board-shell" data-board-theme={option.boardTheme} aria-hidden="true" style={is3D && ["ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi", "makruk", "turkish-draughts", "konane", "shatranj", "chaturanga"].includes(variantKey) ? { background: "var(--board-light)" } : undefined}>{!is3D ? <PieceIcon code={presentation.pieces[1]} owner={variant.players[0]} variantKey={variantKey} pieceSkin={option.pieceSkin} /> : null}</span>
             <span>{option.label}</span>{isSelected(option) ? <Check size={13} /> : null}
           </button>)}</div>
         </div>

@@ -364,3 +364,5 @@ button:disabled { cursor: not-allowed; }
 
 .konane-play-hint { margin: .25rem 0; color: var(--muted); font-size: .75rem; line-height: 1.45; }
 .board-grid[data-board-geometry="pits"] .board-square { background-image: radial-gradient(ellipse at 50% 48%, #37220b26 0 22%, #37220b40 30%, #fff4d630 39%, transparent 42%) !important; }
+
+.historical-piece-hint { margin: 0; font-size: .78rem; line-height: 1.5; color: var(--muted); }

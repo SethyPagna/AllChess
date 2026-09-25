@@ -4,6 +4,12 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ---
 
+## 2026-09-25 — Historical tabletops
+
+- Add distinct original Shatranj ceramic and Chaturanga sculpted-army collections, editable Blender sources, plain wooden grids and coordinated physical frames.
+- Match the native identities in default/carved 2D silhouettes and show compact selected-piece movement hints below the board.
+- Preserve native promotion identities and deliver both collections in the public offline pack. See [validation and scope](historical-tabletops.md).
+
 ## 2026-09-25 — Kōnane
 
 - Native 3D stones, recessed wooden papamū, small rim coordinates, orbit/zoom/reset, material choices and offline asset delivery. Include the public web-app manifest in the verified offline pack.

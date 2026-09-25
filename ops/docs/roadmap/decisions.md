@@ -134,3 +134,8 @@ Record decisions that affect architecture, workflow, product behavior, or releas
 New games use the National Park Service Hōnaunau profile (`nps-v1`): Black first, any own-stone removal for each player, then optional consecutive jumps in one straight direction. Each legal landing prefix is one atomic move, so local play, bots, server validation, clocks and saved history share the same rules. Unversioned games retain their prior White-first, adjacent-second-removal, forced-continuation behavior. Room review restores the original opening profile before replaying.
 
 The presentation is a contemporary wooden papamū with modeled bowls and original portable Blender pebbles. It is not a museum replica or a universal/tournament rules claim. [NPS source](https://www.nps.gov/thingstodo/play-konane.htm).
+
+
+## 2026-09-25: Separate historical piece vocabularies
+
+Use original abstract ceramic forms for Shatranj and a distinct sculpted army for Chaturanga, on plain gridded physical boards. Match those identities in 2D and explain selected-piece movement in a compact line below the board. Retain the existing documented rule profiles, promotion codes and room/save contracts; visual research is not evidence of universal historical rules. Source context and originality boundaries are recorded in [the delivery notes](historical-tabletops.md).

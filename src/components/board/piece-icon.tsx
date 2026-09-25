@@ -1,3 +1,4 @@
+import { HistoricalPiece } from "./historical-piece";
 import { KhmerPiece } from "./khmer-piece";
 import { MakrukPiece } from "./makruk-piece";
 import { normalizeLocale, type LocaleCode } from "@/lib/i18n/locales";
@@ -46,6 +47,7 @@ export function PieceIcon({ code, owner, pieceSkin = "default", variantKey, loca
   if (isStonePresentation(variantKey)) {
     return <StonePieceIcon owner={owner} variantKey={variantKey} label={label} skin={skin} />;
   }
+  if ((variantKey === "shatranj" || variantKey === "chaturanga") && (skin === "western" || skin === "silhouette")) return <HistoricalPiece code={normalized} owner={owner} label={label} variantKey={variantKey} promoted={promoted} skin={skin} />;
   if (usesWesternPresentation(variantKey)) {
     if (skin === "silhouette") return <WesternSilhouetteIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} />;
     if (skin === "glyph") return <WesternGlyphIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} />;

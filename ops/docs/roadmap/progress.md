@@ -2,7 +2,7 @@
 
 **Current Phase:** Ongoing game studio, regional rules, 3D, offline and multiplayer improvements
 
-**Current Status:** The active product goal continues on `codex/compact-game-studio`. Latest delivery notes: [Kōnane papamū and NPS profile](konane-tabletop.md), following [physical draughts boards](draughts-tabletops.md). The original phase table below is a historical planning baseline; individual delivery notes record current scope and validation.
+**Current Status:** The active product goal continues on `codex/compact-game-studio`. Latest delivery notes: [Shatranj and Chaturanga tabletops](historical-tabletops.md), following [Kōnane papamū and NPS profile](konane-tabletop.md) and [physical draughts boards](draughts-tabletops.md). The original phase table below is a historical planning baseline; individual delivery notes record current scope and validation.
 
 **Last Updated:** 2026-09-25
 

@@ -16,10 +16,10 @@ describe("playable 3D collections", () => {
         if (cell.piece) expect(collectionPieces[collection][cell.piece.code], `${variant.key}: ${cell.piece.code}`).toBeTruthy();
       }
     }
-    for (const regional of ["shatranj", "chaturanga"]) expect(get3DCollection(regional)).toBeNull();
+    expect(get3DCollection("jungle")).toBeNull();
   });
 
-  for (const collection of ["classic", "khmer", "shogi", "xiangqi", "janggi", "makruk", "draughts", "konane"] as const) {
+  for (const collection of ["classic", "khmer", "shogi", "xiangqi", "janggi", "makruk", "draughts", "konane", "shatranj", "chaturanga"] as const) {
     test(`${collection} GLB has complete named pieces at playable scale without external dependencies`, async () => {
       const bytes = readFileSync(`public/assets/${collection}/collection.glb`);
       expect(bytes.length).toBeLessThan(1_000_000);
@@ -73,7 +73,7 @@ describe("playable 3D collections", () => {
     expect(pieceModelName("makruk", "p", true)).toBe("light_bia");
   });
 
-  test.each(["classic", "ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi", "makruk", "english-draughts", "international-draughts", "turkish-draughts", "konane"])("%s angled camera contains its physical board and edge pieces", key => {
+  test.each(["classic", "ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi", "makruk", "english-draughts", "international-draughts", "turkish-draughts", "konane", "shatranj", "chaturanga"])("%s angled camera contains its physical board and edge pieces", key => {
     const variant = variantCatalog.find(variant => variant.key === key)!;
     const collection = get3DCollection(key)!;
     const layout = board3DLayout(collection, variant.board.rows, variant.board.cols);
