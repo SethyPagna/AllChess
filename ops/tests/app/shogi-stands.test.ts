@@ -1,15 +1,18 @@
 import { describe, expect, test } from "vitest";
 import { PerspectiveCamera, Vector3 } from "three";
 import { shogiHandSlots, shogiStands, shogiStandTop } from "@/components/board/shogi-stands";
-import { board3DLayout, tabletopAspect, tabletopCameraPosition, tabletopCameraTarget, tabletopFieldOfView } from "@/components/board/board-3d-config";
+import { board3DLayout } from "@/components/board/board-3d-config";
+
+import { tabletopFrame } from "@/components/board/tabletop-camera";
 
 describe("physical Shogi hands", () => {
   for (const size of [5, 9]) {
     const layout = board3DLayout("shogi", size, size);
     test(`${size}×${size} stands clear the board and fit the default camera`, () => {
-      const camera = new PerspectiveCamera(tabletopFieldOfView, tabletopAspect, .01, 10);
-      camera.position.set(...tabletopCameraPosition).multiplyScalar(layout.cameraScale);
-      camera.lookAt(...tabletopCameraTarget); camera.updateMatrixWorld();
+      const frame=tabletopFrame("shogi",size,size,640);
+      const camera = new PerspectiveCamera(frame.fieldOfView, frame.aspect, .01, 10);
+      camera.position.copy(frame.position);
+      camera.lookAt(frame.target); camera.updateMatrixWorld();
       for (const stand of shogiStands(layout.width, layout.depth)) {
         expect(Math.abs(stand.x) - stand.size / 2).toBeGreaterThan(layout.width / 2 + .033);
         for (const dx of [-stand.size / 2, stand.size / 2]) for (const dz of [-stand.size / 2, stand.size / 2]) for (const y of [-.091, .042]) {

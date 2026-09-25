@@ -4,6 +4,12 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ---
 
+## 2026-09-25 — Mobile 3D framing and controls
+
+- Fit physical boards to narrow and short screens; retain an angled perspective and small, unboxed coordinates.
+- Add compact physical Shogi hand trays, larger zoom/reset buttons, two-finger pan and gesture protection. Preserve the customized camera through resizing.
+- Verify moves across all eleven collections, both Shogi sizes, real browser touch input and cold offline Cambodian/Shogi play. See [validation and remaining scope](mobile-tabletop.md).
+
 ## 2026-09-25 — Jungle tabletop and rules
 
 - Add original Blender animal miniatures, recessed enamel rivers, physical wood banks, native traps/dens and compact rank/movement hints. All 21 playable games now have native 3D.

@@ -144,3 +144,7 @@ Use original abstract ceramic forms for Shatranj and a distinct sculpted army fo
 ## 2026-09-25: Jungle physical terrain and rule compatibility
 
 Use original animal miniatures on a physical board whose rivers are recessed below its banks. Terrain markers follow the actual state's cells rather than a separate visual map. New `standard-v1` games correct trap layout/ownership, Dog/Wolf ranks and rat bank captures, and resolve immobilization as a draw. Preserve unversioned saved behavior and reconstruct old room openings for review. Sources and explicit app conventions are documented in [the delivery notes](jungle-tabletop.md); 3D coverage does not imply complete bot calibration, localization or tournament certification.
+
+## 2026-09-25: Fit physical 3D to the available screen
+
+Derive the camera from physical bounds and available space rather than one fixed landscape composition. On narrow Shogi boards, move hand tiles to physical end trays while retaining side komadai on desktop. Keep manual orbit/pan/relative zoom across resize, provide large reset/zoom targets and distinguish taps from complete gestures. Short viewports retain a scrollable margin outside the canvas. This is responsive presentation only; regional rules, hand ownership and saved positions are unchanged. See [validation](mobile-tabletop.md).

@@ -1,16 +1,16 @@
 import { test, expect, type Page } from "@playwright/test";
 import { PerspectiveCamera, Vector3 } from "three";
-import { board3DLayout, tabletopAspect, tabletopCameraPosition, tabletopCameraTarget, tabletopFieldOfView } from "../../../src/components/board/board-3d-config";
+import { board3DLayout } from "../../../src/components/board/board-3d-config";
+import { tabletopFrame } from "../../../src/components/board/tabletop-camera";
 import { shogiHandSlots } from "../../../src/components/board/shogi-stands";
 
 async function tapPoint(page: Page, size: number, x: number, y: number, z: number) {
-  const layout = board3DLayout("shogi", size, size);
-  const camera = new PerspectiveCamera(tabletopFieldOfView, tabletopAspect, .01, 10);
-  camera.position.set(...tabletopCameraPosition).multiplyScalar(layout.cameraScale);
-  camera.lookAt(...tabletopCameraTarget); camera.updateMatrixWorld();
-  const point = new Vector3(x, y, z).project(camera);
   const canvas = page.locator(".board-3d canvas"); await canvas.scrollIntoViewIfNeeded();
   const bounds = (await canvas.boundingBox())!;
+  const frame = tabletopFrame("shogi", size, size, bounds.width, await page.evaluate(() => innerHeight));
+  const camera = new PerspectiveCamera(frame.fieldOfView, frame.aspect, .01, 10);
+  camera.position.copy(frame.position); camera.lookAt(frame.target); camera.updateMatrixWorld();
+  const point = new Vector3(x, y, z).project(camera);
   await page.mouse.click(bounds.x + (point.x + 1) * bounds.width / 2, bounds.y + (1 - point.y) * bounds.height / 2);
 }
 
@@ -38,7 +38,8 @@ for (const size of [9, 5]) test(`${size}×${size} captured tiles drop directly f
   await expect(sente.getByRole("button", { name: `Drop ${label}, 1 in hand`, exact: true })).toBeEnabled();
   await expect(gote.getByRole("button", { name: `Held ${label}, 1 in hand`, exact: true })).toBeDisabled();
   const layout = board3DLayout("shogi", size, size), hands = { sente: { [code]: 1 }, gote: { [code]: 1 } };
-  const slots = shogiHandSlots(layout.width, layout.depth, hands, false);
+  const compactHands = (await page.locator(".board-3d canvas").boundingBox())!.width < 520;
+  const slots = shogiHandSlots(layout.width, layout.depth, hands, false, compactHands);
   const far = slots.find(slot => slot.owner === "gote")!;
   await tapPoint(page, size, far.x, .014, far.z);
   await expect(sente.locator(".hand-piece-button.is-selected")).toHaveCount(0);
@@ -54,7 +55,7 @@ for (const size of [9, 5]) test(`${size}×${size} captured tiles drop directly f
   await square(page, target, size);
   await expect(sente.locator(".hand-piece-button")).toHaveCount(0);
   await page.getByRole("button", { name: "Rotate board", exact: true }).click();
-  const flipped = shogiHandSlots(layout.width, layout.depth, { gote: { [code]: 1 } }, true)[0];
+  const flipped = shogiHandSlots(layout.width, layout.depth, { gote: { [code]: 1 } }, true, compactHands)[0];
   await tapPoint(page, size, flipped.x, .014, flipped.z);
   await expect(gote.locator(".hand-piece-button.is-selected")).toHaveCount(1);
   await square(page, size === 9 ? "a7" : "d4", size, false, true);

@@ -2,8 +2,9 @@ import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
 import { Box3, Mesh, MeshStandardMaterial, PerspectiveCamera, Vector3 } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { tabletopCameraPosition, tabletopCameraTarget, tabletopAspect, tabletopFieldOfView, collectionPieces, get3DCollection, board3DLayout, pieceModelName, shogiPromotedCodes } from "@/components/board/board-3d-config";
+import { collectionPieces, get3DCollection, board3DLayout, pieceModelName, shogiPromotedCodes } from "@/components/board/board-3d-config";
 import { createKonaneCellGeometry } from "@/components/board/konane-board";
+import { tabletopFrame } from "@/components/board/tabletop-camera";
 import { createJungleTerrainKit } from "@/components/board/jungle-board";
 import { createInitialState, variantCatalog } from "@/lib/variants";
 
@@ -78,8 +79,9 @@ describe("playable 3D collections", () => {
     const variant = variantCatalog.find(variant => variant.key === key)!;
     const collection = get3DCollection(key)!;
     const layout = board3DLayout(collection, variant.board.rows, variant.board.cols);
-    const camera = new PerspectiveCamera(tabletopFieldOfView, tabletopAspect, .01, 10);
-    camera.position.set(...tabletopCameraPosition).multiplyScalar(layout.cameraScale); camera.lookAt(...tabletopCameraTarget); camera.updateMatrixWorld();
+    const frame=tabletopFrame(collection,variant.board.rows,variant.board.cols,640);
+    const camera = new PerspectiveCamera(frame.fieldOfView, frame.aspect, .01, 10);
+    camera.position.copy(frame.position); camera.lookAt(frame.target); camera.updateMatrixWorld();
     for (const x of [-layout.width/2-.033,layout.width/2+.033]) for (const z of [-layout.depth/2-.033,layout.depth/2+.033]) {
       const projected = new Vector3(x,collection === "shogi" ? -.091 : -.049,z).project(camera);
       expect(Math.abs(projected.x)).toBeLessThan(.99); expect(Math.abs(projected.y)).toBeLessThan(.94);

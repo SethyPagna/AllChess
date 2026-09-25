@@ -1,13 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
 import { PerspectiveCamera, Vector3 } from "three";
-import { board3DLayout, tabletopAspect, tabletopCameraPosition, tabletopCameraTarget, tabletopFieldOfView } from "../../../src/components/board/board-3d-config";
+import { tabletopFrame } from "../../../src/components/board/tabletop-camera";
 
 async function square(page: Page, key: string, occupied = false) {
-  const camera = new PerspectiveCamera(tabletopFieldOfView, tabletopAspect, .01, 10);
-  camera.position.set(...tabletopCameraPosition).multiplyScalar(board3DLayout("janggi", 10, 9).cameraScale);
-  camera.lookAt(...tabletopCameraTarget); camera.updateMatrixWorld();
-  const point = new Vector3((key.charCodeAt(0) - 97 - 4) * .053, occupied ? .012 : .003, (10 - Number(key.slice(1)) - 4.5) * .053).project(camera);
   const canvas = page.locator(".board-3d canvas"); await canvas.scrollIntoViewIfNeeded(); const b = (await canvas.boundingBox())!;
+  const frame = tabletopFrame("janggi", 10, 9, b.width, await page.evaluate(() => innerHeight));
+  const camera = new PerspectiveCamera(frame.fieldOfView, frame.aspect, .01, 10);
+  camera.position.copy(frame.position); camera.lookAt(frame.target); camera.updateMatrixWorld();
+  const point = new Vector3((key.charCodeAt(0) - 97 - 4) * .053, occupied ? .012 : .003, (10 - Number(key.slice(1)) - 4.5) * .053).project(camera);
   await page.mouse.click(b.x + (point.x + 1) * b.width / 2, b.y + (1 - point.y) * b.height / 2);
 }
 

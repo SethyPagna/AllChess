@@ -35,6 +35,7 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
   scene.fog = new THREE.Fog(0x171b1a, 1.8, 4);
   const group = new THREE.Group(); scene.add(group);
   const geometries: THREE.BufferGeometry[] = [], materials: THREE.Material[] = [];
+  const handStands:Array<{compact:boolean;meshes:THREE.Mesh[]}>=[];
   const walnut = new THREE.MeshPhysicalMaterial({ color: japanese ? 0xc79b57 : collection === "jungle" ? 0x17473b : collection === "janggi" ? 0x21433a : collection === "xiangqi" ? 0x512d25 : collection === "makruk" ? 0x654028 : collection === "shatranj" ? 0x17434b : collection === "chaturanga" ? 0x63392b : 0x493022, map: grain, bumpMap: grain, bumpScale: .00015, roughness: japanese ? .48 : .32, clearcoat: japanese ? .2 : .6, clearcoatRoughness: .28 });
   const edge = new THREE.MeshPhysicalMaterial({ color: 0x251b16, map: grain, roughness: .28, clearcoat: .7, clearcoatRoughness: .25 });
   const brass = new THREE.MeshStandardMaterial({ color: 0xb69757, metalness: .82, roughness: .3 });
@@ -49,10 +50,13 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
     // A solid kaya-coloured block with softly cut legs; the plain grid sits flush.
     block([width+.058,.066,depth+.058], [0,-.031,0], walnut, .003);
     for (const x of [-width*.37,width*.37]) for (const z of [-depth*.37,depth*.37]) block([.036,.027,.036], [x,-.0775,z], walnut, .008);
-    for (const stand of shogiStands(width, depth)) {
-      block([stand.size,.018,stand.size], [stand.x,-.007,stand.z], walnut, .0025);
-      block([.034,.063,.034], [stand.x,-.0475,stand.z], walnut, .004);
-      block([.112,.012,.112], [stand.x,-.085,stand.z], walnut, .004);
+    for (const compact of [false,true]) for (const stand of shogiStands(width, depth, compact)) {
+      const meshes=[
+        block([stand.width,.018,stand.depth], [stand.x,-.007,stand.z], walnut, .0025),
+        block([.034,.063,.034], [stand.x,-.0475,stand.z], walnut, .004),
+        block([compact?.17:.112,.012,compact?.09:.112], [stand.x,-.085,stand.z], walnut, .004)
+      ];
+      meshes.forEach(mesh=>{mesh.visible=!compact;});handStands.push({compact,meshes});
     }
   } else if (collection === "jungle") {
     // The supporting case ends below the pools; no top plate fills the recesses.
@@ -89,6 +93,7 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
   scene.add(key, key.target, rim, fill);
   return {
     grain,
+    setCompactHands(compact:boolean) {handStands.forEach(stand=>stand.meshes.forEach(mesh=>{mesh.visible=stand.compact===compact;}));},
     dispose() {
       geometries.forEach(geometry => geometry.dispose()); materials.forEach(material => material.dispose());
       grain.dispose(); environmentMap.dispose(); key.shadow.map?.dispose();

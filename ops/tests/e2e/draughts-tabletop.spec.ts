@@ -3,14 +3,17 @@ import { PerspectiveCamera, Vector3 } from "three";
 import { createInitialState, applyMove, type GameState } from "../../../src/lib/variants";
 import { exportLocalMatch } from "../../../src/lib/game/local-match-transfer";
 import { botDifficultyLevels } from "../../../src/lib/bot/config";
-import { board3DLayout, tabletopAspect, tabletopCameraPosition, tabletopCameraTarget, tabletopFieldOfView } from "../../../src/components/board/board-3d-config";
+import { board3DLayout } from "../../../src/components/board/board-3d-config";
+
+import { tabletopFrame } from "../../../src/components/board/tabletop-camera";
 
 async function tap(page: Page, key: string, size: number, height = .003, flipped = false) {
-  const layout = board3DLayout("draughts", size, size), camera = new PerspectiveCamera(tabletopFieldOfView, tabletopAspect, .01, 10);
-  camera.position.set(...tabletopCameraPosition).multiplyScalar(layout.cameraScale); camera.lookAt(...tabletopCameraTarget); camera.updateMatrixWorld();
+  const canvas = page.locator(".board-3d canvas"); await canvas.scrollIntoViewIfNeeded(); const box = (await canvas.boundingBox())!;
+  const layout = board3DLayout("draughts", size, size), frame = tabletopFrame("draughts", size, size, box.width, await page.evaluate(() => innerHeight));
+  const camera = new PerspectiveCamera(frame.fieldOfView, frame.aspect, .01, 10);
+  camera.position.copy(frame.position); camera.lookAt(frame.target); camera.updateMatrixWorld();
   const col = key.charCodeAt(0) - 97, row = size - Number(key.slice(1));
   const point = new Vector3(((flipped ? size-1-col : col) - (size-1)/2)*layout.pitchX, height, ((flipped ? size-1-row : row) - (size-1)/2)*layout.pitchZ).project(camera);
-  const canvas = page.locator(".board-3d canvas"); await canvas.scrollIntoViewIfNeeded(); const box = (await canvas.boundingBox())!;
   await page.mouse.click(box.x+(point.x+1)*box.width/2, box.y+(1-point.y)*box.height/2);
 }
 async function openPosition(page: Page, state: GameState) {
