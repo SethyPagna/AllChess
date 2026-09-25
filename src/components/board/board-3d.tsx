@@ -44,6 +44,8 @@ export default function Board3D(props: Props) {
     const { rows, cols } = getVariant(props.variantKey).board;
     const layout = board3DLayout(props.collection, rows, cols);
     const japanese = props.collection === "shogi";
+    const thai = props.collection === "makruk";
+    const plainGrid = japanese || thai;
     const intersection = props.collection === "xiangqi" || props.collection === "janggi";
     const lettered = japanese || intersection;
     const camera = new THREE.PerspectiveCamera(tabletopFieldOfView, tabletopAspect, .01, 10);
@@ -61,7 +63,7 @@ export default function Board3D(props: Props) {
     const grid = new THREE.Group(); scene.add(grid);
     const gridGeometries: THREE.BufferGeometry[] = [];
     const gridMaterial = new THREE.MeshBasicMaterial({ color: 0x50381d });
-    if (japanese) {
+    if (plainGrid) {
       const vertical = new THREE.BoxGeometry(.0006, .0005, layout.depth), horizontal = new THREE.BoxGeometry(layout.width, .0005, .0006);
       gridGeometries.push(vertical, horizontal);
       for (let c = 0; c <= cols; c++) { const line = new THREE.Mesh(vertical, gridMaterial); line.position.set((c-cols/2)*layout.pitchX, .0021, 0); grid.add(line); }
@@ -82,7 +84,7 @@ export default function Board3D(props: Props) {
     const surfaceGeometry = new THREE.BoxGeometry(layout.width, .004, layout.depth);
     const hitMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false });
     const tileGeometry = new THREE.BoxGeometry(layout.pitchX - .0005, .004, layout.pitchZ - .0005);
-    const shogiTiles = japanese ? Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => {
+    const plainTiles = plainGrid ? Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => {
       const geometry = tileGeometry.clone(), uv = geometry.getAttribute("uv"), positions = geometry.getAttribute("position");
       // One continuous timber surface across the full plain board.
       for (let i = 0; i < uv.count; i++) uv.setXY(i, (positions.getX(i)+(c+.5)*layout.pitchX)/layout.width, 1-(positions.getZ(i)+(r+.5)*layout.pitchZ)/layout.depth);
@@ -140,7 +142,7 @@ export default function Board3D(props: Props) {
         if (last) color.lerp(new THREE.Color(0xd9bb45), .35);
         if (isSelected) color.set(0xd5b64b);
         const material = intersection ? hitMaterial : new THREE.MeshPhysicalMaterial({ color, map: tabletop.grain, bumpMap: tabletop.grain, bumpScale: .000025, roughness: .34, clearcoat: .4, clearcoatRoughness: .28 }); if (!intersection) disposableMaterials.push(material);
-        const tile = new THREE.Mesh(shogiTiles?.[r][c] ?? tileGeometry, material); tile.position.set((c-(cols-1)/2)*layout.pitchX, 0, (r-(rows-1)/2)*layout.pitchZ); tile.userData.square = cell.square; tile.receiveShadow = !intersection; meshes.add(tile);
+        const tile = new THREE.Mesh(plainTiles?.[r][c] ?? tileGeometry, material); tile.position.set((c-(cols-1)/2)*layout.pitchX, 0, (r-(rows-1)/2)*layout.pitchZ); tile.userData.square = cell.square; tile.receiveShadow = !intersection; meshes.add(tile);
         if (intersection && (isSelected || last)) {
           const material = new THREE.MeshBasicMaterial({ color: isSelected ? 0x9b5e00 : 0xb08a36, side: THREE.DoubleSide }); disposableMaterials.push(material);
           const halo = new THREE.Mesh(ringGeometry, material); halo.rotation.x = -Math.PI/2; halo.position.set(tile.position.x,.0027,tile.position.z); meshes.add(halo);
@@ -155,7 +157,7 @@ export default function Board3D(props: Props) {
           const source = model.getObjectByName(name);
           if (source) {
             const piece = source.clone(true); piece.position.set(tile.position.x, .002, tile.position.z);
-            if (current.collection === "classic" || lettered) piece.rotation.y = ((light !== (current.orientedRows[0][0].square.row === 0)) ? Math.PI : 0) + (current.collection === "classic" && cell.piece.code === "n" ? Math.PI/4 : 0);
+            if (current.collection === "classic" || lettered || thai) piece.rotation.y = ((light !== (current.orientedRows[0][0].square.row === 0)) ? Math.PI : 0) + ((current.collection === "classic" || thai) && cell.piece.code === "n" ? (thai ? -Math.PI/4 : Math.PI/4) : 0);
             piece.traverse(child => {
               child.userData.square = cell.square;
               if (!(child instanceof THREE.Mesh)) return;
@@ -213,13 +215,13 @@ export default function Board3D(props: Props) {
     function lost(event: Event) { event.preventDefault(); contextLost = true; fail("The 3D display was interrupted. Continue on the 2D board."); }
     renderer.domElement.addEventListener("pointerdown", down); renderer.domElement.addEventListener("pointerup", up); renderer.domElement.addEventListener("pointercancel", cancel);
     renderer.domElement.addEventListener("webglcontextlost", lost);
-    renderer.domElement.setAttribute("aria-label", `${props.collection === "khmer" ? "Cambodian" : japanese ? props.variantKey === "mini-shogi" ? "Mini Shogi" : "Shogi" : intersection ? props.collection === "xiangqi" ? "Xiangqi" : "Janggi" : "Classic"} 3D board. Tap pieces and marked squares to move. Drag to orbit. Use 2D for keyboard play.`);
+    renderer.domElement.setAttribute("aria-label", `${props.collection === "khmer" ? "Cambodian" : japanese ? props.variantKey === "mini-shogi" ? "Mini Shogi" : "Shogi" : intersection ? props.collection === "xiangqi" ? "Xiangqi" : "Janggi" : thai ? "Makruk" : "Classic"} 3D board. Tap pieces and marked squares to move. Drag to orbit. Use 2D for keyboard play.`);
     function disposeModel(group: THREE.Group) { group.traverse(object => { if (object instanceof THREE.Mesh) { object.geometry.dispose(); const materials = Array.isArray(object.material) ? object.material : [object.material]; materials.forEach(material => material.dispose()); } }); }
     new GLTFLoader().load(`/assets/${props.collection}/collection.glb`, gltf => {
       if (disposed) { disposeModel(gltf.scene); return; }
       model = gltf.scene;
       if (contextLost) return;
-      if ([true, false].some(side => Object.keys(collectionPieces[props.collection]).some(code => !model!.getObjectByName(pieceModelName(props.collection, code, side)) || (japanese && shogiPromotedCodes.has(code) && !model!.getObjectByName(pieceModelName(props.collection, code, side, true)))))) { fail("Some pieces could not load. Continue on the 2D board."); return; }
+      if ((thai && [true, false].some(side => !model!.getObjectByName(pieceModelName("makruk", "m", side, true)))) || [true, false].some(side => Object.keys(collectionPieces[props.collection]).some(code => !model!.getObjectByName(pieceModelName(props.collection, code, side)) || (japanese && shogiPromotedCodes.has(code) && !model!.getObjectByName(pieceModelName(props.collection, code, side, true)))))) { fail("Some pieces could not load. Continue on the 2D board."); return; }
       modelReady = true;
       setStatus("Tap to move · drag to orbit · pinch to zoom"); redraw();
     }, undefined, () => fail("Pieces could not load. Continue on the 2D board."));
@@ -230,7 +232,7 @@ export default function Board3D(props: Props) {
       disposableMaterials.forEach(material => material.dispose()); textures.forEach(texture => texture.dispose());
       [surfaceGeometry, riverGeometry, tileGeometry, dotGeometry, ringGeometry, promotionGeometry, labelGeometry].forEach(geometry => geometry.dispose());
       [hitMaterial, markerMaterial, promotionMaterial].forEach(material => material.dispose());
-      shogiTiles?.flat().forEach(geometry => geometry.dispose());
+      plainTiles?.flat().forEach(geometry => geometry.dispose());
       gridGeometries.forEach(geometry => geometry.dispose()); gridMaterial.dispose();
       if (model) disposeModel(model); tabletop.dispose(); renderer.dispose(); renderer.domElement.remove();
     };

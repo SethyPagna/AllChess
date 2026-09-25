@@ -1,17 +1,18 @@
 import type { BoardThemePreference } from "./appearance";
 
-export type PieceCollection = "khmer" | "classic" | "shogi" | "xiangqi" | "janggi";
+export type PieceCollection = "khmer" | "classic" | "shogi" | "xiangqi" | "janggi" | "makruk";
 export type PieceFinish = "original" | "porcelain" | "slate";
 
 const classicVariants = new Set(["classic", "chess960", "crazyhouse", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"]);
 export function get3DCollection(variantKey: string): PieceCollection | null {
   if (variantKey === "ouk-chaktrang") return "khmer";
   if (variantKey === "shogi" || variantKey === "mini-shogi") return "shogi";
-  if (variantKey === "xiangqi" || variantKey === "janggi") return variantKey;
+  if (variantKey === "xiangqi" || variantKey === "janggi" || variantKey === "makruk") return variantKey;
   return classicVariants.has(variantKey) ? "classic" : null;
 }
 
 export const collectionPieces: Record<PieceCollection, Record<string, string>> = {
+  makruk: { k: "khun", m: "met", s: "khon", n: "ma", r: "ruea", p: "bia" },
   khmer: { k: "Khon_king", m: "Neang_queen", s: "Koul_bishop", n: "Ses_horse", r: "Touk_boat", p: "Trey_fish" },
   classic: { k: "king", q: "queen", b: "bishop", n: "knight", r: "rook", p: "pawn" },
   xiangqi: { g: "general", a: "advisor", e: "elephant", h: "horse", r: "chariot", c: "cannon", p: "soldier" },
@@ -21,6 +22,7 @@ export const collectionPieces: Record<PieceCollection, Record<string, string>> =
 
 export const shogiPromotedCodes = new Set(["r", "b", "s", "n", "l", "p"]);
 export function pieceModelName(collection: PieceCollection, code: string, firstSide: boolean, promoted = false) {
+  if (collection === "makruk" && promoted && code === "m") return `${firstSide ? "light" : "dark"}_promoted_bia`;
   return `${firstSide ? "light" : "dark"}_${collection === "shogi" && promoted && shogiPromotedCodes.has(code) ? "promoted_" : ""}${collectionPieces[collection][code]}`;
 }
 

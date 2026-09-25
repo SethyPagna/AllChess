@@ -53,7 +53,7 @@ describe("rules atlas", () => {
     expect(getVariantRuleSummary("makruk").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Native Met")]));
     expect(getVariantRuleSummary("makruk").numberedBasics[0]).toContain("Thai Makruk");
     expect(getVariantRuleSummary("makruk").completion.status).toBe("verified-playable");
-    expect(getVariantRuleSummary("makruk").completion.remainingGates).toEqual([]);
+    expect(getVariantRuleSummary("makruk").completion.remainingGates).toEqual([expect.stringContaining("honor")]);
     expect(getVariantRuleSummary("makruk").completion.remainingGates).not.toEqual(expect.arrayContaining([expect.stringContaining("promotion fixtures")]));
     expect(getVariantRuleSummary("jungle").numberedBasics[3]).toContain("No check/checkmate");
     expect(getVariantRuleSummary("jungle").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Rat river")]));

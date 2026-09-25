@@ -82,7 +82,7 @@ const familyPresets: Record<string, AppearancePresetOption[]> = {
   ],
   makruk: [
     preset("default", "Auto matched", "wood", "default"),
-    preset("carved", "Carved set", "wood", "silhouette"),
+    preset("carved", "Thai carved", "wood", "makruk"),
     preset("castle", "Castle set", "jade", "castle"),
     preset("glyph", "Glyph set", "contrast", "glyph"),
     preset("badge", "Badge set", "jade", "monogram")

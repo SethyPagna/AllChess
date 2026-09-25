@@ -43,13 +43,18 @@ describe("PieceIcon", () => {
     expect(queen).toContain('data-detail="queen-jewel"');
   });
 
-  test("renders Makruk met as the queen-style piece", () => {
+  test("renders native Makruk Met and the distinct reverse face of a promoted Bia", () => {
     const met = renderToStaticMarkup(<PieceIcon code="m" owner="white" variantKey="makruk" />);
 
-    expect(met).toContain('data-piece="queen"');
+    expect(met).toContain('data-piece="met"');
     expect(met).toContain('data-skin="makruk"');
-    expect(met).toContain('data-detail="queen-jewel"');
+    expect(met).not.toContain('data-detail="queen-jewel"');
     expect(met).toContain("<title>Met</title>");
+    const promoted = renderToStaticMarkup(<PieceIcon code="m" owner="black" variantKey="makruk" promoted />);
+    expect(promoted).toContain('data-piece="promoted-bia"');
+    expect(promoted).toContain('data-detail="bia-reverse-face"');
+    const alternate = renderToStaticMarkup(<PieceIcon code="m" owner="white" variantKey="makruk" pieceSkin="western" />);
+    expect(alternate).toContain('data-piece="queen"');
   });
 
   test("localizes piece titles for language-specific board labels", () => {

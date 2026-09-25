@@ -1,4 +1,5 @@
 import { KhmerPiece } from "./khmer-piece";
+import { MakrukPiece } from "./makruk-piece";
 import { normalizeLocale, type LocaleCode } from "@/lib/i18n/locales";
 import { getVocabulary } from "@/lib/i18n/vocabulary";
 import type { PlayerColor } from "@/lib/variants";
@@ -38,6 +39,7 @@ export function PieceIcon({ code, owner, pieceSkin = "default", variantKey, loca
   const label = getPieceDisplayName(normalized, variantKey, locale, promoted);
   const skin = resolvePieceSkin(variantKey, pieceSkin);
   if (variantKey === "ouk-chaktrang" && skin === "khmer") return <KhmerPiece code={normalized} owner={owner} label={label} promoted={promoted} />;
+  if (variantKey === "makruk" && skin === "makruk") return <MakrukPiece code={normalized} owner={owner} label={label} promoted={promoted} />;
   if (isDraughtsPresentation(variantKey)) {
     return <DraughtsPieceIcon code={normalized} owner={owner} promoted={promoted} variantKey={variantKey} label={label} skin={skin} />;
   }
@@ -612,6 +614,8 @@ export function resolvePieceSkin(variantKey: string, preference: PieceSkinPrefer
 }
 
 export function getPieceDisplayName(code: string, variantKey: string, locale = "en", promoted = false) {
+  if (variantKey === "makruk" && promoted && code === "m") return locale === "th" ? "เบี้ยหงาย" : "Bia ngai · Promoted pawn";
+  if (variantKey === "makruk" && locale === "th") return ({ k: "ขุน", m: "เม็ด", s: "โคน", n: "ม้า", r: "เรือ", p: "เบี้ย" } as Record<string, string>)[code] ?? code;
   if (variantKey === "ouk-chaktrang") {
     const names: Record<string, string> = locale === "km" ? { k: "ខុន", m: "នាង", s: "គោល", n: "សេះ", r: "ទូក", p: "ត្រី" } : { k: "Khon · King", m: "Neang · Queen", s: "Koul · General", n: "Ses · Horse", r: "Touk · Boat", p: "Trey · Fish" };
     return (promoted ? (locale === "km" ? "ត្រីបក · " : "Promoted fish · ") : "") + (names[code] ?? code);
@@ -714,7 +718,7 @@ function pieceSkinLabel(key: PieceSkin) {
     monogram: "Monogram",
     castle: "Castle",
     pirate: "Pirate",
-    makruk: "Warm",
+    makruk: "Thai carved",
     disc: "Disc",
     wedge: "Wedge",
     "mini-wedge": "Compact",

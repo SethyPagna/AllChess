@@ -169,10 +169,10 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     variantKey: "makruk",
     sourceLinks: [{ name: "GNU XBoard Makruk rules", url: "https://www.gnu.org/software/xboard/whats_new/rules/Makruk.html" }],
     numberedBasics: [
-      "Thai Makruk uses chess-like pieces with different queen/bishop/pawn behavior.",
-      "Pawns begin advanced and promote differently from western chess.",
-      "No castling.",
-      "Checkmate wins; Makruk counting/draw rules must be supported in rules mode."
+      "In Thai Makruk, Khun starts to each player's left of Met: White's king is on d1 and Black's on e8.",
+      "Bia pawns start on the third rank, move one step, and promote to Met movement on the sixth rank.",
+      "Met steps one square diagonally; Khon steps diagonally or one square forward. There is no castling or opening leap.",
+      "Checkmate wins. This app currently uses automatic endgame counting; optional honor-count claims are not yet available."
     ],
     specialRules: ["No castling", "Makruk promotion", "Counting/draw mode"],
     winConditions: ["Checkmate", "Timeout", "Resignation"],
@@ -419,9 +419,9 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
     verifiedEdgeCases: [
       "Makruk setup uses one royal king and one Met per side with no castling.",
       "Native Met, Khon, knight, rook, king, and pawn movement have fixtures.",
-      "Pawns do not double-push or en-passant, promote to Met on the sixth rank, and Makruk counting-rule draws are covered."
+      "Pawns do not double-push or en-passant and promote to Met on the sixth rank. Legacy automatic counting has fixtures; these do not verify the published honor-count profile."
     ],
-    remainingGates: []
+    remainingGates: ["Replace legacy automatic counting with optional board-honor claims, escaping-player move counts and fixed piece-honor limits before claiming complete Makruk rules."]
   },
   jungle: {
     status: "verified-playable",

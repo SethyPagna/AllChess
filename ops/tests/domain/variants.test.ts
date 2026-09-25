@@ -1196,6 +1196,10 @@ describe("variant engine", () => {
 
   test("makruk setup uses one king and one met per side", () => {
     const state = createInitialState("makruk", "makruk-setup");
+    expect(state.board[7][3].piece).toMatchObject({ code: "k", owner: "white" });
+    expect(state.board[7][4].piece).toMatchObject({ code: "m", owner: "white" });
+    expect(state.board[0][4].piece).toMatchObject({ code: "k", owner: "black" });
+    expect(state.board[0][3].piece).toMatchObject({ code: "m", owner: "black" });
     const whitePieces = state.board.flatMap((row) => row.map((cell) => cell.piece).filter((piece) => piece?.owner === "white"));
     const blackPieces = state.board.flatMap((row) => row.map((cell) => cell.piece).filter((piece) => piece?.owner === "black"));
 

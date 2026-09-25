@@ -15,10 +15,10 @@ describe("playable 3D collections", () => {
         if (cell.piece) expect(collectionPieces[collection][cell.piece.code], `${variant.key}: ${cell.piece.code}`).toBeTruthy();
       }
     }
-    for (const regional of ["shatranj", "chaturanga", "makruk"]) expect(get3DCollection(regional)).toBeNull();
+    for (const regional of ["shatranj", "chaturanga"]) expect(get3DCollection(regional)).toBeNull();
   });
 
-  for (const collection of ["classic", "khmer", "shogi", "xiangqi", "janggi"] as const) {
+  for (const collection of ["classic", "khmer", "shogi", "xiangqi", "janggi", "makruk"] as const) {
     test(`${collection} GLB has complete named pieces at playable scale without external dependencies`, async () => {
       const bytes = readFileSync(`public/assets/${collection}/collection.glb`);
       expect(bytes.length).toBeLessThan(1_000_000);
@@ -28,11 +28,11 @@ describe("playable 3D collections", () => {
       expect((json.images ?? []).some((image: { uri?: string }) => Boolean(image.uri))).toBe(false);
       const gltf = await new GLTFLoader().parseAsync(Uint8Array.from(bytes).buffer, "");
       for (const side of ["light", "dark"]) {
-        for (const name of [...Object.values(collectionPieces[collection]), ...(collection === "shogi" ? [...shogiPromotedCodes].map(code => `promoted_${collectionPieces.shogi[code]}`) : [])]) {
+        for (const name of [...Object.values(collectionPieces[collection]), ...(collection === "shogi" ? [...shogiPromotedCodes].map(code => `promoted_${collectionPieces.shogi[code]}`) : collection === "makruk" ? ["promoted_bia"] : [])]) {
           const root = gltf.scene.getObjectByName(`${side}_${name}`);
           expect(root, `${side}_${name}`).toBeDefined();
           root!.position.set(0,0,0); root!.updateWorldMatrix(true, true);
-          const box = new Box3().setFromObject(root!);
+          const box = new Box3().setFromObject(root!, true);
           const size = box.getSize(new Vector3());
           expect(size.x).toBeGreaterThan(.01); expect(size.x).toBeLessThan(.053);
           expect(size.z).toBeGreaterThan(.01); expect(size.z).toBeLessThan(.053);
@@ -60,7 +60,14 @@ describe("playable 3D collections", () => {
     expect(pieceModelName("shogi", "k", false)).toBe("dark_king");
   });
 
-  test.each(["classic", "ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi"])("%s angled camera contains its physical board and edge pieces", key => {
+  test("Makruk promotion selects the turned Bia instead of an original Met", () => {
+    expect(pieceModelName("makruk", "m", true, true)).toBe("light_promoted_bia");
+    expect(pieceModelName("makruk", "m", false, true)).toBe("dark_promoted_bia");
+    expect(pieceModelName("makruk", "m", true)).toBe("light_met");
+    expect(pieceModelName("makruk", "p", true)).toBe("light_bia");
+  });
+
+  test.each(["classic", "ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi", "makruk"])("%s angled camera contains its physical board and edge pieces", key => {
     const variant = variantCatalog.find(variant => variant.key === key)!;
     const collection = get3DCollection(key)!;
     const layout = board3DLayout(collection, variant.board.rows, variant.board.cols);
