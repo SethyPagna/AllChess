@@ -1,6 +1,7 @@
 import { getVariant } from "./catalog";
 import { advanceOukCount, settleOukCount } from "./ouk-counting";
 import { advanceMakrukHonorCount, settleMakrukHonorCount, usesMakrukHonorCount } from "./makruk-counting";
+import { usesKonaneNpsRules } from "./konane-profile";
 import type { BoardCell, GameState, Move, Piece, PlayerColor, Square, VariantDefinition } from "./types";
 
 const pieceLabels: Record<string, string> = {
@@ -76,7 +77,7 @@ export function createInitialState(variantKey: string, id = crypto.randomUUID())
     id,
     variantKey: variant.key,
     board,
-    turn: variant.key === "janggi" ? "blue" : variant.players[0],
+    turn: variant.key === "janggi" ? "blue" : variant.key === "konane" ? "black" : variant.players[0],
     ply: 0,
     status: "active",
     moves: [],
@@ -91,6 +92,7 @@ export function createInitialState(variantKey: string, id = crypto.randomUUID())
   };
   if (variant.key === "janggi") state.variantState = { janggiProfile: "cho-first-v1" };
   if (variant.key === "makruk") state.variantState = { makrukProfile: "honor-v1" };
+  if (variant.key === "konane") state.variantState = { konaneProfile: "nps-v1" };
   if (variant.supportsDrops) {
     state.hands = Object.fromEntries(variant.players.map((player) => [player, {}])) as GameState["hands"];
   }
@@ -148,7 +150,7 @@ export function getLegalMoves(state: GameState, fromOrHand: Square | { drop: Pie
     const requiredCaptures = draughtsRequiredCaptureLength(state, state.turn, continuation?.square);
     if (requiredCaptures > 0) return legalMoves.filter((move) => draughtsCaptureLengthForMove(state, move) === requiredCaptures);
   }
-  if (variant.key === "konane") {
+  if (variant.key === "konane" && !usesKonaneNpsRules(state)) {
     const continuation = konaneContinuationFor(state);
     if (continuation && (!sameSquare(from, continuation.square) || continuation.owner !== state.turn)) return [];
   }
@@ -657,7 +659,7 @@ function konaneOpeningRemovalMoves(state: GameState, piece: Piece, from: Square)
   const opening = readKonaneOpening(state);
   if (opening.removals >= 2) return [];
   if (piece.owner !== state.turn) return [];
-  if (opening.removals === 0) return [{ kind: "remove" as const, from, to: from }];
+  if (opening.removals === 0 || usesKonaneNpsRules(state)) return [{ kind: "remove" as const, from, to: from }];
   if (opening.firstRemoved && isOrthogonallyAdjacent(from, opening.firstRemoved)) {
     return [{ kind: "remove" as const, from, to: from }];
   }
@@ -667,11 +669,14 @@ function konaneOpeningRemovalMoves(state: GameState, piece: Piece, from: Square)
 function konaneJumpMoves(state: GameState, piece: Piece, from: Square) {
   const moves: Move[] = [];
   for (const [dr, dc] of draughtsAllOrthogonalDirections) {
-    const middle = { row: from.row + dr, col: from.col + dc };
-    const to = { row: from.row + dr * 2, col: from.col + dc * 2 };
-    const jumped = cellAt(state, middle)?.piece;
-    if (!isInside(state, to) || cellAt(state, to)?.piece || !jumped || jumped.owner === piece.owner) continue;
-    moves.push({ from, to });
+    for (let steps = 2; ; steps += 2) {
+      const middle = { row: from.row + dr * (steps-1), col: from.col + dc * (steps-1) };
+      const to = { row: from.row + dr * steps, col: from.col + dc * steps };
+      const jumped = cellAt(state, middle)?.piece;
+      if (!isInside(state, to) || cellAt(state, to)?.piece || !jumped || jumped.owner === piece.owner) break;
+      moves.push({ from, to });
+      if (!usesKonaneNpsRules(state)) break;
+    }
   }
   return moves;
 }
@@ -679,9 +684,10 @@ function konaneJumpMoves(state: GameState, piece: Piece, from: Square) {
 function konaneCapturedSquare(state: GameState, move: Move, piece: Piece) {
   const rowDelta = move.to.row - move.from.row;
   const colDelta = move.to.col - move.from.col;
-  const orthogonalJump = ((rowDelta === 0) !== (colDelta === 0)) && Math.max(Math.abs(rowDelta), Math.abs(colDelta)) === 2;
+  const distance = Math.max(Math.abs(rowDelta), Math.abs(colDelta));
+  const orthogonalJump = ((rowDelta === 0) !== (colDelta === 0)) && (usesKonaneNpsRules(state) ? distance >= 2 && distance % 2 === 0 : distance === 2);
   if (!orthogonalJump) return null;
-  const middle = { row: (move.from.row + move.to.row) / 2, col: (move.from.col + move.to.col) / 2 };
+  const middle = { row: move.from.row + Math.sign(rowDelta), col: move.from.col + Math.sign(colDelta) };
   const jumped = cellAt(state, middle)?.piece;
   return jumped && jumped.owner !== piece.owner ? middle : null;
 }
@@ -1109,6 +1115,16 @@ export function applyMove(state: GameState, move: Move): GameState {
       }
       addCapturedPieceToHand(next, movingPiece.owner, captured);
     }
+    if (usesKonaneNpsRules(next) && jumpedSquare) {
+      // All landing prefixes are legal choices. A longer straight move removes
+      // each intervening enemy atomically and earns only one clock increment.
+      const dr = Math.sign(move.to.row - move.from.row), dc = Math.sign(move.to.col - move.from.col);
+      const distance = Math.max(Math.abs(move.to.row - move.from.row), Math.abs(move.to.col - move.from.col));
+      for (let step = 3; step < distance; step += 2) {
+        const cell = cellAt(next, { row: move.from.row + dr*step, col: move.from.col + dc*step })!;
+        next.captured.push(cell.piece!); cell.piece = null;
+      }
+    }
     const promoted = shouldPromote(variant, movingPiece, move.to, move.promotion);
     toCell!.piece = {
       ...movingPiece,
@@ -1293,7 +1309,7 @@ function withKonaneOutcome(state: GameState, mover: PlayerColor, move: Move, cap
   }
 
   const movedPiece = cellAt(state, move.to)?.piece;
-  if (captured && movedPiece && konaneJumpMoves(state, movedPiece, move.to).length > 0) {
+  if (!usesKonaneNpsRules(state) && captured && movedPiece && konaneJumpMoves(state, movedPiece, move.to).length > 0) {
     state.turn = mover;
     state.variantState = {
       ...(state.variantState ?? {}),

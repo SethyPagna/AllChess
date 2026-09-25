@@ -4,6 +4,13 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ---
 
+## 2026-09-25 — Kōnane
+
+- Native 3D stones, recessed wooden papamū, small rim coordinates, orbit/zoom/reset, material choices and offline asset delivery. Include the public web-app manifest in the verified offline pack.
+- NPS rules profile for new games, including Black first and optional straight multi-jumps; existing saves retain their prior rules.
+- Compact opening/jump guidance, plain 2D pit board and correct starting-side review badges.
+- See [delivery and validation](konane-tabletop.md). The broader product goal remains active.
+
 ## 2026-05-28
 
 ### Repository Organization

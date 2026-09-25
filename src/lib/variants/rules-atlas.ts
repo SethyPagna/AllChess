@@ -237,17 +237,17 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
   },
   konane: {
     variantKey: "konane",
-    sourceLinks: [{ name: "Cyningstan Konane rules", url: "https://www.cyningstan.com/game/97/konane" }],
+    sourceLinks: [{ name: "National Park Service Kōnane rules (this profile)", url: "https://www.nps.gov/thingstodo/play-konane.htm" }, { name: "NPS illustrated rules", url: "https://www.nps.gov/puho/learn/historyculture/upload/Konane-Rules-508.pdf" }],
     numberedBasics: [
-      "Play on an 8x8 board filled with alternating black and white stones.",
-      "The first player removes one own stone; the second player removes an orthogonally adjacent own stone.",
-      "After the opening, every move is an orthogonal jump over one opposing stone to an empty square.",
+      "This NPS profile uses an 8x8 papamū filled with alternating black and white stones.",
+      "Black removes any own stone, then White removes any own stone; the removals need not be adjacent.",
+      "Then jump over opposing stones into empty spaces along one straight orthogonal line. Choose a nearer landing to stop or a farther landing to capture more.",
       "Win by leaving the opponent with no legal jump capture."
     ],
-    specialRules: ["Opening removals", "Orthogonal jumps", "Captured midpoint stones", "Multi-jump continuation", "No legal jump loses"],
+    specialRules: ["Opening removals", "Orthogonal jumps", "Optional straight jump sequences", "NPS rules profile", "No legal jump loses"],
     winConditions: ["Leave the opponent with no legal jump", "Capture until the opponent is immobilized"],
     drawConditions: ["Mutual agreement or selected room no-progress policy"],
-    illegalMoveNotes: ["Diagonal jumps are illegal.", "A stone may not slide without jumping after the opening.", "During a multi-jump continuation only the jumping stone may move."]
+    illegalMoveNotes: ["Diagonal jumps are illegal.", "A stone may not slide without jumping after the opening.", "A jump sequence cannot turn a corner, cross a gap or jump a friendly stone.", "Older saved games retain their original adjacent second removal and forced continuation rules."]
   },
   antichess: {
     variantKey: "antichess",
@@ -466,9 +466,9 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
   konane: {
     status: "verified-playable",
     verifiedEdgeCases: [
-      "Opening removals are legal only for own stones, and the second removal must be orthogonally adjacent to the first.",
-      "Orthogonal jump captures remove the midpoint stone and reject diagonal or quiet movement.",
-      "Multi-jump continuation locks the turn to the same stone until no further capture exists.",
+      "Opening removals use Black first and unrestricted own-stone choices in the NPS profile; legacy saves keep White first and an adjacent second removal.",
+      "Straight orthogonal jump sequences offer every landing prefix and remove all jumped enemies in one move.",
+      "The NPS profile permits stopping after any jump and rejects corners, gaps and friendly blockers; legacy forced continuations remain compatible.",
       "No-legal-jump terminal states resolve as wins for the mover."
     ],
     remainingGates: []

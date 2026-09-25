@@ -10,8 +10,9 @@ async function walk(directory: string): Promise<string[]> {
 const hash = (bytes: Uint8Array | string) => createHash("sha256").update(bytes).digest("hex");
 const staticRoot = path.join(root, ".next/static");
 const files = (await walk(staticRoot)).filter(file => /\.(js|css|woff2?)$/.test(file)).sort();
-const publicFiles = ["assets/khmer/collection.glb", "assets/classic/collection.glb", "assets/shogi/collection.glb", "assets/xiangqi/collection.glb", "assets/janggi/collection.glb", "assets/makruk/collection.glb", "assets/draughts/collection.glb", "engines/stockfish/stockfish-18-lite-single.js", "engines/stockfish/stockfish-18-lite-single.wasm", "icons/app-192.png", "icons/app-512.png", "icons/maskable-512.png"];
+const publicFiles = ["assets/khmer/collection.glb", "assets/classic/collection.glb", "assets/shogi/collection.glb", "assets/xiangqi/collection.glb", "assets/janggi/collection.glb", "assets/makruk/collection.glb", "assets/draughts/collection.glb", "assets/konane/collection.glb", "engines/stockfish/stockfish-18-lite-single.js", "engines/stockfish/stockfish-18-lite-single.wasm", "icons/app-192.png", "icons/app-512.png", "icons/maskable-512.png"];
 const sources = [
+  { url: "/manifest.webmanifest", file: path.join(root, ".next/server/app/manifest.webmanifest.body") },
   { url: "/icon.svg", file: path.join(root, ".next/server/app/icon.svg.body") },
   { url: "/offline", file: path.join(root, ".next/server/app/offline.html") },
   ...files.map(file => ({ url: "/_next/static/" + path.relative(staticRoot, file).split(path.sep).map(encodeURIComponent).join("/"), file })),

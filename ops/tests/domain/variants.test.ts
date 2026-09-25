@@ -377,8 +377,9 @@ describe("variant engine", () => {
     });
   });
 
-  test("konane uses opening removals, orthogonal jumps, continuations, and no-move wins", () => {
+  test("legacy konane retains opening removals, forced continuations, and no-move wins", () => {
     let state = createInitialState("konane", "konane-rules");
+    state.turn = "white"; delete state.variantState;
 
     expect(state.board).toHaveLength(8);
     expect(state.board[0].map((cell) => cell.piece?.owner[0] ?? ".").join("")).toBe("bwbwbwbw");

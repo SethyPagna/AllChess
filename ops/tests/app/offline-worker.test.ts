@@ -58,14 +58,14 @@ function harness() {
 
 describe("public offline play pack", () => {
   test("cold launch serves a complete shell, chunks, and local-only redirect without room secrets", async () => {
-    const sw = harness(); await sw.lifecycle("install"); sw.manifest("first", "Public board shell", ["shogi", "xiangqi", "janggi", "makruk"].map(game => ({ url: `/assets/${game}/collection.glb`, value: `${game} GLB` })));
+    const sw = harness(); await sw.lifecycle("install"); sw.manifest("first", "Public board shell", ["shogi", "xiangqi", "janggi", "makruk", "draughts", "konane"].map(game => ({ url: `/assets/${game}/collection.glb`, value: `${game} GLB` })));
     expect((await sw.message("DOWNLOAD_OFFLINE")).at(-1)).toEqual({ ready: true });
     sw.network.delete("/_next/static/chunks/board.123.js");
     expect(await (await sw.request("/_next/static/chunks/board.123.js", "cors"))!.text()).toBe("board code");
     sw.offline();
     expect(await (await sw.request("/offline?game=classic"))!.text()).toBe("Public board shell");
     expect(await (await sw.request("/_next/static/chunks/board.123.js?dpl=build123", "cors"))!.text()).toBe("board code");
-    for (const game of ["shogi", "xiangqi", "janggi", "makruk"]) expect(await (await sw.request(`/assets/${game}/collection.glb`, "cors"))!.text()).toBe(`${game} GLB`);
+    for (const game of ["shogi", "xiangqi", "janggi", "makruk", "draughts", "konane"]) expect(await (await sw.request(`/assets/${game}/collection.glb`, "cors"))!.text()).toBe(`${game} GLB`);
     const redirect = await sw.request("/km/play/ouk-chaktrang?mode=room&room=private&token=secret&time=rapid&resume=local-save");
     expect(redirect!.headers.get("location")).toBe(origin + "/offline?locale=km&game=ouk-chaktrang&time=rapid&resume=local-save");
     expect((await sw.message("OFFLINE_STATUS")).at(-1)).toEqual({ ready: true });
@@ -109,4 +109,11 @@ describe("public offline play pack", () => {
     await sw.message("DOWNLOAD_OFFLINE");
     expect(sw.hits.filter(path => path === "/offline")).toHaveLength(1);
   });
+});
+
+
+test("the public web-app manifest remains readable after a cold offline request", async () => {
+  const sw=harness(); sw.manifest("manifest", "Public board shell", [{url:"/manifest.webmanifest",value:'{"name":"AllChess","display":"standalone"}'}]);
+  await sw.message("DOWNLOAD_OFFLINE");sw.offline();
+  expect(await (await sw.request("/manifest.webmanifest", "cors"))?.text()).toBe('{"name":"AllChess","display":"standalone"}');
 });

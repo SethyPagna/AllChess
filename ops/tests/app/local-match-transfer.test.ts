@@ -74,3 +74,17 @@ test("the writer rejects the same expanded-size limit before replacing a readabl
   const state = createInitialState("classic"); state.variantState = { metadata: "x".repeat(1024 * 1024) };
   expect(() => encodeLocalMatch({ ...snapshot(state), history: Array(64).fill(state) })).toThrow("too large to save");
 });
+
+
+test("Kōnane save files preserve NPS and legacy rule profiles across undo and redo", () => {
+  for (const legacy of [false,true]) {
+    const start=createInitialState("konane");
+    if (legacy) { delete start.variantState!.konaneProfile; start.turn="white"; }
+    const move=getLegalMoves(start,{row:0,col:legacy?1:0})[0];
+    const next=applyMove(start,move);
+    const imported=importLocalMatch(exportLocalMatch({...snapshot(next),history:[start],future:[]}).contents);
+    expect(imported.state.variantState).toEqual(next.variantState);
+    expect(imported.history[0].turn).toBe(start.turn);
+    expect(getLegalMoves(imported.state,{row:7,col:legacy?7:0})).toEqual(getLegalMoves(next,{row:7,col:legacy?7:0}));
+  }
+});

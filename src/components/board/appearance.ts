@@ -113,6 +113,7 @@ const defaultBoards: Record<string, { label: string; boardTheme: BoardThemePrefe
   makruk: { label: "Thai wood", boardTheme: "wood" },
   jungle: { label: "Forest jade", boardTheme: "jade" },
   "international-draughts": { label: "Tournament slate", boardTheme: "slate" },
+  konane: { label: "Papamū wood", boardTheme: "wood" },
   "turkish-draughts": { label: "Warm wood", boardTheme: "wood" },
   antichess: { label: "Reverse plum", boardTheme: "plum" },
   horde: { label: "Horde wood", boardTheme: "wood" },

@@ -31,8 +31,8 @@ function allowedAsset(path) {
     const decoded = decodeURIComponent(path);
     if (url.origin !== self.location.origin || url.pathname !== path || decoded.includes(String.fromCharCode(92)) || decoded.split("/").some(part => part === "." || part === "..")) return false;
   } catch { return false; }
-  return path === "/offline" || /^\/_next\/static\/[a-zA-Z0-9_./%~-]+\.(js|css|woff2?)$/.test(path)
-    || ["/assets/khmer/collection.glb", "/assets/classic/collection.glb", "/assets/shogi/collection.glb", "/assets/xiangqi/collection.glb", "/assets/janggi/collection.glb", "/assets/makruk/collection.glb", "/assets/draughts/collection.glb", "/engines/stockfish/stockfish-18-lite-single.js", "/engines/stockfish/stockfish-18-lite-single.wasm", "/icons/app-192.png", "/icons/app-512.png", "/icons/maskable-512.png", "/icon.svg"].includes(path);
+  return path === "/offline" || path === "/manifest.webmanifest" || /^\/_next\/static\/[a-zA-Z0-9_./%~-]+\.(js|css|woff2?)$/.test(path)
+    || ["/assets/khmer/collection.glb", "/assets/classic/collection.glb", "/assets/shogi/collection.glb", "/assets/xiangqi/collection.glb", "/assets/janggi/collection.glb", "/assets/makruk/collection.glb", "/assets/draughts/collection.glb", "/assets/konane/collection.glb", "/engines/stockfish/stockfish-18-lite-single.js", "/engines/stockfish/stockfish-18-lite-single.wasm", "/icons/app-192.png", "/icons/app-512.png", "/icons/maskable-512.png", "/icon.svg"].includes(path);
 }
 
 async function fetchWithTimeout(request, init = {}) {

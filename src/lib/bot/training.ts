@@ -481,18 +481,18 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
   {
     id: "konane-start-near-corner-removal",
     variantKey: "konane",
-    positionKey: "konane|turn:white|moves:",
-    moveUci: "b8b8",
+    positionKey: "konane|turn:black|moves:",
+    moveUci: "a8a8",
     source: "opening-book",
     minTier: "easy",
     confidence: 0.82,
     benchmarkVersion: "allchess-variant-seed-v1",
     tags: ["opening", "konane", "hawaiian-checkers", "orthogonal", "removal"],
     explanation: {
-      plan: "Remove a near-corner white stone to create an immediate orthogonal jump lane after Black answers.",
-      threat: "White prepares the classic capture rhythm where empty landing points force local jump tactics.",
+      plan: "Remove a black corner stone to open a straight jump lane after White answers.",
+      threat: "Black prepares the capture rhythm where empty landing points force local jump tactics.",
       risk: "Kōnane has no quiet moves after the removals, so the bot must validate jump availability before evaluating material.",
-      fallbackGoal: "If the adjacent reply changes the lane, prioritize legal multi-jumps that keep the same stone active."
+      fallbackGoal: "Choose a legal landing prefix; longer jumps stay in the same direction and finish the turn."
     }
   },
   {
@@ -979,14 +979,14 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
   },
   {
     variantKey: "konane",
-    line: ["b8b8", "a8a8"],
+    line: ["a8a8", "b8b8"],
     family: "opening removals",
     plan: "Cache both opening removals so the first real jump position starts quickly.",
     risk: "After removals, every move must be an orthogonal jump and cannot rely on quiet heuristics."
   },
   {
     variantKey: "konane",
-    line: ["g7g7", "g8g8"],
+    line: ["g8g8", "g7g7"],
     family: "opening removals flank",
     plan: "Cache a second Kōnane opening-removal pair near the far corner.",
     risk: "After the removals, cached play stops until legal jump lanes are revalidated."

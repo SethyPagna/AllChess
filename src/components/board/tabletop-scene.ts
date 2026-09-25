@@ -54,6 +54,13 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
       block([.034,.063,.034], [stand.x,-.0475,stand.z], walnut, .004);
       block([.112,.012,.112], [stand.x,-.085,stand.z], walnut, .004);
     }
+  } else if (collection === "konane") {
+    // A solid wooden papamū with actual recessed bowls. The supporting block
+    // ends below their bottoms; a full-height top plate would fill the holes.
+    block([width+.066,.04,depth+.066], [0,-.029,0], walnut, .005);
+    for (const z of [-depth/2-.015,depth/2+.015]) block([width+.062,.018,.031], [0,-.004,z], walnut, .002);
+    for (const x of [-width/2-.015,width/2+.015]) block([.031,.018,depth+.002], [x,-.004,0], walnut, .002);
+    for (const x of [-width*.436,width*.436]) for (const z of [-depth*.436,depth*.436]) block([.043,.012,.043], [x,-.055,z], edge, .004);
   } else {
     // A thick, bevelled case, a fine brass reveal, and a raised wooden rim.
     block([width+.066,.04,depth+.066], [0,-.029,0], edge, .006);

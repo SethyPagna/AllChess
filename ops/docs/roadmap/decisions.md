@@ -127,3 +127,10 @@ Record decisions that affect architecture, workflow, product behavior, or releas
 - The catalog should not imply full support for research-stage variants.
 - Rules, bot, and analysis phases can advance independently while still exposing truthful UI states.
 - Launch readiness can be evaluated per variant instead of as one all-or-nothing milestone.
+
+
+## 2026-09-25: Version Kōnane rules and use a recessed papamū
+
+New games use the National Park Service Hōnaunau profile (`nps-v1`): Black first, any own-stone removal for each player, then optional consecutive jumps in one straight direction. Each legal landing prefix is one atomic move, so local play, bots, server validation, clocks and saved history share the same rules. Unversioned games retain their prior White-first, adjacent-second-removal, forced-continuation behavior. Room review restores the original opening profile before replaying.
+
+The presentation is a contemporary wooden papamū with modeled bowls and original portable Blender pebbles. It is not a museum replica or a universal/tournament rules claim. [NPS source](https://www.nps.gov/thingstodo/play-konane.htm).

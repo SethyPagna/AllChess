@@ -590,7 +590,7 @@ describe("bot difficulty ladder", () => {
       "english-draughts": "b6a5",
       "international-draughts": "c7b6",
       "turkish-draughts": "a6a5",
-      konane: "a8a8",
+      konane: "b8b8",
       antichess: "b8c6",
       horde: "g8f6",
       "king-of-the-hill": "e7e5",
@@ -747,7 +747,7 @@ describe("bot difficulty ladder", () => {
     const hit = lookupBotKnowledge(state, "easy");
 
     expect(hit?.entry).toEqual(expect.objectContaining({ variantKey: "konane", minTier: "easy", source: "opening-book" }));
-    expect(hit?.move).toMatchObject({ kind: "remove", from: { row: 0, col: 1 }, to: { row: 0, col: 1 } });
+    expect(hit?.move).toMatchObject({ kind: "remove", from: { row: 0, col: 0 }, to: { row: 0, col: 0 } });
     expect(() => applyMove(state, hit!.move)).not.toThrow();
 
     const result = await requestBotMove(state, "easy", { engine: "auto", maxSearchTimeMs: MAX_BOT_REPLY_MS });

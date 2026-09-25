@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest";
 import { Box3, Mesh, MeshStandardMaterial, PerspectiveCamera, Vector3 } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { tabletopCameraPosition, tabletopCameraTarget, tabletopAspect, tabletopFieldOfView, collectionPieces, get3DCollection, board3DLayout, pieceModelName, shogiPromotedCodes } from "@/components/board/board-3d-config";
+import { createKonaneCellGeometry } from "@/components/board/konane-board";
 import { createInitialState, variantCatalog } from "@/lib/variants";
 
 describe("playable 3D collections", () => {
@@ -18,7 +19,7 @@ describe("playable 3D collections", () => {
     for (const regional of ["shatranj", "chaturanga"]) expect(get3DCollection(regional)).toBeNull();
   });
 
-  for (const collection of ["classic", "khmer", "shogi", "xiangqi", "janggi", "makruk", "draughts"] as const) {
+  for (const collection of ["classic", "khmer", "shogi", "xiangqi", "janggi", "makruk", "draughts", "konane"] as const) {
     test(`${collection} GLB has complete named pieces at playable scale without external dependencies`, async () => {
       const bytes = readFileSync(`public/assets/${collection}/collection.glb`);
       expect(bytes.length).toBeLessThan(1_000_000);
@@ -72,7 +73,7 @@ describe("playable 3D collections", () => {
     expect(pieceModelName("makruk", "p", true)).toBe("light_bia");
   });
 
-  test.each(["classic", "ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi", "makruk", "english-draughts", "international-draughts", "turkish-draughts"])("%s angled camera contains its physical board and edge pieces", key => {
+  test.each(["classic", "ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi", "makruk", "english-draughts", "international-draughts", "turkish-draughts", "konane"])("%s angled camera contains its physical board and edge pieces", key => {
     const variant = variantCatalog.find(variant => variant.key === key)!;
     const collection = get3DCollection(key)!;
     const layout = board3DLayout(collection, variant.board.rows, variant.board.cols);
@@ -87,4 +88,18 @@ describe("playable 3D collections", () => {
       expect(Math.abs(projected.x)).toBeLessThan(.99); expect(Math.abs(projected.y)).toBeLessThan(.94);
     }
   });
+});
+
+
+test("papamū wells are real recessed geometry with flush square edges and upward normals", () => {
+  const geometry=createKonaneCellGeometry(), position=geometry.getAttribute("position"), normal=geometry.getAttribute("normal");
+  geometry.computeBoundingBox();
+  expect(geometry.boundingBox!.min.y).toBeCloseTo(-.006,6);
+  expect(geometry.boundingBox!.max.y).toBeCloseTo(.002,6);
+  expect(geometry.boundingBox!.max.x-geometry.boundingBox!.min.x).toBeCloseTo(.053,6);
+  for (let i=0;i<position.count;i++) {
+    expect(normal.getY(i)).toBeGreaterThan(0);
+    if (Math.max(Math.abs(position.getX(i)),Math.abs(position.getZ(i)))>.026) expect(position.getY(i)).toBeCloseTo(.002,6);
+  }
+  geometry.dispose();
 });

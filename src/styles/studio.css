@@ -361,3 +361,6 @@ button:disabled { cursor: not-allowed; }
 .match-arrival-panel p { margin: 0; font-size: 12px; color: var(--muted); }
 .match-arrival-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .match-arrival-actions button { padding: 9px 12px; font-size: 12px; }
+
+.konane-play-hint { margin: .25rem 0; color: var(--muted); font-size: .75rem; line-height: 1.45; }
+.board-grid[data-board-geometry="pits"] .board-square { background-image: radial-gradient(ellipse at 50% 48%, #37220b26 0 22%, #37220b40 30%, #fff4d630 39%, transparent 42%) !important; }
