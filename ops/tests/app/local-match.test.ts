@@ -6,6 +6,7 @@ import { createMakrukEndgame } from "@/lib/variants/makruk-endgames";
 import { applyMakrukCountAction, readMakrukHonorCount } from "@/lib/variants/makruk-counting";
 import { decodeLocalMatch, encodeLocalMatch, type LocalMatchRecord, type LocalMatchSnapshot } from "@/lib/game/local-match";
 import { botDifficultyLevels } from "@/lib/bot/config";
+import { exportLocalMatch, importLocalMatch } from "@/lib/game/local-match-transfer";
 
 function snapshot(state: GameState, history: GameState[] = [], future: GameState[] = []): LocalMatchSnapshot {
   return { state, history, future, settings: { playMode: "offline", botMode: "human", botDifficulty: botDifficultyLevels[0].key, timeControl: "rapid", humanColor: state.clocks[0].color, seatChoice: "random", boardOrientation: "second" } };
@@ -16,6 +17,11 @@ function record(value: LocalMatchSnapshot): LocalMatchRecord {
 function roundtrip(value: LocalMatchSnapshot) {
   const restored = decodeLocalMatch(record(value));
   expect(restored).toEqual(JSON.parse(JSON.stringify(value)));
+  const imported = importLocalMatch(exportLocalMatch(value).contents);
+  const copied = JSON.parse(JSON.stringify(value)) as LocalMatchSnapshot;
+  for (const frame of [...copied.history, copied.state, ...copied.future]) frame.id = imported.state.id;
+  expect(imported).toEqual(copied);
+  expect(imported.state.id).not.toBe(value.state.id);
   return restored!;
 }
 

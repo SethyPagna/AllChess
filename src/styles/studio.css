@@ -348,6 +348,12 @@ button:disabled { cursor: not-allowed; }
 .saved-match-delete { color: var(--muted); }
 .saved-match-remove { display: flex; gap: 8px; align-items: center; font-size: 12px; flex-wrap: wrap; }
 .saved-match-remove button { padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; }
+.saved-match-transfer { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 0 12px 12px; }
+.saved-match-transfer button { display: inline-flex; align-items: center; gap: 6px; padding: 9px 12px; font-size: 12px; }
+.saved-match-transfer small { flex: 1 1 150px; color: var(--muted); font-size: 11px; }
+.saved-match-message { margin: 0; padding: 0 12px 12px; font-size: 12px; }
+.saved-match-message a { text-decoration: underline; text-underline-offset: 3px; }
+.saved-matches button:disabled { opacity: .55; cursor: wait; }
 
 .match-arrival-panel { display: grid; gap: 9px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
 .match-arrival-heading { display: flex; align-items: center; gap: 8px; font-size: 13px; }

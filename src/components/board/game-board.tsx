@@ -4,6 +4,7 @@ import { useLocalMatch } from "./use-local-match";
 import { SavedMatches } from "./saved-matches";
 import { readLocalMatch } from "@/lib/game/local-match-store";
 import type { LocalMatchSnapshot } from "@/lib/game/local-match";
+import { downloadLocalMatch } from "@/lib/game/local-match-transfer";
 import { FriendChat } from "./friend-chat";
 import { MatchArrivalPanel } from "./match-arrival-panel";
 import { useFriendRoom, saveFriendToken } from "./use-friend-room";
@@ -1425,6 +1426,7 @@ export function GameBoard({
             {localSave.status === "error" ? <button type="button" className="focus-ring" onClick={() => localSave.retry(localSnapshot)}>Retry save</button> : null}
             {state.status === "active" ? <button type="button" className="focus-ring" onClick={() => localPaused ? setLocalPaused(false) : pauseLocalGame()}>{localPaused ? "Resume game" : "Pause"}</button> : null}
           </>}
+          <button type="button" className="focus-ring" onClick={() => { try { downloadLocalMatch(localSnapshot); setRestoreError(""); } catch (cause) { setRestoreError(cause instanceof Error ? cause.message : "This game could not be exported."); } }}>Export game</button>
         </div> : null}
         <BoardToolbar is3D={boardView === "3d" && !!collection3D} variantKey={variantKey} appearancePreset={appearancePreset} onAppearanceChange={changeAppearancePreset} onFlip={flipBoard} onGuide={rulesSummary ? () => setShowRules(true) : undefined} focusMode={focusMode && gameStarted} onFocusChange={() => setFocusMode((current) => !current)} canFocus={gameStarted} />
         {collection3D ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>{collection3D === "xiangqi" ? "3D discs" : collection3D === "shogi" || collection3D === "janggi" ? "3D tiles" : "3D carved"}</button>{boardView === "3d" ? <div role="group" aria-label="Piece material" className="board-finish-buttons">{(["original", "porcelain", "slate"] as const).map(finish => <button key={finish} type="button" className="focus-ring" aria-pressed={pieceFinish === finish} onClick={() => changePieceFinish(finish)}>{finish === "original" ? collection3D === "shogi" || collection3D === "xiangqi" ? "Boxwood" : collection3D === "janggi" ? "Ivory" : collection3D === "makruk" ? "Thai lacquer" : "Original" : finish === "porcelain" ? "Porcelain" : "Slate"}</button>)}</div> : null}</div> : null}
