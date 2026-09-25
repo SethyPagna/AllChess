@@ -1,5 +1,6 @@
 import { getVariant } from "./catalog";
 import { advanceOukCount, settleOukCount } from "./ouk-counting";
+import { advanceMakrukHonorCount, settleMakrukHonorCount, usesMakrukHonorCount } from "./makruk-counting";
 import type { BoardCell, GameState, Move, Piece, PlayerColor, Square, VariantDefinition } from "./types";
 
 const pieceLabels: Record<string, string> = {
@@ -89,6 +90,7 @@ export function createInitialState(variantKey: string, id = crypto.randomUUID())
     }))
   };
   if (variant.key === "janggi") state.variantState = { janggiProfile: "cho-first-v1" };
+  if (variant.key === "makruk") state.variantState = { makrukProfile: "honor-v1" };
   if (variant.supportsDrops) {
     state.hands = Object.fromEntries(variant.players.map((player) => [player, {}])) as GameState["hands"];
   }
@@ -1164,7 +1166,8 @@ export function applyMove(state: GameState, move: Move): GameState {
     advanceOukCount(next, movingPiece.owner);
   }
   if (variant.key === "makruk") {
-    updateMakrukCounting(next);
+    if (usesMakrukHonorCount(next)) advanceMakrukHonorCount(next, movingPiece.owner);
+    else updateMakrukCounting(next);
   }
 
   if (variant.key === "chaturanga" || variant.key === "shatranj") {
@@ -1181,7 +1184,7 @@ export function applyMove(state: GameState, move: Move): GameState {
     return withShogiOutcome(next, movingPiece.owner, move.to);
   }
   const outcome = withOutcome(next, movingPiece.owner, move.to);
-  return variant.key === "ouk-chaktrang" ? settleOukCount(outcome) : outcome;
+  return variant.key === "ouk-chaktrang" ? settleOukCount(outcome) : settleMakrukHonorCount(outcome);
 }
 
 function withHistoricalBareKingOutcome(state: GameState, mover: PlayerColor, destination?: Square): GameState {
@@ -1676,7 +1679,7 @@ function withOutcome(state: GameState, mover: PlayerColor, destination?: Square)
 
 function drawReasonFor(state: GameState): "insufficient-material" | "fifty-move" | "counting-rule" | null {
   const variant = getVariant(state.variantKey);
-  const makrukCounting = variant.key === "makruk" ? readMakrukCounting(state) : undefined;
+  const makrukCounting = variant.key === "makruk" && !usesMakrukHonorCount(state) ? readMakrukCounting(state) : undefined;
   if (makrukCounting && makrukCounting.remainingMoves <= 0) return "counting-rule";
   if (variant.family === "western" && state.halfmoveClock >= 100) return "fifty-move";
   if (!["classic", "chess960", "king-of-the-hill", "three-check"].includes(variant.key)) return null;

@@ -1261,8 +1261,9 @@ describe("variant engine", () => {
     expect(promoted.board[2][0].piece).toMatchObject({ code: "m", owner: "white", promoted: true });
   });
 
-  test("makruk starts board counting when no unpromoted pawns remain", () => {
+  test("legacy Makruk saves retain automatic board counting", () => {
     let state = createInitialState("makruk", "makruk-board-count");
+    delete state.variantState;
     state = {
       ...state,
       board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
@@ -1280,8 +1281,9 @@ describe("variant engine", () => {
     expect(continued.variantState?.makrukCounting).toMatchObject({ phase: "board", limit: 64, remainingMoves: 63, pieceCount: 4 });
   });
 
-  test("makruk bare-king counting expires as a draw", () => {
+  test("legacy Makruk saves retain their bare-king countdown", () => {
     let state = createInitialState("makruk", "makruk-bare-king-count");
+    delete state.variantState;
     state = {
       ...state,
       board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),

@@ -9,6 +9,10 @@ import { useFriendRoom, saveFriendToken } from "./use-friend-room";
 import type { FriendRoomView } from "@/lib/realtime/friend-room";
 import dynamic from "next/dynamic";
 import { ChoicePicker } from "./choice-buttons";
+import { MakrukCountingPanel, MakrukEndgamePicker } from "./makruk-counting-panel";
+import { applyMakrukCountAction, readMakrukHonorCount, makrukCountVersion, replayMakrukCountActions, usesMakrukHonorCount, type MakrukCountAction } from "@/lib/variants/makruk-counting";
+import { createMakrukEndgame, makrukEndgames, type MakrukEndgameKey } from "@/lib/variants/makruk-endgames";
+import { prepareMakrukBotTurn } from "@/lib/bot/makruk-counting";
 import { OukCountingPanel, OukEndgamePicker } from "./ouk-counting-panel";
 import { applyOukCountAction, readOukCount, type OukCountAction } from "@/lib/variants/ouk-counting";
 import { prepareOukBotTurn } from "@/lib/bot/ouk-counting";
@@ -402,12 +406,13 @@ export function GameBoard({
       friendGameRef.current = room.state.id;
       setReviewPly(null); setReviewPlaying(false); setFuture([]); setSelected(null); setSelectedHandCode(null); setNotice(null); setPendingPromotion(null);
     }
-    const historyKey = room.state.id + ":" + room.state.ply;
+    const historyKey = room.state.id + ":" + room.state.ply + ":" + makrukCountVersion(room.state);
     if (friendHistoryRef.current !== historyKey) {
       friendHistoryRef.current = historyKey;
       let position = createInitialState(variantKey, room.state.id);
+      if (variantKey === "makruk" && !usesMakrukHonorCount(room.state)) delete position.variantState;
       const frames: GameState[] = [];
-      for (const move of room.state.moves) { frames.push(position); position = applyMove(position, move); }
+      for (const move of room.state.moves) { position = replayMakrukCountActions(position, room.state); frames.push(position); position = applyMove(position, move); }
       setHistory(frames);
     }
     setTimeControl(getTimeControl(room.time).key);
@@ -673,7 +678,7 @@ export function GameBoard({
 
   function commitPlayerMove(move: Move) {
     if (playMode === "room") {
-      void friend.send({ gameId: state.id, action: "move", move, version: state.ply });
+      void friend.send({ gameId: state.id, action: "move", move, version: state.ply, countVersion: makrukCountVersion(state) });
       setSelected(null); setSelectedHandCode(null); setPendingPromotion(null); return;
     }
     setHistory((current) => [...current, state]);
@@ -700,6 +705,28 @@ export function GameBoard({
     setFuture([]);
     setSuggestedMove(null);
     setNotice(action === "stop" ? "Counting stopped. A new board count starts from 1." : action === "claim-draw" ? "Draw accepted under the counting rule." : "Counting begins on your next move.");
+  }
+
+  function changeMakrukCount(action: MakrukCountAction) {
+    if (!gameStarted || localPaused || isReviewing || isSpectating || botMode === "both") return;
+    if (playMode === "room") {
+      void friend.send({ gameId: state.id, action: "count", countAction: action, version: state.ply, countVersion: makrukCountVersion(state) }); return;
+    }
+    if (isOnlineMode) return;
+    const count = readMakrukHonorCount(state);
+    const actor = botMode === "opponent" ? humanColor : action === "stop" && count ? count.side : action === "claim-draw" && count ? count.side === "white" ? "black" : "white" : state.turn;
+    const requestId = activeBotRequestRef.current;
+    if (requestId) cancelRuntimeBotMove(requestId);
+    activeBotRequestRef.current = null; setThinking({ status: "idle", label: "" });
+    setState(current => { try { return applyMakrukCountAction(current, actor, action); } catch { return current; } });
+    setFuture([]); setSuggestedMove(null);
+    setNotice(action === "stop" ? "Counting stopped. A new board count starts from 1." : action === "claim-draw" ? "Draw accepted under the counting rule." : "Counting begins on your next move.");
+  }
+
+  function loadMakrukEndgame(key: MakrukEndgameKey) {
+    reset(); setPlayMode("offline"); setBotMode("human"); setTimeControl("freestyle");
+    setSeatChoice("first"); setHumanColor("white"); setState(createMakrukEndgame(key));
+    setNotice(`Practice: ${makrukEndgames.find(item => item.key === key)?.label}. White moves first.`);
   }
 
   function loadOukEndgame(key: OukEndgameKey) {
@@ -870,7 +897,7 @@ export function GameBoard({
       if (snapshot.status !== "active" || activeBotRequestRef.current) return;
       const requestId = crypto.randomUUID();
       activeBotRequestRef.current = requestId;
-      const prepared = prepareOukBotTurn(snapshot);
+      const prepared = prepareMakrukBotTurn(prepareOukBotTurn(snapshot));
       if (prepared !== snapshot) setState(current => current.id === snapshot.id && current.ply === snapshot.ply ? { ...current, variantState: prepared.variantState } : current);
       setThinking({ status: "thinking", label: source === "auto" ? "Bot is replying..." : "Bot is thinking..." });
       setNotice(null);
@@ -1082,7 +1109,8 @@ export function GameBoard({
     if (requestId) cancelRuntimeBotMove(requestId);
     activeBotRequestRef.current = null;
     const exercise = oukEndgames.find(item => item.key === state.variantState?.oukExercise);
-    const nextState = withTimeControl(exercise ? createOukEndgame(exercise.key) : createInitialState(variantKey), nextControl);
+    const thaiExercise = makrukEndgames.find(item => item.key === state.variantState?.makrukExercise);
+    const nextState = withTimeControl(exercise ? createOukEndgame(exercise.key) : thaiExercise ? createMakrukEndgame(thaiExercise.key) : createInitialState(variantKey), nextControl);
     resolvedRandomSeatRef.current = false;
     setTimeControl(nextControl);
     setHistory([]);
@@ -1395,6 +1423,7 @@ export function GameBoard({
           {state.status === "completed" && playMode === "room" ? <button type="button" className="focus-ring action-secondary" disabled={friend.busy || friend.connection !== "connected"} onClick={() => void friend.send({ gameId: state.id, action: friend.room?.rematchOffer === friend.room?.seat ? "cancel-rematch" : "rematch" })}>{friend.room?.rematchOffer ? friend.room.rematchOffer === friend.room.seat ? "Cancel rematch offer" : "Accept rematch" : "Rematch"}</button> : null}
         </div> : null}
         {playerCard(topPlayerColor, "top")}
+        {variantKey === "makruk" && gameStarted ? <MakrukCountingPanel state={displayState} actor={playMode === "room" ? friend.room?.seat ?? state.turn : botMode === "opponent" ? humanColor : state.turn} localTwoPlayer={!isOnlineMode && !isSpectating && botMode === "human"} disabled={localPaused || isReviewing || isSpectating || botMode === "both" || (isOnlineMode && playMode !== "room") || (playMode === "room" && (friend.busy || friend.connection !== "connected" || !friend.room?.seat))} onAction={changeMakrukCount} /> : null}
         {variantKey === "ouk-chaktrang" && gameStarted ? <OukCountingPanel state={displayState} actor={botMode === "opponent" ? humanColor : state.turn} localTwoPlayer={!isOnlineMode && !isSpectating && botMode === "human"} disabled={localPaused || isReviewing || isOnlineMode || isSpectating || botMode === "both"} onAction={changeOukCount} /> : null}
         <div className="board-shell" data-view={boardView === "3d" && collection3D ? "3d" : "2d"} data-variant={displayState.variantKey} data-board-theme={boardTheme} data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
@@ -1477,7 +1506,8 @@ export function GameBoard({
                 secondColorLabel={colorLabel(secondColor)}
                 timeControl={timeControl}
               />
-              {variantKey === "ouk-chaktrang" && (playMode === "offline" || playMode === "bot") ? <OukEndgamePicker onChoose={loadOukEndgame} /> : null}</>
+              {variantKey === "ouk-chaktrang" && (playMode === "offline" || playMode === "bot") ? <OukEndgamePicker onChoose={loadOukEndgame} /> : null}
+              {variantKey === "makruk" && (playMode === "offline" || playMode === "bot") ? <MakrukEndgamePicker onChoose={loadMakrukEndgame} /> : null}</>
             )
           ) : null}
           {panelTab === "status" ? (

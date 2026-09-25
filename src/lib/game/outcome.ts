@@ -101,7 +101,12 @@ function outcomeContext(state: GameState, reason: NonNullable<GameState["outcome
       : state.variantState?.oukCountOutcome === "accepted" ? "The chasing player accepted the draw available during their opponent’s board count."
         : "The escaping player reached the counting limit. Only that player’s moves advance the count."
     : null;
-  return [oukCountDetail ?? reasonText[reason], `${sideToMove} was the side to move when the game ended.`, base];
+  const makrukCountDetail = state.variantKey === "makruk" && reason === "counting-rule" && state.variantState?.makrukProfile === "honor-v1"
+    ? state.variantState?.makrukCountOutcome === "countermate" ? "The player claiming board honor gave mate without stopping their count, so the result is a draw."
+      : state.variantState?.makrukCountOutcome === "accepted" ? "The chasing player accepted the draw available during their opponent's board count."
+        : "The escaping player's count exceeded the fixed honor limit. Only that player's moves advance it."
+    : null;
+  return [makrukCountDetail ?? oukCountDetail ?? reasonText[reason], `${sideToMove} was the side to move when the game ended.`, base];
 }
 
 function inferOutcomeReason(state: GameState): NonNullable<GameState["outcomeReason"]> {

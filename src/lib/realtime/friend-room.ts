@@ -1,3 +1,4 @@
+import { applyMakrukCountAction, makrukCountVersion, usesMakrukHonorCount } from "@/lib/variants/makruk-counting";
 import { z } from "zod";
 import { applyMove, createInitialState, getVariant, type GameState, type PlayerColor } from "@/lib/variants";
 import { getTimeControl } from "@/lib/game/time-controls";
@@ -12,7 +13,8 @@ export const friendActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("create"), token, variantKey: z.string().max(64), time: z.enum(["bullet", "blitz", "rapid", "classical", "correspondence", "freestyle"]), side: z.enum(["first", "second", "random"]) }),
   z.object({ action: z.literal("join"), token }),
   z.object({ action: z.literal("read"), token: token.optional() }),
-  z.object({ action: z.literal("move"), token, gameId, version: z.number().int().min(0), move: z.object({ from: square, to: square, kind: z.enum(["move", "drop", "pass", "remove"]).optional(), promotion: z.boolean().optional(), drop: z.object({ id: z.string().max(100), code: z.string().max(8), labelKey: z.string().max(64), owner: z.enum(["white", "black", "red", "blue", "sente", "gote"]), promoted: z.boolean().optional() }).optional() }) }),
+  z.object({ action: z.literal("move"), token, gameId, version: z.number().int().min(0), countVersion: z.number().int().min(0).optional(), move: z.object({ from: square, to: square, kind: z.enum(["move", "drop", "pass", "remove"]).optional(), promotion: z.boolean().optional(), drop: z.object({ id: z.string().max(100), code: z.string().max(8), labelKey: z.string().max(64), owner: z.enum(["white", "black", "red", "blue", "sente", "gote"]), promoted: z.boolean().optional() }).optional() }) }),
+  z.object({ action: z.literal("count"), token, gameId, version: z.number().int().min(0), countVersion: z.number().int().min(0), countAction: z.enum(["start-board", "stop", "claim-draw"]) }),
   z.object({ action: z.literal("resign"), token, gameId }),
   z.object({ action: z.literal("chat"), token, text: z.string().trim().min(1).max(280) }),
   z.object({ action: z.literal("draw"), token, gameId }),
@@ -65,11 +67,17 @@ export async function transitionFriendRoom(stored: FriendRoom | null, id: string
     if (!seat) return fail(403, "Only a seated player can act.");
     if (action.gameId !== room.state.id) return fail(409, "A new game has started. Your board will refresh.");
   }
-  if (["move", "resign", "draw"].includes(action.action)) {
+  if (["move", "resign", "draw", "count"].includes(action.action)) {
     if (!seat) return fail(403, "Only a seated player can act.");
     if (room.state.status !== "active") return fail(409, "The game is not active.");
   }
+  if (action.action === "count") {
+    if (action.version !== room.state.ply || action.countVersion !== makrukCountVersion(room.state)) return fail(409, "The count changed. Your position has been refreshed.");
+    try { room.state = applyMakrukCountAction(room.state, seat!, action.countAction); } catch { return fail(400, "That honor-count action is not available."); }
+    if (room.state.status === "completed") delete room.drawOffer;
+  }
   if (action.action === "move") {
+    if (usesMakrukHonorCount(room.state) && action.countVersion !== undefined && action.countVersion !== makrukCountVersion(room.state)) return fail(409, "The count changed. Review the latest position.");
     if (action.version !== room.state.ply) return fail(409, "The board changed. Your position has been refreshed.");
     if (seat !== room.state.turn || (action.move.drop && action.move.drop.owner !== seat)) return fail(403, "Wait for your turn.");
     try { room.state = applyMove(room.state, action.move); } catch { return fail(400, "That move is not legal."); }

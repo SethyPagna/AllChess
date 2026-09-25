@@ -1,4 +1,5 @@
 import { moveToUci } from "@/lib/bot/stockfish-engine";
+import { readMakrukHonorCount } from "@/lib/variants/makruk-counting";
 import { getBotStrengthBand, getVariantBotStrengthProfile, normalizeBotTierKey, type BotTierKey, type VariantBotStrengthProfile } from "@/lib/bot/strength";
 import { botDifficultyLevels, MAX_BOT_REPLY_MS } from "@/lib/bot/config";
 import { applyMove, createInitialState, getLegalMoves, variantCatalog, type GameState, type Move, type VariantDefinition } from "@/lib/variants";
@@ -1457,6 +1458,8 @@ export function getBotTrainingGateSummary(): BotTrainingGateSummary {
 
 export function lookupBotKnowledge(state: GameState, tier: BotTierKey): BotKnowledgeHit | null {
   if (state.status !== "active") return null;
+  // Static opening/tactic entries do not encode honor-count claims or deadlines.
+  if (readMakrukHonorCount(state)) return null;
 
   const key = createBotPositionKey(state);
   const boardSignature = createBotBoardSignature(state);

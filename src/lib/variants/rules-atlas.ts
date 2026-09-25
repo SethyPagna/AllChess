@@ -167,16 +167,16 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
   },
   makruk: {
     variantKey: "makruk",
-    sourceLinks: [{ name: "GNU XBoard Makruk rules", url: "https://www.gnu.org/software/xboard/whats_new/rules/Makruk.html" }],
+    sourceLinks: [{ name: "PyChess Makruk honor-count profile", url: "https://www.pychess.org/variants/makruk" }, { name: "GNU XBoard Makruk rules", url: "https://www.gnu.org/software/xboard/whats_new/rules/Makruk.html" }],
     numberedBasics: [
       "In Thai Makruk, Khun starts to each player's left of Met: White's king is on d1 and Black's on e8.",
       "Bia pawns start on the third rank, move one step, and promote to Met movement on the sixth rank.",
       "Met steps one square diagonally; Khon steps diagonally or one square forward. There is no castling or opening leap.",
-      "Checkmate wins. This app currently uses automatic endgame counting; optional honor-count claims are not yet available."
+      "Checkmate wins unless the mating player still claims board honor. New games use the published PyChess honor-count profile; earlier saves keep their legacy counter."
     ],
-    specialRules: ["No castling", "Makruk promotion", "Counting/draw mode"],
+    specialRules: ["No castling or opening leap", "Sixth-rank promotion", "With no unpromoted pawns left, claim board honor on your turn: count your moves from 1 to 64. Stop before playing for a win; a new claim restarts at 1. The opponent may accept a draw.", "A bare king with no unpromoted pawns anywhere automatically starts piece honor, replacing board honor. Start at all remaining pieces plus one; freeze the shortest limit: two rooks 8, one rook 16, two Khon 22, two horses 32, one Khon 44, otherwise 64.", "Only the escaping player's moves count. The first announces the starting number; exceeding the limit draws. Captures never reset a piece count."],
     winConditions: ["Checkmate", "Timeout", "Resignation"],
-    drawConditions: ["Makruk counting rules in rules mode", "Stalemate or repetition according to selected mode"],
+    drawConditions: ["Honor count exceeds its limit", "Chaser accepts a board-count draw", "Board-count claimant gives mate without stopping", "Stalemate or only two kings"],
     illegalMoveNotes: ["No castling is allowed.", "Promotion follows Makruk piece rules.", "A king may not stay in check."]
   },
   jungle: {
@@ -419,9 +419,11 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
     verifiedEdgeCases: [
       "Makruk setup uses one royal king and one Met per side with no castling.",
       "Native Met, Khon, knight, rook, king, and pawn movement have fixtures.",
-      "Pawns do not double-push or en-passant and promote to Met on the sixth rank. Legacy automatic counting has fixtures; these do not verify the published honor-count profile."
+      "Pawns do not double-push or en-passant and promote to Met on the sixth rank.",
+      "Versioned honor counting covers optional board claims, automatic bare-king transition, fixed limits, escaping-player moves, and count 9 against two rooks. Legacy saves retain their earlier counter.",
+      "Count-aware bot preparation, saved timelines, three endgame exercises, and authoritative friend-room claims have fixtures."
     ],
-    remainingGates: ["Replace legacy automatic counting with optional board-honor claims, escaping-player move counts and fixed piece-honor limits before claiming complete Makruk rules."]
+    remainingGates: ["Ranked matchmaking still needs honor-count action integration; the controls currently support local, bot and friend-room play.", "Referee-dependent tournament interpretations require separate verification from the published digital profile."]
   },
   jungle: {
     status: "verified-playable",

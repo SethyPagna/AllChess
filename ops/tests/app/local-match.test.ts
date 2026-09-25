@@ -2,6 +2,8 @@ import { describe, expect, test } from "vitest";
 import { applyMove, createInitialState, getLegalMoves, variantCatalog, type GameState } from "@/lib/variants";
 import { applyOukCountAction, readOukCount } from "@/lib/variants/ouk-counting";
 import { createOukEndgame } from "@/lib/variants/ouk-endgames";
+import { createMakrukEndgame } from "@/lib/variants/makruk-endgames";
+import { applyMakrukCountAction, readMakrukHonorCount } from "@/lib/variants/makruk-counting";
 import { decodeLocalMatch, encodeLocalMatch, type LocalMatchRecord, type LocalMatchSnapshot } from "@/lib/game/local-match";
 import { botDifficultyLevels } from "@/lib/bot/config";
 
@@ -18,6 +20,19 @@ function roundtrip(value: LocalMatchSnapshot) {
 }
 
 describe("saved local matches", () => {
+  test("Makruk honor claims, fixed limits and legacy profiles survive undo/redo snapshots", () => {
+    for (const key of ["two-rooks", "board-honor"] as const) {
+      let start = createMakrukEndgame(key);
+      if (key === "board-honor") start = applyMakrukCountAction(start, "white", "start-board");
+      const next = applyMove(start, { from: { row: 7, col: 0 }, to: { row: 7, col: 1 } });
+      const saved = roundtrip(snapshot(next, [start]));
+      expect(readMakrukHonorCount(saved.state)).toMatchObject({ firstMovePending: false, count: key === "two-rooks" ? 5 : 1 });
+      expect(saved.state.variantState?.makrukCountEvents).toEqual(start.variantState?.makrukCountEvents);
+      roundtrip(snapshot(start, [], [next]));
+    }
+    const legacy = createInitialState("makruk"); delete legacy.variantState;
+    expect(roundtrip(snapshot(legacy)).state.variantState).toBeUndefined();
+  });
   test.each(variantCatalog.map(variant => variant.key))("%s preserves positions, clocks and undo/redo across legal moves", key => {
     let state = createInitialState(key); const timeline = [state];
     for (let i = 0; i < 10 && state.status === "active"; i++) {
