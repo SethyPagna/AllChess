@@ -48,7 +48,9 @@ export default function Board3D(props: Props) {
     const layout = board3DLayout(props.collection, rows, cols);
     const japanese = props.collection === "shogi";
     const thai = props.collection === "makruk";
-    const plainGrid = japanese || thai;
+    const draughts = props.collection === "draughts";
+    const plainGrid = japanese || thai || props.variantKey === "turkish-draughts";
+    const checkered = props.collection === "classic" || (draughts && !plainGrid);
     const intersection = props.collection === "xiangqi" || props.collection === "janggi";
     const lettered = japanese || intersection;
     const camera = new THREE.PerspectiveCamera(tabletopFieldOfView, tabletopAspect, .01, 10);
@@ -132,14 +134,14 @@ export default function Board3D(props: Props) {
           const materials = Array.isArray(child.material) ? child.material : [child.material];
           const paintedInk = lettered && materials.every(material => /ink/i.test(material.name));
           child.castShadow = !paintedInk; child.receiveShadow = !paintedInk;
-          if (current.finish === "original" && !(japanese || current.collection === "xiangqi")) return;
+          if (current.finish === "original" && !(japanese || current.collection === "xiangqi" || draughts)) return;
           const finish = (original: THREE.Material) => {
             if (!(original instanceof THREE.MeshStandardMaterial) || /brass|inlay|felt|ink/i.test(original.name)) return original;
             const id = `${original.uuid}:${light}`;
             let changed = finishMaterials.get(id);
             if (!changed) {
               const copy = original.clone();
-              if (japanese || current.collection === "xiangqi") { copy.map = tabletop.grain; copy.bumpMap = tabletop.grain; copy.bumpScale = .000035; }
+              if (japanese || current.collection === "xiangqi" || draughts) { copy.map = tabletop.grain; copy.bumpMap = tabletop.grain; copy.bumpScale = .000035; }
               if (current.finish !== "original") {
                 copy.color.set(current.finish === "porcelain" ? (light || lettered) ? 0xfff7e6 : 0x24313b : (light || lettered) ? 0xe2e9e9 : 0x385773);
                 copy.roughness = current.finish === "porcelain" ? .2 : .65; copy.metalness = 0;
@@ -166,7 +168,7 @@ export default function Board3D(props: Props) {
         const isSelected = current.selected && sameSquare(current.selected, cell.square);
         const legal = current.legalTargets.has(serializeSquare(cell.square));
         const last = current.lastMove && (sameSquare(current.lastMove.from, cell.square) || sameSquare(current.lastMove.to, cell.square));
-        const color = new THREE.Color(japanese && current.boardTheme === "wood" ? 0xd9b77d : palette[current.collection !== "classic" ? 0 : (cell.square.row + cell.square.col) % 2]);
+        const color = new THREE.Color((japanese || (draughts && plainGrid)) && current.boardTheme === "wood" ? 0xd9b77d : palette[checkered ? (cell.square.row + cell.square.col) % 2 : 0]);
         const objective = current.variantKey === "king-of-the-hill" && [3,4].includes(cell.square.row) && [3,4].includes(cell.square.col) || current.variantKey === "racing-kings" && cell.square.row === 0;
         if (objective) color.lerp(new THREE.Color(0xd6a648), .4);
         if (last) color.lerp(new THREE.Color(0xd9bb45), .35);
@@ -177,7 +179,7 @@ export default function Board3D(props: Props) {
           const material = new THREE.MeshBasicMaterial({ color: isSelected ? 0x9b5e00 : 0xb08a36, side: THREE.DoubleSide }); disposableMaterials.push(material);
           const halo = new THREE.Mesh(ringGeometry, material); halo.rotation.x = -Math.PI/2; halo.position.set(tile.position.x,.0027,tile.position.z); meshes.add(halo);
         }
-        if (legal || (cell.piece?.promoted && !japanese)) {
+        if (legal || (cell.piece?.promoted && !japanese && !draughts)) {
           const marker = new THREE.Mesh(legal ? cell.piece ? ringGeometry : dotGeometry : promotionGeometry, legal ? markerMaterial : promotionMaterial);
           marker.rotation.x = -Math.PI/2; marker.position.set(tile.position.x, .0028, tile.position.z); marker.userData.square = cell.square; meshes.add(marker);
         }
@@ -250,7 +252,7 @@ export default function Board3D(props: Props) {
     function lost(event: Event) { event.preventDefault(); contextLost = true; fail("The 3D display was interrupted. Continue on the 2D board."); }
     renderer.domElement.addEventListener("pointerdown", down); renderer.domElement.addEventListener("pointerup", up); renderer.domElement.addEventListener("pointercancel", cancel);
     renderer.domElement.addEventListener("webglcontextlost", lost);
-    renderer.domElement.setAttribute("aria-label", `${props.collection === "khmer" ? "Cambodian" : japanese ? props.variantKey === "mini-shogi" ? "Mini Shogi" : "Shogi" : intersection ? props.collection === "xiangqi" ? "Xiangqi" : "Janggi" : thai ? "Makruk" : "Classic"} 3D board. Tap pieces and marked squares to move.${japanese ? " Tap captured tiles on the side stands to drop them." : ""} Drag to orbit. Use 2D for keyboard play.`);
+    renderer.domElement.setAttribute("aria-label", `${props.collection === "khmer" ? "Cambodian" : japanese ? props.variantKey === "mini-shogi" ? "Mini Shogi" : "Shogi" : intersection ? props.collection === "xiangqi" ? "Xiangqi" : "Janggi" : thai ? "Makruk" : draughts ? props.variantKey === "international-draughts" ? "International draughts" : props.variantKey === "turkish-draughts" ? "Turkish draughts" : "English draughts" : "Classic"} 3D board. Tap pieces and marked squares to move.${japanese ? " Tap captured tiles on the side stands to drop them." : ""} Drag to orbit. Use 2D for keyboard play.`);
     function disposeModel(group: THREE.Group) { group.traverse(object => { if (object instanceof THREE.Mesh) { object.geometry.dispose(); const materials = Array.isArray(object.material) ? object.material : [object.material]; materials.forEach(material => material.dispose()); } }); }
     new GLTFLoader().load(`/assets/${props.collection}/collection.glb`, gltf => {
       if (disposed) { disposeModel(gltf.scene); return; }

@@ -1,17 +1,19 @@
 import type { BoardThemePreference } from "./appearance";
 
-export type PieceCollection = "khmer" | "classic" | "shogi" | "xiangqi" | "janggi" | "makruk";
+export type PieceCollection = "khmer" | "classic" | "shogi" | "xiangqi" | "janggi" | "makruk" | "draughts";
 export type PieceFinish = "original" | "porcelain" | "slate";
 
 const classicVariants = new Set(["classic", "chess960", "crazyhouse", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"]);
 export function get3DCollection(variantKey: string): PieceCollection | null {
   if (variantKey === "ouk-chaktrang") return "khmer";
   if (variantKey === "shogi" || variantKey === "mini-shogi") return "shogi";
+  if (["english-draughts", "international-draughts", "turkish-draughts"].includes(variantKey)) return "draughts";
   if (variantKey === "xiangqi" || variantKey === "janggi" || variantKey === "makruk") return variantKey;
   return classicVariants.has(variantKey) ? "classic" : null;
 }
 
 export const collectionPieces: Record<PieceCollection, Record<string, string>> = {
+  draughts: { p: "man", x: "king" },
   makruk: { k: "khun", m: "met", s: "khon", n: "ma", r: "ruea", p: "bia" },
   khmer: { k: "Khon_king", m: "Neang_queen", s: "Koul_bishop", n: "Ses_horse", r: "Touk_boat", p: "Trey_fish" },
   classic: { k: "king", q: "queen", b: "bishop", n: "knight", r: "rook", p: "pawn" },

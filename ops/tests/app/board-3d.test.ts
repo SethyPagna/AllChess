@@ -10,7 +10,7 @@ describe("playable 3D collections", () => {
     for (const variant of variantCatalog) {
       const collection = get3DCollection(variant.key);
       if (!collection) continue;
-      expect(variant.board).toMatchObject(collection === "shogi" ? { rows: variant.key === "mini-shogi" ? 5 : 9, cols: variant.key === "mini-shogi" ? 5 : 9 } : collection === "xiangqi" || collection === "janggi" ? { rows: 10, cols: 9 } : { rows: 8, cols: 8 });
+      expect(variant.board).toMatchObject(variant.key === "international-draughts" ? { rows: 10, cols: 10 } : collection === "shogi" ? { rows: variant.key === "mini-shogi" ? 5 : 9, cols: variant.key === "mini-shogi" ? 5 : 9 } : collection === "xiangqi" || collection === "janggi" ? { rows: 10, cols: 9 } : { rows: 8, cols: 8 });
       for (const cell of createInitialState(variant.key).board.flat()) {
         if (cell.piece) expect(collectionPieces[collection][cell.piece.code], `${variant.key}: ${cell.piece.code}`).toBeTruthy();
       }
@@ -18,7 +18,7 @@ describe("playable 3D collections", () => {
     for (const regional of ["shatranj", "chaturanga"]) expect(get3DCollection(regional)).toBeNull();
   });
 
-  for (const collection of ["classic", "khmer", "shogi", "xiangqi", "janggi", "makruk"] as const) {
+  for (const collection of ["classic", "khmer", "shogi", "xiangqi", "janggi", "makruk", "draughts"] as const) {
     test(`${collection} GLB has complete named pieces at playable scale without external dependencies`, async () => {
       const bytes = readFileSync(`public/assets/${collection}/collection.glb`);
       expect(bytes.length).toBeLessThan(1_000_000);
@@ -38,6 +38,11 @@ describe("playable 3D collections", () => {
           expect(size.z).toBeGreaterThan(.01); expect(size.z).toBeLessThan(.053);
           expect(size.y).toBeGreaterThan(.009); expect(size.y).toBeLessThan(.075);
           expect(Math.abs(box.min.y)).toBeLessThan(.003);
+          if (collection === "draughts") {
+            expect(size.y).toBeCloseTo(name === "king" ? .022 : .011, 4);
+            expect(root!.children.filter(child => /counter/.test(child.name))).toHaveLength(name === "king" ? 2 : 1);
+            expect(size.x).toBeCloseTo(.042, 4);
+          }
           if (collection === "shogi") {
             const inks: MeshStandardMaterial[] = [];
             root!.traverse(child => { if (child instanceof Mesh) for (const material of Array.isArray(child.material) ? child.material : [child.material]) if (/ink/i.test(material.name)) inks.push(material); });
@@ -67,7 +72,7 @@ describe("playable 3D collections", () => {
     expect(pieceModelName("makruk", "p", true)).toBe("light_bia");
   });
 
-  test.each(["classic", "ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi", "makruk"])("%s angled camera contains its physical board and edge pieces", key => {
+  test.each(["classic", "ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi", "makruk", "english-draughts", "international-draughts", "turkish-draughts"])("%s angled camera contains its physical board and edge pieces", key => {
     const variant = variantCatalog.find(variant => variant.key === key)!;
     const collection = get3DCollection(key)!;
     const layout = board3DLayout(collection, variant.board.rows, variant.board.cols);
