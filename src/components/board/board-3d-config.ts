@@ -1,18 +1,31 @@
 import type { BoardThemePreference } from "./appearance";
 
-export type PieceCollection = "khmer" | "classic";
+export type PieceCollection = "khmer" | "classic" | "shogi";
 export type PieceFinish = "original" | "porcelain" | "slate";
 
 const classicVariants = new Set(["classic", "chess960", "crazyhouse", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"]);
 export function get3DCollection(variantKey: string): PieceCollection | null {
   if (variantKey === "ouk-chaktrang") return "khmer";
+  if (variantKey === "shogi" || variantKey === "mini-shogi") return "shogi";
   return classicVariants.has(variantKey) ? "classic" : null;
 }
 
 export const collectionPieces: Record<PieceCollection, Record<string, string>> = {
   khmer: { k: "Khon_king", m: "Neang_queen", s: "Koul_bishop", n: "Ses_horse", r: "Touk_boat", p: "Trey_fish" },
-  classic: { k: "king", q: "queen", b: "bishop", n: "knight", r: "rook", p: "pawn" }
+  classic: { k: "king", q: "queen", b: "bishop", n: "knight", r: "rook", p: "pawn" },
+  shogi: { k: "king", r: "rook", b: "bishop", g: "gold", s: "silver", n: "knight", l: "lance", p: "pawn" }
 };
+
+export const shogiPromotedCodes = new Set(["r", "b", "s", "n", "l", "p"]);
+export function pieceModelName(collection: PieceCollection, code: string, firstSide: boolean, promoted = false) {
+  return `${firstSide ? "light" : "dark"}_${collection === "shogi" && promoted && shogiPromotedCodes.has(code) ? "promoted_" : ""}${collectionPieces[collection][code]}`;
+}
+
+export function board3DLayout(collection: PieceCollection, rows: number, cols: number) {
+  const pitchX = .053, pitchZ = collection === "shogi" ? .057 : .053;
+  const width = cols * pitchX, depth = rows * pitchZ;
+  return { pitchX, pitchZ, width, depth, cameraScale: Math.max(.85, Math.max(width, depth) / .424), edgeX: width / 2 + .015, edgeZ: depth / 2 + .015 };
+}
 
 export const board3DPalettes: Record<BoardThemePreference, readonly [number, number]> = {
   classic: [0xddd0ad, 0x60764e], wood: [0xbd925e, 0x765039], jade: [0xdbe2c6, 0x6f947d],

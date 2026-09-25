@@ -22,7 +22,7 @@ function woodGrain() {
   return texture;
 }
 
-export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRenderer) {
+export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRenderer, width = .424, depth = .424, japanese = false) {
   const grain = woodGrain();
   grain.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   const environment = new RoomEnvironment();
@@ -34,26 +34,32 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
   scene.fog = new THREE.Fog(0x171b1a, 1.8, 4);
   const group = new THREE.Group(); scene.add(group);
   const geometries: THREE.BufferGeometry[] = [], materials: THREE.Material[] = [];
-  const walnut = new THREE.MeshPhysicalMaterial({ color: 0x493022, map: grain, bumpMap: grain, bumpScale: .00015, roughness: .32, clearcoat: .6, clearcoatRoughness: .28 });
+  const walnut = new THREE.MeshPhysicalMaterial({ color: japanese ? 0xc79b57 : 0x493022, map: grain, bumpMap: grain, bumpScale: .00015, roughness: japanese ? .48 : .32, clearcoat: japanese ? .2 : .6, clearcoatRoughness: .28 });
   const edge = new THREE.MeshPhysicalMaterial({ color: 0x251b16, map: grain, roughness: .28, clearcoat: .7, clearcoatRoughness: .25 });
   const brass = new THREE.MeshStandardMaterial({ color: 0xb69757, metalness: .82, roughness: .3 });
-  const felt = new THREE.MeshStandardMaterial({ color: 0x142620, roughness: .96 });
+  const felt = new THREE.MeshStandardMaterial({ color: japanese ? 0x202521 : 0x142620, roughness: .96 });
   materials.push(walnut, edge, brass, felt);
   function block(size: [number, number, number], position: [number, number, number], material: THREE.Material, radius: number) {
     const geometry = new RoundedBoxGeometry(...size, 3, radius); geometries.push(geometry);
     const mesh = new THREE.Mesh(geometry, material); mesh.position.set(...position); mesh.castShadow = true; mesh.receiveShadow = true; group.add(mesh);
     return mesh;
   }
-  // A thick, bevelled case, a fine brass reveal, and a raised wooden rim.
-  block([.49,.04,.49], [0,-.029,0], edge, .006);
-  block([.484,.002,.484], [0,-.008,0], brass, .001);
-  block([.48,.009,.48], [0,-.003,0], walnut, .002);
-  for (const z of [-.227,.227]) block([.48,.009,.027], [0,.001,z], walnut, .002);
-  for (const x of [-.227,.227]) block([.027,.009,.428], [x,.001,0], walnut, .002);
-  for (const x of [-.185,.185]) for (const z of [-.185,.185]) block([.043,.012,.043], [x,-.055,z], edge, .004);
+  if (japanese) {
+    // A solid kaya-coloured block with softly cut legs; the plain grid sits flush.
+    block([width+.058,.066,depth+.058], [0,-.031,0], walnut, .003);
+    for (const x of [-width*.37,width*.37]) for (const z of [-depth*.37,depth*.37]) block([.036,.027,.036], [x,-.0775,z], walnut, .008);
+  } else {
+    // A thick, bevelled case, a fine brass reveal, and a raised wooden rim.
+    block([width+.066,.04,depth+.066], [0,-.029,0], edge, .006);
+    block([width+.06,.002,depth+.06], [0,-.008,0], brass, .001);
+    block([width+.056,.009,depth+.056], [0,-.003,0], walnut, .002);
+    for (const z of [-depth/2-.015,depth/2+.015]) block([width+.056,.009,.027], [0,.001,z], walnut, .002);
+    for (const x of [-width/2-.015,width/2+.015]) block([.027,.009,depth+.004], [x,.001,0], walnut, .002);
+    for (const x of [-width*.436,width*.436]) for (const z of [-depth*.436,depth*.436]) block([.043,.012,.043], [x,-.055,z], edge, .004);
+  }
   // The board actually rests on a table and casts a shadow onto it.
   const tableGeometry = new THREE.PlaneGeometry(8,8); geometries.push(tableGeometry);
-  const table = new THREE.Mesh(tableGeometry, felt); table.rotation.x = -Math.PI/2; table.position.y = -.061; table.receiveShadow = true; group.add(table);
+  const table = new THREE.Mesh(tableGeometry, felt); table.rotation.x = -Math.PI/2; table.position.y = japanese ? -.091 : -.061; table.receiveShadow = true; group.add(table);
   const ambient = new THREE.HemisphereLight(0xe8e9e2, 0x1b211b, .45); scene.add(ambient);
   const key = new THREE.SpotLight(0xffe4bc, 3.2, 3, Math.PI/5, .65, 2);
   key.position.set(-.38,.85,.25); key.target.position.set(0,0,0);

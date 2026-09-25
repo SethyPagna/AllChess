@@ -58,13 +58,14 @@ function harness() {
 
 describe("public offline play pack", () => {
   test("cold launch serves a complete shell, chunks, and local-only redirect without room secrets", async () => {
-    const sw = harness(); await sw.lifecycle("install"); sw.manifest("first");
+    const sw = harness(); await sw.lifecycle("install"); sw.manifest("first", "Public board shell", [{ url: "/assets/shogi/collection.glb", value: "Shogi GLB" }]);
     expect((await sw.message("DOWNLOAD_OFFLINE")).at(-1)).toEqual({ ready: true });
     sw.network.delete("/_next/static/chunks/board.123.js");
     expect(await (await sw.request("/_next/static/chunks/board.123.js", "cors"))!.text()).toBe("board code");
     sw.offline();
     expect(await (await sw.request("/offline?game=classic"))!.text()).toBe("Public board shell");
     expect(await (await sw.request("/_next/static/chunks/board.123.js?dpl=build123", "cors"))!.text()).toBe("board code");
+    expect(await (await sw.request("/assets/shogi/collection.glb", "cors"))!.text()).toBe("Shogi GLB");
     const redirect = await sw.request("/km/play/ouk-chaktrang?mode=room&room=private&token=secret&time=rapid&resume=local-save");
     expect(redirect!.headers.get("location")).toBe(origin + "/offline?locale=km&game=ouk-chaktrang&time=rapid&resume=local-save");
     expect((await sw.message("OFFLINE_STATUS")).at(-1)).toEqual({ ready: true });
