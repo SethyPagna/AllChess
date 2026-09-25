@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { shogiStands } from "./shogi-stands";
 
 /** Small, deterministic grain map. No external textures or continuous render loop. */
 function woodGrain() {
@@ -48,6 +49,11 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
     // A solid kaya-coloured block with softly cut legs; the plain grid sits flush.
     block([width+.058,.066,depth+.058], [0,-.031,0], walnut, .003);
     for (const x of [-width*.37,width*.37]) for (const z of [-depth*.37,depth*.37]) block([.036,.027,.036], [x,-.0775,z], walnut, .008);
+    for (const stand of shogiStands(width, depth)) {
+      block([stand.size,.018,stand.size], [stand.x,-.007,stand.z], walnut, .0025);
+      block([.034,.063,.034], [stand.x,-.0475,stand.z], walnut, .004);
+      block([.112,.012,.112], [stand.x,-.085,stand.z], walnut, .004);
+    }
   } else {
     // A thick, bevelled case, a fine brass reveal, and a raised wooden rim.
     block([width+.066,.04,depth+.066], [0,-.029,0], edge, .006);

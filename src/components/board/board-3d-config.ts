@@ -29,7 +29,9 @@ export function pieceModelName(collection: PieceCollection, code: string, firstS
 export function board3DLayout(collection: PieceCollection, rows: number, cols: number) {
   const pitchX = .053, pitchZ = collection === "shogi" ? .057 : .053;
   const width = cols * pitchX, depth = rows * pitchZ;
-  return { pitchX, pitchZ, width, depth, cameraScale: Math.max(.85, Math.max(width, depth) / .424), edgeX: width / 2 + .015, edgeZ: depth / 2 + .015 };
+  // The two komadai belong in the default Shogi composition, even while empty.
+  const cameraScale = Math.max(.85, Math.max(width, depth) / .424, collection === "shogi" ? (width + .438) / .65 : 0);
+  return { pitchX, pitchZ, width, depth, cameraScale, edgeX: width / 2 + .015, edgeZ: depth / 2 + .015 };
 }
 
 export const board3DPalettes: Record<BoardThemePreference, readonly [number, number]> = {

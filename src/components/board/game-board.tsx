@@ -613,7 +613,7 @@ export function GameBoard({
   );
 
   function playerCard(color: Piece["owner"], placement: "top" | "bottom") {
-    const handCounts = state.hands?.[color] ?? {};
+    const handCounts = displayState.hands?.[color] ?? {};
     const canUseHand = canHumanMove(color) && Object.values(handCounts).some((count) => count > 0);
     const isBotSeat = color === botColor && botMode !== "human";
     const isHumanSeat = color === humanColor;
@@ -637,7 +637,7 @@ export function GameBoard({
         playerAvatarLabel={isBotSeat ? "AI" : isHumanSeat ? "YOU" : "G2"}
         playerLabel={isBotSeat ? undefined : guestName}
         placement={placement}
-        selectedHandCode={color === state.turn ? selectedHandCode : null}
+        selectedHandCode={!isReviewing && color === state.turn ? selectedHandCode : null}
         supportsDrops={supportsDrops}
         thinking={thinking.status === "thinking"}
         timeControl={timeControl}
@@ -761,7 +761,7 @@ export function GameBoard({
   }
 
   function chooseHandPiece(color: Piece["owner"], code: string) {
-    if (!canHumanMove(color)) return;
+    if (!canHumanMove(color) || (state.hands?.[color]?.[code] ?? 0) <= 0) return;
     setSelected(null);
     setSelectedHandCode((current) => (current === code ? null : code));
     setNotice(null);
@@ -1436,7 +1436,7 @@ export function GameBoard({
         {variantKey === "ouk-chaktrang" && gameStarted ? <OukCountingPanel state={displayState} actor={botMode === "opponent" ? humanColor : state.turn} localTwoPlayer={!isOnlineMode && !isSpectating && botMode === "human"} disabled={localPaused || isReviewing || isOnlineMode || isSpectating || botMode === "both"} onAction={changeOukCount} /> : null}
         <div className="board-shell" data-view={boardView === "3d" && collection3D ? "3d" : "2d"} data-variant={displayState.variantKey} data-board-theme={boardTheme} data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
-            {boardView === "3d" && collection3D ? <Board3D key={variantKey} collection={collection3D} variantKey={variantKey} orientedRows={orientedRows} legalTargets={legalTargets} selected={selected} onChoose={choose} boardTheme={boardTheme} lastMove={displayState.moves.at(-1)} finish={pieceFinish} onFallback={() => changeBoardView("2d")} /> : <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} lastMove={displayState.moves.at(-1)} variantKey={displayState.variantKey} />}
+            {boardView === "3d" && collection3D ? <Board3D key={variantKey} collection={collection3D} variantKey={variantKey} orientedRows={orientedRows} legalTargets={legalTargets} selected={selected} onChoose={choose} boardTheme={boardTheme} lastMove={displayState.moves.at(-1)} finish={pieceFinish} hands={displayState.hands} selectedHand={!isReviewing && selectedHandCode ? { owner: state.turn, code: selectedHandCode } : null} onChooseHand={chooseHandPiece} onFallback={() => changeBoardView("2d")} /> : <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} lastMove={displayState.moves.at(-1)} variantKey={displayState.variantKey} />}
             {selectedHandCode && selectedHandLabel ? <DropSelectionHint legalTargetCount={legalTargets.size} locale={locale} onCancel={cancelHandDrop} pieceCode={selectedHandCode} pieceLabel={selectedHandLabel} pieceOwner={state.turn} pieceSkin={pieceSkin} variantKey={displayState.variantKey} /> : null}
             {pendingPromotion ? (
               <PromotionChoiceCard locale={locale} onChoose={choosePromotion} pieceCode={pendingPromotion.pieceCode} pieceLabel={pendingPromotion.pieceLabel} pieceOwner={pendingPromotion.pieceOwner} pieceSkin={pieceSkin} promotedPieceLabel={pendingPromotion.promotedPieceLabel} variantKey={displayState.variantKey} />

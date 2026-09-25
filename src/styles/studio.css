@@ -293,6 +293,7 @@ button:disabled { cursor: not-allowed; }
 @media (max-width: 400px) { .board-finish-buttons { margin-left: 0; } .board-3d-status { font-size: 10px; } }
 
 .board-shell[data-view="3d"], .board-shell[data-view="3d"] > .board-stage { aspect-ratio: auto; }
+.board-shell[data-view="3d"] .drop-selection-card { position: relative; inset: auto; transform: none; margin: 6px auto 0; box-shadow: none; }
 
 /* Public offline play uses the same boards in a compact standalone shell. */
 .offline-play { max-width: 1480px; margin: auto; padding: 20px; }
