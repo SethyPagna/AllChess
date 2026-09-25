@@ -10,15 +10,15 @@ describe("playable 3D collections", () => {
     for (const variant of variantCatalog) {
       const collection = get3DCollection(variant.key);
       if (!collection) continue;
-      expect(variant.board).toMatchObject(collection === "shogi" ? { rows: variant.key === "mini-shogi" ? 5 : 9, cols: variant.key === "mini-shogi" ? 5 : 9 } : { rows: 8, cols: 8 });
+      expect(variant.board).toMatchObject(collection === "shogi" ? { rows: variant.key === "mini-shogi" ? 5 : 9, cols: variant.key === "mini-shogi" ? 5 : 9 } : collection === "xiangqi" || collection === "janggi" ? { rows: 10, cols: 9 } : { rows: 8, cols: 8 });
       for (const cell of createInitialState(variant.key).board.flat()) {
         if (cell.piece) expect(collectionPieces[collection][cell.piece.code], `${variant.key}: ${cell.piece.code}`).toBeTruthy();
       }
     }
-    for (const regional of ["shatranj", "chaturanga", "makruk", "xiangqi", "janggi"]) expect(get3DCollection(regional)).toBeNull();
+    for (const regional of ["shatranj", "chaturanga", "makruk"]) expect(get3DCollection(regional)).toBeNull();
   });
 
-  for (const collection of ["classic", "khmer", "shogi"] as const) {
+  for (const collection of ["classic", "khmer", "shogi", "xiangqi", "janggi"] as const) {
     test(`${collection} GLB has complete named pieces at playable scale without external dependencies`, async () => {
       const bytes = readFileSync(`public/assets/${collection}/collection.glb`);
       expect(bytes.length).toBeLessThan(1_000_000);
@@ -60,7 +60,7 @@ describe("playable 3D collections", () => {
     expect(pieceModelName("shogi", "k", false)).toBe("dark_king");
   });
 
-  test.each(["classic", "ouk-chaktrang", "shogi", "mini-shogi"])("%s angled camera contains its physical board and edge pieces", key => {
+  test.each(["classic", "ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi"])("%s angled camera contains its physical board and edge pieces", key => {
     const variant = variantCatalog.find(variant => variant.key === key)!;
     const collection = get3DCollection(key)!;
     const layout = board3DLayout(collection, variant.board.rows, variant.board.cols);

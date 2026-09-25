@@ -565,8 +565,8 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
   {
     id: "janggi-start-central-soldier",
     variantKey: "janggi",
-    positionKey: "janggi|turn:red|moves:",
-    moveUci: "e4e5",
+    positionKey: "janggi|turn:blue|moves:",
+    moveUci: "e7e6",
     source: "opening-book",
     minTier: "easy",
     confidence: 0.8,
@@ -574,9 +574,9 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
     tags: ["opening", "janggi", "soldier", "palace-pressure"],
     explanation: {
       plan: "Advance the central soldier to claim space while keeping palace lanes and cannon screens flexible.",
-      threat: "Red starts asking Blue to defend central files before the chariots and cannons are fully active.",
+      threat: "Blue starts asking Red to defend central files before the chariots and cannons are fully active.",
       risk: "The soldier cannot retreat, so the bot should avoid overextending without nearby cannon or chariot support.",
-      fallbackGoal: "If Blue blocks the center, shift to palace-line pressure and preserve the general's escape squares."
+      fallbackGoal: "If Red blocks the center, shift to palace-line pressure and preserve the general's escape squares."
     }
   },
   {
@@ -873,21 +873,21 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
   },
   {
     variantKey: "janggi",
-    line: ["e4e5", "b10c8"],
+    line: ["e7e6", "b1c3"],
     family: "palace pressure",
     plan: "Advance a central soldier and answer with a horse route that preserves cannon screens.",
     risk: "Palace movement and facing generals must remain validated by the native adapter."
   },
   {
     variantKey: "janggi",
-    line: ["c4c5", "b10c8"],
+    line: ["c7c6", "b1c3"],
     family: "palace flank pressure",
     plan: "Cache a second Janggi soldier lane while preserving horse development and cannon screens.",
     risk: "Facing generals and palace geometry must override any stale cached reply."
   },
   {
     variantKey: "janggi",
-    line: ["g4g5", "b10c8"],
+    line: ["g7g6", "b1c3"],
     family: "palace wing pressure",
     plan: "Add a right-side Janggi soldier lane with the same compact horse reply.",
     risk: "Palace geometry, cannon screens, and facing-general constraints still decide whether the cache is usable."

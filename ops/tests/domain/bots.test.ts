@@ -585,7 +585,7 @@ describe("bot difficulty ladder", () => {
       xiangqi: "b10c8",
       shogi: "c9d8",
       "mini-shogi": "c5c4",
-      janggi: "b10c8",
+      janggi: "b1c3",
       jungle: "a9a8",
       "english-draughts": "b6a5",
       "international-draughts": "c7b6",
@@ -833,7 +833,7 @@ describe("bot difficulty ladder", () => {
     const hit = lookupBotKnowledge(state, "easy");
 
     expect(hit?.entry).toEqual(expect.objectContaining({ variantKey: "janggi", minTier: "easy", source: "opening-book" }));
-    expect(hit?.move).toMatchObject({ from: { row: 6, col: 4 }, to: { row: 5, col: 4 } });
+    expect(hit?.move).toMatchObject({ from: { row: 3, col: 4 }, to: { row: 4, col: 4 } });
     expect(() => applyMove(state, hit!.move)).not.toThrow();
 
     const result = await requestBotMove(state, "easy", { engine: "auto", maxSearchTimeMs: MAX_BOT_REPLY_MS });

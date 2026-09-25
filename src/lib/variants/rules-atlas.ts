@@ -144,17 +144,17 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
   },
   janggi: {
     variantKey: "janggi",
-    sourceLinks: [{ name: "AllChess Janggi rules profile", url: "https://en.wikipedia.org/wiki/Janggi" }],
+    sourceLinks: [{ name: "PyChess Janggi reference", url: "https://www.pychess.org/variants/janggi" }],
     numberedBasics: [
-      "Play on a 9x10 intersection board with palaces.",
-      "Generals, guards, elephants, horses, chariots, cannons, and soldiers use Janggi movement.",
-      "Palace diagonals and facing-general rules must be implemented.",
-      "Checkmate wins; repetition/pass/scoring policy must be locked to the selected AllChess ruleset."
+      "Blue Cho moves first. Red Han receives 1.5 points when two passes trigger material scoring.",
+      "Play on 9x10 intersections without a river. Generals start in palace centres; this opening places elephants inside horses.",
+      "Palace diagonals extend some moves. Cannons need a non-cannon screen and cannot capture another cannon.",
+      "Checkmate wins. In this app's casual profile, leaving a bikjang challenge unanswered draws; two passes compare material points."
     ],
     specialRules: ["Palace diagonals", "Cannon screens", "No river", "Facing generals", "Optional pass in rules mode"],
-    winConditions: ["Checkmate", "Timeout", "Scoring decision in supported tournament mode"],
-    drawConditions: ["Repetition/pass scoring according to AllChess rules mode", "Mutual agreement"],
-    illegalMoveNotes: ["Generals may not face directly.", "Cannon movement requires the correct screen behavior.", "A player may not remain in check."]
+    winConditions: ["Checkmate", "Timeout", "Higher material score after consecutive passes"],
+    drawConditions: ["Unanswered bikjang in this casual profile", "Repetition", "Mutual agreement"],
+    illegalMoveNotes: ["A cannon cannot screen or capture another cannon.", "Passing is unavailable in check.", "A player may not remain in check."]
   },
   "ouk-chaktrang": {
     variantKey: "ouk-chaktrang",

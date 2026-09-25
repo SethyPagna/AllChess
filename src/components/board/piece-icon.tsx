@@ -552,8 +552,8 @@ function getNativeGlyph({ code, owner, variantKey, promoted }: { code: string; o
     return (owner === "red" ? red : black)[code] ?? nativeGlyphs[code] ?? code.toUpperCase();
   }
   if (variantKey === "janggi") {
-    const red: Record<string, string> = { g: "\u695a", a: "\u58eb", e: "\u8c61", h: "\u99ac", r: "\u8eca", c: "\u5305", p: "\u5352" };
-    const blue: Record<string, string> = { g: "\u6f22", a: "\u58eb", e: "\u8c61", h: "\u99ac", r: "\u8eca", c: "\u5305", p: "\u5175" };
+    const blue: Record<string, string> = { g: "\u695a", a: "\u58eb", e: "\u8c61", h: "\u99ac", r: "\u8eca", c: "\u5305", p: "\u5352" };
+    const red: Record<string, string> = { g: "\u6f22", a: "\u58eb", e: "\u8c61", h: "\u99ac", r: "\u8eca", c: "\u5305", p: "\u5175" };
     return (owner === "blue" ? blue : red)[code] ?? nativeGlyphs[code] ?? code.toUpperCase();
   }
   if (isShogiPresentation(variantKey)) {

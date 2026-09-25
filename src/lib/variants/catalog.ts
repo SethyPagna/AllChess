@@ -143,7 +143,7 @@ export const variantCatalog: VariantDefinition[] = [
     supportsCastling: false,
     supportsCheck: true,
     objective: "Checkmate the opposing general on a palace board.",
-    setup: ["rheagaehr", ".........", ".c.....c.", "p.p.p.p.p", ".........", ".........", "P.P.P.P.P", ".C.....C.", ".........", "RHEAGAEHR"],
+    setup: ["rhea.aehr", "....g....", ".c.....c.", "p.p.p.p.p", ".........", ".........", "P.P.P.P.P", ".C.....C.", "....G....", "RHEA.AEHR"],
     aliases: ["korean-chess"]
   },
   {

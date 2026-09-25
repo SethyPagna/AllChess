@@ -75,7 +75,7 @@ export function createInitialState(variantKey: string, id = crypto.randomUUID())
     id,
     variantKey: variant.key,
     board,
-    turn: variant.players[0],
+    turn: variant.key === "janggi" ? "blue" : variant.players[0],
     ply: 0,
     status: "active",
     moves: [],
@@ -88,6 +88,7 @@ export function createInitialState(variantKey: string, id = crypto.randomUUID())
       incrementMs: 5000
     }))
   };
+  if (variant.key === "janggi") state.variantState = { janggiProfile: "cho-first-v1" };
   if (variant.supportsDrops) {
     state.hands = Object.fromEntries(variant.players.map((player) => [player, {}])) as GameState["hands"];
   }
@@ -1380,7 +1381,9 @@ function updateJanggiScoring(state: GameState) {
 function calculateJanggiScoring(state: GameState): JanggiScoringState {
   const redPieceCounts: Record<string, number> = {};
   const bluePieceCounts: Record<string, number> = {};
-  let redPoints = 0;
+  // New native games award Han the 1.5-point compensation for moving second.
+  // Unversioned saved games retain their original adjudication convention.
+  let redPoints = state.variantState?.janggiProfile === "cho-first-v1" ? 1.5 : 0;
   let bluePoints = 0;
 
   for (const row of state.board) {

@@ -1471,7 +1471,7 @@ describe("variant engine", () => {
     const scored = applyMove(redPassed, { kind: "pass", from: { row: -1, col: -1 }, to: { row: -1, col: -1 } });
     expect(scored).toMatchObject({ status: "completed", result: "red", outcomeReason: "scoring" });
     expect(scored.variantState?.janggiScoring).toMatchObject({
-      redPoints: 13,
+      redPoints: 14.5,
       bluePoints: 5,
       redPieceCounts: { g: 1, r: 1 },
       bluePieceCounts: { g: 1, h: 1 }
@@ -1493,7 +1493,7 @@ describe("variant engine", () => {
     const drawn = applyMove(pending, { kind: "pass", from: { row: -1, col: -1 }, to: { row: -1, col: -1 } });
 
     expect(drawn).toMatchObject({ status: "completed", result: "draw", outcomeReason: "draw" });
-    expect(drawn.variantState?.janggiScoring).toMatchObject({ redPoints: 2, bluePoints: 0 });
+    expect(drawn.variantState?.janggiScoring).toMatchObject({ redPoints: 3.5, bluePoints: 0 });
   });
 
   test("sets up Jungle Chess with opposing sides and blocks non-rats from rivers", () => {
