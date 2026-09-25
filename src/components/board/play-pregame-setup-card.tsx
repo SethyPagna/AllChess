@@ -1,4 +1,5 @@
 import { Bot, Eye, Flag, MonitorSmartphone, PlayCircle, Users } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { botDifficultyLevels, type BotDifficultyKey } from "@/lib/bot/config";
 import type { CatalogModeSupport } from "@/lib/catalog";
@@ -10,6 +11,7 @@ import { ChoiceButtons, ChoicePicker } from "./choice-buttons";
 type SeatChoice = "random" | "first" | "second";
 
 type PlayPregameSetupCardProps = {
+  gameSetup?: ReactNode;
   botDifficulty: BotDifficultyKey;
   botLevelLabel: string;
   botStrengthDisplay: string;
@@ -48,6 +50,7 @@ export function PlayPregameSetupCard({
   seatChoice,
   secondColorLabel,
   timeControl,
+  gameSetup,
   joiningRoom = false
 }: PlayPregameSetupCardProps) {
   const secondaryModes = [
@@ -99,6 +102,7 @@ export function PlayPregameSetupCard({
         </div>
       ) : null}
       {playMode === "online" ? <small className="choice-help">Casual game · sides assigned when paired</small> : <ChoiceButtons label="Side" value={seatChoice} onChange={onSeatChoiceChange} options={[{ key: "random", label: "Random" }, { key: "first", label: firstColorLabel }, { key: "second", label: secondColorLabel }]} />}
+      {gameSetup}
       <button type="button" onClick={onStartGame} className="focus-ring action-primary play-start-button">
         <PlayCircle size={18} />
         {startActionLabel}

@@ -4,6 +4,7 @@ import { applyMove, createInitialState, getVariant, type GameState, type PlayerC
 import { getTimeControl } from "@/lib/game/time-controls";
 import { tickGameClock } from "@/lib/game/clocks";
 import { getGameCatalogEntry, getCatalogModeSupport } from "@/lib/catalog";
+import { janggiFormationKeys, pendingJanggiSide, withJanggiFormation, type JanggiSetup } from "@/lib/variants/janggi-formations";
 
 // Piece drops and passes use an off-board source sentinel; the engine validates destinations.
 const square = z.object({ row: z.number().int().min(-1).max(19), col: z.number().int().min(-1).max(19) });
@@ -16,6 +17,7 @@ export const friendActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("move"), token, gameId, version: z.number().int().min(0), countVersion: z.number().int().min(0).optional(), move: z.object({ from: square, to: square, kind: z.enum(["move", "drop", "pass", "remove"]).optional(), promotion: z.boolean().optional(), drop: z.object({ id: z.string().max(100), code: z.string().max(8), labelKey: z.string().max(64), owner: z.enum(["white", "black", "red", "blue", "sente", "gote"]), promoted: z.boolean().optional() }).optional() }) }),
   z.object({ action: z.literal("count"), token, gameId, version: z.number().int().min(0), countVersion: z.number().int().min(0), countAction: z.enum(["start-board", "stop", "claim-draw"]) }),
   z.object({ action: z.literal("leave-before-start"), token, gameId }),
+  z.object({ action: z.literal("formation"), token, gameId, formation: z.enum(janggiFormationKeys) }),
   z.object({ action: z.literal("resign"), token, gameId }),
   z.object({ action: z.literal("chat"), token, text: z.string().trim().min(1).max(280) }),
   z.object({ action: z.literal("draw"), token, gameId }),
@@ -26,8 +28,8 @@ export type FriendAction = z.infer<typeof friendActionSchema>;
 export type FriendMessage = { id: string; color: PlayerColor; sender?: number; text: string; at: number };
 export type MatchArrival = { deadline: number; status: "waiting" | "cancelled" | "expired" };
 export const matchArrivalWindowMs = 60_000;
-export type FriendRoom = { id: string; arrival?: MatchArrival; matched?: boolean; revision?: number; state: GameState; seats: Array<{ digest: string; color: PlayerColor; lastSeenAt?: number; ready?: boolean }>; updatedAt: number; createdAt: number; time: string; rematchOffer?: PlayerColor; drawOffer?: PlayerColor; messages?: FriendMessage[] };
-export type FriendRoomView = { roomId: string; arrival?: MatchArrival & { remainingMs: number }; matched?: boolean; revision: number; state: GameState; seat: PlayerColor | null; member: number | null; friendConnected: boolean; playerCount: number; time: string; rematchOffer?: PlayerColor; drawOffer?: PlayerColor; messages?: FriendMessage[] };
+export type FriendRoom = { id: string; janggiSetup?: JanggiSetup; arrival?: MatchArrival; matched?: boolean; revision?: number; state: GameState; seats: Array<{ digest: string; color: PlayerColor; lastSeenAt?: number; ready?: boolean }>; updatedAt: number; createdAt: number; time: string; rematchOffer?: PlayerColor; drawOffer?: PlayerColor; messages?: FriendMessage[] };
+export type FriendRoomView = { roomId: string; janggiSetup?: JanggiSetup; arrival?: MatchArrival & { remainingMs: number }; matched?: boolean; revision: number; state: GameState; seat: PlayerColor | null; member: number | null; friendConnected: boolean; playerCount: number; time: string; rematchOffer?: PlayerColor; drawOffer?: PlayerColor; messages?: FriendMessage[] };
 export type FriendResult = { status: number; body: { room?: FriendRoomView; error?: string }; stored: FriendRoom | null };
 
 async function digestToken(value: string) {
@@ -66,7 +68,7 @@ export async function transitionFriendRoom(stored: FriendRoom | null, id: string
     const control = getTimeControl(action.time);
     state.status = "waiting";
     state.clocks = state.clocks.map(clock => ({ ...clock, remainingMs: control.baseSeconds * 1000, incrementMs: control.incrementSeconds * 1000 }));
-    room = { id, state, seats: [{ digest, color: players[index] }], updatedAt: now, createdAt: now, time: action.time };
+    room = { id, state, seats: [{ digest, color: players[index] }], updatedAt: now, createdAt: now, time: action.time, ...(state.variantKey === "janggi" ? { janggiSetup: {} } : {}) };
   }
   if (!room) return fail(404, "Room not found. Check the invite link.");
   if (now - room.createdAt > 7 * 86400000) return { status: 410, body: { error: "This invite has expired." }, stored: null };
@@ -78,13 +80,14 @@ export async function transitionFriendRoom(stored: FriendRoom | null, id: string
     if (room.seats.length >= 2) return fail(409, "Both seats are taken. Open the spectator link to watch.");
     if (room.state.status === "completed") return fail(409, "This game has ended.");
     seat = getVariant(room.state.variantKey).players.find(color => !room!.seats.some(item => item.color === color))!;
-    room.seats.push({ digest, color: seat }); room.state.status = "active";
+    room.seats.push({ digest, color: seat });
+    if (!pendingJanggiSide(room.janggiSetup)) room.state.status = "active";
   }
   const member = room.seats.findIndex(item => item.digest === digest);
   if (member >= 0) room.seats[member].lastSeenAt = now;
   if (room.matched && action.action === "join" && member >= 0 && room.state.status === "waiting" && room.arrival?.status === "waiting") {
     room.seats[member].ready = true;
-    if (room.seats.every(item => item.ready)) { room.state.status = "active"; delete room.arrival; }
+    if (room.seats.every(item => item.ready) && !pendingJanggiSide(room.janggiSetup)) { room.state.status = "active"; delete room.arrival; }
   }
   if ("gameId" in action) {
     if (!seat) return fail(403, "Only a seated player can act.");
@@ -93,6 +96,19 @@ export async function transitionFriendRoom(stored: FriendRoom | null, id: string
   if (action.action === "leave-before-start") {
     if (!room.matched || room.state.status !== "waiting" || !room.arrival) return fail(409, "The game has already started. Leaving now requires resignation.");
     if (room.arrival.status === "waiting") room.arrival.status = "cancelled";
+  }
+  if (action.action === "formation") {
+    if (room.state.variantKey !== "janggi" || !room.janggiSetup || (seat !== "red" && seat !== "blue")) return fail(400, "This game has no opening formation choice.");
+    if (room.arrival && room.arrival.status !== "waiting") return fail(409, "This match has closed.");
+    if (room.janggiSetup[seat] !== action.formation) {
+      if (room.state.status !== "waiting" || pendingJanggiSide(room.janggiSetup) !== seat) return fail(409, "Han chooses first, then Cho. A confirmed formation is locked.");
+      room.state = withJanggiFormation(room.state, seat, action.formation);
+      room.janggiSetup[seat] = action.formation;
+    }
+    // Idempotent confirmations cannot rearrange an active position or start a closed match.
+    if (room.state.status === "waiting" && !pendingJanggiSide(room.janggiSetup) && room.seats.length === 2 && (!room.matched || room.seats.every(item => item.ready))) {
+      room.state.status = "active"; delete room.arrival;
+    }
   }
   if (["move", "resign", "draw", "count"].includes(action.action)) {
     if (!seat) return fail(403, "Only a seated player can act.");
@@ -133,10 +149,14 @@ export async function transitionFriendRoom(stored: FriendRoom | null, id: string
       seat = room.seats[member].color;
       const control = getTimeControl(room.time);
       room.state = createInitialState(room.state.variantKey);
+      if (room.state.variantKey === "janggi") {
+        room.janggiSetup = {}; room.state.status = "waiting";
+        if (room.matched) room.arrival = { deadline: now + matchArrivalWindowMs, status: "waiting" };
+      }
       room.state.clocks = room.state.clocks.map(clock => ({ ...clock, remainingMs: control.baseSeconds * 1000, incrementMs: control.incrementSeconds * 1000 }));
       delete room.drawOffer;
       delete room.rematchOffer;
     } else room.rematchOffer = seat!;
   }
-  return { status: 200, stored: room, body: { room: { roomId: id, arrival: room.arrival ? { ...room.arrival, remainingMs: Math.max(0, room.arrival.deadline - now) } : undefined, matched: room.matched, revision: room.revision, state: room.state, seat, member: member >= 0 ? member : null, friendConnected: room.seats.some(item => item.digest !== digest && item.lastSeenAt !== undefined && now - item.lastSeenAt < 15000), playerCount: room.seats.length, time: room.time, rematchOffer: room.rematchOffer, drawOffer: room.drawOffer, messages: seat ? room.messages ?? [] : [] } } };
+  return { status: 200, stored: room, body: { room: { roomId: id, janggiSetup: room.janggiSetup, arrival: room.arrival ? { ...room.arrival, remainingMs: Math.max(0, room.arrival.deadline - now) } : undefined, matched: room.matched, revision: room.revision, state: room.state, seat, member: member >= 0 ? member : null, friendConnected: room.seats.some(item => item.digest !== digest && item.lastSeenAt !== undefined && now - item.lastSeenAt < 15000), playerCount: room.seats.length, time: room.time, rematchOffer: room.rematchOffer, drawOffer: room.drawOffer, messages: seat ? room.messages ?? [] : [] } } };
 }

@@ -295,6 +295,24 @@ button:disabled { cursor: not-allowed; }
 .board-shell[data-view="3d"], .board-shell[data-view="3d"] > .board-stage { aspect-ratio: auto; }
 .board-shell[data-view="3d"] .drop-selection-card { position: relative; inset: auto; transform: none; margin: 6px auto 0; box-shadow: none; }
 
+.janggi-formation-picker, .janggi-local-setup { padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+.janggi-local-setup > .janggi-formation-picker { padding: 10px 0 0; border: 0; }
+.formation-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; }
+.formation-heading > span { color: var(--muted); font-size: 11px; }
+.formation-heading button { min-height: 36px; padding: 5px 12px; border-radius: 7px; }
+.formation-heading button[aria-pressed="true"] { background: var(--accent-soft); }
+.formation-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 9px; }
+.formation-options button { padding: 9px 4px; border: 1px solid var(--border); border-radius: 9px; font-size: 11px; background: var(--surface-raised); }
+.formation-options button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-soft); }
+.formation-options button:disabled { opacity: .55; }
+.formation-pieces { display: flex; justify-content: center; gap: 2px; margin-bottom: 5px; }
+.formation-pieces .piece-icon { width: 24px; height: 24px; }
+.formation-right-wing { margin-left: 8px; }
+.formation-confirm { margin-top: 10px; padding: 9px 16px; min-height: 40px; border-radius: 8px; }
+.janggi-local-setup .formation-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.janggi-formation-wait { padding: 10px 12px; border-radius: 10px; background: var(--surface); color: var(--muted); font-size: 12px; }
+@media (max-width: 600px) { .formation-options { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
 /* Public offline play uses the same boards in a compact standalone shell. */
 .offline-play { max-width: 1480px; margin: auto; padding: 20px; }
 .offline-play-header { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }

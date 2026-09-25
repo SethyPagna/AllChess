@@ -147,7 +147,7 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     sourceLinks: [{ name: "PyChess Janggi reference", url: "https://www.pychess.org/variants/janggi" }],
     numberedBasics: [
       "Blue Cho moves first. Red Han receives 1.5 points when two passes trigger material scoring.",
-      "Play on 9x10 intersections without a river. Generals start in palace centres; this opening places elephants inside horses.",
+      "Play on 9x10 intersections without a river. Generals start in palace centres. Choose one of four horse-and-elephant formations; in online rooms Han confirms first, then Cho.",
       "Palace diagonals extend some moves. Cannons need a non-cannon screen and cannot capture another cannon.",
       "Checkmate wins. In this app's casual profile, leaving a bikjang challenge unanswered draws; two passes compare material points."
     ],

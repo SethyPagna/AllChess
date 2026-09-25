@@ -60,5 +60,5 @@ export function createMatchedRoom(plan: MatchedRoomPlan): FriendRoom {
   const state = createInitialState(plan.variantKey, plan.id), control = getTimeControl(plan.time);
   state.status = "waiting";
   state.clocks = state.clocks.map(clock => ({ ...clock, remainingMs: control.baseSeconds * 1000, incrementMs: control.incrementSeconds * 1000 }));
-  return { id: plan.id, state, seats: getVariant(plan.variantKey).players.map((color, index) => ({ color, digest: plan.digests[index] })), time: plan.time, createdAt: plan.createdAt, updatedAt: plan.createdAt, matched: true, arrival: { deadline: plan.createdAt + matchArrivalWindowMs, status: "waiting" } };
+  return { id: plan.id, state, ...(state.variantKey === "janggi" ? { janggiSetup: {} } : {}), seats: getVariant(plan.variantKey).players.map((color, index) => ({ color, digest: plan.digests[index] })), time: plan.time, createdAt: plan.createdAt, updatedAt: plan.createdAt, matched: true, arrival: { deadline: plan.createdAt + matchArrivalWindowMs, status: "waiting" } };
 }

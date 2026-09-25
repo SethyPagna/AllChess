@@ -10,7 +10,7 @@ function getToken(id: string) { let token = sessionTokens.get(id); try { token ?
 
 type Connection = "connecting" | "connected" | "reconnecting" | "offline" | "unavailable";
 type WithoutCredentials<T> = T extends { token: string } ? Omit<T, "token"> : never;
-type SendAction = WithoutCredentials<Extract<FriendAction, { action: "move" | "resign" | "draw" | "chat" | "rematch" | "cancel-rematch" | "count" | "leave-before-start" }>>;
+type SendAction = WithoutCredentials<Extract<FriendAction, { action: "move" | "resign" | "draw" | "chat" | "rematch" | "cancel-rematch" | "count" | "leave-before-start" | "formation" }>>;
 
 export function useFriendRoom(id: string | null, enabled: boolean, spectating: boolean, onSnapshot: (room: FriendRoomView) => void) {
   const [room, setRoom] = useState<FriendRoomView | null>(null);

@@ -46,6 +46,8 @@ import { normalizeLocale } from "@/lib/i18n/locales";
 import { getVocabulary } from "@/lib/i18n/vocabulary";
 import type { VariantRuleSummary } from "@/lib/variants/rules-atlas";
 import { getTimeControl, type TimeControlKey } from "@/lib/game/time-controls";
+import { JanggiLocalSetup, JanggiRoomSetup } from "./janggi-formation-picker";
+import { copyJanggiFormations, pendingJanggiSide, readJanggiFormations, restoreJanggiOpening, withJanggiFormation, type JanggiFormation, type JanggiSide } from "@/lib/variants/janggi-formations";
 import { applyMove, createInitialState, getLegalMoves, getVariant, sameSquare, serializeSquare, type GameState, type Move, type Piece, type Square } from "@/lib/variants";
 import { BoardGrid } from "@/components/board/board-grid";
 import { BoardToolbar } from "@/components/board/board-toolbar";
@@ -413,7 +415,7 @@ export function GameBoard({
     const historyKey = room.state.id + ":" + room.state.ply + ":" + makrukCountVersion(room.state);
     if (friendHistoryRef.current !== historyKey) {
       friendHistoryRef.current = historyKey;
-      let position = createInitialState(variantKey, room.state.id);
+      let position = restoreJanggiOpening(createInitialState(variantKey, room.state.id), room.state);
       if (variantKey === "makruk" && !usesMakrukHonorCount(room.state)) delete position.variantState;
       const frames: GameState[] = [];
       for (const move of room.state.moves) { position = replayMakrukCountActions(position, room.state); frames.push(position); position = applyMove(position, move); }
@@ -1085,7 +1087,7 @@ export function GameBoard({
     const requestId = activeBotRequestRef.current;
     if (requestId) cancelRuntimeBotMove(requestId);
     activeBotRequestRef.current = null;
-    const nextState = withTimeControl(createInitialState(variantKey), timeControl);
+    const nextState = withTimeControl(copyJanggiFormations(createInitialState(variantKey), state), timeControl);
     resolvedRandomSeatRef.current = false;
     setHistory([]);
     setFuture([]);
@@ -1131,7 +1133,7 @@ export function GameBoard({
     activeBotRequestRef.current = null;
     const exercise = oukEndgames.find(item => item.key === state.variantState?.oukExercise);
     const thaiExercise = makrukEndgames.find(item => item.key === state.variantState?.makrukExercise);
-    const nextState = withTimeControl(exercise ? createOukEndgame(exercise.key) : thaiExercise ? createMakrukEndgame(thaiExercise.key) : createInitialState(variantKey), nextControl);
+    const nextState = withTimeControl(exercise ? createOukEndgame(exercise.key) : thaiExercise ? createMakrukEndgame(thaiExercise.key) : copyJanggiFormations(createInitialState(variantKey), state), nextControl);
     resolvedRandomSeatRef.current = false;
     setTimeControl(nextControl);
     setHistory([]);
@@ -1151,6 +1153,11 @@ export function GameBoard({
     setReviewPly(null);
     setReviewPlaying(false);
     setRoomCreation({ status: "idle" });
+  }
+
+  function changeJanggiFormation(side: JanggiSide, formation: JanggiFormation) {
+    if (gameStarted || !localGame) return;
+    setState(current => withJanggiFormation(current, side, formation));
   }
 
   function changeSeatChoice(nextChoice: SeatChoice) {
@@ -1423,14 +1430,15 @@ export function GameBoard({
         {collection3D ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>{collection3D === "xiangqi" ? "3D discs" : collection3D === "shogi" || collection3D === "janggi" ? "3D tiles" : "3D carved"}</button>{boardView === "3d" ? <div role="group" aria-label="Piece material" className="board-finish-buttons">{(["original", "porcelain", "slate"] as const).map(finish => <button key={finish} type="button" className="focus-ring" aria-pressed={pieceFinish === finish} onClick={() => changePieceFinish(finish)}>{finish === "original" ? collection3D === "shogi" || collection3D === "xiangqi" ? "Boxwood" : collection3D === "janggi" ? "Ivory" : collection3D === "makruk" ? "Thai lacquer" : "Original" : finish === "porcelain" ? "Porcelain" : "Slate"}</button>)}</div> : null}</div> : null}
         {friendId && gameStarted ? friend.room?.arrival ? <MatchArrivalPanel room={friend.room} connected={friend.connection === "connected"} busy={friend.busy} error={friend.error} onCancel={leaveUnplayedMatch} onFindAnother={() => findAnotherOpponent(true)} onSetup={() => findAnotherOpponent(false)} onReconnect={friend.reconnect} /> : <div className="room-live-status" role="status">
           <span>{friend.connection !== "connected"
-            ? friend.connection === "offline" ? timeControl === "freestyle" ? "You’re offline · waiting for a connection" : "You’re offline · the room clock continues" : friend.connection === "connecting" ? "Connecting to your room…" : friend.connection === "unavailable" ? friend.error : "Reconnecting · checking the latest board…"
-            : friend.error ?? (state.status === "completed" ? "Game finished" : friend.room?.matched && state.status === "waiting" ? "Opponent found · waiting for both players to connect" : friend.room?.playerCount === 2 ? (playMode === "spectate" ? "Watching live" : friend.room.seat === state.turn ? "Your turn" : friend.room?.matched ? "Opponent’s turn" : "Friend’s turn") : "Waiting for your friend · share the invite link")}
+            ? friend.connection === "offline" ? state.status === "waiting" || timeControl === "freestyle" ? "You’re offline · waiting for a connection" : "You’re offline · the room clock continues" : friend.connection === "connecting" ? "Connecting to your room…" : friend.connection === "unavailable" ? friend.error : "Reconnecting · checking the latest board…"
+            : friend.error ?? (state.status === "completed" ? "Game finished" : pendingJanggiSide(friend.room?.janggiSetup) ? "Opening setup · clocks are stopped" : friend.room?.matched && state.status === "waiting" ? "Opponent found · waiting for both players to connect" : friend.room?.playerCount === 2 ? (playMode === "spectate" ? "Watching live" : friend.room.seat === state.turn ? "Your turn" : friend.room?.matched ? "Opponent’s turn" : "Friend’s turn") : "Waiting for your friend · share the invite link")}
             {friend.connection === "connected" && playMode === "room" && state.status === "active" && friend.room?.playerCount === 2 && !friend.room.friendConnected ? friend.room.matched ? " · Opponent disconnected" : " · Friend disconnected" : ""}
           </span>
           {friend.connection === "reconnecting" || friend.connection === "unavailable" ? <button type="button" className="focus-ring action-secondary" onClick={friend.reconnect}>Reconnect now</button> : null}
           {friend.room?.drawOffer && state.status === "active" ? <button type="button" className="focus-ring action-secondary" disabled={friend.busy || friend.connection !== "connected" || playMode === "spectate" || friend.room.drawOffer === friend.room.seat} onClick={() => void friend.send({ gameId: state.id, action: "draw" })}>{friend.room.drawOffer === friend.room.seat ? "Draw offered" : "Accept draw"}</button> : null}
           {state.status === "completed" && playMode === "room" ? <button type="button" className="focus-ring action-secondary" disabled={friend.busy || friend.connection !== "connected"} onClick={() => void friend.send({ gameId: state.id, action: friend.room?.rematchOffer === friend.room?.seat ? "cancel-rematch" : "rematch" })}>{friend.room?.rematchOffer ? friend.room.rematchOffer === friend.room.seat ? "Cancel rematch offer" : "Accept rematch" : "Rematch"}</button> : null}
         </div> : null}
+        {friendId && gameStarted && pendingJanggiSide(friend.room?.janggiSetup) && (!friend.room?.arrival || friend.room.arrival.status === "waiting") ? <JanggiRoomSetup key={`${state.id}:${pendingJanggiSide(friend.room?.janggiSetup)}`} side={pendingJanggiSide(friend.room?.janggiSetup)!} canChoose={playMode === "room" && friend.room?.seat === pendingJanggiSide(friend.room?.janggiSetup)} disabled={friend.busy || friend.connection !== "connected"} onConfirm={formation => void friend.send({ action: "formation", gameId: state.id, formation })} /> : null}
         {playerCard(topPlayerColor, "top")}
         {variantKey === "makruk" && gameStarted ? <MakrukCountingPanel state={displayState} actor={playMode === "room" ? friend.room?.seat ?? state.turn : botMode === "opponent" ? humanColor : state.turn} localTwoPlayer={!isOnlineMode && !isSpectating && botMode === "human"} disabled={localPaused || isReviewing || isSpectating || botMode === "both" || (isOnlineMode && playMode !== "room") || (playMode === "room" && (friend.busy || friend.connection !== "connected" || !friend.room?.seat))} onAction={changeMakrukCount} /> : null}
         {variantKey === "ouk-chaktrang" && gameStarted ? <OukCountingPanel state={displayState} actor={botMode === "opponent" ? humanColor : state.turn} localTwoPlayer={!isOnlineMode && !isSpectating && botMode === "human"} disabled={localPaused || isReviewing || isOnlineMode || isSpectating || botMode === "both"} onAction={changeOukCount} /> : null}
@@ -1496,6 +1504,7 @@ export function GameBoard({
               <PlayActiveSetupCard modeLabel={modeDetails.label} onReset={reset} onShowStatus={() => setPanelTab("status")} timeControlLabel={getTimeControl(timeControl).label} />
             ) : (
               <><PlayPregameSetupCard
+                gameSetup={variantKey === "janggi" && localGame ? <JanggiLocalSetup values={readJanggiFormations(state)} onChange={changeJanggiFormation} /> : undefined}
                 joiningRoom={Boolean(inviteRoomId)}
                 botDifficulty={botDifficulty}
                 botLevelLabel={botLevel.label}
