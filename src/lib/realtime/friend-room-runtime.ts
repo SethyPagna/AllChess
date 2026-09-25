@@ -1,3 +1,4 @@
+import { createMatchedRoom, type MatchedRoomPlan } from "./quick-match";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
 import { fetchDurableJson } from "./durable-client";
 import { transitionFriendRoom, type FriendAction, type FriendRoom } from "./friend-room";
@@ -23,4 +24,14 @@ export async function runFriendAction(id: string, action: FriendAction) {
   });
   locks.set(id, task);
   try { return await task; } finally { if (locks.get(id) === task) locks.delete(id); }
+}
+
+/** Development adapter shares the same per-room lock as public room actions. */
+export async function provisionLocalMatch(plan: MatchedRoomPlan) {
+  const rooms = dev.allchessFriendRooms ??= new Map();
+  const locks = dev.allchessFriendLocks ??= new Map();
+  const previous = locks.get(plan.id) ?? Promise.resolve();
+  const task = previous.catch(() => undefined).then(() => { if (!rooms.has(plan.id)) rooms.set(plan.id, createMatchedRoom(plan)); });
+  locks.set(plan.id, task);
+  try { await task; } finally { if (locks.get(plan.id) === task) locks.delete(plan.id); }
 }

@@ -143,7 +143,7 @@ type PendingPromotion = {
 
 type MatchmakingState =
   | { status: "idle" }
-  | { status: "queued"; ticketId: string; ratingRange: [number, number] }
+  | { status: "queued"; ticketId: string }
   | { status: "matched"; roomId: string }
   | { status: "failed"; message: string };
 
@@ -388,6 +388,9 @@ export function GameBoard({
   const [panelTab, setPanelTab] = useState<PanelTab>("setup");
   const [reviewPly, setReviewPly] = useState<number | null>(null);
   const [reviewPlaying, setReviewPlaying] = useState(false);
+  const quickMatchToken = useRef("");
+  const cancellingSearchRef = useRef(false);
+  const [cancellingSearch, setCancellingSearch] = useState(false);
   const [matchmaking, setMatchmaking] = useState<MatchmakingState>({ status: "idle" });
   const [ignoreInitialRoom, setIgnoreInitialRoom] = useState(false);
   const inviteRoomId = ignoreInitialRoom ? undefined : initialRoomId;
@@ -582,7 +585,7 @@ export function GameBoard({
     const rowsToRender = displayState.board.map((row) => [...row]);
     return isBoardFlipped ? rowsToRender.reverse().map((row) => row.reverse()) : rowsToRender;
   }, [displayState.board, isBoardFlipped]);
-  const modeDetails = playModeOptions.find((option) => option.key === playMode) ?? playModeOptions[2];
+  const modeDetails = playModeOptions.find((option) => option.key === (friend.room?.matched ? "online" : playMode)) ?? playModeOptions[2];
   const chatRoomId =
     inviteRoomId?.trim() ||
     (roomCreation.status === "ready" ? roomCreation.roomId : "") ||
@@ -590,7 +593,7 @@ export function GameBoard({
     `${displayState.variantKey}-local`;
   const onlineTicketLabel = matchmaking.status === "queued" ? `Ticket ${matchmaking.ticketId.slice(0, 8)}` : null;
   const statusHeading = playMode === "room" && gameStarted
-    ? "Invite room ready"
+    ? friend.room?.matched ? "Casual match" : "Invite room ready"
     : isSearchingOnline
     ? "Searching for opponent"
     : isWatchingMode
@@ -822,7 +825,7 @@ export function GameBoard({
       setPendingPromotion(null);
       return;
     }
-    if (state.status === "completed" || thinking.status === "thinking") return;
+    if (!canHumanMove(state.turn)) return;
     if (botMode === "both" || (botMode === "opponent" && state.turn !== humanColor)) {
       setNotice(botMode === "both" ? "Both bots are controlling the board." : "Bot is to move. You can change sides or cancel bot mode.");
       setPendingPromotion(null);
@@ -1152,6 +1155,7 @@ export function GameBoard({
     setSelected(null);
     setSelectedHandCode(null);
     setLastBotResult(null);
+    quickMatchToken.current = crypto.randomUUID() + crypto.randomUUID();
     setGameStarted(true);
     setLocalPaused(false);
     setRestoreError("");
@@ -1167,7 +1171,7 @@ export function GameBoard({
     setPanelTab("status");
     setNotice(
       playMode === "online"
-        ? `Searching for opponent in ${modeDetails.label}. You will play ${colorLabel(nextColor)} when paired.`
+        ? "Finding an opponent for a casual game. Sides are assigned when paired."
         : playMode === "room"
           ? "Invite room ready. Share the invite link, spectator link, or room code."
           : isSpectating
@@ -1176,24 +1180,28 @@ export function GameBoard({
     );
   }
 
+  const enterMatchedRoom = useCallback((roomId: string, token: string) => {
+    saveFriendToken(roomId, token);
+    const url = new URL(window.location.href); url.searchParams.set("room", roomId); url.searchParams.set("mode", "room"); window.history.replaceState(null, "", url);
+    setMatchmaking({ status: "matched", roomId }); setRoomCreation({ status: "ready", roomId }); setPlayMode("room");
+    setNotice("Opponent found. Connecting to your game…");
+  }, []);
+
   async function cancelOnlineSearch() {
-    const ticketId = matchmaking.status === "queued" ? matchmaking.ticketId : null;
+    if (cancellingSearchRef.current) return;
+    cancellingSearchRef.current = true; setCancellingSearch(true);
+    const token = quickMatchToken.current;
     try {
-      if (ticketId) {
-        await fetch("/api/matchmaking/leave", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ ticketId })
-        });
-      }
-      setMatchmaking({ status: "idle" });
-      setGameStarted(false);
-      setState((current) => ({ ...current, status: "waiting" }));
-      setPanelTab("setup");
-      setNotice("Online search cancelled. Start again when ready.");
-    } catch {
-      setNotice("Could not cancel the online search. Check the network and try again.");
-    }
+      const response = await fetch("/api/matchmaking/leave", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ token, variantKey, timeControlKey: timeControl }), signal: AbortSignal.timeout(8000) });
+      const data = await response.json() as { left?: boolean; match?: { roomId: string }; error?: string };
+      if (token !== quickMatchToken.current) return;
+      if (!response.ok) throw new Error(data.error);
+      if (data.match) { enterMatchedRoom(data.match.roomId, token); return; }
+      if (!data.left) throw new Error("Cancellation not confirmed.");
+      setMatchmaking({ status: "idle" }); setGameStarted(false); setState(current => ({ ...current, status: "waiting" })); setPanelTab("setup");
+      setNotice("Search cancelled. Start again when ready.");
+    } catch { if (token === quickMatchToken.current) setNotice("Cancellation not confirmed. Reconnect and try again."); }
+    finally { cancellingSearchRef.current = false; setCancellingSearch(false); }
   }
 
   function selectPlayMode(nextMode: PlayMode) {
@@ -1211,7 +1219,7 @@ export function GameBoard({
       setLastBotResult(null);
     }
     if (nextMode === "online") {
-      setNotice("Quick Match selected. Find Match will queue an automatic ranked search.");
+      setNotice("Quick Match finds an opponent for a casual game with your selected clock.");
     } else if (nextMode === "room") {
       setNotice("Room setup selected. Bot controls are disabled while waiting for a player.");
     } else if (nextMode === "spectate") {
@@ -1315,53 +1323,36 @@ export function GameBoard({
   }, [gameStarted, playMode, roomCreation.status, variantKey, timeControl, seatChoice]);
 
   useEffect(() => {
-    if (!gameStarted || playMode !== "online" || state.status !== "waiting" || matchmaking.status !== "idle") return;
+    if (!gameStarted || playMode !== "online") return;
     const controller = new AbortController();
-    let cancelled = false;
-
-    async function joinMatchmakingQueue() {
+    let cancelled = false, timer: ReturnType<typeof setTimeout>, failures = 0;
+    const token = quickMatchToken.current;
+    async function poll() {
       try {
+        if (!navigator.onLine) throw new Error("You’re offline. Reconnecting to your search…");
         const response = await fetch("/api/matchmaking/join", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ variantKey, timeControlKey: timeControl, rating: 1450, rated: timeControl === "rapid" }),
-          signal: controller.signal
+          method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ token, variantKey, timeControlKey: timeControl, rated: false }),
+          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(8000)])
         });
-        const data = (await response.json().catch(() => ({}))) as {
-          ticket?: { ticketId?: string; ratingRange?: [number, number] };
-          match?: { roomId?: string };
-          error?: string;
-        };
+        const data = await response.json() as { ticket?: { ticketId: string }; match?: { roomId: string }; error?: string };
         if (cancelled) return;
         if (!response.ok) {
-          setMatchmaking({ status: "failed", message: data.error ?? "Matchmaking is unavailable." });
-          setNotice(data.error ?? "Matchmaking is unavailable. Try again in a moment.");
-          return;
+          if ([400, 403, 410].includes(response.status)) { setMatchmaking({ status: "failed", message: data.error ?? "Start a new search." }); return; }
+          throw new Error(data.error ?? "Reconnecting to your search…");
         }
-        if (data.match?.roomId) {
-          setMatchmaking({ status: "matched", roomId: data.match.roomId });
-          setState((current) => ({ ...current, status: "active" }));
-          setNotice(`Matched in room ${data.match.roomId}. Share can copy the spectator link.`);
-          return;
-        }
-        setMatchmaking({
-          status: "queued",
-          ticketId: data.ticket?.ticketId ?? "pending",
-          ratingRange: data.ticket?.ratingRange ?? [1250, 1650]
-        });
+        failures = 0;
+        if (data.match) { enterMatchedRoom(data.match.roomId, token); return; }
+        if (data.ticket) { setMatchmaking({ status: "queued", ticketId: data.ticket.ticketId }); setNotice("Looking for an opponent with the same game and clock. You can cancel anytime."); }
       } catch (error) {
-        if (cancelled || controller.signal.aborted) return;
-        setMatchmaking({ status: "failed", message: error instanceof Error ? error.message : "Matchmaking request failed." });
-        setNotice("Matchmaking request failed. Check the network and try again.");
+        if (cancelled) return;
+        failures++; setNotice(error instanceof Error ? error.message : "Reconnecting to your search…");
       }
+      if (!cancelled) timer = setTimeout(poll, Math.min(8000, 1500 * 2 ** Math.min(failures, 3)));
     }
-
-    void joinMatchmakingQueue();
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [gameStarted, matchmaking.status, playMode, state.status, timeControl, variantKey]);
+    void poll();
+    return () => { cancelled = true; controller.abort(); clearTimeout(timer); };
+  }, [gameStarted, playMode, timeControl, variantKey, enterMatchedRoom]);
 
   useEffect(() => {
     if (!outcomeKey) {
@@ -1415,8 +1406,8 @@ export function GameBoard({
         {friendId && gameStarted ? <div className="room-live-status" role="status">
           <span>{friend.connection !== "connected"
             ? friend.connection === "offline" ? timeControl === "freestyle" ? "You’re offline · waiting for a connection" : "You’re offline · the room clock continues" : friend.connection === "connecting" ? "Connecting to your room…" : friend.connection === "unavailable" ? friend.error : "Reconnecting · checking the latest board…"
-            : friend.error ?? (state.status === "completed" ? "Game finished" : friend.room?.playerCount === 2 ? (playMode === "spectate" ? "Watching live" : friend.room.seat === state.turn ? "Your turn" : "Friend’s turn") : "Waiting for your friend · share the invite link")}
-            {friend.connection === "connected" && playMode === "room" && friend.room?.playerCount === 2 && !friend.room.friendConnected ? " · Friend disconnected" : ""}
+            : friend.error ?? (state.status === "completed" ? "Game finished" : friend.room?.matched && state.status === "waiting" ? "Opponent found · waiting for both players to connect" : friend.room?.playerCount === 2 ? (playMode === "spectate" ? "Watching live" : friend.room.seat === state.turn ? "Your turn" : friend.room?.matched ? "Opponent’s turn" : "Friend’s turn") : "Waiting for your friend · share the invite link")}
+            {friend.connection === "connected" && playMode === "room" && state.status === "active" && friend.room?.playerCount === 2 && !friend.room.friendConnected ? friend.room.matched ? " · Opponent disconnected" : " · Friend disconnected" : ""}
           </span>
           {friend.connection === "reconnecting" || friend.connection === "unavailable" ? <button type="button" className="focus-ring action-secondary" onClick={friend.reconnect}>Reconnect now</button> : null}
           {friend.room?.drawOffer && state.status === "active" ? <button type="button" className="focus-ring action-secondary" disabled={friend.busy || friend.connection !== "connected" || playMode === "spectate" || friend.room.drawOffer === friend.room.seat} onClick={() => void friend.send({ gameId: state.id, action: "draw" })}>{friend.room.drawOffer === friend.room.seat ? "Draw offered" : "Accept draw"}</button> : null}
@@ -1443,7 +1434,7 @@ export function GameBoard({
                 showModal={showOutcome}
                 onClose={() => setShowOutcome(false)}
                 onPlayAgain={playMode === "room" ? () => { void friend.send({ gameId: state.id, action: "rematch" }); } : reset}
-                playAgainLabel={playMode === "room" ? friend.room?.rematchOffer ? friend.room.rematchOffer === friend.room.seat ? "Waiting for friend…" : "Accept rematch · swap sides" : "Rematch · swap sides" : undefined}
+                playAgainLabel={playMode === "room" ? friend.room?.rematchOffer ? friend.room.rematchOffer === friend.room.seat ? friend.room.matched ? "Waiting for opponent…" : "Waiting for friend…" : "Accept rematch · swap sides" : "Rematch · swap sides" : undefined}
                 playAgainDisabled={playMode === "room" && (friend.busy || friend.connection !== "connected" || friend.room?.rematchOffer === friend.room?.seat)}
                 onCancelRematch={playMode === "room" && friend.room?.rematchOffer && friend.room.rematchOffer === friend.room.seat && !friend.busy && friend.connection === "connected" ? () => { void friend.send({ gameId: state.id, action: "cancel-rematch" }); } : undefined}
                 onReview={() => {
@@ -1561,7 +1552,7 @@ export function GameBoard({
                         {playMode === "room"
                           ? roomCreation.status === "creating"
                             ? "Creating room code"
-                            : friend.room?.playerCount === 2 ? "Friend connected" : "Invite room ready"
+                            : friend.room?.playerCount === 2 ? friend.room.matched ? "Opponent connected" : "Friend connected" : "Invite room ready"
                           : matchmaking.status === "matched"
                             ? "Opponent matched"
                             : "Auto-matching opponent"}
@@ -1571,29 +1562,29 @@ export function GameBoard({
                           ? roomCreation.status === "creating"
                             ? "Generating a room code for invites and spectator links."
                             : roomCreation.status === "ready"
-                              ? `Room ${roomCreation.roomId} is ready. Use Share for invite and spectator links.`
+                              ? friend.room?.matched ? "Casual match · both seats are reserved. Share the spectator link to invite viewers." : `Room ${roomCreation.roomId} is ready. Use Share for invite and spectator links.`
                               : roomCreation.status === "failed"
                                 ? roomCreation.message
                                 : "Use Share to copy an invite link, spectator link, or room code."
                           : matchmaking.status === "matched"
                             ? `Room ${matchmaking.roomId} is active.`
                             : matchmaking.status === "queued"
-                              ? `Queued in ${matchmaking.ratingRange[0]}-${matchmaking.ratingRange[1]} ${getTimeControl(timeControl).label}.`
+                              ? `Looking for a ${getTimeControl(timeControl).label} opponent.`
                               : matchmaking.status === "failed"
                                 ? matchmaking.message
-                                : `Ranked ${getTimeControl(timeControl).label} pairs by game, clock, and rating.`}
+                                : `Casual ${getTimeControl(timeControl).label} pairs by game and clock.`}
                       </span>
                       {playMode === "online" ? (
                         <div className="online-queue-tags" aria-label="Online queue details">
                           <span>{getTimeControl(timeControl).label}</span>
-                          <span>{timeControl === "rapid" ? "Ranked" : "Casual"}</span>
+                          <span>Casual</span>
                           {onlineTicketLabel ? <span>{onlineTicketLabel}</span> : null}
                           <span>{displayState.variantKey}</span>
                         </div>
                       ) : null}
                     </div>
-                    {playMode === "online" && matchmaking.status === "queued" ? (
-                      <button type="button" className="focus-ring online-search-cancel" onClick={() => void cancelOnlineSearch()}>
+                    {playMode === "online" && matchmaking.status !== "matched" ? (
+                      <button type="button" className="focus-ring online-search-cancel" disabled={cancellingSearch} onClick={() => void cancelOnlineSearch()}>
                         <X size={14} />
                         <span>Cancel</span>
                       </button>

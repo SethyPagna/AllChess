@@ -23,8 +23,8 @@ export const friendActionSchema = z.discriminatedUnion("action", [
 ]);
 export type FriendAction = z.infer<typeof friendActionSchema>;
 export type FriendMessage = { id: string; color: PlayerColor; sender?: number; text: string; at: number };
-export type FriendRoom = { id: string; revision?: number; state: GameState; seats: Array<{ digest: string; color: PlayerColor; lastSeenAt?: number }>; updatedAt: number; createdAt: number; time: string; rematchOffer?: PlayerColor; drawOffer?: PlayerColor; messages?: FriendMessage[] };
-export type FriendRoomView = { roomId: string; revision: number; state: GameState; seat: PlayerColor | null; member: number | null; friendConnected: boolean; playerCount: number; time: string; rematchOffer?: PlayerColor; drawOffer?: PlayerColor; messages?: FriendMessage[] };
+export type FriendRoom = { id: string; matched?: boolean; revision?: number; state: GameState; seats: Array<{ digest: string; color: PlayerColor; lastSeenAt?: number; ready?: boolean }>; updatedAt: number; createdAt: number; time: string; rematchOffer?: PlayerColor; drawOffer?: PlayerColor; messages?: FriendMessage[] };
+export type FriendRoomView = { roomId: string; matched?: boolean; revision: number; state: GameState; seat: PlayerColor | null; member: number | null; friendConnected: boolean; playerCount: number; time: string; rematchOffer?: PlayerColor; drawOffer?: PlayerColor; messages?: FriendMessage[] };
 export type FriendResult = { status: number; body: { room?: FriendRoomView; error?: string }; stored: FriendRoom | null };
 
 async function digestToken(value: string) {
@@ -63,6 +63,10 @@ export async function transitionFriendRoom(stored: FriendRoom | null, id: string
   }
   const member = room.seats.findIndex(item => item.digest === digest);
   if (member >= 0) room.seats[member].lastSeenAt = now;
+  if (room.matched && action.action === "join" && member >= 0 && room.state.status === "waiting") {
+    room.seats[member].ready = true;
+    if (room.seats.every(item => item.ready)) room.state.status = "active";
+  }
   if ("gameId" in action) {
     if (!seat) return fail(403, "Only a seated player can act.");
     if (action.gameId !== room.state.id) return fail(409, "A new game has started. Your board will refresh.");
@@ -111,5 +115,5 @@ export async function transitionFriendRoom(stored: FriendRoom | null, id: string
       delete room.rematchOffer;
     } else room.rematchOffer = seat!;
   }
-  return { status: 200, stored: room, body: { room: { roomId: id, revision: room.revision, state: room.state, seat, member: member >= 0 ? member : null, friendConnected: room.seats.some(item => item.digest !== digest && item.lastSeenAt !== undefined && now - item.lastSeenAt < 15000), playerCount: room.seats.length, time: room.time, rematchOffer: room.rematchOffer, drawOffer: room.drawOffer, messages: seat ? room.messages ?? [] : [] } } };
+  return { status: 200, stored: room, body: { room: { roomId: id, matched: room.matched, revision: room.revision, state: room.state, seat, member: member >= 0 ? member : null, friendConnected: room.seats.some(item => item.digest !== digest && item.lastSeenAt !== undefined && now - item.lastSeenAt < 15000), playerCount: room.seats.length, time: room.time, rematchOffer: room.rematchOffer, drawOffer: room.drawOffer, messages: seat ? room.messages ?? [] : [] } } };
 }

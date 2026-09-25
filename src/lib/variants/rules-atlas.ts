@@ -423,7 +423,7 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
       "Versioned honor counting covers optional board claims, automatic bare-king transition, fixed limits, escaping-player moves, and count 9 against two rooks. Legacy saves retain their earlier counter.",
       "Count-aware bot preparation, saved timelines, three endgame exercises, and authoritative friend-room claims have fixtures."
     ],
-    remainingGates: ["Ranked matchmaking still needs honor-count action integration; the controls currently support local, bot and friend-room play.", "Referee-dependent tournament interpretations require separate verification from the published digital profile."]
+    remainingGates: ["Rated matchmaking needs verified accounts and rating settlement. Casual Quick Match uses authoritative rooms with honor-count actions.", "Referee-dependent tournament interpretations require separate verification from the published digital profile."]
   },
   jungle: {
     status: "verified-playable",

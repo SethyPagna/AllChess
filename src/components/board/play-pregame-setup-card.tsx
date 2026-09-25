@@ -98,7 +98,7 @@ export function PlayPregameSetupCard({
           <small className="choice-help">{botStrengthDisplay}</small>
         </div>
       ) : null}
-      <ChoiceButtons label="Side" value={seatChoice} onChange={onSeatChoiceChange} options={[{ key: "random", label: "Random" }, { key: "first", label: firstColorLabel }, { key: "second", label: secondColorLabel }]} />
+      {playMode === "online" ? <small className="choice-help">Casual game · sides assigned when paired</small> : <ChoiceButtons label="Side" value={seatChoice} onChange={onSeatChoiceChange} options={[{ key: "random", label: "Random" }, { key: "first", label: firstColorLabel }, { key: "second", label: secondColorLabel }]} />}
       <button type="button" onClick={onStartGame} className="focus-ring action-primary play-start-button">
         <PlayCircle size={18} />
         {startActionLabel}

@@ -9,7 +9,9 @@ test("Makruk opening and honor-count endings remain legal at four difficulty anc
   for (const state of [createInitialState("makruk"), createMakrukEndgame("two-rooks"), applyMakrukCountAction(createMakrukEndgame("board-honor"), "white", "start-board")]) {
     for (const level of ["elo-100-200", "elo-1400-1500", "elo-2800-2900", "elo-3900-4000"] as const) {
       const result = chooseBotMoveSafe(state, level, { engine: "internal", maxSearchTimeMs: 16 });
-      expect(result.reason).toBe("ok"); expect(result.validatedLegal).toBe(true);
+      expect(result.reason).toBe("ok");
+      if (result.reason !== "ok") throw new Error("Expected a legal bot move.");
+      expect(result.validatedLegal).toBe(true);
       expect(result.move).toBeTruthy(); expect(() => applyMove(state, result.move!)).not.toThrow();
     }
   }
