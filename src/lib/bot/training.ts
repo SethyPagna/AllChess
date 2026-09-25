@@ -1,4 +1,5 @@
 import { moveToUci } from "@/lib/bot/stockfish-engine";
+import { readMakrukHonorCount } from "@/lib/variants/makruk-counting";
 import { getBotStrengthBand, getVariantBotStrengthProfile, normalizeBotTierKey, type BotTierKey, type VariantBotStrengthProfile } from "@/lib/bot/strength";
 import { botDifficultyLevels, MAX_BOT_REPLY_MS } from "@/lib/bot/config";
 import { applyMove, createInitialState, getLegalMoves, variantCatalog, type GameState, type Move, type VariantDefinition } from "@/lib/variants";
@@ -480,18 +481,18 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
   {
     id: "konane-start-near-corner-removal",
     variantKey: "konane",
-    positionKey: "konane|turn:white|moves:",
-    moveUci: "b8b8",
+    positionKey: "konane|turn:black|moves:",
+    moveUci: "a8a8",
     source: "opening-book",
     minTier: "easy",
     confidence: 0.82,
     benchmarkVersion: "allchess-variant-seed-v1",
     tags: ["opening", "konane", "hawaiian-checkers", "orthogonal", "removal"],
     explanation: {
-      plan: "Remove a near-corner white stone to create an immediate orthogonal jump lane after Black answers.",
-      threat: "White prepares the classic capture rhythm where empty landing points force local jump tactics.",
+      plan: "Remove a black corner stone to open a straight jump lane after White answers.",
+      threat: "Black prepares the capture rhythm where empty landing points force local jump tactics.",
       risk: "Kōnane has no quiet moves after the removals, so the bot must validate jump availability before evaluating material.",
-      fallbackGoal: "If the adjacent reply changes the lane, prioritize legal multi-jumps that keep the same stone active."
+      fallbackGoal: "Choose a legal landing prefix; longer jumps stay in the same direction and finish the turn."
     }
   },
   {
@@ -565,8 +566,8 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
   {
     id: "janggi-start-central-soldier",
     variantKey: "janggi",
-    positionKey: "janggi|turn:red|moves:",
-    moveUci: "e4e5",
+    positionKey: "janggi|turn:blue|moves:",
+    moveUci: "e7e6",
     source: "opening-book",
     minTier: "easy",
     confidence: 0.8,
@@ -574,9 +575,9 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
     tags: ["opening", "janggi", "soldier", "palace-pressure"],
     explanation: {
       plan: "Advance the central soldier to claim space while keeping palace lanes and cannon screens flexible.",
-      threat: "Red starts asking Blue to defend central files before the chariots and cannons are fully active.",
+      threat: "Blue starts asking Red to defend central files before the chariots and cannons are fully active.",
       risk: "The soldier cannot retreat, so the bot should avoid overextending without nearby cannon or chariot support.",
-      fallbackGoal: "If Blue blocks the center, shift to palace-line pressure and preserve the general's escape squares."
+      fallbackGoal: "If Red blocks the center, shift to palace-line pressure and preserve the general's escape squares."
     }
   },
   {
@@ -873,21 +874,21 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
   },
   {
     variantKey: "janggi",
-    line: ["e4e5", "b10c8"],
+    line: ["e7e6", "b1c3"],
     family: "palace pressure",
     plan: "Advance a central soldier and answer with a horse route that preserves cannon screens.",
     risk: "Palace movement and facing generals must remain validated by the native adapter."
   },
   {
     variantKey: "janggi",
-    line: ["c4c5", "b10c8"],
+    line: ["c7c6", "b1c3"],
     family: "palace flank pressure",
     plan: "Cache a second Janggi soldier lane while preserving horse development and cannon screens.",
     risk: "Facing generals and palace geometry must override any stale cached reply."
   },
   {
     variantKey: "janggi",
-    line: ["g4g5", "b10c8"],
+    line: ["g7g6", "b1c3"],
     family: "palace wing pressure",
     plan: "Add a right-side Janggi soldier lane with the same compact horse reply.",
     risk: "Palace geometry, cannon screens, and facing-general constraints still decide whether the cache is usable."
@@ -978,14 +979,14 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
   },
   {
     variantKey: "konane",
-    line: ["b8b8", "a8a8"],
+    line: ["a8a8", "b8b8"],
     family: "opening removals",
     plan: "Cache both opening removals so the first real jump position starts quickly.",
     risk: "After removals, every move must be an orthogonal jump and cannot rely on quiet heuristics."
   },
   {
     variantKey: "konane",
-    line: ["g7g7", "g8g8"],
+    line: ["g8g8", "g7g7"],
     family: "opening removals flank",
     plan: "Cache a second Kōnane opening-removal pair near the far corner.",
     risk: "After the removals, cached play stops until legal jump lanes are revalidated."
@@ -1457,6 +1458,8 @@ export function getBotTrainingGateSummary(): BotTrainingGateSummary {
 
 export function lookupBotKnowledge(state: GameState, tier: BotTierKey): BotKnowledgeHit | null {
   if (state.status !== "active") return null;
+  // Static opening/tactic entries do not encode honor-count claims or deadlines.
+  if (readMakrukHonorCount(state)) return null;
 
   const key = createBotPositionKey(state);
   const boardSignature = createBotBoardSignature(state);

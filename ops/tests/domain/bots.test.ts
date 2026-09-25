@@ -121,10 +121,10 @@ describe("bot difficulty ladder", () => {
     }
   }, 20_000);
 
-  test("every launch variant covers every Elo band with a legal bounded bot move", () => {
+  test.each(variantCatalog)("$key covers every Elo band with a legal bounded bot move", (variant) => {
     const failures: string[] = [];
 
-    for (const variant of variantCatalog) {
+    {
       const state = createInitialState(variant.key, `${variant.key}-all-elo-smoke`);
       for (const level of botDifficultyLevels) {
         const result = chooseBotMoveSafe(state, level.key, { engine: "internal", maxSearchTimeMs: 8 });
@@ -142,7 +142,7 @@ describe("bot difficulty ladder", () => {
     }
 
     expect(failures).toEqual([]);
-  }, 120_000);
+  }, 60_000);
 
   test("always chooses a legal move for every launch variant", () => {
     const variants = ["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "shogi", "mini-shogi", "janggi", "makruk", "jungle", "english-draughts", "international-draughts", "turkish-draughts", "konane", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"];
@@ -585,12 +585,12 @@ describe("bot difficulty ladder", () => {
       xiangqi: "b10c8",
       shogi: "c9d8",
       "mini-shogi": "c5c4",
-      janggi: "b10c8",
+      janggi: "b1c3",
       jungle: "a9a8",
       "english-draughts": "b6a5",
       "international-draughts": "c7b6",
       "turkish-draughts": "a6a5",
-      konane: "a8a8",
+      konane: "b8b8",
       antichess: "b8c6",
       horde: "g8f6",
       "king-of-the-hill": "e7e5",
@@ -747,7 +747,7 @@ describe("bot difficulty ladder", () => {
     const hit = lookupBotKnowledge(state, "easy");
 
     expect(hit?.entry).toEqual(expect.objectContaining({ variantKey: "konane", minTier: "easy", source: "opening-book" }));
-    expect(hit?.move).toMatchObject({ kind: "remove", from: { row: 0, col: 1 }, to: { row: 0, col: 1 } });
+    expect(hit?.move).toMatchObject({ kind: "remove", from: { row: 0, col: 0 }, to: { row: 0, col: 0 } });
     expect(() => applyMove(state, hit!.move)).not.toThrow();
 
     const result = await requestBotMove(state, "easy", { engine: "auto", maxSearchTimeMs: MAX_BOT_REPLY_MS });
@@ -833,7 +833,7 @@ describe("bot difficulty ladder", () => {
     const hit = lookupBotKnowledge(state, "easy");
 
     expect(hit?.entry).toEqual(expect.objectContaining({ variantKey: "janggi", minTier: "easy", source: "opening-book" }));
-    expect(hit?.move).toMatchObject({ from: { row: 6, col: 4 }, to: { row: 5, col: 4 } });
+    expect(hit?.move).toMatchObject({ from: { row: 3, col: 4 }, to: { row: 4, col: 4 } });
     expect(() => applyMove(state, hit!.move)).not.toThrow();
 
     const result = await requestBotMove(state, "easy", { engine: "auto", maxSearchTimeMs: MAX_BOT_REPLY_MS });

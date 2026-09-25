@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { LogIn, Swords } from "lucide-react";
+import { ArrowUpRight, Bot, Swords } from "lucide-react";
 
 import { IntroBoard } from "@/components/home/intro-board";
-import { IntroNavigation } from "@/components/home/intro-navigation";
+import { GameLibrary } from "@/components/home/game-library";
 import { getCatalogStats } from "@/lib/catalog";
 import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
@@ -23,35 +23,37 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
-  const catalogStats = getCatalogStats(await getRuntimeCatalogEntries());
+  const entries = await getRuntimeCatalogEntries();
+  const catalogStats = getCatalogStats(entries);
 
   return (
-    <div className="intro-page">
-      <section className="intro-hero" aria-label="AllChess intro">
+    <div className="studio-home">
+      <header className="studio-welcome"><Link href={`/${locale}`}>{t("app.name")} <span>/ your daily escape</span></Link><Link href={`/${locale}/watch`}>Watch a game <ArrowUpRight size={15} /></Link></header>
+      <section className="studio-hero" aria-label="AllChess intro">
         <div className="intro-copy">
-          <h1>{t("app.name")}</h1>
-          <p>Play first. Learn as you go. Sign in only when you want your games saved.</p>
+          <span className="studio-eyebrow">One place. Every kind of player.</span>
+          <h1>Your board.<br /><em>Your next move.</em></h1>
+          <p>A familiar favorite or a whole new game. Take a seat.</p>
           <div className="intro-actions">
             <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="focus-ring action-primary inline-flex items-center gap-2 px-5 py-3">
               <Swords size={18} />
-              Start playing
+              Quick match
             </Link>
-            <Link href={`/${locale}/login`} className="focus-ring action-secondary inline-flex items-center gap-2 px-5 py-3">
-              <LogIn size={18} />
-              Sign in
+            <Link href={playSetupHref(locale, { mode: "bot", time: "rapid" }) as never} className="focus-ring action-secondary inline-flex items-center gap-2 px-5 py-3">
+              <Bot size={18} />
+              Play a bot
             </Link>
           </div>
           <div className="intro-proof" aria-label="Intro stats">
-            <span>{catalogStats.playableGames} ready games</span>
-            <span>{catalogStats.learnGames + catalogStats.comingSoonGames} guides</span>
-            <span>Live data only</span>
+            <span>{catalogStats.playableGames} playable games</span>
+            <span>No account needed for local play</span>
           </div>
         </div>
 
         <IntroBoard />
       </section>
 
-      <IntroNavigation locale={locale} />
+      <GameLibrary entries={entries} locale={locale} />
     </div>
   );
 }

@@ -1,0 +1,9 @@
+# Makruk tabletop — 2026-09-25
+
+Makruk now has its own original Blender and SVG collections, with Thai-inspired turned shapes, ivory/oxblood lacquer, distinct promoted Bia faces, and a physical plain-grid teak board. The portable GLB, editable scene and generator are committed. Small unboxed edge coordinates, orbit/zoom/reset, selectable materials, per-game appearance and offline delivery use the shared studio. Native 3D now covers fourteen games.
+
+The setup audit corrected White's Khun to d1 and Met to e1; Black remains Khun e8 and Met d8. Existing saved positions remain untouched. Browser checks exercise both players' promotion, the promoted model after rotation, materials, camera movement, 320/390-pixel layouts, missing assets and WebGL recovery. A cold offline browser restart restored both promoted counters and the saved 3D porcelain view, then continued play. Build, lint, 441 core cases (including the corrected precise-geometry rerun) and seven focused bot cases are verified. See [asset notes](../../assets/makruk/README.md).
+
+The subsequent rules pass implements versioned honor counting, claim controls, fixed piece limits, bot decisions, friend-room actions and cold offline count restoration. See [Makruk counting profile](makruk-counting-profile.md) for rules, compatibility and current validation. [Casual Quick Match](quick-match.md) now supports count actions; rated accounts and tournament/referee variations remain open; presentation work alone does not prove rule completeness.
+
+Other open work remains: further regional collections, Janggi formation choices/profiles, Shogi hand trays, localization, account friends/invitations, save export/sync, physical-device PWA verification and guide-only engines. The broad goal remains active. No production deployment or remote migration was performed.

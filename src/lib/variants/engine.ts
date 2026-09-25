@@ -1,4 +1,8 @@
 import { getVariant } from "./catalog";
+import { advanceOukCount, settleOukCount } from "./ouk-counting";
+import { advanceMakrukHonorCount, settleMakrukHonorCount, usesMakrukHonorCount } from "./makruk-counting";
+import { usesKonaneNpsRules } from "./konane-profile";
+import { jungleRank, jungleTerrain, jungleTrapOwner, usesJungleStandardRules } from "./jungle-profile";
 import type { BoardCell, GameState, Move, Piece, PlayerColor, Square, VariantDefinition } from "./types";
 
 const pieceLabels: Record<string, string> = {
@@ -74,7 +78,7 @@ export function createInitialState(variantKey: string, id = crypto.randomUUID())
     id,
     variantKey: variant.key,
     board,
-    turn: variant.players[0],
+    turn: variant.key === "janggi" ? "blue" : variant.key === "konane" ? "black" : variant.players[0],
     ply: 0,
     status: "active",
     moves: [],
@@ -87,6 +91,10 @@ export function createInitialState(variantKey: string, id = crypto.randomUUID())
       incrementMs: 5000
     }))
   };
+  if (variant.key === "janggi") state.variantState = { janggiProfile: "cho-first-v1" };
+  if (variant.key === "makruk") state.variantState = { makrukProfile: "honor-v1" };
+  if (variant.key === "konane") state.variantState = { konaneProfile: "nps-v1" };
+  if (variant.key === "jungle") state.variantState = { jungleProfile: "standard-v1" };
   if (variant.supportsDrops) {
     state.hands = Object.fromEntries(variant.players.map((player) => [player, {}])) as GameState["hands"];
   }
@@ -144,7 +152,7 @@ export function getLegalMoves(state: GameState, fromOrHand: Square | { drop: Pie
     const requiredCaptures = draughtsRequiredCaptureLength(state, state.turn, continuation?.square);
     if (requiredCaptures > 0) return legalMoves.filter((move) => draughtsCaptureLengthForMove(state, move) === requiredCaptures);
   }
-  if (variant.key === "konane") {
+  if (variant.key === "konane" && !usesKonaneNpsRules(state)) {
     const continuation = konaneContinuationFor(state);
     if (continuation && (!sameSquare(from, continuation.square) || continuation.owner !== state.turn)) return [];
   }
@@ -164,6 +172,7 @@ function getPseudoLegalMoves(state: GameState, from: Square): Move[] {
   if (isShogiFamily(variant.key)) {
     return shogiPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
   }
+  if (variant.key === "ouk-chaktrang") return oukPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
   if (variant.key === "makruk") {
     return makrukPieceMoves(state, piece, from).filter((move) => terrainAllows(state, piece, move.to));
   }
@@ -301,6 +310,35 @@ function shogiKnightDirections(owner: PlayerColor): Array<[number, number]> {
   return [[forward * 2, -1], [forward * 2, 1]];
 }
 
+// Opening leaps never attack occupied squares. Keep them out of check detection to
+// avoid recursion while using the ordinary Cambodian movement for attacks.
+function oukPieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
+  const moves = makrukPieceMoves(state, piece, from);
+  if (piece.promoted || !["k", "m"].includes(piece.code)) return moves;
+  const homeRow = piece.owner === "white" ? 7 : 0;
+  const homeCol = piece.code === "k" ? (piece.owner === "white" ? 3 : 4) : (piece.owner === "white" ? 4 : 3);
+  if (from.row !== homeRow || from.col !== homeCol || hasMovedFrom(state, from)) return moves;
+  const used = (state.variantState?.oukLeapUsed ?? {}) as Record<string, boolean>;
+  if (used[piece.owner + piece.code]) return moves;
+  if (piece.code === "k" && (oukRookAligned(state, piece.owner) || isInCheck(state, piece.owner))) return moves;
+  const forward = orient(piece.owner, -1);
+  const targets = piece.code === "k" ? [{ row: from.row + forward, col: from.col - 2 }, { row: from.row + forward, col: from.col + 2 }] : [{ row: from.row + forward * 2, col: from.col }];
+  for (const to of targets) if (cellAt(state, to) && !cellAt(state, to)?.piece) moves.push({ from, to });
+  return moves;
+}
+
+function oukRookAligned(state: GameState, owner: PlayerColor) {
+  const king = findRoyal(state, owner);
+  return Boolean(king && state.board.flat().some(cell => cell.piece?.code === "r" && cell.piece.owner !== owner && (cell.square.row === king.square.row || cell.square.col === king.square.col)));
+}
+
+function updateOukLeapRights(state: GameState, piece: Piece) {
+  const used = { ...(state.variantState?.oukLeapUsed as Record<string, boolean> ?? {}) };
+  if (!piece.promoted && ["k", "m"].includes(piece.code)) used[piece.owner + piece.code] = true;
+  for (const owner of getVariant(state.variantKey).players) if (oukRookAligned(state, owner)) used[owner + "k"] = true;
+  state.variantState = { ...state.variantState, oukLeapUsed: used };
+}
+
 function makrukPieceMoves(state: GameState, piece: Piece, from: Square): Move[] {
   switch (piece.code) {
     case "m":
@@ -399,12 +437,26 @@ function westernPawnMoves(state: GameState, piece: Piece, from: Square, allowDou
   for (const dc of [-1, 1]) {
     const capture = { row: from.row + forward, col: from.col + dc };
     const target = cellAt(state, capture);
-    if (target?.piece && target.piece.owner !== piece.owner) {
+    if ((target?.piece && target.piece.owner !== piece.owner) || (allowDouble && enPassantCapturedSquare(state, { from, to: capture }))) {
       moves.push({ from, to: capture });
     }
   }
 
   return moves;
+}
+
+function enPassantCapturedSquare(state: GameState, move: Move): Square | null {
+  if (getVariant(state.variantKey).family !== "western" || (move.kind && move.kind !== "move")) return null;
+  const pawn = cellAt(state, move.from)?.piece, last = state.moves.at(-1);
+  if (pawn?.code !== "p" || pawn.promoted || !last || (last.kind && last.kind !== "move") || cellAt(state, move.to)?.piece) return null;
+  const forward = orient(pawn.owner, -1);
+  if (move.to.row !== move.from.row + forward || Math.abs(move.to.col - move.from.col) !== 1 || !isInside(state, move.to)) return null;
+  const captured = cellAt(state, last.to)?.piece;
+  if (captured?.code !== "p" || captured.promoted || captured.owner === pawn.owner) return null;
+  const originalRow = captured.owner === "black" ? 1 : state.board.length - 2;
+  // Horde first-rank double steps are deliberately not en-passant eligible.
+  if (last.from.row !== originalRow || last.from.col !== last.to.col || last.to.row - last.from.row !== orient(captured.owner, -2)) return null;
+  return last.to.row === move.from.row && last.to.col === move.to.col && move.to.row === (last.from.row + last.to.row) / 2 ? last.to : null;
 }
 
 function draughtsPieceMoves(state: GameState, piece: Piece, from: Square) {
@@ -609,7 +661,7 @@ function konaneOpeningRemovalMoves(state: GameState, piece: Piece, from: Square)
   const opening = readKonaneOpening(state);
   if (opening.removals >= 2) return [];
   if (piece.owner !== state.turn) return [];
-  if (opening.removals === 0) return [{ kind: "remove" as const, from, to: from }];
+  if (opening.removals === 0 || usesKonaneNpsRules(state)) return [{ kind: "remove" as const, from, to: from }];
   if (opening.firstRemoved && isOrthogonallyAdjacent(from, opening.firstRemoved)) {
     return [{ kind: "remove" as const, from, to: from }];
   }
@@ -619,11 +671,14 @@ function konaneOpeningRemovalMoves(state: GameState, piece: Piece, from: Square)
 function konaneJumpMoves(state: GameState, piece: Piece, from: Square) {
   const moves: Move[] = [];
   for (const [dr, dc] of draughtsAllOrthogonalDirections) {
-    const middle = { row: from.row + dr, col: from.col + dc };
-    const to = { row: from.row + dr * 2, col: from.col + dc * 2 };
-    const jumped = cellAt(state, middle)?.piece;
-    if (!isInside(state, to) || cellAt(state, to)?.piece || !jumped || jumped.owner === piece.owner) continue;
-    moves.push({ from, to });
+    for (let steps = 2; ; steps += 2) {
+      const middle = { row: from.row + dr * (steps-1), col: from.col + dc * (steps-1) };
+      const to = { row: from.row + dr * steps, col: from.col + dc * steps };
+      const jumped = cellAt(state, middle)?.piece;
+      if (!isInside(state, to) || cellAt(state, to)?.piece || !jumped || jumped.owner === piece.owner) break;
+      moves.push({ from, to });
+      if (!usesKonaneNpsRules(state)) break;
+    }
   }
   return moves;
 }
@@ -631,9 +686,10 @@ function konaneJumpMoves(state: GameState, piece: Piece, from: Square) {
 function konaneCapturedSquare(state: GameState, move: Move, piece: Piece) {
   const rowDelta = move.to.row - move.from.row;
   const colDelta = move.to.col - move.from.col;
-  const orthogonalJump = ((rowDelta === 0) !== (colDelta === 0)) && Math.max(Math.abs(rowDelta), Math.abs(colDelta)) === 2;
+  const distance = Math.max(Math.abs(rowDelta), Math.abs(colDelta));
+  const orthogonalJump = ((rowDelta === 0) !== (colDelta === 0)) && (usesKonaneNpsRules(state) ? distance >= 2 && distance % 2 === 0 : distance === 2);
   if (!orthogonalJump) return null;
-  const middle = { row: (move.from.row + move.to.row) / 2, col: (move.from.col + move.to.col) / 2 };
+  const middle = { row: move.from.row + Math.sign(rowDelta), col: move.from.col + Math.sign(colDelta) };
   const jumped = cellAt(state, middle)?.piece;
   return jumped && jumped.owner !== piece.owner ? middle : null;
 }
@@ -1002,12 +1058,18 @@ function canJungleMoveTo(state: GameState, piece: Piece, from: Square, to: Squar
 function canJungleCapture(state: GameState, attacker: Piece, from: Square, defender: Piece, to: Square) {
   const fromTerrain = cellAt(state, from)?.terrain;
   const toTerrain = cellAt(state, to)?.terrain;
+  const standard = usesJungleStandardRules(state);
+  if (standard) {
+    if ((fromTerrain === "river") !== (toTerrain === "river")) return false;
+    // A defender in the attacker's trap loses protection, including the rat exception.
+    if (jungleTrapOwner(to) === attacker.owner) return true;
+  }
   if (attacker.code === "r" && defender.code === "e" && fromTerrain !== "river" && toTerrain !== "river") return true;
   if (attacker.code === "e" && defender.code === "r") return false;
   if (defender.code === "r" && toTerrain === "river") return attacker.code === "r";
 
-  const defenderRank = isJungleOwnTrap(defender.owner, to) ? 0 : jungleRank(defender.code);
-  return jungleRank(attacker.code) >= defenderRank;
+  const defenderRank = !standard && isJungleOwnTrap(defender.owner, to) ? 0 : jungleRank(defender.code, standard);
+  return jungleRank(attacker.code, standard) >= defenderRank;
 }
 
 export function applyMove(state: GameState, move: Move): GameState {
@@ -1051,15 +1113,24 @@ export function applyMove(state: GameState, move: Move): GameState {
     if (!fromCell?.piece) throw new Error("errors.invalidMove");
 
     movingPiece = fromCell.piece;
-    const jumpedSquare = isDraughtsVariant(variant.key) ? draughtsCapturedSquare(next, move, movingPiece) : variant.key === "konane" ? konaneCapturedSquare(next, move, movingPiece) : null;
+    const jumpedSquare = isDraughtsVariant(variant.key) ? draughtsCapturedSquare(next, move, movingPiece) : variant.key === "konane" ? konaneCapturedSquare(next, move, movingPiece) : enPassantCapturedSquare(next, move);
     const jumpedCell = jumpedSquare ? cellAt(next, jumpedSquare) : null;
     captured = jumpedCell?.piece ?? toCell!.piece;
     if (captured) {
       next.captured.push(captured);
       if (jumpedCell?.piece) {
         jumpedCell.piece = null;
-      } else {
-        addCapturedPieceToHand(next, movingPiece.owner, captured);
+      }
+      addCapturedPieceToHand(next, movingPiece.owner, captured);
+    }
+    if (usesKonaneNpsRules(next) && jumpedSquare) {
+      // All landing prefixes are legal choices. A longer straight move removes
+      // each intervening enemy atomically and earns only one clock increment.
+      const dr = Math.sign(move.to.row - move.from.row), dc = Math.sign(move.to.col - move.from.col);
+      const distance = Math.max(Math.abs(move.to.row - move.from.row), Math.abs(move.to.col - move.from.col));
+      for (let step = 3; step < distance; step += 2) {
+        const cell = cellAt(next, { row: move.from.row + dr*step, col: move.from.col + dc*step })!;
+        next.captured.push(cell.piece!); cell.piece = null;
       }
     }
     const promoted = shouldPromote(variant, movingPiece, move.to, move.promotion);
@@ -1114,8 +1185,13 @@ export function applyMove(state: GameState, move: Move): GameState {
     return withRacingKingsOutcome(next, movingPiece.owner, move.to);
   }
 
+  if (variant.key === "ouk-chaktrang") {
+    updateOukLeapRights(next, movingPiece);
+    advanceOukCount(next, movingPiece.owner);
+  }
   if (variant.key === "makruk") {
-    updateMakrukCounting(next);
+    if (usesMakrukHonorCount(next)) advanceMakrukHonorCount(next, movingPiece.owner);
+    else updateMakrukCounting(next);
   }
 
   if (variant.key === "chaturanga" || variant.key === "shatranj") {
@@ -1131,7 +1207,8 @@ export function applyMove(state: GameState, move: Move): GameState {
   if (isShogiFamily(variant.key)) {
     return withShogiOutcome(next, movingPiece.owner, move.to);
   }
-  return withOutcome(next, movingPiece.owner, move.to);
+  const outcome = withOutcome(next, movingPiece.owner, move.to);
+  return variant.key === "ouk-chaktrang" ? settleOukCount(outcome) : settleMakrukHonorCount(outcome);
 }
 
 function withHistoricalBareKingOutcome(state: GameState, mover: PlayerColor, destination?: Square): GameState {
@@ -1186,6 +1263,10 @@ function withJungleOutcome(state: GameState, mover: PlayerColor, destination: Sq
     state.status = "completed";
     state.result = mover;
     state.outcomeReason = "objective";
+  } else if (usesJungleStandardRules(state) && !hasAnyLegalMove(state, state.turn)) {
+    state.status = "completed";
+    state.result = "draw";
+    state.outcomeReason = "stalemate";
   }
 
   return state;
@@ -1240,7 +1321,7 @@ function withKonaneOutcome(state: GameState, mover: PlayerColor, move: Move, cap
   }
 
   const movedPiece = cellAt(state, move.to)?.piece;
-  if (captured && movedPiece && konaneJumpMoves(state, movedPiece, move.to).length > 0) {
+  if (!usesKonaneNpsRules(state) && captured && movedPiece && konaneJumpMoves(state, movedPiece, move.to).length > 0) {
     state.turn = mover;
     state.variantState = {
       ...(state.variantState ?? {}),
@@ -1331,7 +1412,9 @@ function updateJanggiScoring(state: GameState) {
 function calculateJanggiScoring(state: GameState): JanggiScoringState {
   const redPieceCounts: Record<string, number> = {};
   const bluePieceCounts: Record<string, number> = {};
-  let redPoints = 0;
+  // New native games award Han the 1.5-point compensation for moving second.
+  // Unversioned saved games retain their original adjudication convention.
+  let redPoints = state.variantState?.janggiProfile === "cho-first-v1" ? 1.5 : 0;
   let bluePoints = 0;
 
   for (const row of state.board) {
@@ -1624,7 +1707,7 @@ function withOutcome(state: GameState, mover: PlayerColor, destination?: Square)
 
 function drawReasonFor(state: GameState): "insufficient-material" | "fifty-move" | "counting-rule" | null {
   const variant = getVariant(state.variantKey);
-  const makrukCounting = variant.key === "makruk" ? readMakrukCounting(state) : undefined;
+  const makrukCounting = variant.key === "makruk" && !usesMakrukHonorCount(state) ? readMakrukCounting(state) : undefined;
   if (makrukCounting && makrukCounting.remainingMoves <= 0) return "counting-rule";
   if (variant.family === "western" && state.halfmoveClock >= 100) return "fifty-move";
   if (!["classic", "chess960", "king-of-the-hill", "three-check"].includes(variant.key)) return null;
@@ -1786,7 +1869,7 @@ function shouldPromote(variant: VariantDefinition, piece: Piece, to: Square, req
     return mustPromoteShogiPiece(piece, to, variant.board.rows) || Boolean(requested && canPromoteShogiPiece(piece));
   }
   if (piece.code !== "p") return false;
-  if (variant.key === "makruk") {
+  if (variant.key === "makruk" || variant.key === "ouk-chaktrang") {
     return piece.owner === "white" ? to.row <= 2 : to.row >= variant.board.rows - 3;
   }
   if (variant.family === "western") {
@@ -1848,7 +1931,7 @@ function promotionCodeFor(variant: VariantDefinition, piece: Piece) {
   if (variant.key === "chaturanga" && piece.code === "p") return "m";
   if (variant.key === "shatranj" && piece.code === "p") return "f";
   if (variant.family === "western" && piece.code === "p") return "q";
-  if (variant.key === "makruk" && piece.code === "p") return "m";
+  if ((variant.key === "makruk" || variant.key === "ouk-chaktrang") && piece.code === "p") return "m";
   return piece.code;
 }
 
@@ -1869,6 +1952,8 @@ function wouldLeaveRoyalInCheck(state: GameState, move: Move, owner: PlayerColor
   const fromCell = cellAt(next, move.from);
   const toCell = cellAt(next, move.to);
   if (!fromCell?.piece || !toCell) return true;
+  const enPassant = enPassantCapturedSquare(state, move);
+  if (enPassant) cellAt(next, enPassant)!.piece = null;
   toCell.piece = { ...fromCell.piece, promoted: move.promotion || fromCell.piece.promoted };
   fromCell.piece = null;
   return isInCheck(next, owner);
@@ -1879,6 +1964,8 @@ function wouldGiveRoyalCheck(state: GameState, move: Move, owner: PlayerColor) {
   const fromCell = cellAt(next, move.from);
   const toCell = cellAt(next, move.to);
   if (!fromCell?.piece || !toCell) return true;
+  const enPassant = enPassantCapturedSquare(state, move);
+  if (enPassant) cellAt(next, enPassant)!.piece = null;
   toCell.piece = { ...fromCell.piece, promoted: move.promotion || fromCell.piece.promoted };
   fromCell.piece = null;
   return isInCheck(next, opponentOf(owner));
@@ -1904,7 +1991,8 @@ function isSquareAttacked(state: GameState, square: Square, byColor: PlayerColor
   for (const row of state.board) {
     for (const cell of row) {
       if (cell.piece?.owner !== byColor) continue;
-      if (getPseudoLegalMoves(state, cell.square).some((move) => sameSquare(move.to, square))) {
+      const attacks = state.variantKey === "ouk-chaktrang" ? makrukPieceMoves(state, cell.piece, cell.square) : getPseudoLegalMoves(state, cell.square);
+      if (attacks.some((move) => sameSquare(move.to, square))) {
         return true;
       }
     }
@@ -1968,7 +2056,7 @@ function hasAnyCaptureMove(state: GameState, color: PlayerColor) {
 function isCaptureMove(state: GameState, move: Move) {
   const movingPiece = cellAt(state, move.from)?.piece;
   const targetPiece = cellAt(state, move.to)?.piece;
-  return Boolean(movingPiece && targetPiece && targetPiece.owner !== movingPiece.owner);
+  return Boolean(movingPiece && ((targetPiece && targetPiece.owner !== movingPiece.owner) || enPassantCapturedSquare(state, move)));
 }
 
 function countPieces(state: GameState, owner: PlayerColor) {
@@ -2050,10 +2138,6 @@ function isCenterSquare(state: GameState, square: Square) {
   return centerRows.includes(square.row) && centerCols.includes(square.col);
 }
 
-function jungleRank(code: string) {
-  return ({ r: 1, c: 2, d: 3, w: 4, p: 5, t: 6, l: 7, e: 8 } as Record<string, number>)[code] ?? 0;
-}
-
 function isJungleOwnDen(owner: PlayerColor, square: Square) {
   return owner === "white" ? square.row === 8 && square.col === 3 : owner === "black" && square.row === 0 && square.col === 3;
 }
@@ -2087,10 +2171,7 @@ function ownerForToken(token: string, variant: VariantDefinition): PlayerColor {
 
 function terrainFor(variant: VariantDefinition, square: Square): BoardCell["terrain"] {
   if (variant.key === "jungle") {
-    const river = square.row >= 3 && square.row <= 5 && [1, 2, 4, 5].includes(square.col);
-    if (river) return "river";
-    if ((square.row === 0 || square.row === 8) && square.col === 3) return "den";
-    if ((square.row <= 1 || square.row >= 7) && [2, 3, 4].includes(square.col)) return "trap";
+    return jungleTerrain(square);
   }
   if (variant.key === "xiangqi" || variant.key === "janggi") {
     if ((square.row <= 2 || square.row >= 7) && square.col >= 3 && square.col <= 5) return "palace";
@@ -2098,9 +2179,11 @@ function terrainFor(variant: VariantDefinition, square: Square): BoardCell["terr
   if (variant.key === "mini-shogi") {
     return square.row === 0 || square.row === variant.board.rows - 1 ? "promotion-zone" : "land";
   }
-  if (variant.supportsPromotion && (square.row <= 2 || square.row >= variant.board.rows - 3)) {
+  if (variant.key === "shogi" && (square.row <= 2 || square.row >= variant.board.rows - 3)) {
     return "promotion-zone";
   }
+  if (variant.key === "makruk" || variant.key === "ouk-chaktrang") return square.row === 2 || square.row === 5 ? "promotion-zone" : "land";
+  if (variant.supportsPromotion && (square.row === 0 || square.row === variant.board.rows - 1)) return "promotion-zone";
   return "land";
 }
 

@@ -144,45 +144,54 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
   },
   janggi: {
     variantKey: "janggi",
-    sourceLinks: [{ name: "AllChess Janggi rules profile", url: "https://en.wikipedia.org/wiki/Janggi" }],
+    sourceLinks: [{ name: "PyChess Janggi reference", url: "https://www.pychess.org/variants/janggi" }],
     numberedBasics: [
-      "Play on a 9x10 intersection board with palaces.",
-      "Generals, guards, elephants, horses, chariots, cannons, and soldiers use Janggi movement.",
-      "Palace diagonals and facing-general rules must be implemented.",
-      "Checkmate wins; repetition/pass/scoring policy must be locked to the selected AllChess ruleset."
+      "Blue Cho moves first. Red Han receives 1.5 points when two passes trigger material scoring.",
+      "Play on 9x10 intersections without a river. Generals start in palace centres. Choose one of four horse-and-elephant formations; in online rooms Han confirms first, then Cho.",
+      "Palace diagonals extend some moves. Cannons need a non-cannon screen and cannot capture another cannon.",
+      "Checkmate wins. In this app's casual profile, leaving a bikjang challenge unanswered draws; two passes compare material points."
     ],
     specialRules: ["Palace diagonals", "Cannon screens", "No river", "Facing generals", "Optional pass in rules mode"],
-    winConditions: ["Checkmate", "Timeout", "Scoring decision in supported tournament mode"],
-    drawConditions: ["Repetition/pass scoring according to AllChess rules mode", "Mutual agreement"],
-    illegalMoveNotes: ["Generals may not face directly.", "Cannon movement requires the correct screen behavior.", "A player may not remain in check."]
+    winConditions: ["Checkmate", "Timeout", "Higher material score after consecutive passes"],
+    drawConditions: ["Unanswered bikjang in this casual profile", "Repetition", "Mutual agreement"],
+    illegalMoveNotes: ["A cannon cannot screen or capture another cannon.", "Passing is unavailable in check.", "A player may not remain in check."]
+  },
+  "ouk-chaktrang": {
+    variantKey: "ouk-chaktrang",
+    sourceLinks: [{ name: "PyChess Ouk Chaktrang digital rules", url: "https://www.pychess.org/variants/cambodian" }, { name: "Cambodia federation: 2022 championship regulations, Article 5", url: "https://docs.google.com/document/d/1adppJ66vonM27UYwC-KyldXl7oZ_5Pb0/edit" }],
+    numberedBasics: ["Khon (king) starts to each player’s left of Neang (queen).", "Trey pawns start on the third rank and promote to Neang on the sixth.", "Khon may leap to the second rank once; Neang may leap two squares forward once. Neither leap captures.", "Checkmate wins unless the winner still claims a board count. Endgame counting follows the published PyChess digital profile."],
+    specialRules: ["Khon opening leap", "Neang opening leap", "Rook alignment permanently removes Khon’s leap", "Sixth-rank promotion", "With at most three pieces, claim a board count from 1 to 64 on your turn. Stop it to play for a win; restarting begins at 1.", "A bare king with no unpromoted pawns anywhere may choose a piece count. Start at the total pieces plus one; use the shortest material limit: two boats 8, one boat 16, two generals 22, two horses 32, one general 44, otherwise 64.", "Only the claimant’s moves count. A piece count stays fixed after captures and cannot be restarted. A bare king may replace a board count with a piece count."],
+    winConditions: ["Checkmate", "Resignation"],
+    drawConditions: ["Stalemate or only two kings", "Counting limit reached", "Chasing player accepts a board-count draw", "Board-count claimant mates without first stopping their count", "Mutual agreement"],
+    illegalMoveNotes: ["No castling, pawn double-step, or en passant.", "Khon cannot leap while checked or after an opposing rook aligns with its rank or file."]
   },
   makruk: {
     variantKey: "makruk",
-    sourceLinks: [{ name: "GNU XBoard Makruk rules", url: "https://www.gnu.org/software/xboard/whats_new/rules/Makruk.html" }],
+    sourceLinks: [{ name: "PyChess Makruk honor-count profile", url: "https://www.pychess.org/variants/makruk" }, { name: "GNU XBoard Makruk rules", url: "https://www.gnu.org/software/xboard/whats_new/rules/Makruk.html" }],
     numberedBasics: [
-      "Thai Makruk uses chess-like pieces with different queen/bishop/pawn behavior.",
-      "Pawns begin advanced and promote differently from western chess.",
-      "No castling.",
-      "Checkmate wins; Makruk counting/draw rules must be supported in rules mode."
+      "In Thai Makruk, Khun starts to each player's left of Met: White's king is on d1 and Black's on e8.",
+      "Bia pawns start on the third rank, move one step, and promote to Met movement on the sixth rank.",
+      "Met steps one square diagonally; Khon steps diagonally or one square forward. There is no castling or opening leap.",
+      "Checkmate wins unless the mating player still claims board honor. New games use the published PyChess honor-count profile; earlier saves keep their legacy counter."
     ],
-    specialRules: ["No castling", "Makruk promotion", "Counting/draw mode"],
+    specialRules: ["No castling or opening leap", "Sixth-rank promotion", "With no unpromoted pawns left, claim board honor on your turn: count your moves from 1 to 64. Stop before playing for a win; a new claim restarts at 1. The opponent may accept a draw.", "A bare king with no unpromoted pawns anywhere automatically starts piece honor, replacing board honor. Start at all remaining pieces plus one; freeze the shortest limit: two rooks 8, one rook 16, two Khon 22, two horses 32, one Khon 44, otherwise 64.", "Only the escaping player's moves count. The first announces the starting number; exceeding the limit draws. Captures never reset a piece count."],
     winConditions: ["Checkmate", "Timeout", "Resignation"],
-    drawConditions: ["Makruk counting rules in rules mode", "Stalemate or repetition according to selected mode"],
+    drawConditions: ["Honor count exceeds its limit", "Chaser accepts a board-count draw", "Board-count claimant gives mate without stopping", "Stalemate or only two kings"],
     illegalMoveNotes: ["No castling is allowed.", "Promotion follows Makruk piece rules.", "A king may not stay in check."]
   },
   jungle: {
     variantKey: "jungle",
-    sourceLinks: [{ name: "Yellow Mountain Imports Dou Shou Qi rules", url: "https://ymimports.onsitesupport.io/yellowmountainimports/knowledge-base/article/how-to-play-jungle-dou-shou-qi-%E9%AC%A5%E7%8D%B8%E6%A3%8B" }],
+    sourceLinks: [{ name: "Yellow Mountain Imports Dou Shou Qi rules", url: "https://www.ymimports.com/pages/how-to-play-jungle" }],
     numberedBasics: [
-      "Animals have ranks and capture by rank rules.",
-      "Rat, river, trap, and den rules are native to the game.",
-      "Win by entering the opponent den or eliminating all opponent animals.",
-      "No check/checkmate concept."
+      "Rank 1–8: Rat, Cat, Wolf, Dog, Leopard, Tiger, Lion, Elephant. Capture equal or lower ranks.",
+      "Only rats swim. Lions and tigers jump rivers unless a rat blocks the path.",
+      "Three traps surround each den. An enemy in your trap can be captured by any of your animals.",
+      "No check/checkmate. Win by entering the opponent den or eliminating all opponent animals."
     ],
     specialRules: ["Animal ranks", "River movement", "Rat exceptions", "Trap weakening", "Den objective"],
     winConditions: ["Enter the opponent den", "Capture all opposing animals"],
-    drawConditions: ["Repetition or no-progress policy in AllChess rules mode"],
-    illegalMoveNotes: ["Most animals may not enter river squares.", "Pieces may not enter their own den.", "Trap and rank rules control captures."]
+    drawConditions: ["No legal move is a draw in new games", "Mutual agreement in friend rooms; no automatic repetition or no-progress draw"],
+    illegalMoveNotes: ["Most animals may not enter river squares.", "Pieces may not enter their own den.", "Rats cannot capture across the water–land boundary.", "Elephants cannot capture rats, except enemy rats weakened in your traps.", "White moves first in AllChess. Unversioned saved games retain their original rules."]
   },
   "english-draughts": {
     variantKey: "english-draughts",
@@ -228,17 +237,17 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
   },
   konane: {
     variantKey: "konane",
-    sourceLinks: [{ name: "Cyningstan Konane rules", url: "https://www.cyningstan.com/game/97/konane" }],
+    sourceLinks: [{ name: "National Park Service Kōnane rules (this profile)", url: "https://www.nps.gov/thingstodo/play-konane.htm" }, { name: "NPS illustrated rules", url: "https://www.nps.gov/puho/learn/historyculture/upload/Konane-Rules-508.pdf" }],
     numberedBasics: [
-      "Play on an 8x8 board filled with alternating black and white stones.",
-      "The first player removes one own stone; the second player removes an orthogonally adjacent own stone.",
-      "After the opening, every move is an orthogonal jump over one opposing stone to an empty square.",
+      "This NPS profile uses an 8x8 papamū filled with alternating black and white stones.",
+      "Black removes any own stone, then White removes any own stone; the removals need not be adjacent.",
+      "Then jump over opposing stones into empty spaces along one straight orthogonal line. Choose a nearer landing to stop or a farther landing to capture more.",
       "Win by leaving the opponent with no legal jump capture."
     ],
-    specialRules: ["Opening removals", "Orthogonal jumps", "Captured midpoint stones", "Multi-jump continuation", "No legal jump loses"],
+    specialRules: ["Opening removals", "Orthogonal jumps", "Optional straight jump sequences", "NPS rules profile", "No legal jump loses"],
     winConditions: ["Leave the opponent with no legal jump", "Capture until the opponent is immobilized"],
     drawConditions: ["Mutual agreement or selected room no-progress policy"],
-    illegalMoveNotes: ["Diagonal jumps are illegal.", "A stone may not slide without jumping after the opening.", "During a multi-jump continuation only the jumping stone may move."]
+    illegalMoveNotes: ["Diagonal jumps are illegal.", "A stone may not slide without jumping after the opening.", "A jump sequence cannot turn a corner, cross a gap or jump a friendly stone.", "Older saved games retain their original adjacent second removal and forced continuation rules."]
   },
   antichess: {
     variantKey: "antichess",
@@ -320,6 +329,11 @@ const verifiedChessEdgeCases = [
 ];
 
 const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
+  "ouk-chaktrang": {
+    status: "rules-gated",
+    verifiedEdgeCases: ["Native setup, first-move rights, non-capturing leaps, rook alignment and sixth-rank promotion.", "Explicit board/piece counting, fixed limits, claimant-only moves, stop/restart, accepted draws, counter-mate draws, and bare-king priority."],
+    remainingGates: ["The digital counting profile is implemented; referee-dependent tournament interpretations still require separate verification.", "Online competitive verification and calibrated bot benchmarks are pending."]
+  },
   classic: {
     status: "verified-playable",
     verifiedEdgeCases: verifiedChessEdgeCases,
@@ -405,9 +419,11 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
     verifiedEdgeCases: [
       "Makruk setup uses one royal king and one Met per side with no castling.",
       "Native Met, Khon, knight, rook, king, and pawn movement have fixtures.",
-      "Pawns do not double-push or en-passant, promote to Met on the sixth rank, and Makruk counting-rule draws are covered."
+      "Pawns do not double-push or en-passant and promote to Met on the sixth rank.",
+      "Versioned honor counting covers optional board claims, automatic bare-king transition, fixed limits, escaping-player moves, and count 9 against two rooks. Legacy saves retain their earlier counter.",
+      "Count-aware bot preparation, saved timelines, three endgame exercises, and authoritative friend-room claims have fixtures."
     ],
-    remainingGates: []
+    remainingGates: ["Rated matchmaking needs verified accounts and rating settlement. Casual Quick Match uses authoritative rooms with honor-count actions.", "Referee-dependent tournament interpretations require separate verification from the published digital profile."]
   },
   jungle: {
     status: "verified-playable",
@@ -450,9 +466,9 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
   konane: {
     status: "verified-playable",
     verifiedEdgeCases: [
-      "Opening removals are legal only for own stones, and the second removal must be orthogonally adjacent to the first.",
-      "Orthogonal jump captures remove the midpoint stone and reject diagonal or quiet movement.",
-      "Multi-jump continuation locks the turn to the same stone until no further capture exists.",
+      "Opening removals use Black first and unrestricted own-stone choices in the NPS profile; legacy saves keep White first and an adjacent second removal.",
+      "Straight orthogonal jump sequences offer every landing prefix and remove all jumped enemies in one move.",
+      "The NPS profile permits stopping after any jump and rejects corners, gaps and friendly blockers; legacy forced continuations remain compatible.",
       "No-legal-jump terminal states resolve as wins for the mover."
     ],
     remainingGates: []

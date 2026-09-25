@@ -4,6 +4,14 @@ import { applyMove, createInitialState, formatVariantPlayMeta, getLegalMoves, ge
 import { ruleSources } from "@/lib/variants/rule-sources";
 
 describe("variant catalog", () => {
+  test("promotion markings match each game's promotion ranks", () => {
+    const ranks = (key: string) => createInitialState(key).board.flatMap((row, index) => row.some((cell) => cell.terrain === "promotion-zone") ? [index] : []);
+    expect(ranks("classic")).toEqual([0, 7]);
+    expect(ranks("shogi")).toEqual([0, 1, 2, 6, 7, 8]);
+    expect(ranks("mini-shogi")).toEqual([0, 4]);
+    expect(ranks("makruk")).toEqual([2, 5]);
+    expect(ranks("xiangqi")).toEqual([]);
+  });
   test("contains the planned global launch variants", () => {
     expect(variantCatalog.map((variant) => variant.key)).toEqual([
       "classic",
@@ -16,6 +24,7 @@ describe("variant catalog", () => {
       "mini-shogi",
       "janggi",
       "makruk",
+      "ouk-chaktrang",
       "jungle",
       "english-draughts",
       "international-draughts",
@@ -41,6 +50,7 @@ describe("variant catalog", () => {
       "mini-shogi": "shogiops",
       janggi: "allchess-janggi",
       makruk: "makruk-js",
+      "ouk-chaktrang": "allchess-ouk",
       jungle: "allchess-jungle",
       "english-draughts": "draughts-engine",
       "international-draughts": "draughts-engine",
@@ -367,8 +377,9 @@ describe("variant engine", () => {
     });
   });
 
-  test("konane uses opening removals, orthogonal jumps, continuations, and no-move wins", () => {
+  test("legacy konane retains opening removals, forced continuations, and no-move wins", () => {
     let state = createInitialState("konane", "konane-rules");
+    state.turn = "white"; delete state.variantState;
 
     expect(state.board).toHaveLength(8);
     expect(state.board[0].map((cell) => cell.piece?.owner[0] ?? ".").join("")).toBe("bwbwbwbw");
@@ -1186,6 +1197,10 @@ describe("variant engine", () => {
 
   test("makruk setup uses one king and one met per side", () => {
     const state = createInitialState("makruk", "makruk-setup");
+    expect(state.board[7][3].piece).toMatchObject({ code: "k", owner: "white" });
+    expect(state.board[7][4].piece).toMatchObject({ code: "m", owner: "white" });
+    expect(state.board[0][4].piece).toMatchObject({ code: "k", owner: "black" });
+    expect(state.board[0][3].piece).toMatchObject({ code: "m", owner: "black" });
     const whitePieces = state.board.flatMap((row) => row.map((cell) => cell.piece).filter((piece) => piece?.owner === "white"));
     const blackPieces = state.board.flatMap((row) => row.map((cell) => cell.piece).filter((piece) => piece?.owner === "black"));
 
@@ -1247,8 +1262,9 @@ describe("variant engine", () => {
     expect(promoted.board[2][0].piece).toMatchObject({ code: "m", owner: "white", promoted: true });
   });
 
-  test("makruk starts board counting when no unpromoted pawns remain", () => {
+  test("legacy Makruk saves retain automatic board counting", () => {
     let state = createInitialState("makruk", "makruk-board-count");
+    delete state.variantState;
     state = {
       ...state,
       board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
@@ -1266,8 +1282,9 @@ describe("variant engine", () => {
     expect(continued.variantState?.makrukCounting).toMatchObject({ phase: "board", limit: 64, remainingMoves: 63, pieceCount: 4 });
   });
 
-  test("makruk bare-king counting expires as a draw", () => {
+  test("legacy Makruk saves retain their bare-king countdown", () => {
     let state = createInitialState("makruk", "makruk-bare-king-count");
+    delete state.variantState;
     state = {
       ...state,
       board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
@@ -1461,7 +1478,7 @@ describe("variant engine", () => {
     const scored = applyMove(redPassed, { kind: "pass", from: { row: -1, col: -1 }, to: { row: -1, col: -1 } });
     expect(scored).toMatchObject({ status: "completed", result: "red", outcomeReason: "scoring" });
     expect(scored.variantState?.janggiScoring).toMatchObject({
-      redPoints: 13,
+      redPoints: 14.5,
       bluePoints: 5,
       redPieceCounts: { g: 1, r: 1 },
       bluePieceCounts: { g: 1, h: 1 }
@@ -1483,7 +1500,7 @@ describe("variant engine", () => {
     const drawn = applyMove(pending, { kind: "pass", from: { row: -1, col: -1 }, to: { row: -1, col: -1 } });
 
     expect(drawn).toMatchObject({ status: "completed", result: "draw", outcomeReason: "draw" });
-    expect(drawn.variantState?.janggiScoring).toMatchObject({ redPoints: 2, bluePoints: 0 });
+    expect(drawn.variantState?.janggiScoring).toMatchObject({ redPoints: 3.5, bluePoints: 0 });
   });
 
   test("sets up Jungle Chess with opposing sides and blocks non-rats from rivers", () => {
@@ -1538,9 +1555,9 @@ describe("variant engine", () => {
       board: state.board.map((row) => row.map((cell) => ({ ...cell, piece: null }))),
       turn: "white"
     };
-    state.board[1][1].piece = { id: "white-cat", code: "c", owner: "white", labelKey: "chess.pawn" };
-    state.board[1][2].piece = { id: "black-elephant-trapped", code: "e", owner: "black", labelKey: "chess.elephant" };
-    expect(getLegalMoves(state, { row: 1, col: 1 })).toContainEqual({ from: { row: 1, col: 1 }, to: { row: 1, col: 2 } });
+    state.board[8][1].piece = { id: "white-cat", code: "c", owner: "white", labelKey: "chess.pawn" };
+    state.board[8][2].piece = { id: "black-elephant-trapped", code: "e", owner: "black", labelKey: "chess.elephant" };
+    expect(getLegalMoves(state, { row: 8, col: 1 })).toContainEqual({ from: { row: 8, col: 1 }, to: { row: 8, col: 2 } });
 
     state = {
       ...state,

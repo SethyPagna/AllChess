@@ -4,6 +4,31 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ---
 
+## 2026-09-25 — Mobile 3D framing and controls
+
+- Fit physical boards to narrow and short screens; retain an angled perspective and small, unboxed coordinates.
+- Add compact physical Shogi hand trays, larger zoom/reset buttons, two-finger pan and gesture protection. Preserve the customized camera through resizing.
+- Verify moves across all eleven collections, both Shogi sizes, real browser touch input and cold offline Cambodian/Shogi play. See [validation and remaining scope](mobile-tabletop.md).
+
+## 2026-09-25 — Jungle tabletop and rules
+
+- Add original Blender animal miniatures, recessed enamel rivers, physical wood banks, native traps/dens and compact rank/movement hints. All 21 playable games now have native 3D.
+- Version new Jungle games with correct trap placement/ownership, Dog/Wolf ranks and rat river-boundary captures; retain old saved behavior and correct room replay.
+- Verify native clicks, saves, fallback, bot legality, room rules and cold offline play. See [validation and remaining scope](jungle-tabletop.md).
+
+## 2026-09-25 — Historical tabletops
+
+- Add distinct original Shatranj ceramic and Chaturanga sculpted-army collections, editable Blender sources, plain wooden grids and coordinated physical frames.
+- Match the native identities in default/carved 2D silhouettes and show compact selected-piece movement hints below the board.
+- Preserve native promotion identities and deliver both collections in the public offline pack. See [validation and scope](historical-tabletops.md).
+
+## 2026-09-25 — Kōnane
+
+- Native 3D stones, recessed wooden papamū, small rim coordinates, orbit/zoom/reset, material choices and offline asset delivery. Include the public web-app manifest in the verified offline pack.
+- NPS rules profile for new games, including Black first and optional straight multi-jumps; existing saves retain their prior rules.
+- Compact opening/jump guidance, plain 2D pit board and correct starting-side review badges.
+- See [delivery and validation](konane-tabletop.md). The broader product goal remains active.
+
 ## 2026-05-28
 
 ### Repository Organization

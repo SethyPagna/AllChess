@@ -8,6 +8,7 @@ type BotMode = "human" | "opponent" | "both";
 
 type PlayControlCardProps = {
   appearanceOptions: AppearancePresetOption[];
+  showAppearance?: boolean;
   appearancePreset: AppearancePresetPreference;
   botLevelLabel: string;
   botMode: BotMode;
@@ -40,6 +41,7 @@ type PlayControlCardProps = {
 
 export function PlayControlCard({
   appearanceOptions,
+  showAppearance = true,
   appearancePreset,
   botLevelLabel,
   botMode,
@@ -116,23 +118,13 @@ export function PlayControlCard({
             </button>
           </div>
         </section>
-        <section className="play-control-section" aria-label="Board appearance">
+        {showAppearance ? <section className="play-control-section" aria-label="Board appearance">
           <details className="play-look-disclosure">
             <summary className="focus-ring">
               <span>Look</span>
               <small>{selectedAppearance?.label ?? "Matched set"}</small>
             </summary>
             <div className="play-look-grid">
-              <label>
-                <span>Appearance set</span>
-                <select className="focus-ring" aria-label="Appearance set" value={appearancePreset} onChange={(event) => onAppearancePresetChange(event.target.value as AppearancePresetPreference)}>
-                  {appearanceOptions.map((option) => (
-                    <option key={option.key} value={option.key}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
               <div className="play-look-option-row play-look-set-row" role="group" aria-label="Appearance set options">
                 {appearanceOptions.map((option) => (
                   <button
@@ -161,7 +153,7 @@ export function PlayControlCard({
           <span className="sr-only" aria-live="polite">
             Selected appearance: {selectedAppearance?.label ?? "Matched set"}, {boardThemeOptions.find((option) => option.key === boardTheme)?.label ?? "Board"} board, {pieceSkin} pieces
           </span>
-        </section>
+        </section> : null}
         <section className="play-control-section" aria-label="Match controls">
           <div className="play-control-group-label">
             <span>Match</span>

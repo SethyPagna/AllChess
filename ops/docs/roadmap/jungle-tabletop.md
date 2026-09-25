@@ -1,0 +1,22 @@
+# Jungle tabletop and versioned rules
+
+All twenty-one playable games now have native 3D presentation across eleven mesh collections. Jungle adds eight original animal sculptures per side and a 7 × 9 physical board with recessed enamel rivers, wood banks, a thick jade-coloured frame, brass trap crosses and den inlays. Materials, shadows, angled camera controls and small unboxed rim coordinates follow the shared studio. A selected animal shows its name, rank and movement exception in one short line. River targets use a contrasting pale marker. The 2D board also uses a plain grid, while saved legacy terrain remains visible in both views.
+
+## Rules and compatibility
+
+Inspection found ten traps instead of six, weakening on the wrong side's traps, inverted Dog/Wolf ranks and illegal rat captures across river banks. New games now carry `jungleProfile: standard-v1`. They use three traps beside each den, weaken enemies in the defender's traps, rank Dog above Wolf and reject captures across the land/water boundary. A trapped rat can be captured by the trap owner's elephant. Rat swimming and lion/tiger jumps, including either owner's rat blockers, retain their normal role.
+
+The [Yellow Mountain Imports rules](https://www.ymimports.com/pages/how-to-play-jungle) describe these movement and capture rules. Its former support link now redirects to login; rule guides point to the public page. AllChess keeps White first and treats no legal move as a draw, as described in [van Rijn and Vis, ICGA 2014](https://liacs.leidenuniv.nl/~visjk/icga2014a.pdf). Den entry and elimination win. Automatic repetition/no-progress adjudication is not implemented; the guide no longer suggests it is. This is a documented app profile, not a universal tournament-rules claim.
+
+Unversioned saved games retain their old terrain, rank and capture semantics. Local snapshots preserve the profile through undo/redo, reload and file transfer. Room review reconstructs the correct opening before replay; new rooms and rematches receive the new profile. Bot position keys already include variant metadata, preventing cross-profile cache reuse.
+
+## Verification
+
+- 548 core tests across 76 files pass; all 73 existing bot tests pass together. New checks cover both owners' complete rank matchups, six trap locations, trap ownership, river boundaries, rat blockers, immobilization, legacy behavior, save transfers, room authority/rejoin/replay and a legal bot den win.
+- Actual GLB checks cover all sixteen native models, scale, ground contact and portability. Terrain geometry checks verify an 8 mm recess and square-linked marks. The default camera contains the rectangular board and edge animals.
+- Browser studies exercise vertical and horizontal jumping captures from opposing orientations, a rat blocking a jump, water capture, rejected bank capture, both owners' trap captures, den victory and a legacy capture. Material changes, orbit/zoom/reset, mobile layout, saved recovery and undo/redo work. Failed GLB downloads and WebGL loss retain a playable 2D position.
+- A fresh production Chrome profile downloaded the 26.4 MiB pack (93 public assets), saved both a played jumping study and a river study, closed entirely, and reopened offline. At 320 px it restored rotated porcelain boards, continued a land move and water capture, retained six-trap rules, and completed undo/redo with no runtime exceptions, failed requests or horizontal overflow.
+- After updating the collection's studio render, the regenerated GLB passed its model checks again. The refreshed pack was downloaded, the browser closed and reopened offline, and the final asset's SHA-256 matched while rendering the full opening at desktop and 320 px.
+- Lint, TypeScript and the production build pass, including 209 generated pages. Windows ANGLE emits a nonfatal shader precision warning; deliberately aborted model requests produce expected network errors. The browser audit's den-result lookup was corrected after it matched hidden details; the visible win banner and the cat in the opponent's den were explicitly verified.
+
+The broader goal remains active. Full localization, deeper regional bot evaluation and review quality, further small-screen 3D interaction polish, account friend lists and ratings, referee-dependent competitive modes, guide-only engines, physical-device installation and deployed multiplayer checks remain. Keyboard board play remains in 2D. No deployment, remote migration or merge is included.

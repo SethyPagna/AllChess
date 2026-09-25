@@ -10,6 +10,8 @@ import { createAppNavGroups } from "@/components/shell/navigation-config";
 import { NotificationCenter } from "@/components/shell/notification-center";
 import { ThemeProvider } from "@/components/shell/theme-provider";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
+import { OfflinePack } from "@/components/shell/offline-pack";
+import { InstallApp } from "@/components/shell/install-app";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { locales, normalizeLocale, rtlLocales, type LocaleCode } from "@/lib/i18n/locales";
 
@@ -90,6 +92,8 @@ export default async function LocaleLayout({
                   <LocaleSwitcher active={locale as LocaleCode} />
                 </Suspense>
                 <NotificationCenter />
+                <InstallApp />
+                <OfflinePack />
               </div>
             </aside>
             <div className="app-main">
@@ -112,6 +116,7 @@ export default async function LocaleLayout({
                     <LocaleSwitcher active={locale as LocaleCode} />
                   </Suspense>
                   <NotificationCenter />
+                  <OfflinePack />
                 </div>
                 <details className="dropdown app-menu">
                   <summary className="btn btn-square focus-ring action-secondary grid h-10 w-10 cursor-pointer list-none place-items-center" aria-label="Open navigation menu" title="Open navigation menu">

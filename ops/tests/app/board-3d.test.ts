@@ -1,0 +1,121 @@
+import { readFileSync } from "node:fs";
+import { describe, expect, test } from "vitest";
+import { Box3, Mesh, MeshStandardMaterial, PerspectiveCamera, Vector3 } from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { collectionPieces, get3DCollection, board3DLayout, pieceModelName, shogiPromotedCodes } from "@/components/board/board-3d-config";
+import { createKonaneCellGeometry } from "@/components/board/konane-board";
+import { tabletopFrame } from "@/components/board/tabletop-camera";
+import { createJungleTerrainKit } from "@/components/board/jungle-board";
+import { createInitialState, variantCatalog } from "@/lib/variants";
+
+describe("playable 3D collections", () => {
+  test("every advertised board has matching native models for its initial pieces", () => {
+    for (const variant of variantCatalog) {
+      const collection = get3DCollection(variant.key);
+      if (!collection) continue;
+      expect(variant.board).toMatchObject(variant.key === "international-draughts" ? { rows: 10, cols: 10 } : collection === "jungle" ? { rows: 9, cols: 7 } : collection === "shogi" ? { rows: variant.key === "mini-shogi" ? 5 : 9, cols: variant.key === "mini-shogi" ? 5 : 9 } : collection === "xiangqi" || collection === "janggi" ? { rows: 10, cols: 9 } : { rows: 8, cols: 8 });
+      for (const cell of createInitialState(variant.key).board.flat()) {
+        if (cell.piece) expect(collectionPieces[collection][cell.piece.code], `${variant.key}: ${cell.piece.code}`).toBeTruthy();
+      }
+    }
+    expect(variantCatalog.every(variant => get3DCollection(variant.key))).toBe(true);
+  });
+
+  for (const collection of ["classic", "khmer", "shogi", "xiangqi", "janggi", "makruk", "draughts", "konane", "shatranj", "chaturanga", "jungle"] as const) {
+    test(`${collection} GLB has complete named pieces at playable scale without external dependencies`, async () => {
+      const bytes = readFileSync(`public/assets/${collection}/collection.glb`);
+      expect(bytes.length).toBeLessThan(1_000_000);
+      const length = bytes.readUInt32LE(12);
+      const json = JSON.parse(bytes.subarray(20, 20+length).toString("utf8"));
+      expect((json.buffers ?? []).some((buffer: { uri?: string }) => Boolean(buffer.uri))).toBe(false);
+      expect((json.images ?? []).some((image: { uri?: string }) => Boolean(image.uri))).toBe(false);
+      const gltf = await new GLTFLoader().parseAsync(Uint8Array.from(bytes).buffer, "");
+      for (const side of ["light", "dark"]) {
+        for (const name of [...Object.values(collectionPieces[collection]), ...(collection === "shogi" ? [...shogiPromotedCodes].map(code => `promoted_${collectionPieces.shogi[code]}`) : collection === "makruk" ? ["promoted_bia"] : [])]) {
+          const root = gltf.scene.getObjectByName(`${side}_${name}`);
+          expect(root, `${side}_${name}`).toBeDefined();
+          root!.position.set(0,0,0); root!.updateWorldMatrix(true, true);
+          const box = new Box3().setFromObject(root!, true);
+          const size = box.getSize(new Vector3());
+          expect(size.x).toBeGreaterThan(.01); expect(size.x).toBeLessThan(.053);
+          expect(size.z).toBeGreaterThan(.01); expect(size.z).toBeLessThan(.053);
+          expect(size.y).toBeGreaterThan(.009); expect(size.y).toBeLessThan(.075);
+          expect(Math.abs(box.min.y)).toBeLessThan(.003);
+          if (collection === "draughts") {
+            expect(size.y).toBeCloseTo(name === "king" ? .022 : .011, 4);
+            expect(root!.children.filter(child => /counter/.test(child.name))).toHaveLength(name === "king" ? 2 : 1);
+            expect(size.x).toBeCloseTo(.042, 4);
+          }
+          if (collection === "shogi") {
+            const inks: MeshStandardMaterial[] = [];
+            root!.traverse(child => { if (child instanceof Mesh) for (const material of Array.isArray(child.material) ? child.material : [child.material]) if (/ink/i.test(material.name)) inks.push(material); });
+            expect(inks).toHaveLength(1);
+            expect(inks[0].roughness).toBeGreaterThanOrEqual(.9);
+            if (name.startsWith("promoted_")) expect(inks[0].color.r).toBeGreaterThan(inks[0].color.g * 5);
+            else expect(Math.max(inks[0].color.r, inks[0].color.g, inks[0].color.b)).toBeLessThan(.02);
+          }
+        }
+      }
+    });
+  }
+
+  test("Shogi promoted faces and ownership resolve to distinct portable models", () => {
+    for (const code of shogiPromotedCodes) {
+      expect(pieceModelName("shogi", code, true, true)).toBe(`light_promoted_${collectionPieces.shogi[code]}`);
+      expect(pieceModelName("shogi", code, false, true)).toBe(`dark_promoted_${collectionPieces.shogi[code]}`);
+      expect(pieceModelName("shogi", code, true)).not.toBe(pieceModelName("shogi", code, true, true));
+    }
+    expect(pieceModelName("shogi", "k", false)).toBe("dark_king");
+  });
+
+  test("Makruk promotion selects the turned Bia instead of an original Met", () => {
+    expect(pieceModelName("makruk", "m", true, true)).toBe("light_promoted_bia");
+    expect(pieceModelName("makruk", "m", false, true)).toBe("dark_promoted_bia");
+    expect(pieceModelName("makruk", "m", true)).toBe("light_met");
+    expect(pieceModelName("makruk", "p", true)).toBe("light_bia");
+  });
+
+  test.each(["classic", "ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi", "makruk", "english-draughts", "international-draughts", "turkish-draughts", "konane", "shatranj", "chaturanga", "jungle"])("%s angled camera contains its physical board and edge pieces", key => {
+    const variant = variantCatalog.find(variant => variant.key === key)!;
+    const collection = get3DCollection(key)!;
+    const layout = board3DLayout(collection, variant.board.rows, variant.board.cols);
+    const frame=tabletopFrame(collection,variant.board.rows,variant.board.cols,640);
+    const camera = new PerspectiveCamera(frame.fieldOfView, frame.aspect, .01, 10);
+    camera.position.copy(frame.position); camera.lookAt(frame.target); camera.updateMatrixWorld();
+    for (const x of [-layout.width/2-.033,layout.width/2+.033]) for (const z of [-layout.depth/2-.033,layout.depth/2+.033]) {
+      const projected = new Vector3(x,collection === "shogi" ? -.091 : -.049,z).project(camera);
+      expect(Math.abs(projected.x)).toBeLessThan(.99); expect(Math.abs(projected.y)).toBeLessThan(.94);
+    }
+    for (const x of [-layout.width/2+.017,layout.width/2-.017]) for (const z of [-layout.depth/2+.017,layout.depth/2-.017]) {
+      const projected = new Vector3(x,collection === "shogi" ? .013 : .065,z).project(camera);
+      expect(Math.abs(projected.x)).toBeLessThan(.99); expect(Math.abs(projected.y)).toBeLessThan(.94);
+    }
+  });
+});
+
+
+test("papamū wells are real recessed geometry with flush square edges and upward normals", () => {
+  const geometry=createKonaneCellGeometry(), position=geometry.getAttribute("position"), normal=geometry.getAttribute("normal");
+  geometry.computeBoundingBox();
+  expect(geometry.boundingBox!.min.y).toBeCloseTo(-.006,6);
+  expect(geometry.boundingBox!.max.y).toBeCloseTo(.002,6);
+  expect(geometry.boundingBox!.max.x-geometry.boundingBox!.min.x).toBeCloseTo(.053,6);
+  for (let i=0;i<position.count;i++) {
+    expect(normal.getY(i)).toBeGreaterThan(0);
+    if (Math.max(Math.abs(position.getX(i)),Math.abs(position.getZ(i)))>.026) expect(position.getY(i)).toBeCloseTo(.002,6);
+  }
+  geometry.dispose();
+});
+
+test("Jungle river surfaces are recessed beneath the banks and terrain stays tied to board squares", () => {
+  const kit=createJungleTerrainKit(.053);
+  kit.land.computeBoundingBox();kit.water.computeBoundingBox();
+  expect(kit.land.boundingBox!.max.y).toBeCloseTo(.002,6);
+  expect(kit.water.boundingBox!.max.y).toBeCloseTo(-.006,6);
+  for(const cell of createInitialState("jungle").board.flat()) {
+    const marks=kit.decorate(cell);
+    expect(marks.children).toHaveLength(cell.terrain==="river"?3:cell.terrain==="trap"||cell.terrain==="den"?2:0);
+    for(const mark of marks.children)expect(mark.userData.square).toEqual(cell.square);
+  }
+  kit.dispose();
+});

@@ -127,3 +127,24 @@ Record decisions that affect architecture, workflow, product behavior, or releas
 - The catalog should not imply full support for research-stage variants.
 - Rules, bot, and analysis phases can advance independently while still exposing truthful UI states.
 - Launch readiness can be evaluated per variant instead of as one all-or-nothing milestone.
+
+
+## 2026-09-25: Version Kōnane rules and use a recessed papamū
+
+New games use the National Park Service Hōnaunau profile (`nps-v1`): Black first, any own-stone removal for each player, then optional consecutive jumps in one straight direction. Each legal landing prefix is one atomic move, so local play, bots, server validation, clocks and saved history share the same rules. Unversioned games retain their prior White-first, adjacent-second-removal, forced-continuation behavior. Room review restores the original opening profile before replaying.
+
+The presentation is a contemporary wooden papamū with modeled bowls and original portable Blender pebbles. It is not a museum replica or a universal/tournament rules claim. [NPS source](https://www.nps.gov/thingstodo/play-konane.htm).
+
+
+## 2026-09-25: Separate historical piece vocabularies
+
+Use original abstract ceramic forms for Shatranj and a distinct sculpted army for Chaturanga, on plain gridded physical boards. Match those identities in 2D and explain selected-piece movement in a compact line below the board. Retain the existing documented rule profiles, promotion codes and room/save contracts; visual research is not evidence of universal historical rules. Source context and originality boundaries are recorded in [the delivery notes](historical-tabletops.md).
+
+
+## 2026-09-25: Jungle physical terrain and rule compatibility
+
+Use original animal miniatures on a physical board whose rivers are recessed below its banks. Terrain markers follow the actual state's cells rather than a separate visual map. New `standard-v1` games correct trap layout/ownership, Dog/Wolf ranks and rat bank captures, and resolve immobilization as a draw. Preserve unversioned saved behavior and reconstruct old room openings for review. Sources and explicit app conventions are documented in [the delivery notes](jungle-tabletop.md); 3D coverage does not imply complete bot calibration, localization or tournament certification.
+
+## 2026-09-25: Fit physical 3D to the available screen
+
+Derive the camera from physical bounds and available space rather than one fixed landscape composition. On narrow Shogi boards, move hand tiles to physical end trays while retaining side komadai on desktop. Keep manual orbit/pan/relative zoom across resize, provide large reset/zoom targets and distinguish taps from complete gestures. Short viewports retain a scrollable margin outside the canvas. This is responsive presentation only; regional rules, hand ownership and saved positions are unchanged. See [validation](mobile-tabletop.md).

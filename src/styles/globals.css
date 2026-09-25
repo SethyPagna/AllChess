@@ -2207,34 +2207,20 @@ option {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: #274f1b;
-  font-size: clamp(0.78rem, calc((var(--board-fixed-size) / var(--board-cols)) * 0.18), 1.12rem);
-  font-weight: 950;
+  color: #314b2d;
+  font-size: clamp(0.56rem, calc((var(--board-fixed-size) / var(--board-cols)) * 0.14), 0.75rem);
+  font-weight: 600;
   line-height: 1;
   padding: 0;
   pointer-events: none;
   text-align: center;
-  text-shadow:
-    0 1px 0 rgb(255 255 255 / 86%),
-    0 0 0.22rem rgb(255 255 255 / 72%);
+  text-shadow: none;
   text-transform: none;
 }
 
-.board-square[data-tone="dark"] .board-coordinate {
-  color: #fff8c7;
-  text-shadow:
-    0 1px 1px rgb(0 0 0 / 46%),
-    0 0 0.18rem rgb(0 0 0 / 42%);
-}
-
-.board-shell:not([data-variant="classic"]):not([data-variant="chess960"]):not([data-variant="antichess"]):not([data-variant="horde"]):not([data-variant="king-of-the-hill"]):not([data-variant="three-check"]):not([data-variant="racing-kings"]) .board-coordinate {
-  border: 1px solid rgb(255 255 255 / 30%);
-  border-radius: 999px;
-  background: rgb(12 18 14 / 58%);
-  color: #fff8d6;
-  padding: 0.08rem 0.18rem;
-  text-shadow: 0 1px 1px rgb(0 0 0 / 62%);
-}
+.board-square[data-tone="dark"] .board-coordinate { color: #fff8df; }
+.board-grid[data-board-geometry="plain-grid"] .board-coordinate,
+.board-grid[data-board-geometry="intersections"] .board-coordinate { color: #354533; }
 
 .board-rank {
   left: 0.16rem;
@@ -2552,7 +2538,7 @@ option {
 }
 
 .match-result-modal {
-  position: absolute;
+  position: fixed;
   z-index: 95;
 }
 
@@ -2580,20 +2566,24 @@ option {
 }
 
 .match-result-modal {
-  left: 50%;
-  top: 50%;
-  width: min(88%, 26rem);
-  max-height: min(88vh, 34rem);
+  inset: 0;
+  margin: auto;
+  width: min(calc(100vw - 2rem), 26rem);
+  max-height: calc(100dvh - 2rem);
   overflow: auto;
-  transform: translate(-50%, -50%);
+  color: var(--foreground);
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  background: var(--surface);
   box-shadow: var(--shadow);
   padding: clamp(1rem, 3vw, 1.4rem);
   text-align: center;
   pointer-events: auto;
 }
+
+.match-result-modal::backdrop { background: rgb(10 24 17 / 32%); backdrop-filter: blur(2px); }
+.match-result-details { margin-top: .8rem; text-align: left; }
+.match-result-details summary { cursor: pointer; color: var(--muted); font-size: .8rem; padding: .35rem 0; }
 
 .match-result-close {
   position: absolute;

@@ -8,6 +8,8 @@ dist/
 coverage/
 playwright-report/
 test-results/
+.playwright-cli/
+output/playwright/
 .vercel/
 .open-next/
 .wrangler/
@@ -23,3 +25,5 @@ public/engines/stockfish/
 .vercel
 data/local/
 supabase/
+
+public/offline-pack.json

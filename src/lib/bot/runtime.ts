@@ -1,4 +1,4 @@
-import { applyMove, getLegalMoves, sameSquare, type GameState, type Move, type PlayerColor } from "@/lib/variants";
+import { applyMove, getLegalMoves, getVariant, sameSquare, type GameState, type Move, type PlayerColor } from "@/lib/variants";
 import { lookupBotKnowledge, type BotKnowledgeSource, type BotMoveExplanation } from "@/lib/bot/training";
 import { isStockfishRuntimeReady, moveToUci, requestStockfishMove, shouldUseStockfish, warmStockfishRuntime, type BotEngineMode } from "@/lib/bot/stockfish-engine";
 import { botDifficultyLevels, getBotDifficultyLevel, isBeginnerBotDifficulty, isCeilingBotDifficulty, isMasterBotDifficulty, MAX_BOT_REPLY_MS, type BotDifficulty, type BotDifficultyKey, type BotPlayStyle } from "@/lib/bot/config";
@@ -488,8 +488,20 @@ export function createBotSearchStateKey(state: GameState) {
     }
   }
 
+  const last = state.moves.at(-1);
+  const previousMove = last ? `${last.kind ?? "move"}:${last.from.row},${last.from.col}:${last.to.row},${last.to.col}` : "";
+  // Identical piece placement can have different castling/opening-leap rights.
+  let movedHomeSquares = 0;
+  if (getVariant(state.variantKey).supportsCastling || state.variantKey === "ouk-chaktrang") {
+    for (const move of state.moves) {
+      if (move.from.row === 0 || move.from.row === state.board.length - 1) movedHomeSquares |= 1 << ((move.from.row === 0 ? 0 : 8) + move.from.col);
+    }
+  }
+
   return [
     state.variantKey,
+    previousMove,
+    movedHomeSquares,
     state.turn,
     state.status,
     state.result ?? "",
