@@ -22,23 +22,23 @@ export default async function LeaderboardsPage({
   const { locale: rawLocale } = await params;
   const query = await searchParams;
   const locale = normalizeLocale(rawLocale);
-  const { leaderboards, scopes, source, filters, totalLeaderboards } = await getRuntimeLeaderboards({ scope: query?.scope });
+  const { leaderboards, scopes, filters, totalLeaderboards } = await getRuntimeLeaderboards({ scope: query?.scope });
   const populatedLeaderboards = leaderboards.filter((leaderboard) => leaderboard.entries.length > 0);
   const hasComputedBoards = totalLeaderboards > 0;
   const hasRatedResults = populatedLeaderboards.length > 0;
   const selectedScope = filters.scope === "all" ? null : scopes.find((scope) => scope.id === filters.scope);
   const emptyScopes = selectedScope ? [selectedScope] : scopes.slice(0, 4);
-  const familyScopes = selectedScope ? [] : scopes.slice(4);
+  const familyScopes = selectedScope ? [] : scopes;
 
   return (
     <section className="leaderboards-page grid gap-5">
       <div className="compact-page-heading">
         <h1 className="text-4xl font-black sm:text-5xl">Leaderboards</h1>
-        <InfoHint text={source === "d1" ? "Leaderboards read Cloudflare D1 rows. Empty boards mean no rated entries have been computed yet." : "Rated tables stay empty until real match results are recorded. No seeded players or guessed rankings."} />
+        <InfoHint text="Rankings from recorded rated games. Choose a scope to see a game or family." />
       </div>
       <LeaderboardFilterBar filters={filters} hasComputedBoards={hasComputedBoards} hasRatedResults={hasRatedResults} populatedCount={populatedLeaderboards.length} scopes={scopes} />
       {hasRatedResults ? <PopulatedLeaderboards leaderboards={populatedLeaderboards} /> : <EmptyLeaderboardScopes scopes={emptyScopes} />}
-      {familyScopes.length > 0 ? <LeaderboardFamilyList scopes={familyScopes} /> : null}
+      {familyScopes.length > 0 ? <LeaderboardFamilyList scopes={familyScopes} locale={locale} /> : null}
       <LeaderboardActions locale={locale} />
     </section>
   );

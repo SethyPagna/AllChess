@@ -1,6 +1,8 @@
 import Link from "next/link";
-import { Filter, Play, Trophy } from "lucide-react";
+import { Play, Trophy } from "lucide-react";
 
+import { EmptyState } from "@/components/ui/empty-state";
+import { FormChoicePicker } from "@/components/ui/form-choice-picker";
 import type { RuntimeLeaderboards } from "@/lib/leaderboards/runtime";
 import { playSetupHref } from "@/lib/routing/play-links";
 
@@ -14,6 +16,7 @@ type LeaderboardActionsProps = {
 
 type LeaderboardFamilyListProps = {
   scopes: RuntimeLeaderboards["scopes"];
+  locale: string;
 };
 
 type LeaderboardFilterBarProps = {
@@ -30,15 +33,9 @@ type PopulatedLeaderboardsProps = {
 
 export function EmptyLeaderboardScopes({ scopes }: EmptyLeaderboardScopesProps) {
   return (
-    <div className="leaderboard-feature-grid">
-      {scopes.map((scope) => (
-        <article key={scope.id} className="panel leaderboard-card" role="group" aria-label={`${scope.label}. No rated results yet.`}>
-          <Trophy size={24} />
-          <h2>{scope.label}</h2>
-          <p>No rated results yet.</p>
-        </article>
-      ))}
-    </div>
+    <EmptyState className="panel" icon={Trophy} title="No rated results yet." help="Rankings appear after rated games are recorded.">
+      {scopes.length === 1 ? <span className="studio-empty-caption">{scopes[0].label}</span> : null}
+    </EmptyState>
   );
 }
 
@@ -73,42 +70,28 @@ export function LeaderboardFilterBar({
 }: LeaderboardFilterBarProps) {
   return (
     <form method="get" className={`panel leaderboard-filter-bar ${hasComputedBoards ? "" : "is-empty"}`} aria-label="Leaderboard filters">
-      <label className="leaderboard-scope-field" title="Choose a leaderboard scope. Empty scopes stay visible until rated games create rows.">
-        <Filter size={16} />
-        <span>Scope</span>
-        <select name="scope" defaultValue={filters.scope} aria-label="Leaderboard scope">
-          <option value="all">All scopes</option>
-          {scopes.map((scope) => (
-            <option key={scope.id} value={scope.id}>
-              {scope.label}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div title="Choose a leaderboard scope."><FormChoicePicker key={filters.scope} name="scope" label="Leaderboard scope" defaultValue={filters.scope} options={[{ key: "all", label: "All scopes" }, ...scopes.map(scope => ({ key: scope.id, label: scope.label }))]} /></div>
       <button type="submit" className="leaderboard-filter-submit focus-ring">
         Filter
       </button>
       <span className="leaderboard-filter-stat" aria-disabled="true" title="Only real rated games appear here.">Rated only</span>
-      <span className="leaderboard-filter-stat" aria-disabled={hasRatedResults ? undefined : "true"} title={hasRatedResults ? "Showing computed Cloudflare D1 leaderboard rows." : "Leaderboards stay empty until real games are recorded."}>
-        {hasRatedResults ? `${populatedCount} computed boards` : "Real results"}
+      <span className="leaderboard-filter-stat" aria-disabled={hasRatedResults ? undefined : "true"} title={hasRatedResults ? "Rankings from recorded rated games." : "Leaderboards stay empty until real games are recorded."}>
+        {hasRatedResults ? `${populatedCount} rankings` : "Real results"}
       </span>
     </form>
   );
 }
 
-export function LeaderboardFamilyList({ scopes }: LeaderboardFamilyListProps) {
+export function LeaderboardFamilyList({ scopes, locale }: LeaderboardFamilyListProps) {
   return (
-    <div className="panel leaderboard-family-list">
-      <h2>Game-family boards</h2>
+    <details className="panel leaderboard-family-list studio-disclosure">
+      <summary>All rankings</summary>
       <div>
         {scopes.map((scope) => (
-          <article key={scope.id}>
-            <strong>{scope.label}</strong>
-            <span>Waiting for rated games</span>
-          </article>
+          <Link className="focus-ring" key={scope.id} href={`/${locale}/leaderboards?scope=${encodeURIComponent(scope.id)}` as never}>{scope.label}</Link>
         ))}
       </div>
-    </div>
+    </details>
   );
 }
 
@@ -117,7 +100,7 @@ export function LeaderboardActions({ locale }: LeaderboardActionsProps) {
     <div className="watch-actions">
       <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="action-primary focus-ring watch-action-button">
         <Play size={16} />
-        Play rated
+        Play
       </Link>
       <Link href={`/${locale}/lobby`} className="action-secondary focus-ring watch-action-button">
         Back to lobby

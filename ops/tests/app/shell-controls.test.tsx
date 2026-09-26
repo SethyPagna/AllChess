@@ -24,16 +24,17 @@ describe("shell controls", () => {
     expect(markup).not.toContain(">EN<");
   });
 
-  test("notification center exposes a compact menu with actionable states", () => {
+  test("notification center does not count placeholder messages as real unread events", () => {
     const markup = renderToStaticMarkup(createElement(NotificationCenter));
 
-    expect(markup).toContain('aria-label="Notifications, 3 unread"');
+    expect(markup).toContain('aria-label="Notifications"');
     expect(markup).toContain('data-shell-menu="notifications"');
     expect(markup).toContain("shell-icon-control");
-    expect(markup).toContain("Match ready");
-    expect(markup).toContain("Review complete");
-    expect(markup).toContain("Real alerts only");
-    expect(markup).toContain("Mark read");
+    expect(markup).toContain("No notifications yet");
+    expect(markup).not.toContain("unread");
+    expect(markup).not.toContain("Match ready");
+    expect(markup).not.toContain("notification-dot");
+    expect(markup).not.toContain("Mark read");
   });
 
   test("information hints are native expandable controls", () => {

@@ -4,6 +4,12 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ---
 
+## 2026-09-27 — Compact account, review and community pages
+
+- Use shared visual empty states, compact forms and explicit theme buttons across seven secondary pages.
+- Remove synthetic notification events, add menu dismissal and keep mobile popovers visible.
+- Preserve all saved review moves instead of truncating the timeline at ply 16. See [scope and validation](secondary-pages.md).
+
 ## 2026-09-27 — Visual discovery and compact guides
 
 - Share native piece artwork across browsing surfaces; feature Cambodia in the lobby and reduce repeated card descriptions.

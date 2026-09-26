@@ -40,7 +40,7 @@ export default async function AnalysisPage({
   const decodedGameId = safeDecodeRouteSegment(gameId) ?? gameId;
   const review = await getRuntimeAnalysisReview(decodedGameId);
   const hasAnalysis = Boolean(review.analysis);
-  const statusLabel = hasAnalysis ? `${review.source.toUpperCase()} review` : "No saved review";
+  const statusLabel = hasAnalysis ? "Saved review" : "No saved review";
   const selectedMoveIndex = normalizeSelectedMoveIndex(query.ply, review.moves);
   const reviewMoments = extractReviewMoments(review.analysis?.report);
   const reviewMomentByMove = createReviewMomentByMove(reviewMoments, review.moves);

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Brain, Play } from "lucide-react";
 
+import { EmptyState } from "@/components/ui/empty-state";
 import { ReviewMomentLink } from "@/components/analysis/review-controls";
 import type { ReviewLabelTone, ReviewMoment } from "@/lib/analysis/review-moments";
 import type { RuntimeAnalysisReview } from "@/lib/analysis/runtime";
@@ -38,17 +39,14 @@ export function AnalysisSummaryCard({
 }: AnalysisSummaryCardProps) {
   if (!analysis) {
     return (
-      <article className="panel account-empty-state">
-        <Brain size={26} />
-        <h2>No saved review yet</h2>
-        <p>Finish a game to unlock move labels, turning points, and replay controls.</p>
+      <EmptyState className="panel" icon={Brain} title="No saved review yet" help="Recorded games can include move labels, turning points and replay controls.">
         <div className="watch-actions">
           <Link href={playGameHref(locale, "classic", { mode: "offline", time: "rapid" }) as never} className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2">
             <Play size={16} />
             Play first
           </Link>
         </div>
-      </article>
+      </EmptyState>
     );
   }
 
@@ -57,7 +55,7 @@ export function AnalysisSummaryCard({
       <Brain size={26} />
       <h2>Saved review</h2>
       <p>{analysis.summary}</p>
-      <dl>
+      <details className="studio-disclosure"><summary>Review details</summary><dl>
         <div>
           <dt>Provider</dt>
           <dd>{analysis.provider}</dd>
@@ -70,7 +68,7 @@ export function AnalysisSummaryCard({
           <dt>Moves</dt>
           <dd>{moveCount}</dd>
         </div>
-      </dl>
+      </dl></details>
       {reviewLabelCounts.length ? (
         <div className="analysis-label-counts" aria-label="Review label counts">
           {reviewLabelCounts.map((item) => (

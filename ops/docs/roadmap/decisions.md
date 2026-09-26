@@ -157,3 +157,7 @@ A portable GLB alone does not establish realism. Use licensed detailed meshes wi
 ## 2026-09-27: Visual browsing and camera acceptance
 
 Reuse native piece artwork across home, lobby, catalog and playable guides. Keep rules and mode support in accessible disclosures and native modal dialogs rather than repeated card copy. Preserve Unicode letters and marks in search, including Khmer and Thai. Treat camera composition, light, scale, gesture safety and responsive framing as explicit acceptance criteria for every game/theme in the active goal. See [delivery scope](discovery-design.md).
+
+## 2026-09-27: Compact secondary pages with honest state
+
+Use visual empty states and optional guidance while preserving submitted filters, auth errors, room status and complete review timelines. Settings should expose Light, Dark and System directly. Do not manufacture unread notifications or imply a casual queue is rated. Keep shell menus dismissible and within small-screen bounds. See [delivery scope](secondary-pages.md).

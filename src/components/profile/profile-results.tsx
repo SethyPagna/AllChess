@@ -14,7 +14,7 @@ export function ProfileResults({ history, locale }: ProfileResultsProps) {
     <div className="panel profile-history-list">
       <div className="compact-section-heading">
         <h2 className="section-title">Recent matches</h2>
-        <InfoHint text="These rows come from saved Cloudflare D1 match results for this profile." />
+        <InfoHint text="Open a recorded match to review its moves." />
         <Link href={`/${locale}/history`} className="action-secondary focus-ring inline-flex items-center gap-2 px-3 py-2 text-sm">
           <History size={15} />
           Full history

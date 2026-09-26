@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import "@/styles/globals.css";
 import "@/styles/studio.css";
 import "@/styles/discovery.css";
+import "@/styles/account.css";
 
 export const metadata: Metadata = {
   title: "AllChess Multiplayer",

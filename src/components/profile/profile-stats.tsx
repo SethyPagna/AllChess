@@ -11,7 +11,7 @@ export function ProfileStats({ ratingLabel, summary }: ProfileStatsProps) {
   const stats = [
     { label: ratingLabel, value: summary.bestRating ? String(Math.round(summary.bestRating)) : "Unrated", Icon: BarChart3 },
     { label: "Saved games", value: String(summary.gamesPlayed), Icon: History },
-    { label: "Best game", value: summary.recentResult ?? "Pending", Icon: Play }
+    { label: "Last result", value: summary.recentResult ?? "—", Icon: Play }
   ];
 
   return (

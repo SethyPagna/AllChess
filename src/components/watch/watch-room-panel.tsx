@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ExternalLink, Radio, Search, Swords, Trophy, Users } from "lucide-react";
 
 import type { RuntimeRoomList } from "@/lib/realtime/runtime";
@@ -20,55 +21,12 @@ export function WatchRoomPanel({ hasRooms, locale, requestedVariant, roomList }:
 
   return (
     <div className="panel watch-empty-state">
-      {searchedRoom ? (
-        <Link href={`/${locale}/play/${searchedRoom.variantKey}?mode=spectate&room=${encodeURIComponent(searchedRoom.roomId)}` as never} className="focus-ring watch-room-lookup" aria-label={`Open searched room ${searchedRoom.roomId}`}>
-          <span>
-            <strong>Open searched room</strong>
-            <small>{searchedRoom.variantLabel} / {searchedRoom.roomId}</small>
-          </span>
-          <ExternalLink size={16} />
-        </Link>
-      ) : null}
-      {hasVisibleRooms ? (
-        <>
-          <h2>Live room list</h2>
-          <p>Public rooms from Cloudflare D1. Search by room, game, status, or rated state.</p>
-          <div className="watch-room-list" aria-label="Public rooms">
-            {roomList.rooms.map((room) => (
-              <Link
-                key={room.roomId}
-                href={`/${locale}/play/${room.variantKey}?mode=spectate&room=${encodeURIComponent(room.roomId)}`}
-                className="focus-ring watch-room-card"
-                aria-label={`Spectate ${room.variantKey} room ${room.roomId}. ${room.status}, ${room.rated ? "rated" : "casual"}, ${room.moveVersion} plies, ${room.spectators} watching.`}
-              >
-                <span>
-                  <strong>{room.variantKey}</strong>
-                  <small>{room.status} / {room.rated ? "rated" : "casual"}</small>
-                </span>
-                <span>
-                  <strong>{room.moveVersion}</strong>
-                  <small>plies</small>
-                </span>
-                <span>
-                  <strong>{room.spectators}</strong>
-                  <small>watching</small>
-                </span>
-              </Link>
-            ))}
-          </div>
-        </>
-      ) : (
-        <>
-          <h2>{hasRooms ? "No rooms match those filters" : "No public rooms right now"}</h2>
-          <p>{hasRooms ? "Clear the search or switch back to all rooms." : "Start a room or check back when a public game is live."}</p>
-        </>
-      )}
       <form className="watch-room-tools" aria-label="Watch room controls" action={`/${locale}/watch`}>
         <label className="watch-room-search">
           <Search size={15} />
           <input name="q" defaultValue={searchQuery} placeholder="Room, game, rated" aria-label="Search rooms" />
         </label>
-        <button type="submit" className="focus-ring">
+        <button type="submit" className="focus-ring" title="Search rooms">
           <Search size={15} />
           Search
         </button>
@@ -88,10 +46,49 @@ export function WatchRoomPanel({ hasRooms, locale, requestedVariant, roomList }:
           </Link>
           <Link href={watchHref(locale, { q: searchQuery, variant: requestedVariant, status: statusFilter, sort: "spectators" }) as never} className={`focus-ring watch-filter-chip${roomSort === "spectators" ? " is-active" : ""}`} aria-current={roomSort === "spectators" ? true : undefined}>
             <Users size={15} />
-            Spectators
+            Popular
           </Link>
         </div>
       </form>
+      {searchedRoom ? (
+        <Link href={`/${locale}/play/${searchedRoom.variantKey}?mode=spectate&room=${encodeURIComponent(searchedRoom.roomId)}` as never} className="focus-ring watch-room-lookup" aria-label={`Open searched room ${searchedRoom.roomId}`}>
+          <span>
+            <strong>Open searched room</strong>
+            <small>{searchedRoom.variantLabel} / {searchedRoom.roomId}</small>
+          </span>
+          <ExternalLink size={16} />
+        </Link>
+      ) : null}
+      {hasVisibleRooms ? (
+        <>
+          <h2>Live rooms</h2>
+          <div className="watch-room-list" aria-label="Public rooms">
+            {roomList.rooms.map((room) => (
+              <Link
+                key={room.roomId}
+                href={`/${locale}/play/${room.variantKey}?mode=spectate&room=${encodeURIComponent(room.roomId)}`}
+                className="focus-ring watch-room-card"
+                aria-label={`Spectate ${room.variantKey} room ${room.roomId}. ${room.status}, ${room.rated ? "rated" : "casual"}, ${room.moveVersion} plies, ${room.spectators} watching.`}
+              >
+                <span>
+                  <strong>{getGameCatalogEntry(room.variantKey)?.name.english ?? room.variantKey}</strong>
+                  <small>{room.status} / {room.rated ? "rated" : "casual"}</small>
+                </span>
+                <span>
+                  <strong>{room.moveVersion}</strong>
+                  <small>plies</small>
+                </span>
+                <span>
+                  <strong>{room.spectators}</strong>
+                  <small>watching</small>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </>
+      ) : (
+        <EmptyState icon={Radio} title={hasRooms ? "No rooms match those filters" : "No public rooms right now"} help={hasRooms ? "Clear the search or choose all rooms." : "Public games appear here when a room is available."} />
+      )}
       <div className="watch-actions">
         <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="action-primary focus-ring watch-action-button">
           <Swords size={16} />

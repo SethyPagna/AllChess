@@ -176,11 +176,11 @@ describe("compact page copy", () => {
     expect(markup).toContain('value="mini-shogi"');
   });
 
-  test("analysis keeps empty review controls visible but disabled", async () => {
+  test("analysis keeps unavailable review controls in a disclosure", async () => {
     const element = await AnalysisPage({ params: Promise.resolve({ locale: "en", gameId: "demo" }) });
     const markup = renderToStaticMarkup(element);
 
-    expect(markup).toContain("Review tools");
+    expect(markup).toContain("<summary>Review tools</summary>");
     expect(markup).toContain("aria-label=\"Review playback controls\"");
     expect(markup).toContain("First move unlocks when this game has saved move history.");
     expect(markup).toContain("Playback controls unlock after saved moves");
@@ -192,6 +192,8 @@ describe("compact page copy", () => {
     const markup = renderToStaticMarkup(<ThemeProvider>{element}</ThemeProvider>);
 
     expect(markup).toContain("Display");
+    expect(markup).toContain('aria-label="Display appearance"');
+    expect(markup).toContain("System");
     expect(markup).toContain("Language");
     expect(markup).toContain("Notifications");
     expect(markup).toContain('class="info-hint');
@@ -212,13 +214,15 @@ describe("compact page copy", () => {
     expect(markup).not.toContain("AllChess will show real per-game ratings");
   });
 
-  test("login keeps account benefits compact", async () => {
+  test("login keeps account actions clear without advertising unavailable account features", async () => {
     const element = await LoginPage({ params: Promise.resolve({ locale: "en" }) });
     const markup = renderToStaticMarkup(element);
 
-    expect(markup).toContain("Ratings");
-    expect(markup).toContain("Reviews");
-    expect(markup).toContain("Preferences");
+    expect(markup).toContain('name="email"');
+    expect(markup).toContain('name="password"');
+    expect(markup).toContain("Continue with Google");
+    expect(markup).toContain("Create account");
+    expect(markup).not.toContain("Account benefits");
     expect(markup).toContain('class="info-hint');
     expect(markup).not.toContain("<p>Sign in with AllChess auth");
   });

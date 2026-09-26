@@ -1,3 +1,4 @@
+import { FormChoicePicker } from "@/components/ui/form-choice-picker";
 import { Search } from "lucide-react";
 
 import type { RuntimeRecentHistory } from "@/lib/history/runtime";
@@ -15,13 +16,7 @@ export function HistoryFilterBar({ hasSavedRows, history }: HistoryFilterBarProp
         <span className="sr-only">Search history</span>
         <input aria-label="Search history" name="q" defaultValue={history.filters.query} placeholder="Search saved games" />
       </label>
-      <select className="record-filter-select" name="result" aria-label="Filter history result" defaultValue={history.filters.result}>
-        <option value="all">All games</option>
-        <option value="win">Wins</option>
-        <option value="loss">Losses</option>
-        <option value="draw">Draws</option>
-        <option value="unfinished">Unfinished</option>
-      </select>
+      <FormChoicePicker key={history.filters.result} name="result" label="Filter history result" defaultValue={history.filters.result} options={[{key: "all", label: "All games"}, {key: "win", label: "Wins"}, {key: "loss", label: "Losses"}, {key: "draw", label: "Draws"}, {key: "unfinished", label: "Unfinished"}]} />
       <button type="submit" className="focus-ring record-filter-chip">
         Search
       </button>

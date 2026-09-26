@@ -12,6 +12,7 @@ vi.mock("@/lib/cloudflare/runtime", () => ({
 }));
 
 import AnalysisPage from "@/app/[locale]/analysis/[gameId]/page";
+import { AnalysisReviewTools } from "@/components/analysis/analysis-review-tools";
 
 function createAnalysisPageD1() {
   const db = {
@@ -73,6 +74,14 @@ function createAnalysisPageD1() {
 }
 
 describe("analysis page review navigation", () => {
+  test("keeps later saved moves reachable in the scrollable timeline", () => {
+    const moves = Array.from({ length: 24 }, (_, index) => ({ gameId: "long-game", ply: index + 1, move: {}, notation: `Move ${index + 1}`, boardStateAfter: {}, createdAt: "2026-09-27T00:00:00Z" }));
+    const markup = renderToStaticMarkup(<AnalysisReviewTools autoPlay={false} gameId="long-game" locale="en" moves={moves} reviewMomentByMove={new Map()} selectedMoveIndex={23} />);
+    expect(markup).toContain("Ply 24 of 24");
+    expect(markup).toContain("/en/analysis/long-game?ply=17");
+    expect(markup).toContain("/en/analysis/long-game?ply=24");
+    expect(markup).toContain('<li class="is-active"><a');
+  });
   test("renders saved moves as route-backed review links", async () => {
     runtime.env = { ALLCHESS_D1: createAnalysisPageD1() };
 

@@ -1,69 +1,21 @@
 "use client";
 
-import { Bell, CheckCircle2, Radio, Sparkles } from "lucide-react";
-import { useState } from "react";
-
-import { closeOtherShellMenus } from "./menu-utils";
-
-const notifications = [
-  {
-    title: "Match ready",
-    detail: "Your next queue or room update appears here.",
-    Icon: Radio
-  },
-  {
-    title: "Review complete",
-    detail: "Game review and bot notes will surface when available.",
-    Icon: CheckCircle2
-  },
-  {
-    title: "Real alerts only",
-    detail: "Account, room, and review events appear only when they exist.",
-    Icon: Sparkles
-  }
-];
+import { Bell } from "lucide-react";
+import { closeOtherShellMenus, useShellMenuDismissal } from "./menu-utils";
 
 export function NotificationCenter() {
-  const [read, setRead] = useState(false);
-  const unreadCount = read ? 0 : notifications.length;
-
+  const menuRef = useShellMenuDismissal();
   return (
-    <details
-      className="dropdown notification-menu relative inline-block"
-      data-shell-menu="notifications"
-      onToggle={(event) => {
-        if (event.currentTarget.open) {
-          closeOtherShellMenus(event.currentTarget);
-        }
-      }}
-    >
-      <summary
-        aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : "Notifications"}
-        title={unreadCount ? `${unreadCount} unread notifications` : "Notifications"}
-        className="btn btn-square focus-ring action-secondary shell-icon-control cursor-pointer text-[var(--muted)]"
-      >
+    <details ref={menuRef} className="dropdown notification-menu relative inline-block" data-shell-menu="notifications" onToggle={(event) => {
+      if (event.currentTarget.open) closeOtherShellMenus(event.currentTarget);
+    }}>
+      <summary aria-label="Notifications" title="Notifications" className="btn btn-square focus-ring action-secondary shell-icon-control cursor-pointer text-[var(--muted)]">
         <Bell aria-hidden="true" size={17} />
-        {unreadCount ? <span className="notification-dot" aria-hidden="true" /> : null}
       </summary>
-      <div className="dropdown-content notification-panel panel grid gap-2 p-2 shadow-xl">
-        <div className="notification-panel-heading">
-          <span>
-            <strong>Notifications</strong>
-            <small>{unreadCount ? `${unreadCount} unread` : "All caught up"}</small>
-          </span>
-          <button type="button" className="btn focus-ring notification-read-button" onClick={() => setRead(true)} disabled={!unreadCount}>
-            Mark read
-          </button>
-        </div>
-        {notifications.map(({ title, detail, Icon }) => (
-          <div key={title} className="notification-row" data-read={read ? "true" : "false"}>
-            <Icon aria-hidden="true" size={16} />
-            <span>
-              <strong>{title}</strong>
-              <small>{detail}</small>
-            </span>
-          </div>
-        ))}
+      <div className="dropdown-content notification-panel panel notification-empty">
+        <strong>Notifications</strong>
+        <Bell size={26} strokeWidth={1.5} aria-hidden="true" />
+        <span>No notifications yet</span>
       </div>
     </details>
   );

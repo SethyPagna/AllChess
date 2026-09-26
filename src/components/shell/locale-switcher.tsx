@@ -6,9 +6,10 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 import { localeNames, locales, type LocaleCode } from "@/lib/i18n/locales";
 import { localizePath } from "@/lib/i18n/navigation";
-import { closeOtherShellMenus } from "./menu-utils";
+import { closeOtherShellMenus, useShellMenuDismissal } from "./menu-utils";
 
 export function LocaleSwitcher({ active }: { active: LocaleCode }) {
+  const menuRef = useShellMenuDismissal();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const query = searchParams.toString();
@@ -16,6 +17,7 @@ export function LocaleSwitcher({ active }: { active: LocaleCode }) {
 
   return (
     <details
+      ref={menuRef}
       className="dropdown language-menu relative inline-block"
       data-shell-menu="language"
       onToggle={(event) => {

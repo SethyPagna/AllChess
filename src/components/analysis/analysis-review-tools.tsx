@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BarChart3, Pause } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 
 import { EmptyReviewPlaybackControls, ReviewPlaybackLinks } from "@/components/analysis/review-controls";
 import { getReviewMomentForMove, reviewLabelTone, type ReviewMoment } from "@/lib/analysis/review-moments";
@@ -27,6 +27,12 @@ export function AnalysisReviewTools({
   const selectedMove = moves[selectedMoveIndex] ?? null;
   const selectedMoment = selectedMove ? getReviewMomentForMove(reviewMomentByMove, selectedMove) : undefined;
 
+  if (!hasMoves) return <details className="panel analysis-review-shell studio-disclosure">
+    <summary>Review tools</summary>
+    <EmptyReviewPlaybackControls />
+    <p className="review-empty-note">Playback controls unlock after saved moves</p>
+  </details>;
+
   return (
     <article className="panel analysis-review-shell">
       <h2>
@@ -46,7 +52,7 @@ export function AnalysisReviewTools({
             </div>
           ) : null}
           <ol className="analysis-move-list" aria-label="Saved move timeline">
-            {moves.slice(0, 16).map((move) => {
+            {moves.map((move) => {
               const moment = getReviewMomentForMove(reviewMomentByMove, move);
 
               return (
@@ -61,17 +67,7 @@ export function AnalysisReviewTools({
             })}
           </ol>
         </>
-      ) : (
-        <div className="analysis-review-rows">
-          <span>Move timeline</span>
-          <span>Best / excellent / mistake / blunder labels</span>
-          <span>
-            <Pause size={14} />
-            Playback controls unlock after saved moves
-          </span>
-          <span>Position notes and engine-ready explanations</span>
-        </div>
-      )}
+      ) : null}
     </article>
   );
 }

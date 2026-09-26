@@ -13,7 +13,7 @@ export function RecentHistoryList({ history, locale }: RecentHistoryListProps) {
     <div className="panel profile-history-list">
       <div className="compact-section-heading">
         <h2 className="section-title">Recent saved games</h2>
-        <InfoHint text={history.source === "d1" ? "These rows are distinct saved games from Cloudflare D1." : "History stays empty until real saved games exist."} />
+        <InfoHint text={"Open a recorded game to review its moves."} />
       </div>
       <div>
         {history.results.map((result) => (

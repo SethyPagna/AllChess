@@ -1,4 +1,5 @@
 import { continueAsGuest, signInWithGoogle, signInWithPassword, signUpWithPassword } from "@/app/actions";
+import { GameArtwork } from "@/components/games/game-artwork";
 import { InfoHint } from "@/components/ui/info-hint";
 import type { LocaleCode } from "@/lib/i18n/locales";
 
@@ -12,23 +13,15 @@ export function AuthCard({
   error?: string | null;
 }) {
   return (
-    <section className="auth-page mx-auto grid max-w-5xl gap-5 lg:grid-cols-[minmax(0,1fr)_420px]">
-      <div className="auth-intro panel">
+    <section className="auth-page panel">
+      <GameArtwork variantKey="classic" locale={locale} />
+      <div className="auth-intro">
         <div className="compact-title-row">
           <h1>{copy.title}</h1>
           <InfoHint text={copy.subtitle} />
         </div>
-        <div className="auth-benefits" aria-label="Account benefits">
-          <span>Ratings</span>
-          <span>Reviews</span>
-          <span>Preferences</span>
-        </div>
-        <form action={continueAsGuest}>
-          <input type="hidden" name="locale" value={locale} />
-          <button className="focus-ring action-primary inline-flex px-5 py-3">{copy.demo}</button>
-        </form>
       </div>
-      <div className="panel auth-form-card">
+      <div className="auth-form-card">
         {error ? (
           <div className="auth-error" role="alert">
             {error}
@@ -49,7 +42,7 @@ export function AuthCard({
               {copy.login}
             </button>
             <button formAction={signUpWithPassword} className="auth-submit-secondary focus-ring">
-              Create
+              Create account
             </button>
           </div>
         </form>
@@ -58,6 +51,10 @@ export function AuthCard({
           <button className="auth-google-button focus-ring">
             Continue with Google
           </button>
+        </form>
+        <form action={continueAsGuest}>
+          <input type="hidden" name="locale" value={locale} />
+          <button className="focus-ring action-secondary inline-flex px-5 py-3">{copy.demo}</button>
         </form>
       </div>
     </section>
