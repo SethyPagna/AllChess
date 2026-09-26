@@ -373,3 +373,6 @@ button:disabled { cursor: not-allowed; }
 .board-grid[data-board-geometry="pits"] .board-square { background-image: radial-gradient(ellipse at 50% 48%, #37220b26 0 22%, #37220b40 30%, #fff4d630 39%, transparent 42%) !important; }
 
 .historical-piece-hint { margin: 0; font-size: .78rem; line-height: 1.5; color: var(--muted); }
+
+.photographic-piece { filter: drop-shadow(0 1px 1px #0005); }
+.photographic-piece image { image-rendering: auto; }

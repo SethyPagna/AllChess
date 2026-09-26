@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, test } from "vitest";
-import { Box3, Mesh, MeshStandardMaterial, PerspectiveCamera, Vector3 } from "three";
+import { Box3, Mesh, MeshStandardMaterial, PerspectiveCamera, Texture, Vector3 } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { collectionPieces, get3DCollection, board3DLayout, pieceModelName, shogiPromotedCodes } from "@/components/board/board-3d-config";
+import { collectionModelPath, collectionPieces, get3DCollection, board3DLayout, pieceModelName, shogiPromotedCodes } from "@/components/board/board-3d-config";
 import { createKonaneCellGeometry } from "@/components/board/konane-board";
 import { tabletopFrame } from "@/components/board/tabletop-camera";
 import { createJungleTerrainKit } from "@/components/board/jungle-board";
@@ -23,13 +23,23 @@ describe("playable 3D collections", () => {
 
   for (const collection of ["classic", "khmer", "shogi", "xiangqi", "janggi", "makruk", "draughts", "konane", "shatranj", "chaturanga", "jungle"] as const) {
     test(`${collection} GLB has complete named pieces at playable scale without external dependencies`, async () => {
-      const bytes = readFileSync(`public/assets/${collection}/collection.glb`);
-      expect(bytes.length).toBeLessThan(1_000_000);
+      const bytes = readFileSync(`public${collectionModelPath(collection)}`);
+      expect(bytes.length).toBeLessThan(collection === "classic" ? 16_000_000 : 1_000_000);
       const length = bytes.readUInt32LE(12);
       const json = JSON.parse(bytes.subarray(20, 20+length).toString("utf8"));
       expect((json.buffers ?? []).some((buffer: { uri?: string }) => Boolean(buffer.uri))).toBe(false);
       expect((json.images ?? []).some((image: { uri?: string }) => Boolean(image.uri))).toBe(false);
-      const gltf = await new GLTFLoader().parseAsync(Uint8Array.from(bytes).buffer, "");
+      if (collection === "classic") {
+        expect(json.images.length).toBeGreaterThanOrEqual(6);
+        for (const material of json.materials) {
+          expect(material.normalTexture).toBeDefined();
+          expect(material.pbrMetallicRoughness.baseColorTexture).toBeDefined();
+          expect(material.pbrMetallicRoughness.metallicRoughnessTexture).toBeDefined();
+        }
+      }
+      // Node has no image decoder. Validate the embedded maps above; parse actual geometry below.
+      const loader = new GLTFLoader().register(()=>({name:"NODE_TEXTURE_CHECK",loadTexture:()=>Promise.resolve(new Texture())}));
+      const gltf = await loader.parseAsync(Uint8Array.from(bytes).buffer, "");
       for (const side of ["light", "dark"]) {
         for (const name of [...Object.values(collectionPieces[collection]), ...(collection === "shogi" ? [...shogiPromotedCodes].map(code => `promoted_${collectionPieces.shogi[code]}`) : collection === "makruk" ? ["promoted_bia"] : [])]) {
           const root = gltf.scene.getObjectByName(`${side}_${name}`);

@@ -8,7 +8,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import type { BoardCell, GameState, PlayerColor, Square } from "@/lib/variants";
 import { sameSquare, serializeSquare, getVariant } from "@/lib/variants";
 import type { BoardThemePreference } from "./appearance";
-import { board3DPalettes, collectionPieces, pieceModelName, shogiPromotedCodes, board3DLayout, type PieceCollection, type PieceFinish } from "./board-3d-config";
+import { board3DPalettes, collectionModelPath, collectionPieces, pieceModelName, shogiPromotedCodes, board3DLayout, type PieceCollection, type PieceFinish } from "./board-3d-config";
 import { tabletopFrame } from "./tabletop-camera";
 import { tabletopGesture } from "./tabletop-gesture";
 
@@ -82,7 +82,7 @@ export default function Board3D(props: Props) {
       offset.setLength(THREE.MathUtils.clamp(offset.length()*factor,controls.minDistance,controls.maxDistance));
       camera.position.copy(controls.target).add(offset);controls.update();
     };
-    const tabletop = createTabletopScene(scene, renderer, layout.width, layout.depth, japanese, props.collection);
+    const tabletop = createTabletopScene(scene, renderer, layout.width, layout.depth, japanese, props.collection, () => render());
     tabletop.setCompactHands(frame.compactHands);
     const meshes = new THREE.Group(); scene.add(meshes);
     const grid = new THREE.Group(); scene.add(grid);
@@ -164,6 +164,7 @@ export default function Board3D(props: Props) {
               const copy = original.clone();
               if (japanese || current.collection === "xiangqi" || draughts) { copy.map = tabletop.grain; copy.bumpMap = tabletop.grain; copy.bumpScale = .000035; }
               if (current.finish !== "original") {
+                if (current.collection === "classic") copy.map = null;
                 copy.color.set(current.finish === "porcelain" ? (light || lettered) ? 0xfff7e6 : 0x24313b : (light || lettered) ? 0xe2e9e9 : 0x385773);
                 copy.roughness = current.finish === "porcelain" ? .2 : .65; copy.metalness = 0;
               }
@@ -292,10 +293,33 @@ export default function Board3D(props: Props) {
     renderer.domElement.addEventListener("pointerdown", down); renderer.domElement.addEventListener("pointermove", move); renderer.domElement.addEventListener("pointerup", up); renderer.domElement.addEventListener("pointercancel", cancel);
     renderer.domElement.addEventListener("webglcontextlost", lost);
     renderer.domElement.setAttribute("aria-label", `${props.collection === "khmer" ? "Cambodian" : japanese ? props.variantKey === "mini-shogi" ? "Mini Shogi" : "Shogi" : intersection ? props.collection === "xiangqi" ? "Xiangqi" : "Janggi" : jungle ? "Jungle" : historical ? props.collection === "shatranj" ? "Shatranj" : "Chaturanga" : thai ? "Makruk" : papamu ? "Kōnane papamū" : draughts ? props.variantKey === "international-draughts" ? "International draughts" : props.variantKey === "turkish-draughts" ? "Turkish draughts" : "English draughts" : "Classic"} 3D board. Tap pieces and marked squares to move.${japanese ? " Tap captured tiles on the hand stands to drop them." : ""} Drag to orbit. Pinch or use the zoom buttons; move with two fingers or right-drag. Use 2D for keyboard play.`);
-    function disposeModel(group: THREE.Group) { group.traverse(object => { if (object instanceof THREE.Mesh) { object.geometry.dispose(); const materials = Array.isArray(object.material) ? object.material : [object.material]; materials.forEach(material => material.dispose()); } }); }
-    new GLTFLoader().load(`/assets/${props.collection}/collection.glb`, gltf => {
+    function disposeModel(group: THREE.Group) {
+      const resources = new Set<THREE.BufferGeometry | THREE.Material | THREE.Texture>();
+      const bitmaps = new Set<ImageBitmap>();
+      group.traverse(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        resources.add(object.geometry);
+        for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+          resources.add(material);
+          for (const value of Object.values(material)) if (value instanceof THREE.Texture) {
+            resources.add(value);
+            if (typeof ImageBitmap !== "undefined" && value.source.data instanceof ImageBitmap) bitmaps.add(value.source.data);
+          }
+        }
+      });
+      resources.forEach(resource => resource.dispose());
+      bitmaps.forEach(bitmap => bitmap.close());
+    }
+    new GLTFLoader().load(collectionModelPath(props.collection), gltf => {
       if (disposed) { disposeModel(gltf.scene); return; }
       model = gltf.scene;
+      const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+      model.traverse(object => {
+        if (!(object instanceof THREE.Mesh)) return;
+        for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+          for (const value of Object.values(material)) if (value instanceof THREE.Texture) value.anisotropy = anisotropy;
+        }
+      });
       if (contextLost) return;
       if ((thai && [true, false].some(side => !model!.getObjectByName(pieceModelName("makruk", "m", side, true)))) || [true, false].some(side => Object.keys(collectionPieces[props.collection]).some(code => !model!.getObjectByName(pieceModelName(props.collection, code, side)) || (japanese && shogiPromotedCodes.has(code) && !model!.getObjectByName(pieceModelName(props.collection, code, side, true)))))) { fail("Some pieces could not load. Continue on the 2D board."); return; }
       modelReady = true;

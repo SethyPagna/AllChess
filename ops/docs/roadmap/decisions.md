@@ -148,3 +148,7 @@ Use original animal miniatures on a physical board whose rivers are recessed bel
 ## 2026-09-25: Fit physical 3D to the available screen
 
 Derive the camera from physical bounds and available space rather than one fixed landscape composition. On narrow Shogi boards, move hand tiles to physical end trays while retaining side komadai on desktop. Keep manual orbit/pan/relative zoom across resize, provide large reset/zoom targets and distinguish taps from complete gestures. Short viewports retain a scrollable margin outside the canvas. This is responsive presentation only; regional rules, hand ownership and saved positions are unchanged. See [validation](mobile-tabletop.md).
+
+## 2026-09-27: Separate playable coverage from art quality
+
+A portable GLB alone does not establish realism. Use licensed detailed meshes with UV/PBR textures and editable source files where appropriate, and generate native regional artwork individually. Keep image masters separate from actual 3D geometry. The Western set adapts Riley Queen's CC0 work; Cambodian 2D uses generated contemporary designs. Do not claim its mesh replacement is complete while only raster masters exist. Record provenance, native identities, runtime derivatives, offline impact and remaining quality gaps in [the revision notes](asset-quality-revision.md).

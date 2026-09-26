@@ -23,13 +23,30 @@ function woodGrain() {
   return texture;
 }
 
-export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRenderer, width = .424, depth = .424, japanese = false, collection = "classic") {
+export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRenderer, width = .424, depth = .424, japanese = false, collection = "classic", onTextureReady = () => {}) {
+  let disposed = false;
+  const woodTextures: THREE.Texture[] = [];
+  function woodTexture(name: string, colour = false) {
+    const texture = new THREE.TextureLoader().load(`/assets/materials/wood-table/${name}.jpg`, loaded => {
+      if (disposed) loaded.dispose();
+      else onTextureReady();
+    }, undefined, () => { /* The solid material remains playable if a texture cannot load. */ });
+    texture.colorSpace = colour ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    woodTextures.push(texture);
+    return texture;
+  }
+  const stainedTimber = ["classic", "khmer", "makruk", "chaturanga", "konane"].includes(collection);
+  const caseColour = stainedTimber ? woodTexture("colour", true) : null;
+  const woodNormal = woodTexture("normal");
+  const woodRoughness = woodTexture("roughness");
   const grain = woodGrain();
   grain.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   const environment = new RoomEnvironment();
   const generator = new THREE.PMREMGenerator(renderer);
   const environmentMap = generator.fromScene(environment, .04);
-  scene.environment = environmentMap.texture; scene.environmentIntensity = .45;
+  scene.environment = environmentMap.texture; scene.environmentIntensity = .65;
   environment.dispose(); generator.dispose();
   scene.background = new THREE.Color(0x171b1a);
   scene.fog = new THREE.Fog(0x171b1a, 1.8, 4);
@@ -38,6 +55,19 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
   const handStands:Array<{compact:boolean;meshes:THREE.Mesh[]}>=[];
   const walnut = new THREE.MeshPhysicalMaterial({ color: japanese ? 0xc79b57 : collection === "jungle" ? 0x17473b : collection === "janggi" ? 0x21433a : collection === "xiangqi" ? 0x512d25 : collection === "makruk" ? 0x654028 : collection === "shatranj" ? 0x17434b : collection === "chaturanga" ? 0x63392b : 0x493022, map: grain, bumpMap: grain, bumpScale: .00015, roughness: japanese ? .48 : .32, clearcoat: japanese ? .2 : .6, clearcoatRoughness: .28 });
   const edge = new THREE.MeshPhysicalMaterial({ color: 0x251b16, map: grain, roughness: .28, clearcoat: .7, clearcoatRoughness: .25 });
+  // Photographed UV/PBR timber on the case; regional colour tints remain distinct.
+  for (const material of [walnut, edge]) {
+    // Keep kaya, lacquer and painted cases in their native colour families.
+    if (caseColour) {
+      material.color.lerp(new THREE.Color(0xffffff), material === walnut ? .72 : .36);
+      material.map = caseColour;
+    }
+    material.bumpMap = null;
+    material.normalMap = woodNormal;
+    material.normalScale.set(.35, .35);
+    material.roughnessMap = woodRoughness;
+    material.roughness = .75;
+  }
   const brass = new THREE.MeshStandardMaterial({ color: 0xb69757, metalness: .82, roughness: .3 });
   const felt = new THREE.MeshStandardMaterial({ color: japanese ? 0x202521 : 0x142620, roughness: .96 });
   materials.push(walnut, edge, brass, felt);
@@ -84,18 +114,20 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
   const tableGeometry = new THREE.PlaneGeometry(8,8); geometries.push(tableGeometry);
   const table = new THREE.Mesh(tableGeometry, felt); table.rotation.x = -Math.PI/2; table.position.y = japanese ? -.091 : -.061; table.receiveShadow = true; group.add(table);
   const ambient = new THREE.HemisphereLight(0xe8e9e2, 0x1b211b, .45); scene.add(ambient);
-  const key = new THREE.SpotLight(0xffe4bc, 3.2, 3, Math.PI/5, .65, 2);
+  const key = new THREE.SpotLight(0xffe4bc, 1.9, 3, Math.PI/5, .65, 2);
   key.position.set(-.38,.85,.25); key.target.position.set(0,0,0);
   key.castShadow = true; key.shadow.mapSize.set(2048,2048); key.shadow.camera.near = .1; key.shadow.camera.far = 2;
   key.shadow.bias = -.00008; key.shadow.normalBias = .0007; key.shadow.radius = 4; key.shadow.blurSamples = 8;
-  const rim = new THREE.DirectionalLight(0xbcd7e3, 1.2); rim.position.set(.35,.4,-.5);
-  const fill = new THREE.DirectionalLight(0xf6ddb6, .5); fill.position.set(.5,.18,.5);
+  const rim = new THREE.DirectionalLight(0xbcd7e3, 1.4); rim.position.set(.35,.4,-.5);
+  const fill = new THREE.DirectionalLight(0xf6ddb6, .7); fill.position.set(.5,.18,.5);
   scene.add(key, key.target, rim, fill);
   return {
     grain,
     setCompactHands(compact:boolean) {handStands.forEach(stand=>stand.meshes.forEach(mesh=>{mesh.visible=stand.compact===compact;}));},
     dispose() {
+      disposed = true;
       geometries.forEach(geometry => geometry.dispose()); materials.forEach(material => material.dispose());
+      woodTextures.forEach(texture => texture.dispose());
       grain.dispose(); environmentMap.dispose(); key.shadow.map?.dispose();
       scene.remove(group, ambient, key, key.target, rim, fill); scene.environment = null;
     }

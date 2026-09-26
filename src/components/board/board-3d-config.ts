@@ -3,6 +3,10 @@ import type { BoardThemePreference } from "./appearance";
 export type PieceCollection = "khmer" | "classic" | "shogi" | "xiangqi" | "janggi" | "makruk" | "draughts" | "konane" | "chaturanga" | "shatranj" | "jungle";
 export type PieceFinish = "original" | "porcelain" | "slate";
 
+export function collectionModelPath(collection: PieceCollection) {
+  return `/assets/${collection}/${collection === "classic" ? "marble" : "collection"}.glb`;
+}
+
 const classicVariants = new Set(["classic", "chess960", "crazyhouse", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"]);
 export function get3DCollection(variantKey: string): PieceCollection | null {
   if (variantKey === "jungle") return "jungle";

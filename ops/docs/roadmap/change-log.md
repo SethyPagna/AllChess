@@ -4,6 +4,13 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ---
 
+## 2026-09-27 — Textured piece assets and Cambodian atelier artwork
+
+- Replace the modern Western GLB with a licensed, UV/PBR marble set and matching Blender-rendered 2D images. Preserve editable sources and source checksums.
+- Generate all twelve Cambodian light/dark piece images individually, retaining transparent masters and lossless runtime derivatives. Keep native vector/letter alternatives.
+- Add photographed case materials, controlled lighting, texture filtering and resource cleanup; include the assets in offline delivery.
+- Keep the incomplete Cambodian and other regional 3D quality work explicit. See [scope and validation](asset-quality-revision.md).
+
 ## 2026-09-25 — Mobile 3D framing and controls
 
 - Fit physical boards to narrow and short screens; retain an angled perspective and small, unboxed coordinates.

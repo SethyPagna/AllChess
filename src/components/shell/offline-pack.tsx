@@ -81,7 +81,7 @@ export function OfflinePack() {
     </button>
     {open ? createPortal(<div id={panelId} ref={panelRef} className="offline-pack-panel">
       <strong>Take your boards with you</strong>
-      <p>Save local games, bots, and 3D sets on this device. About 25 MB. Your browser may clear this download if storage runs low.</p>
+      <p>Save local games, bots, and 3D sets on this device. Your browser may clear this download if storage runs low.</p>
       <div role="status" aria-live="polite">
         {status.downloading ? <><progress value={status.completed || 0} max={status.total || 1} /><span>Saving play pack… {status.total ? `${Math.round((status.completed || 0) / status.total * 100)}%` : ""}</span></> : null}
         {status.error ? <p>{status.error}</p> : null}

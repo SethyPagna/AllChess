@@ -1,12 +1,27 @@
-# Cambodian asset quality revision — in progress
+# Cambodian atelier artwork
 
-The previous procedural collection does not meet the requested realism and detail standard. These individually generated transparent PNG masters establish the new carving, material and lighting direction. They are production source artwork, not finished 3D meshes and not a claim that the whole set has been replaced.
+Twelve individually generated transparent PNG masters created with Codex's built-in image-generation tool on 2026-09-27. These are contemporary Cambodian-inspired designs, not historical replicas. Light pieces use waxed boxwood, dark pieces use oxblood rosewood, both with a hairline aged-brass foot inlay. The default Ouk Chaktrang 2D set uses these assets; the Clear Khmer vector option remains available.
 
-Created with Codex's built-in image-generation tool on 2026-09-27. Contemporary Cambodian-inspired interpretation, not a historical replica. The horse and king use pale waxed boxwood and a restrained brass foot inlay. Future mesh exports must be inspected from multiple angles in the actual browser, with portable PBR textures, before replacing playable assets.
+The native masters are 1280 × 1280 RGBA PNGs. The browser derivatives are 512 × 512 lossless WebP images with transparency. The conversion only resizes and encodes; the artwork remains unaltered:
 
-## Prompts
+```powershell
+npx tsx ops/scripts/assets/prepare-atelier.ts
+```
 
-- `light-horse.png`: One isolated transparent Cambodian Ses horse bust on a turned circular pedestal, left-facing profile with an 8-degree elevated orthographic product camera. Anatomical muzzle, jaw, eyes, nostrils, two ears and an arched neck with detailed mane carving. Fine boxwood grain, satin wax, incised collar rings, double-torus base and hairline aged-brass inlay. Crisp studio lighting from upper left, no floor, text or external shadow; readable at chess-square size.
-- `light-king.png`: One matching Khon king, using the horse as material/lighting reference. Wide circular tiered foot, concave waist, three annular collar tiers, elongated lotus-bud finial with incised petal fluting. No European cross or crown jewels. Same boxwood, wax and brass, transparent orthographic product presentation.
+## Generation briefs and references
 
-Native output masters are preserved here. Runtime derivatives should keep alpha, coherent proportions and a clear owner distinction; they must not be shipped as flattened billboards in the 3D view.
+Each piece was generated separately, inspected, and used as a material/style reference for the next. Common brief: one isolated piece on transparency, slightly elevated orthographic product view, crisp studio light from upper left, detailed but readable at chess-square size. No floor, external shadow, text or watermark. Natural fine wood grain, satin wax, incised collar rings, tiered circular foot and restrained brass inlay.
+
+- `light-horse.png`: Cambodian Ses horse bust in left-facing profile. Anatomical muzzle, jaw, eye, nostril, two ears and an arched neck with detailed mane carving; double-torus pedestal. Established the material and camera reference.
+- `light-king.png`: Matching Khon king, using the horse as reference. Wide tiered foot, concave waist, three annular collar tiers, elongated lotus-bud finial with incised petal fluting. No European cross or jewels.
+- `light-queen.png`: Matching Neang, using the king as reference. Shorter concave waist, one broad collar and a smaller closed bud; visibly lower than the king.
+- `light-bishop.png`: Matching Koul with a broad pointed six-petal teardrop finial, narrow collar and shorter body. Preserve the common foot and light boxwood material.
+- `light-rook.png`: Matching Touk as an open shallow bowl on a short turned waist and the shared circular foot. Keep the rim and interior cavity clearly defined.
+- `light-pawn.png`: Matching Trey as a low domed circular counter with an incised ring, subtle wood grain and the same restrained brass foot band.
+- `dark-horse.png`, `dark-king.png`, `dark-queen.png`, `dark-bishop.png`, `dark-rook.png`, `dark-pawn.png`: Each is an individual image-generation edit of its corresponding light master. Preserve silhouette, proportions, pose, camera, carving, transparency and brass. Replace only the pale boxwood material with deep oxblood rosewood, with readable warm grain and controlled specular highlights.
+
+These are recorded generation briefs, not seed-deterministic recipes. Image generation is stochastic; the native masters are the authoritative outputs.
+
+## 3D boundary
+
+This artwork is not a completed mesh reconstruction and is never used as a billboard in the 3D board. Ouk's prior playable Blender collection remains in place while its quality revision is unfinished. Higgsfield exposed image-to-3D model descriptions in this session, but no callable generation endpoint. No remote reconstruction job was submitted. Future 3D replacements need full geometry, UV/PBR materials, multi-angle inspection and real browser validation.

@@ -57,6 +57,21 @@ function harness() {
 }
 
 describe("public offline play pack", () => {
+  test("downloads every photographic piece and PBR material and serves it after disconnecting", async () => {
+    const urls = ["/assets/classic/marble.glb"];
+    for (const side of ["light", "dark"]) {
+      for (const name of ["king", "queen", "bishop", "knight", "rook", "pawn"]) urls.push(`/assets/classic/marble/${side}_${name}.png`);
+      for (const name of ["king", "queen", "bishop", "horse", "rook", "pawn"]) urls.push(`/assets/khmer/atelier/${side}-${name}.webp`);
+    }
+    for (const name of ["colour", "normal", "roughness"]) urls.push(`/assets/materials/wood-table/${name}.jpg`);
+    const sw = harness();
+    await sw.lifecycle("install");
+    sw.manifest("photographic", "Public shell", urls.map(url => ({ url, value: `bytes:${url}` })));
+    expect((await sw.message("DOWNLOAD_OFFLINE")).at(-1)).toEqual({ ready: true });
+    sw.offline();
+    for (const url of urls) expect(await (await sw.request(url, "cors"))!.text()).toBe(`bytes:${url}`);
+  });
+
   test("cold launch serves a complete shell, chunks, and local-only redirect without room secrets", async () => {
     const sw = harness(); await sw.lifecycle("install"); sw.manifest("first", "Public board shell", ["shogi", "xiangqi", "janggi", "makruk", "draughts", "konane", "shatranj", "chaturanga", "jungle"].map(game => ({ url: `/assets/${game}/collection.glb`, value: `${game} GLB` })));
     expect((await sw.message("DOWNLOAD_OFFLINE")).at(-1)).toEqual({ ready: true });

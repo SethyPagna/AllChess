@@ -10,7 +10,7 @@ Original Cambodian-inspired carved study made for AllChess with Blender 5.2 thro
 - Six shapes in two materials: Khon, Neang, Koul, Ses, Touk, Trey.
 - Metre scale, semantic object names, editable lathed geometry and bevel modifiers. No third-party textures or imported meshes.
 - The app lazy-loads Three.js and the GLB only when 3D is selected. Meshes are reused across the board; camera and display plinth from the collection are excluded from play.
-- The 2D SVG collection is original vector work with matching piece identities.
+- The default 2D artwork now uses the individually generated [atelier set](atelier/README.md). The original Clear Khmer SVG collection remains selectable. The new artwork has not yet replaced these 3D meshes.
 
 Creation brief: readable small silhouettes, progressively taller royal/general shapes, a sculpted horse, an open boat-shaped rook, and low fish counters; warm sandstone versus polished rosewood with brass accents. Keep the collection editable, portable, and light enough for browser play.
 

@@ -75,8 +75,8 @@ const familyPresets: Record<string, AppearancePresetOption[]> = {
     preset("classic", "Checker set", "classic", "checker")
   ],
   khmer: [
-    preset("default", "Khmer sandstone", "wood", "khmer"),
-    preset("carved", "Rosewood & ivory", "wood", "khmer"),
+    preset("default", "Khmer atelier", "wood", "atelier"),
+    preset("carved", "Boxwood & rosewood", "wood", "atelier"),
     preset("contrast", "Clear Khmer", "contrast", "khmer"),
     preset("tablet", "Khmer letters", "jade", "tile")
   ],
@@ -109,7 +109,7 @@ const defaultBoards: Record<string, { label: string; boardTheme: BoardThemePrefe
   "mini-shogi": { label: "Mini kaya", boardTheme: "wood" },
   xiangqi: { label: "River wood", boardTheme: "wood" },
   janggi: { label: "Palace blue", boardTheme: "ocean" },
-  "ouk-chaktrang": { label: "Khmer sandstone", boardTheme: "wood" },
+  "ouk-chaktrang": { label: "Khmer atelier", boardTheme: "wood" },
   makruk: { label: "Thai wood", boardTheme: "wood" },
   jungle: { label: "Forest jade", boardTheme: "jade" },
   "international-draughts": { label: "Tournament slate", boardTheme: "slate" },

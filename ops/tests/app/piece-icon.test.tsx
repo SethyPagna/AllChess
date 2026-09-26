@@ -48,9 +48,9 @@ describe("PieceIcon", () => {
     expect(king).toContain("viewBox");
     expect(queen).toContain("viewBox");
     expect(king).toContain('data-piece-label="King"');
-    expect(king).toContain('data-skin="western"');
-    expect(king).toContain('data-detail="king-cross"');
-    expect(queen).toContain('data-detail="queen-jewel"');
+    expect(king).toContain('data-skin="marble"');
+    expect(king).toContain('/assets/classic/marble/light_king.png');
+    expect(queen).toContain('/assets/classic/marble/light_queen.png');
   });
 
   test("renders native Makruk Met and the distinct reverse face of a promoted Bia", () => {
