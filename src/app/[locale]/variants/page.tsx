@@ -47,8 +47,8 @@ export default async function VariantsPage({
         <span>{stats.learnGames} guides</span>
         <span>{stats.comingSoonGames} building</span>
       </div>
-      <CatalogTrainingMetrics knowledge={knowledge} legendBand={legendBand} trainingGate={trainingGate} />
       <CatalogBrowser entries={entries} initialFamily={initialFamily} initialMode={initialMode} initialStatus={initialStatus} locale={locale} />
+      <details className="studio-disclosure"><summary>Bot details</summary><CatalogTrainingMetrics knowledge={knowledge} legendBand={legendBand} trainingGate={trainingGate} /></details>
     </section>
   );
 }

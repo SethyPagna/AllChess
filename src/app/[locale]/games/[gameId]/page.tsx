@@ -8,7 +8,7 @@ import { GameDetailHero } from "@/components/games/game-detail-hero";
 import { GameDetailRuleSections } from "@/components/games/game-detail-rule-sections";
 import { GameDetailSources } from "@/components/games/game-detail-sources";
 import { safeDecodeRouteSegment } from "@/lib/routing/params";
-import { gameFamilies } from "@/lib/catalog";
+import { gameFamilies, getCatalogModeSupport } from "@/lib/catalog";
 import { getRuntimeCatalogEntry } from "@/lib/catalog/runtime";
 import { listBotTrainingReadiness } from "@/lib/bot/training";
 import { normalizeLocale } from "@/lib/i18n/locales";
@@ -44,13 +44,13 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
       </Link>
       <GameDetailHero entry={entry} family={family} locale={locale} />
       {isGated ? (
-        <GameDetailGate primaryGap={readiness?.primaryGap ?? completion?.remainingGates[0]} />
+        <GameDetailGate previewAvailable={getCatalogModeSupport(entry, "offline").enabled} primaryGap={readiness?.primaryGap ?? completion?.remainingGates[0]} />
       ) : null}
       <div className="game-detail-grid">
-        <article className="panel game-detail-section game-detail-mode-panel">
-          <h2>Modes</h2>
+        <details className="panel game-detail-section studio-disclosure game-detail-mode-panel">
+          <summary>Modes</summary>
           <CatalogModeGrid entry={entry} />
-        </article>
+        </details>
         <GameDetailRuleSections completion={completion} entry={entry} />
         <GameDetailSources sources={entry.ruleSourceLinks} />
       </div>

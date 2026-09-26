@@ -5,10 +5,9 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, BookOpen, Bot, Search, Star, Users, X } from "lucide-react";
 
 import { SavedMatches } from "@/components/board/saved-matches";
-import { PieceIcon } from "@/components/board/piece-icon";
+import { GameArtwork } from "@/components/games/game-artwork";
 import { displayGameName, getCatalogModeSupport, type CatalogPlayMode, type GameCatalogEntry } from "@/lib/catalog";
 import { getGamePresentation } from "@/lib/variants/presentation";
-import { getVariant } from "@/lib/variants/catalog";
 import { playGameHref } from "@/lib/routing/play-links";
 
 const favoritesKey = "allchess-favorite-games";
@@ -52,10 +51,10 @@ export function GameLibrary({ entries, locale }: { entries: GameCatalogEntry[]; 
     <section className="game-library" aria-label="Game library">
       <SavedMatches locale={locale} />
       <div className="library-heading">
-        <div><span className="studio-eyebrow">A world of strategy</span><h2>Find your next move.</h2></div>
+        <h2>Games</h2>
         <div className="library-mode" role="group" aria-label="Library play mode">
-          <button type="button" className="focus-ring" aria-pressed={mode === "bot"} onClick={() => setMode("bot")}><Bot size={16} /> Play a bot</button>
-          <button type="button" className="focus-ring" aria-pressed={mode === "offline"} onClick={() => setMode("offline")}><Users size={16} /> Local two-player</button>
+          <button type="button" className="focus-ring" aria-pressed={mode === "bot"} onClick={() => setMode("bot")}><Bot size={16} /> Bot</button>
+          <button type="button" className="focus-ring" aria-pressed={mode === "offline"} onClick={() => setMode("offline")}><Users size={16} /> Local</button>
           {([{ key: "room", label: "Friend" }, { key: "online", label: "Quick match" }, { key: "spectate", label: "Watch" }] as const).map(item => <button type="button" className="focus-ring" key={item.key} aria-pressed={mode === item.key} onClick={() => setMode(item.key)}>{item.label}</button>)}
         </div>
       </div>
@@ -69,19 +68,13 @@ export function GameLibrary({ entries, locale }: { entries: GameCatalogEntry[]; 
         {visible.map((entry) => {
           const key = entry.variantKey!;
           const presentation = getGamePresentation(key);
-          const variant = getVariant(key);
           const name = displayGameName(entry);
           const favorite = favorites.includes(entry.id);
           return (
             <article className="library-card" key={entry.id} data-tone={presentation.tone}>
               <Link className="library-card-link focus-ring" href={playGameHref(locale, key, { mode, time: "rapid" }) as never} aria-label={`${mode === "spectate" ? "Watch" : "Play"} ${name}`}>
-                <div className="library-art" aria-hidden="true">
-                  <span className="library-motif">{presentation.motif}</span>
-                  <div className="library-art-grid" />
-                  <div className="library-piece-group">{presentation.pieces.map((code, index) => <span key={index}><PieceIcon code={code} owner={variant.players[index === 2 ? 1 : 0]} variantKey={key} locale={locale} /></span>)}</div>
-                  <span className="library-board-size">{variant.board.cols} × {variant.board.rows}</span>
-                </div>
-                <div className="library-card-copy"><div><h3 title={name}>{entry.name.english}</h3><p>{presentation.subtitle}</p></div><ArrowUpRight size={19} /></div>
+                <GameArtwork variantKey={key} locale={locale} />
+                <div className="library-card-copy"><div><h3 title={name}>{entry.name.english}</h3></div><ArrowUpRight size={19} /></div>
               </Link>
               <button type="button" className="library-favorite focus-ring" aria-label={`${favorite ? "Unfavorite" : "Favorite"} ${name}`} aria-pressed={favorite} onClick={() => toggleFavorite(entry.id)}><Star size={16} fill={favorite ? "currentColor" : "none"} /></button>
             </article>

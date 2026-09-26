@@ -152,3 +152,8 @@ Derive the camera from physical bounds and available space rather than one fixed
 ## 2026-09-27: Separate playable coverage from art quality
 
 A portable GLB alone does not establish realism. Use licensed detailed meshes with UV/PBR textures and editable source files where appropriate, and generate native regional artwork individually. Keep image masters separate from actual 3D geometry. The Western set adapts Riley Queen's CC0 work; Cambodian 2D uses generated contemporary designs. Do not claim its mesh replacement is complete while only raster masters exist. Record provenance, native identities, runtime derivatives, offline impact and remaining quality gaps in [the revision notes](asset-quality-revision.md).
+
+
+## 2026-09-27: Visual browsing and camera acceptance
+
+Reuse native piece artwork across home, lobby, catalog and playable guides. Keep rules and mode support in accessible disclosures and native modal dialogs rather than repeated card copy. Preserve Unicode letters and marks in search, including Khmer and Thai. Treat camera composition, light, scale, gesture safety and responsive framing as explicit acceptance criteria for every game/theme in the active goal. See [delivery scope](discovery-design.md).

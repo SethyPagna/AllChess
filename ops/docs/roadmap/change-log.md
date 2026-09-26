@@ -4,6 +4,12 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ---
 
+## 2026-09-27 — Visual discovery and compact guides
+
+- Share native piece artwork across browsing surfaces; feature Cambodia in the lobby and reduce repeated card descriptions.
+- Replace catalog selects with button choices, preserve Khmer/Thai search and use native modal focus behavior for guides.
+- Collapse optional guide, training and statistics details. Record camera quality as part of the active goal. See [scope and validation](discovery-design.md).
+
 ## 2026-09-27 — Textured piece assets and Cambodian atelier artwork
 
 - Replace the modern Western GLB with a licensed, UV/PBR marble set and matching Blender-rendered 2D images. Preserve editable sources and source checksums.

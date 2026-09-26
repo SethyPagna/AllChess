@@ -9,8 +9,8 @@ type GameDetailRuleSectionsProps = {
 export function GameDetailRuleSections({ completion, entry }: GameDetailRuleSectionsProps) {
   return (
     <>
-      <article className="panel game-detail-section">
-        <h2>Basic rules</h2>
+      <details open className="panel game-detail-section studio-disclosure">
+        <summary>Basic rules</summary>
         <ol className="game-detail-rule-list game-detail-rule-list-numbered">
           {entry.shortRules.map((rule, index) => (
             <li key={rule}>
@@ -19,17 +19,17 @@ export function GameDetailRuleSections({ completion, entry }: GameDetailRuleSect
             </li>
           ))}
         </ol>
-      </article>
-      <article className="panel game-detail-section">
-        <h2>How it ends</h2>
+      </details>
+      <details className="panel game-detail-section studio-disclosure">
+        <summary>How it ends</summary>
         <ul className="game-detail-rule-list game-detail-rule-list-plain">
           {entry.winConditions.map((condition) => (
             <li key={condition}>{condition}</li>
           ))}
         </ul>
-      </article>
-      <article className="panel game-detail-section">
-        <h2>Training focus</h2>
+      </details>
+      <details className="panel game-detail-section studio-disclosure">
+        <summary>Training focus</summary>
         <div className="game-detail-note">
           <span>{displayPiecePresentation(entry)}</span>
           <span>{displayBotReadiness(entry)}</span>
@@ -39,16 +39,16 @@ export function GameDetailRuleSections({ completion, entry }: GameDetailRuleSect
             <li key={item}>{item}</li>
           ))}
         </ul>
-      </article>
+      </details>
       {completion ? (
-        <article className="panel game-detail-section">
-          <h2>{completion.status === "verified-playable" ? "Verified rules" : "Rules gate"}</h2>
+        <details open={completion.status !== "verified-playable"} className="panel game-detail-section studio-disclosure">
+          <summary>{completion.status === "verified-playable" ? "Verified rules" : "Rules gate"}</summary>
           <ul className="game-detail-rule-list game-detail-rule-list-plain">
             {(completion.status === "verified-playable" ? completion.verifiedEdgeCases : completion.remainingGates).slice(0, 4).map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>
-        </article>
+        </details>
       ) : null}
     </>
   );

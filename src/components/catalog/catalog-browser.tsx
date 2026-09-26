@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, Bot, ChevronDown, Filter, Play, RotateCcw, Search, X } from "lucide-react";
+import { BookOpen, Bot, Filter, Play, RotateCcw, Search, X } from "lucide-react";
 
-import { CatalogModeGrid, CatalogModeStrip, catalogModeKeys, catalogModeLabels } from "@/components/catalog/catalog-mode-support";
+import { ChoicePicker } from "@/components/board/choice-buttons";
+import { GameArtwork } from "@/components/games/game-artwork";
+import { CatalogModeGrid, catalogModeKeys, catalogModeLabels } from "@/components/catalog/catalog-mode-support";
 import {
   displayBotReadiness,
   displayGameName,
@@ -154,41 +156,9 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
                   </button>
                 </div>
               </div>
-              <label className="catalog-filter-field">
-                <span>Family</span>
-                <select value={family} onChange={(event) => setFamily(event.target.value as GameFamilyKey | "all")} aria-label="Family filter">
-                  <option value="all">{familySelectLabels.all}</option>
-                  {gameFamilies.map((item) => (
-                    <option key={item.key} value={item.key}>
-                      {familySelectLabels[item.key]}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={16} aria-hidden="true" />
-              </label>
-              <label className="catalog-filter-field">
-                <span>Playability</span>
-                <select value={status} onChange={(event) => setStatus(event.target.value as PlayabilityStatus | "all")} aria-label="Playability filter">
-                  {Object.entries(playabilityLabels).map(([value, label]) => (
-                    <option key={value} value={value}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={16} aria-hidden="true" />
-              </label>
-              <label className="catalog-filter-field">
-                <span>Mode</span>
-                <select value={mode} onChange={(event) => setMode(event.target.value as CatalogPlayMode | "all")} aria-label="Mode filter">
-                  <option value="all">{catalogModeLabels.all}</option>
-                  {catalogModeKeys.map((modeKey) => (
-                    <option key={modeKey} value={modeKey}>
-                      {catalogModeLabels[modeKey]}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={16} aria-hidden="true" />
-              </label>
+              <ChoicePicker<GameFamilyKey | "all"> label="Family filter" value={family} onChange={setFamily} options={[{ key: "all", label: familySelectLabels.all }, ...gameFamilies.map(item => ({ key: item.key, label: familySelectLabels[item.key] }))]} />
+              <ChoicePicker<PlayabilityStatus | "all"> label="Playability filter" value={status} onChange={setStatus} options={(Object.entries(playabilityLabels) as [PlayabilityStatus | "all", string][]).map(([key, label]) => ({ key, label }))} />
+              <ChoicePicker<CatalogPlayMode | "all"> label="Mode filter" value={mode} onChange={setMode} options={[{ key: "all", label: catalogModeLabels.all }, ...catalogModeKeys.map(key => ({ key, label: catalogModeLabels[key] }))]} />
             </div>
           ) : null}
         </div>
@@ -208,24 +178,22 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
           </button>
         ) : null}
       </div>
-      <div className="catalog-count">Showing {filtered.length} of {entries.length} games</div>
+      <div className="catalog-count" role="status">{filtered.length} of {entries.length} games</div>
       <div className="catalog-grid">
         {filtered.map((entry) => (
-          <article key={entry.id} className="panel catalog-card">
+          <article key={entry.id} className="panel catalog-card visual-catalog-card">
+            {getCatalogModeSupport(entry, "offline").enabled && entry.variantKey ? <Link href={playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) as never} className="catalog-art-link focus-ring" aria-label={`Play ${displayGameName(entry)}`}><GameArtwork variantKey={entry.variantKey} locale={locale} /></Link> : <button type="button" className="catalog-art-link focus-ring" aria-label={`Read ${displayGameName(entry)} guide`} onClick={() => setSelectedEntry(entry)}><GameArtwork locale={locale} /></button>}
             <div className="catalog-card-head">
               <div>
-                <h2>{displayGameName(entry)}</h2>
-                <p>{gameFamilies.find((item) => item.key === entry.family)?.label}</p>
+                <h2>{entry.name.english}</h2>
               </div>
               <button type="button" className="catalog-guide-button focus-ring" aria-label={`Open guide for ${displayGameName(entry)}`} title="Guide, rules, and actions" onClick={() => setSelectedEntry(entry)}>
                 <BookOpen size={15} />
-                <span>Guide</span>
+                <span className="sr-only">Guide</span>
               </button>
             </div>
-            <p className="catalog-card-summary">{entry.shortRules[0] ?? entry.winConditions[0]}</p>
-            <CatalogModeStrip entry={entry} />
             <div className="catalog-card-actions">
-              {entry.playability === "playable" && entry.variantKey ? (
+              {getCatalogModeSupport(entry, "offline").enabled && entry.variantKey ? (
                 <Link href={playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) as never} className="action-primary focus-ring">
                   <Play size={16} />
                   Play
@@ -237,7 +205,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
                 </button>
               )}
               <span className="catalog-status" data-status={entry.playability}>
-                {displayPlayabilityStatus(entry.playability)}
+                {getCatalogModeSupport(entry, "offline").level === "preview" ? "Preview" : displayPlayabilityStatus(entry.playability)}
               </span>
             </div>
           </article>
@@ -248,7 +216,6 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
         <div className="panel catalog-empty-state">
           <Search size={22} />
           <h2>No matching games</h2>
-          <p>Try another family, a native name, a romanized name, or clear the filters.</p>
           <button
             type="button"
             className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2"
@@ -269,11 +236,21 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
 }
 
 export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCatalogEntry; locale: LocaleCode; onClose: () => void }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    const previous = document.activeElement;
+    dialog?.showModal();
+    return () => {
+      dialog?.close();
+      if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
+    };
+  }, []);
   const playHref = entry.variantKey ? playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) : `/${locale}/games/${entry.id}`;
 
   return (
-    <div className="catalog-rules-backdrop" role="presentation" onClick={onClose}>
-      <section className="catalog-rules-sheet panel" role="dialog" aria-modal="true" aria-label={`${displayGameName(entry)} guide`} onClick={(event) => event.stopPropagation()}>
+    <dialog ref={dialogRef} className="catalog-rules-dialog" aria-label={`${displayGameName(entry)} guide`} onCancel={onClose} onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+      <section className="catalog-rules-sheet panel">
         <div className="catalog-rules-head">
           <div>
             <span>{gameFamilies.find((item) => item.key === entry.family)?.label}</span>
@@ -284,13 +261,13 @@ export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCata
           </button>
         </div>
         <div className="catalog-rules-actions">
-          {entry.playability === "playable" && entry.variantKey ? (
+          {getCatalogModeSupport(entry, "offline").enabled && entry.variantKey ? (
             <Link href={playHref as never} className="action-primary focus-ring">
               <Play size={16} />
               Play
             </Link>
           ) : null}
-          {entry.playability === "playable" && entry.variantKey ? (
+          {getCatalogModeSupport(entry, "bot").enabled && entry.variantKey ? (
             <Link href={playGameHref(locale, entry.variantKey, { mode: "bot", time: "rapid" }) as never} className="action-secondary focus-ring">
               <Bot size={16} />
               Bot Mode
@@ -331,7 +308,7 @@ export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCata
               <span>{entry.botAdapter !== "none" ? displayBotReadiness(entry) : "Rules only"}</span>
             </div>
           </details>
-          <details open>
+          <details>
             <summary>Modes</summary>
             <CatalogModeGrid entry={entry} />
           </details>
@@ -347,7 +324,7 @@ export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCata
           </details>
         </div>
       </section>
-    </div>
+    </dialog>
   );
 }
 
@@ -356,5 +333,5 @@ function normalize(value: string) {
     .normalize("NFKD")
     .toLowerCase()
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]+/g, "");
+    .replace(/[^\p{L}\p{M}\p{N}]+/gu, "");
 }

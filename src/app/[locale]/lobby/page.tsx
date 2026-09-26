@@ -1,7 +1,7 @@
 import { LobbyActions } from "@/components/lobby/lobby-actions";
 import { LobbyCatalogStats, LobbyFamilyHighlights, LobbyFeaturedGames } from "@/components/lobby/lobby-catalog-highlights";
 import { InfoHint } from "@/components/ui/info-hint";
-import { getCatalogStats } from "@/lib/catalog";
+import { getCatalogStats, getCatalogModeSupport } from "@/lib/catalog";
 import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
@@ -18,8 +18,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 const featuredGameOrder = new Map([
   ["classic", 0],
-  ["crazyhouse", 1],
-  ["chess960", 2],
+  ["ouk-chaktrang", 1],
+  ["makruk", 2],
   ["xiangqi", 3],
   ["shogi", 4],
   ["janggi", 5]
@@ -31,7 +31,7 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
   const t = createTranslator(locale);
   const catalog = await getRuntimeCatalogEntries();
   const stats = getCatalogStats(catalog);
-  const featured = [...catalog.filter((entry) => entry.playability === "playable")]
+  const featured = [...catalog.filter((entry) => getCatalogModeSupport(entry, "offline").enabled)]
     .sort((a, b) => (featuredGameOrder.get(a.variantKey ?? a.id) ?? 100) - (featuredGameOrder.get(b.variantKey ?? b.id) ?? 100))
     .slice(0, 6);
 
@@ -48,13 +48,13 @@ export default async function LobbyPage({ params }: { params: Promise<{ locale: 
           <LobbyFamilyHighlights locale={locale} stats={stats} />
         </div>
       </div>
-      <aside className="lobby-stat-rail">
+      <details className="studio-disclosure lobby-stat-rail"><summary>Stats</summary>
         <div className="compact-section-heading">
           <h2 className="section-title">Stats</h2>
           <InfoHint text="Catalog totals and playable boards. Live room discovery stays in the watch page." />
         </div>
         <LobbyCatalogStats stats={stats} />
-      </aside>
+      </details>
     </section>
   );
 }

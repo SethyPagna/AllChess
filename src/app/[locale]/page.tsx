@@ -3,7 +3,6 @@ import { ArrowUpRight, Bot, Swords } from "lucide-react";
 
 import { IntroBoard } from "@/components/home/intro-board";
 import { GameLibrary } from "@/components/home/game-library";
-import { getCatalogStats } from "@/lib/catalog";
 import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
@@ -24,16 +23,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
   const entries = await getRuntimeCatalogEntries();
-  const catalogStats = getCatalogStats(entries);
 
   return (
     <div className="studio-home">
-      <header className="studio-welcome"><Link href={`/${locale}`}>{t("app.name")} <span>/ your daily escape</span></Link><Link href={`/${locale}/watch`}>Watch a game <ArrowUpRight size={15} /></Link></header>
+      <header className="studio-welcome"><Link href={`/${locale}`}>{t("app.name")}</Link><Link href={`/${locale}/watch`}>Watch a game <ArrowUpRight size={15} /></Link></header>
       <section className="studio-hero" aria-label="AllChess intro">
         <div className="intro-copy">
-          <span className="studio-eyebrow">One place. Every kind of player.</span>
-          <h1>Your board.<br /><em>Your next move.</em></h1>
-          <p>A familiar favorite or a whole new game. Take a seat.</p>
+          <h1>Your next <em>move.</em></h1>
           <div className="intro-actions">
             <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="focus-ring action-primary inline-flex items-center gap-2 px-5 py-3">
               <Swords size={18} />
@@ -43,10 +39,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <Bot size={18} />
               Play a bot
             </Link>
-          </div>
-          <div className="intro-proof" aria-label="Intro stats">
-            <span>{catalogStats.playableGames} playable games</span>
-            <span>No account needed for local play</span>
           </div>
         </div>
 

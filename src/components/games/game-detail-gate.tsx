@@ -1,17 +1,15 @@
-type GameDetailGateProps = {
-  primaryGap?: string | null;
-};
+import { InfoHint } from "@/components/ui/info-hint";
 
-export function GameDetailGate({ primaryGap }: GameDetailGateProps) {
+type GameDetailGateProps = { primaryGap?: string | null; previewAvailable?: boolean };
+
+export function GameDetailGate({ primaryGap, previewAvailable = false }: GameDetailGateProps) {
   return (
     <div className="game-detail-gate panel" aria-label="Training and rules gate">
       <div>
-        <strong>Guide gated for play</strong>
-        <span>
-          This game stays as a rule guide until native rules, legal bot moves, review, persistence, and E2E fixtures are complete.
-        </span>
+        <strong>{previewAvailable ? "Preview" : "Guide only"}</strong>
+        <span>{previewAvailable ? "Local play is available. Online play is not ready." : "Explore the rules. Play is not available yet."}</span>
       </div>
-      <span>{primaryGap ?? "Complete the verification matrix before enabling play."}</span>
+      <InfoHint text={primaryGap ?? "Rules and game behavior are still being verified."} />
     </div>
   );
 }

@@ -94,6 +94,17 @@ describe("compact page copy", () => {
     await expect(GameDetailPage({ params: Promise.resolve({ locale: "en", gameId: "%E0%A4%A" }) })).rejects.toThrow("NEXT_HTTP_ERROR_FALLBACK;404");
   });
 
+  test("Cambodian guides and lobby expose local preview without claiming online readiness", async () => {
+    const markup = renderToStaticMarkup(await GameDetailPage({ params: Promise.resolve({ locale: "en", gameId: "ouk-chaktrang" }) }));
+    expect(markup).toContain('/en/play/ouk-chaktrang?mode=offline&amp;time=rapid');
+    expect(markup).toContain('Local preview');
+    expect(markup).toContain('Online play is not ready.');
+    expect(markup).not.toContain('Ouk Chaktrang / Ouk Chaktrang');
+    const lobby = renderToStaticMarkup(await LobbyPage({ params: Promise.resolve({ locale: "en" }) }));
+    expect(lobby).toContain('/en/play/ouk-chaktrang?mode=offline&amp;time=rapid');
+    expect(lobby).toContain('Preview');
+  });
+
   test("play route safely decodes game ids before loading the board", async () => {
     const element = await PlayPage({
       params: Promise.resolve({ locale: "en", gameId: "classic" }),

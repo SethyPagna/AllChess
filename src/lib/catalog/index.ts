@@ -702,7 +702,7 @@ export function displayModeReadiness(entry: GameCatalogEntry, mode: CatalogPlayM
 }
 
 export function displayGameName(entry: GameCatalogEntry) {
-  return [entry.name.english, entry.name.romanization, entry.name.native].filter(Boolean).join(" / ");
+  return [...new Set([entry.name.english, entry.name.romanization, entry.name.native].filter(Boolean))].join(" / ");
 }
 
 export function displayPlayabilityStatus(status: PlayabilityStatus) {

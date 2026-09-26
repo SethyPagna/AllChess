@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { BarChart3, Radio, Swords } from "lucide-react";
 
+import { GameArtwork } from "@/components/games/game-artwork";
 import { InfoHint } from "@/components/ui/info-hint";
-import { displayGameName, displayRulesReadiness, gameFamilies, type CatalogStats, type GameCatalogEntry } from "@/lib/catalog";
+import { displayGameName, getCatalogModeSupport, gameFamilies, type CatalogStats, type GameCatalogEntry } from "@/lib/catalog";
 import { playGameHref } from "@/lib/routing/play-links";
 
 type LobbyStatsProps = {
@@ -48,19 +49,14 @@ export function LobbyFeaturedGames({ entries, locale }: FeaturedGamesProps) {
         <h2 className="section-title">Play Now</h2>
         <InfoHint text="Playable boards, grouped tightly so the lobby reads at a glance." />
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="lobby-art-grid">
         {entries.map((entry) => {
           const gameName = displayGameName(entry);
-          const readiness = displayRulesReadiness(entry);
-          const winCondition = entry.winConditions[0];
 
           return (
-            <Link key={entry.id} href={playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) as never} className="panel lobby-featured-card focus-ring" aria-label={`${gameName}. ${readiness}. ${winCondition}.`}>
-              <span className="lobby-featured-head">
-                <strong>{gameName}</strong>
-                <span>{readiness}</span>
-              </span>
-              <span className="lobby-featured-body">{winCondition}</span>
+            <Link key={entry.id} href={playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) as never} className="library-card library-card-link focus-ring" aria-label={`Play ${gameName}`}>
+              <GameArtwork variantKey={entry.variantKey} locale={locale} />
+              <div className="library-card-copy"><h3>{entry.name.english}</h3>{getCatalogModeSupport(entry, "offline").level === "preview" ? <small className="game-preview-label">Preview</small> : null}</div>
             </Link>
           );
         })}
