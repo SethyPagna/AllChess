@@ -17,14 +17,25 @@ export function tabletopFrame(collection: PieceCollection, rows: number, cols: n
     for(const dx of [-width/2,width/2])for(const dz of [-depth/2,depth/2])for(const y of [bottom,top])bounds.push(new Vector3(x+dx,y,z+dz));
   }
   box(0,0,layout.width+.066,layout.depth+.066,collection==="shogi"?-.091:-.061,.006);
-  box(0,0,layout.width-.004,layout.depth-.004,.002,collection==="shogi"?.026:.070);
+  box(0,0,layout.width-.004,layout.depth-.004,.002,collection==="shogi"?.026:collection==="khmer"?.078:.070);
   if(collection==="shogi")for(const stand of shogiStands(layout.width,layout.depth,compactHands))box(stand.x,stand.z,stand.width,stand.depth,-.091,.052);
   const horizontal=Math.tan(21*Math.PI/180),vertical=horizontal/aspect;
-  let distance=0;
-  for(const point of bounds) {
-    const relative=point.clone().sub(target),depth=relative.dot(direction);
-    distance=Math.max(distance,depth+Math.abs(relative.dot(right))/(horizontal*.90),depth+Math.abs(relative.dot(up))/(vertical*.90));
+  // Fit both sides of each screen axis. A fixed world-centred target leaves the
+  // near corner filling one edge while wasting space at the opposite edge.
+  // These intervals account for each corner's perspective depth, not an
+  // orthographic bounding rectangle or a guessed camera offset.
+  const projected=bounds.map(point=>{
+    const relative=point.clone().sub(target);
+    return {x:relative.dot(right),y:relative.dot(up),depth:relative.dot(direction)};
+  });
+  function fitAxis(axis:"x"|"y",slope:number) {
+    const high=Math.max(...projected.map(point=>point[axis]+slope*point.depth));
+    const low=Math.min(...projected.map(point=>point[axis]-slope*point.depth));
+    return {distance:(high-low)/(2*slope),offset:(high+low)/2};
   }
+  const x=fitAxis("x",horizontal*.90),y=fitAxis("y",vertical*.90);
+  const distance=Math.max(x.distance,y.distance);
+  target.addScaledVector(right,x.offset).addScaledVector(up,y.offset);
   return {aspect,compactHands,target,position:direction.multiplyScalar(distance).add(target),distance,bounds,
     fieldOfView:2*Math.atan(vertical)*180/Math.PI};
 }

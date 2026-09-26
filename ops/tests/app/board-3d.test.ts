@@ -24,7 +24,7 @@ describe("playable 3D collections", () => {
   for (const collection of ["classic", "khmer", "shogi", "xiangqi", "janggi", "makruk", "draughts", "konane", "shatranj", "chaturanga", "jungle"] as const) {
     test(`${collection} GLB has complete named pieces at playable scale without external dependencies`, async () => {
       const bytes = readFileSync(`public${collectionModelPath(collection)}`);
-      expect(bytes.length).toBeLessThan(collection === "classic" ? 16_000_000 : 1_000_000);
+      expect(bytes.length).toBeLessThan(collection === "classic" ? 16_000_000 : collection === "khmer" ? 10_000_000 : 1_000_000);
       const length = bytes.readUInt32LE(12);
       const json = JSON.parse(bytes.subarray(20, 20+length).toString("utf8"));
       expect((json.buffers ?? []).some((buffer: { uri?: string }) => Boolean(buffer.uri))).toBe(false);
@@ -32,6 +32,16 @@ describe("playable 3D collections", () => {
       if (collection === "classic") {
         expect(json.images.length).toBeGreaterThanOrEqual(6);
         for (const material of json.materials) {
+          expect(material.normalTexture).toBeDefined();
+          expect(material.pbrMetallicRoughness.baseColorTexture).toBeDefined();
+          expect(material.pbrMetallicRoughness.metallicRoughnessTexture).toBeDefined();
+        }
+      }
+      if (collection === "khmer") {
+        expect(json.images.length).toBeGreaterThanOrEqual(5);
+        const woods = json.materials.filter((material: {name: string}) => /boxwood|rosewood/.test(material.name));
+        expect(woods).toHaveLength(4);
+        for (const material of woods) {
           expect(material.normalTexture).toBeDefined();
           expect(material.pbrMetallicRoughness.baseColorTexture).toBeDefined();
           expect(material.pbrMetallicRoughness.metallicRoughnessTexture).toBeDefined();
@@ -51,6 +61,15 @@ describe("playable 3D collections", () => {
           expect(size.z).toBeGreaterThan(.01); expect(size.z).toBeLessThan(.053);
           expect(size.y).toBeGreaterThan(.009); expect(size.y).toBeLessThan(.075);
           expect(Math.abs(box.min.y)).toBeLessThan(.003);
+          if (collection === "khmer") {
+            let triangles = 0;
+            root!.traverse(child => { if (child instanceof Mesh) {
+              expect(child.geometry.attributes.uv).toBeDefined();
+              triangles += (child.geometry.index?.count ?? child.geometry.attributes.position.count) / 3;
+            } });
+            expect(triangles).toBeLessThan(25_000);
+            expect(Math.max(...tabletopFrame(collection, 8, 8, 288).bounds.map(point => point.y))).toBeGreaterThan(size.y + .002);
+          }
           if (collection === "draughts") {
             expect(size.y).toBeCloseTo(name === "king" ? .022 : .011, 4);
             expect(root!.children.filter(child => /counter/.test(child.name))).toHaveLength(name === "king" ? 2 : 1);

@@ -4,7 +4,7 @@ export type PieceCollection = "khmer" | "classic" | "shogi" | "xiangqi" | "jangg
 export type PieceFinish = "original" | "porcelain" | "slate";
 
 export function collectionModelPath(collection: PieceCollection) {
-  return `/assets/${collection}/${collection === "classic" ? "marble" : "collection"}.glb`;
+  return `/assets/${collection}/${collection === "classic" ? "marble" : collection === "khmer" ? "atelier" : "collection"}.glb`;
 }
 
 const classicVariants = new Set(["classic", "chess960", "crazyhouse", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"]);

@@ -300,6 +300,9 @@ button:disabled { cursor: not-allowed; }
 @media (max-width: 400px) { .board-finish-buttons { margin-left: 0; } .board-3d-status { font-size: 10px; } }
 
 .board-shell[data-view="3d"], .board-shell[data-view="3d"] > .board-stage { aspect-ratio: auto; }
+.game-studio .board-shell[data-view="3d"] .pregame-board-overlay { position: static; display: flex; width: fit-content; margin: 4px auto 0; padding: 0; background: transparent; box-shadow: none; }
+.game-studio .board-shell[data-view="3d"] .pregame-board-overlay button { min-height: 44px; padding: 8px 14px; }
+.game-studio .board-shell[data-view="3d"] .pregame-board-overlay strong { padding: 0; background: transparent; box-shadow: none; }
 .board-shell[data-view="3d"] .drop-selection-card { position: relative; inset: auto; transform: none; margin: 6px auto 0; box-shadow: none; }
 
 .janggi-formation-picker, .janggi-local-setup { padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }

@@ -22,6 +22,6 @@ Each piece was generated separately, inspected, and used as a material/style ref
 
 These are recorded generation briefs, not seed-deterministic recipes. Image generation is stochastic; the native masters are the authoritative outputs.
 
-## 3D boundary
+## 3D interpretation
 
-This artwork is not a completed mesh reconstruction and is never used as a billboard in the 3D board. Ouk's prior playable Blender collection remains in place while its quality revision is unfinished. Higgsfield exposed image-to-3D model descriptions in this session, but no callable generation endpoint. No remote reconstruction job was submitted. Future 3D replacements need full geometry, UV/PBR materials, multi-angle inspection and real browser validation.
+The default 3D set now uses the [editable atelier collection](../README.md), with original turned geometry, baked wood materials and a licensed anatomical horse sculpt. It interprets these design masters rather than reconstructing them exactly: the horse posture and mane differ. These PNGs remain 2D artwork and are never used as billboards in the 3D board. No remote image-to-mesh job was submitted.

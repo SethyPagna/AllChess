@@ -164,7 +164,12 @@ export default function Board3D(props: Props) {
               const copy = original.clone();
               if (japanese || current.collection === "xiangqi" || draughts) { copy.map = tabletop.grain; copy.bumpMap = tabletop.grain; copy.bumpScale = .000035; }
               if (current.finish !== "original") {
-                if (current.collection === "classic") copy.map = null;
+                if (current.collection === "classic" || current.collection === "khmer") copy.map = null;
+                if (current.collection === "khmer") {
+                  // Keep sculpted horse relief, but remove photographed timber pores from ceramic finishes.
+                  if (!/Ses relief/.test(original.name)) copy.normalMap = null;
+                  copy.roughnessMap = null;
+                }
                 copy.color.set(current.finish === "porcelain" ? (light || lettered) ? 0xfff7e6 : 0x24313b : (light || lettered) ? 0xe2e9e9 : 0x385773);
                 copy.roughness = current.finish === "porcelain" ? .2 : .65; copy.metalness = 0;
               }

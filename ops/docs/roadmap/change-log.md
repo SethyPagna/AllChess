@@ -4,6 +4,12 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ---
 
+## 2026-09-27 — Textured Cambodian models and balanced camera
+
+- Replace the Cambodian 3D study with a packed, textured Blender/GLB collection, original turned pieces and a licensed detailed horse sculpt.
+- Balance camera framing using perspective depth across all 21 games and include the taller Khmer king in the physical bounds.
+- Keep the setup action below the 3D camera hint so it cannot cover instructions or the board. Include the new GLB in cold-offline delivery. See [scope and validation](khmer-atelier-3d.md).
+
 ## 2026-09-27 — Compact account, review and community pages
 
 - Use shared visual empty states, compact forms and explicit theme buttons across seven secondary pages.

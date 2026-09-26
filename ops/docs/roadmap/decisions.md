@@ -161,3 +161,7 @@ Reuse native piece artwork across home, lobby, catalog and playable guides. Keep
 ## 2026-09-27: Compact secondary pages with honest state
 
 Use visual empty states and optional guidance while preserving submitted filters, auth errors, room status and complete review timelines. Settings should expose Light, Dark and System directly. Do not manufacture unread notifications or imply a casual queue is rated. Keep shell menus dismissible and within small-screen bounds. See [delivery scope](secondary-pages.md).
+
+## 2026-09-27: Physical Cambodian assets and balanced perspective
+
+Use actual UV/PBR geometry for the Cambodian atelier, with original turned forms and a documented CC0 horse adaptation. Preserve editable sources and treat differences from generated 2D artwork honestly. Recolours do not satisfy the goal's requirement for distinct collections. Fit opposite screen edges using physical perspective depth, including captured-piece trays and the tallest pieces, rather than fixing the camera target at the world origin. See [delivery scope](khmer-atelier-3d.md).

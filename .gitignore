@@ -10,6 +10,7 @@ playwright-report/
 test-results/
 .playwright-cli/
 output/playwright/
+output/atelier/
 .vercel/
 .open-next/
 .wrangler/

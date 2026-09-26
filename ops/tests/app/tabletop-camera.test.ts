@@ -22,6 +22,11 @@ describe("responsive physical board framing",()=>{
         expect(Math.abs(projected.y)).toBeLessThanOrEqual(.900001);
         expect(projected.z).toBeGreaterThan(-1);expect(projected.z).toBeLessThan(1);
       }
+      const points=frame.bounds.map(corner=>corner.clone().project(camera));
+      for(const axis of ["x","y"] as const) {
+        const low=Math.min(...points.map(point=>point[axis])),high=Math.max(...points.map(point=>point[axis]));
+        expect(Math.abs(high+low), `${key} ${width}px ${axis} framing imbalance`).toBeLessThan(.12);
+      }
       expect(frame.position.y).toBeGreaterThan(.25);expect(frame.position.z).toBeGreaterThan(frame.position.y);
     }
   });

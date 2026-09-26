@@ -1,0 +1,35 @@
+{
+  "asset": "Horse Head",
+  "author": "Tina",
+  "source": "https://polyhaven.com/a/horse_head",
+  "license": "CC0-1.0",
+  "licenseUrl": "https://polyhaven.com/license",
+  "retrieved": "2026-09-27",
+  "files": {
+    "horse_head.gltf": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/2k/horse_head/horse_head_2k.gltf",
+      "md5": "2791e4dbda0f624b7fd583bb08466a9c",
+      "size": 2755
+    },
+    "textures/horse_head_nor_gl_2k.jpg": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/horse_head/horse_head_nor_gl_2k.jpg",
+      "md5": "b30c00d97d46030bfd6cd83f4b777c12",
+      "size": 1413531
+    },
+    "textures/horse_head_diff_2k.jpg": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/horse_head/horse_head_diff_2k.jpg",
+      "md5": "c04db00a476b9f9b7333fe99012fef0d",
+      "size": 1795897
+    },
+    "textures/horse_head_arm_2k.jpg": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/jpg/2k/horse_head/horse_head_arm_2k.jpg",
+      "md5": "d754d218921f67c92acab2ce7df171dd",
+      "size": 1864250
+    },
+    "horse_head.bin": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Models/gltf/8k/horse_head/horse_head.bin",
+      "md5": "77d4dfede2ae9275084d5161dabb2cd9",
+      "size": 293272
+    }
+  }
+}
