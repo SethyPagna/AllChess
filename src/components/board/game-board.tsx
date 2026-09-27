@@ -14,7 +14,7 @@ import { useFriendRoom, saveFriendToken } from "./use-friend-room";
 import type { FriendRoomView } from "@/lib/realtime/friend-room";
 import dynamic from "next/dynamic";
 import { ChoicePicker } from "./choice-buttons";
-import { pieceSetOptions, pieceSetSkin, resolvePieceSet, type PieceSetId } from "./piece-sets";
+import { pieceSetOptions, pieceSetSkin, readPieceSetPreference, resolvePieceSet, type PieceSetId } from "./piece-sets";
 import { MakrukCountingPanel, MakrukEndgamePicker } from "./makruk-counting-panel";
 import { applyMakrukCountAction, readMakrukHonorCount, makrukCountVersion, replayMakrukCountActions, usesMakrukHonorCount, type MakrukCountAction } from "@/lib/variants/makruk-counting";
 import { createMakrukEndgame, makrukEndgames, type MakrukEndgameKey } from "@/lib/variants/makruk-endgames";
@@ -45,7 +45,7 @@ import { getCatalogModeSupport, getGameCatalogEntry, type CatalogModeSupport } f
 import { applyBotMoveAfterThinking, settleBotThinkingSnapshot } from "@/lib/game/bot-clock";
 import { tickGameClock } from "@/lib/game/clocks";
 import { redoTimeline, redoTimelineUntil, undoTimeline, undoTimelineUntil } from "@/lib/game/history";
-import { analyzeMoveList, summarizeReview, type ReviewedMove } from "@/lib/game/review";
+import { buildMoveTimeline, summarizeMoves, type MoveTimelineEntry } from "@/lib/game/review";
 import { describeGameOutcome } from "@/lib/game/outcome";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getVocabulary } from "@/lib/i18n/vocabulary";
@@ -172,7 +172,7 @@ type DropSelectionHintProps = {
   locale: string;
 };
 
-type ReviewMoveRow = ReviewedMove & {
+type ReviewMoveRow = MoveTimelineEntry & {
   owner: Piece["owner"];
   piece: Piece | null;
   pieceLabel: string;
@@ -191,7 +191,7 @@ function buildReviewMoveRows({
 }: {
   locale: string;
   files: string[];
-  moves: ReviewedMove[];
+  moves: MoveTimelineEntry[];
   rawMoves: Array<Move & { notation: string }>;
   rows: number;
   timeline: GameState[];
@@ -372,7 +372,7 @@ export function GameBoard({
   const [future, setFuture] = useState<GameState[]>([]);
   const [boardView, setBoardView] = useState<"2d" | "3d">("2d");
   const [pieceFinish, setPieceFinish] = useState<PieceFinish>("original");
-  const [pieceSet, setPieceSet] = useState<PieceSetId>("standard");
+  const [pieceSet, setPieceSet] = useState<PieceSetId>(() => resolvePieceSet(variantKey, null));
   const collection3D = get3DCollection(variantKey);
   const [selected, setSelected] = useState<Square | null>(null);
   const [selectedHandCode, setSelectedHandCode] = useState<string | null>(null);
@@ -390,7 +390,6 @@ export function GameBoard({
   const [humanColor, setHumanColor] = useState(() => pickHumanColor(withTimeControl(initialState ?? createInitialState(variantKey), initialTimeControl), "first"));
   const [thinking, setThinking] = useState<ThinkingState>({ status: "idle", label: "" });
   const [suggestedMove, setSuggestedMove] = useState<SuggestedMove | null>(null);
-  const [lastBotResult, setLastBotResult] = useState<BotMoveResult | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [showOutcome, setShowOutcome] = useState(true);
   const [showRules, setShowRules] = useState(false);
@@ -461,7 +460,7 @@ export function GameBoard({
     setPlayMode(saved.settings.playMode); setBotMode(saved.settings.botMode); setBotDifficulty(saved.settings.botDifficulty);
     setTimeControl(saved.settings.timeControl); setHumanColor(saved.settings.humanColor); setSeatChoice(saved.settings.seatChoice); setBoardOrientation(saved.settings.boardOrientation);
     setGameStarted(true); setLocalPaused(paused && saved.state.status === "active");
-    setSelected(null); setSelectedHandCode(null); setPendingPromotion(null); setSuggestedMove(null); setLastBotResult(null);
+    setSelected(null); setSelectedHandCode(null); setPendingPromotion(null); setSuggestedMove(null);
     setThinking({ status: "idle", label: "" }); setReviewPly(null); setReviewPlaying(false); setShowOutcome(false); setPanelTab("status"); setNotice(null); setRestoreError("");
     setIgnoreInitialRoom(true); setRoomCreation({ status: "idle" }); setMatchmaking({ status: "idle" });
   }, [variantKey, adoptLocalSave]);
@@ -492,12 +491,16 @@ export function GameBoard({
   useEffect(() => {
     queueMicrotask(() => {
       setAppearancePreset(initialAppearancePreset(variantKey));
+      setPieceSet(readPieceSetPreference(variantKey));
+      setBoardView("2d");
+      setPieceFinish("original");
       try {
         setBoardView(get3DCollection(variantKey) && localStorage.getItem(`allchess-board-view:${variantKey}`) === "3d" ? "3d" : "2d");
+      } catch { /* Keep the accessible 2D default. */ }
+      try {
         const finish = localStorage.getItem(`allchess-piece-finish:${variantKey}`);
         setPieceFinish(isPieceFinish(finish) ? finish : "original");
-        setPieceSet(resolvePieceSet(variantKey, localStorage.getItem(`allchess-piece-set:${variantKey}`)));
-      } catch { /* Keep the accessible 2D default. */ }
+      } catch { /* Keep this game's original finish. */ }
     });
   }, [variantKey]);
 
@@ -529,8 +532,8 @@ export function GameBoard({
   }, []);
 
   const timeline = useMemo(() => (history.length ? [...history, state] : [state]), [history, state]);
-  const reviewMoves = useMemo(() => analyzeMoveList(state.moves), [state.moves]);
-  const reviewSummary = useMemo(() => summarizeReview(reviewMoves), [reviewMoves]);
+  const reviewMoves = useMemo(() => buildMoveTimeline(state.moves, timeline), [state.moves, timeline]);
+  const reviewSummary = useMemo(() => summarizeMoves(reviewMoves), [reviewMoves]);
   const displayPly = reviewPly ?? timeline.length - 1;
   const displayState = timeline[Math.min(displayPly, timeline.length - 1)] ?? state;
   const activeReviewMove = displayPly > 0 ? reviewMoves[displayPly - 1] : null;
@@ -562,7 +565,6 @@ export function GameBoard({
   const supportsDrops = useMemo(() => getVariant(variantKey).supportsDrops, [variantKey]);
   const botStrength = useMemo(() => getVariantBotStrengthProfile(variantKey, botDifficulty), [botDifficulty, variantKey]);
   const botCalibrationLabel = botStrength.calibrationStatus.replace(/-/g, " ");
-  const botResponseBudget = Math.min(botLevel.moveTimeMs, MAX_BOT_REPLY_MS - 180);
   const outcome = useMemo(() => describeGameOutcome(state, humanColor), [humanColor, state]);
   const outcomeKey = state.status === "completed" ? `${state.id}:${state.moves.length}:${state.result ?? ""}:${state.outcomeReason ?? ""}` : null;
   const firstColor = (state.clocks[0]?.color ?? "white") as Piece["owner"];
@@ -603,18 +605,6 @@ export function GameBoard({
     (matchmaking.status === "matched" ? matchmaking.roomId : "") ||
     `${displayState.variantKey}-local`;
   const onlineTicketLabel = matchmaking.status === "queued" ? `Ticket ${matchmaking.ticketId.slice(0, 8)}` : null;
-  const statusHeading = playMode === "room" && gameStarted
-    ? roomCreation.status === "failed" ? "Room unavailable" : roomCreation.status === "creating" ? "Creating room" : friend.room?.matched ? "Casual match" : friend.room ? "Friend room" : "Connecting to room"
-    : isSearchingOnline
-    ? "Searching for opponent"
-    : isWatchingMode
-      ? "Watching rooms"
-      : "Current position";
-  const botSearchDetail = lastBotResult
-    ? `Bot: ${lastBotResult.knowledgeSource ?? lastBotResult.engine} ${lastBotResult.depthReached}/${lastBotResult.nodesSearched}.`
-    : isBotMode
-      ? `Bot budget: ${botResponseBudget}ms.`
-      : "";
   const topPlayerColor = isBoardFlipped ? firstColor : secondColor;
   const bottomPlayerColor = isBoardFlipped ? secondColor : firstColor;
   const capturedBy = useCallback(
@@ -884,20 +874,17 @@ export function GameBoard({
       setThinking({ status: "idle", label: "" });
 
       if (result.status === "cancelled") {
-        setLastBotResult(result);
         setNotice("Bot thinking was cancelled.");
         return;
       }
 
       if (!result.move) {
-        setLastBotResult(result);
         setNotice(result.status === "no-legal-moves" ? "No legal moves are available. Review the final position or reset the board." : result.error ?? "Bot move failed.");
         return;
       }
 
       const move = result.move;
       const historySnapshot = settleBotThinkingSnapshot(snapshot, result.elapsedMs);
-      setLastBotResult(result);
       setHistory((current) => [...current, historySnapshot]);
       setFuture([]);
       setState((current) => applyBotMoveAfterThinking(current, snapshot, move, result.elapsedMs));
@@ -936,7 +923,6 @@ export function GameBoard({
     if (state.status !== "active" || activeBotRequestRef.current || isReviewing) return;
     const quickMove = quickSuggestionMove(state);
     if (quickMove) {
-      setLastBotResult(null);
       setSuggestedMove({
         from: quickMove.from,
         to: quickMove.to,
@@ -962,13 +948,10 @@ export function GameBoard({
     setThinking({ status: "idle", label: "" });
 
     if (!result.move) {
-      setLastBotResult(result);
       setSuggestedMove(null);
       setNotice("No legal moves are available.");
       return;
     }
-
-    setLastBotResult(result);
     setSuggestedMove({
       from: result.move.from,
       to: result.move.to,
@@ -997,7 +980,6 @@ export function GameBoard({
     setSelectedHandCode(null);
     setPendingPromotion(null);
     setSuggestedMove(null);
-    setLastBotResult(null);
     setNotice("Suggestion applied.");
     setPanelTab("status");
     setReviewPly(null);
@@ -1071,7 +1053,6 @@ export function GameBoard({
     setSelectedHandCode(null);
     setPendingPromotion(null);
     setSuggestedMove(null);
-    setLastBotResult(null);
     setNotice(null);
     setReviewPly(null);
     setReviewPlaying(false);
@@ -1090,7 +1071,6 @@ export function GameBoard({
     setSelectedHandCode(null);
     setPendingPromotion(null);
     setSuggestedMove(null);
-    setLastBotResult(null);
     setNotice(null);
     setReviewPly(null);
     setReviewPlaying(false);
@@ -1113,7 +1093,6 @@ export function GameBoard({
     setSelectedHandCode(null);
     setPendingPromotion(null);
     setSuggestedMove(null);
-    setLastBotResult(null);
     setNotice(null);
     setThinking({ status: "idle", label: "" });
     setShowOutcome(false);
@@ -1159,7 +1138,6 @@ export function GameBoard({
     setSelected(null);
     setSelectedHandCode(null);
     setSuggestedMove(null);
-    setLastBotResult(null);
     setNotice(null);
     setThinking({ status: "idle", label: "" });
     setShowOutcome(false);
@@ -1193,7 +1171,6 @@ export function GameBoard({
     setBoardOrientation("auto");
     setSelected(null);
     setSelectedHandCode(null);
-    setLastBotResult(null);
     quickMatchToken.current = crypto.randomUUID() + crypto.randomUUID();
     setGameStarted(true);
     setLocalPaused(false);
@@ -1255,7 +1232,6 @@ export function GameBoard({
     setSelectedHandCode(null);
     if (nextMode !== "bot") {
       setBotMode("human");
-      setLastBotResult(null);
     }
     if (nextMode === "online") {
       setNotice("Quick Match finds an opponent for a casual game with your selected clock.");
@@ -1678,26 +1654,11 @@ export function GameBoard({
                 </span>
                 <span className="review-summary-pills" aria-label="Move review summary">
                   {isReviewing ? <em>Reviewing</em> : null}
-                  <span data-review="best">{reviewSummary.best} Best</span>
-                  <span data-review="excellent">{reviewSummary.excellent} Excellent</span>
-                  <span data-review="blunder">{reviewSummary.blunder} Blunder</span>
+                  <span>{reviewSummary.moves} {reviewSummary.moves === 1 ? "move" : "moves"}</span>
+                  {reviewSummary.captures ? <span>{reviewSummary.captures} captured</span> : null}
                 </span>
               </div>
-              <div className={`review-position-card ${activeReviewMove ? "" : "is-live"}`}>
-                {activeReviewMove ? (
-                  <>
-                    <p>{`After ${activeReviewMove.notation}`}</p>
-                    <strong>{`${activeReviewMove.label} - ${activeReviewMove.score}/100`}</strong>
-                    <span>{activeReviewMove.detail}</span>
-                    <small>Best line: {activeReviewMove.bestLine}{botSearchDetail ? ` ${botSearchDetail}` : ""}</small>
-                  </>
-                ) : (
-                  <>
-                    <strong>{statusHeading}</strong>
-                    {botSearchDetail ? <span>{botSearchDetail}</span> : null}
-                  </>
-                )}
-              </div>
+              {isReviewing ? <div className="review-position-card"><strong>{activeReviewMove ? `After ${activeReviewMove.notation}` : "Starting position"}</strong>{activeReviewMove?.label ? <span>{activeReviewMove.label}</span> : null}</div> : null}
               <ol className="review-move-list move-list text-sm">
                 <li className={displayPly === 0 ? "is-active" : ""}>
                   <button type="button" onClick={() => setReviewCursor(0)} className="focus-ring">
@@ -1707,7 +1668,7 @@ export function GameBoard({
                 </li>
                 {reviewMoveRows.length ? (
                   reviewMoveRows.map((move) => (
-                    <li key={`${move.notation}-${move.ply}`} className={displayPly === move.ply ? "is-active" : ""} data-review={move.classification}>
+                    <li key={`${move.notation}-${move.ply}`} className={displayPly === move.ply ? "is-active" : ""}>
                       <button type="button" onClick={() => setReviewCursor(move.ply)} className="focus-ring" aria-label={`Review move ${move.ply} ${move.sideLabel} ${move.pieceLabel} ${move.routeLabel} ${move.notation}`}>
                         <span className="review-move-side" data-owner={move.owner}>{move.sideLabel.slice(0, 2)}</span>
                         <span className="review-move-piece">
@@ -1716,7 +1677,7 @@ export function GameBoard({
                         </span>
                         <span className="review-move-meta">
                           <small>{move.routeLabel}</small>
-                          <em>{move.label}</em>
+                          {move.label ? <em>{move.label}</em> : null}
                         </span>
                       </button>
                     </li>

@@ -54,10 +54,10 @@ export function PlayPregameSetupCard({
   joiningRoom = false
 }: PlayPregameSetupCardProps) {
   const secondaryModes = [
-    { key: "online" as const, label: "Quick Match", Icon: Flag },
-    { key: "room" as const, label: "Play a Friend", Icon: Users },
-    { key: "spectate" as const, label: "Watch Games", Icon: Eye },
-    { key: "offline" as const, label: "Offline Local", Icon: MonitorSmartphone }
+    { key: "online" as const, label: "Quick Match", shortLabel: "Match", Icon: Flag },
+    { key: "room" as const, label: "Play a Friend", shortLabel: "Friend", Icon: Users },
+    { key: "spectate" as const, label: "Watch Games", shortLabel: "Watch", Icon: Eye },
+    { key: "offline" as const, label: "Offline Local", shortLabel: "Local", Icon: MonitorSmartphone }
   ];
   const modeAccessibleNames: Partial<Record<PlayMode, string>> = {
     spectate: "Spectate"
@@ -70,6 +70,7 @@ export function PlayPregameSetupCard({
       <div className="play-mode-stack" aria-label="Play modes">
         <button
           type="button"
+          aria-label="Bot Mode"
           aria-pressed={playMode === "bot"}
           onClick={() => onModeChange("bot")}
           className={`focus-ring play-mode-stack-button ${playMode === "bot" ? "is-selected" : ""}`}
@@ -77,9 +78,9 @@ export function PlayPregameSetupCard({
           title={modeSupport.bot.reason}
         >
           <Bot size={18} />
-          <span>Bot Mode</span>
+          <span>Bot</span>
         </button>
-        {secondaryModes.map(({ key, label, Icon }) => (
+        {secondaryModes.map(({ key, label, shortLabel, Icon }) => (
           <button
             key={key}
             type="button"
@@ -91,7 +92,7 @@ export function PlayPregameSetupCard({
             title={modeSupport[key].reason}
           >
             <Icon size={18} />
-            <span>{label}</span>
+            <span>{shortLabel}</span>
           </button>
         ))}
       </div>

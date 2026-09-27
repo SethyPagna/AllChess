@@ -169,3 +169,7 @@ Use actual UV/PBR geometry for the Cambodian atelier, with original turned forms
 ## 2026-09-27: Independent collections and deliberate camera control
 
 Keep collection identity separate from board colours and material recolours. Each selectable collection must connect its native 2D presentation with the correct 3D asset without changing game state. Save preferences per game and reject foreign set IDs. Use automatic bounds fitting during ordinary orbit; deliberate zoom/pan enters free composition until reset. See [delivery scope](rosette-collections.md).
+
+## 2026-09-27: Evidence-based move events and native defaults
+
+Move order and notation cannot establish quality grades or a best line. Display factual timeline events from matching positions; leave unavailable capture counts unknown and reserve evaluations for a real analysis provider. A new default collection may apply to unset or invalid preferences, while an explicitly saved legacy choice must remain intact. Read per-game collection, view and finish preferences independently so one blocked key cannot suppress the others. See [delivery scope](club-collections.md).

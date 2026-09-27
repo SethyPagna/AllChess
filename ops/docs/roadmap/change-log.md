@@ -4,6 +4,13 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ---
 
+## 2026-09-27 — Club collection and factual review
+
+- Add an ivory/oxblood lacquer collection, four generated sprites and an original textured Blender/GLB with stacked kings for all three draughts games.
+- Use three compact collection cards, a per-game Rosette default and unclipped short mode labels.
+- Replace fabricated move grades and best-line claims with factual events and preserve playback.
+- Reduce repeated full-state cloning in royal-safety probes without changing search budgets or legality. See [scope and validation](club-collections.md).
+
 ## 2026-09-27 — Rosette draughts collections and fitted orbit
 
 - Add four generated sprite masters and a textured, carved Blender/GLB collection for all three draughts games, with real stacked kings and shared mesh data.

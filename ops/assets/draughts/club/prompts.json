@@ -1,0 +1,37 @@
+{
+  "provider": "built-in image_gen",
+  "date": "2026-09-27",
+  "purpose": "Individual transparent 2D masters and references for original Blender geometry",
+  "assets": [
+    {
+      "file": "light-man.png",
+      "generation": "exec-b0570ff8-d7c5-497f-8d55-7aa17192de5b.png",
+      "prompt": "Create ONE photorealistic production sprite for a modern luxury draughts/checkers collection named Club: the LIGHT MAN, a single ivory-lacquer counter. Genuine transparent alpha background; no floor, no text, no cast shadow outside object. Square canvas centered with 12% clear margin. Orthographic product camera elevated 60 degrees above tabletop, front-facing with no yaw, showing broad elliptical top and front edge. Diameter 42mm height 8mm. DISTINCT DESIGN: wide softly rounded upper rim; a smooth shallow scooped dish in the top with a small low circular grip plateau at the bottom of the dish; smoothly waisted side with two deep fine horizontal grooves; rounded flat foot narrower than upper rim. No rosette, no petal pattern, no vertical reeding, no crown, no metal inlay. Warm ivory opaque lacquer with a subtle realistic satin sheen, microscopic finish texture and precise clean edges, not translucent, not ceramic crazing, not shiny toy plastic. Broad soft studio key from upper left and gentle fill, crisp physical depth and clear silhouette at 32px playing size. Exactly one counter, not stacked, no surrounding objects. This is an original contemporary game design, no brand or historical insignia."
+    },
+    {
+      "file": "dark-man.png",
+      "generation": "exec-cb09398d-bfb0-4599-b1f9-5cdc24383e6d.png",
+      "references": [
+        "light-man.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Reference image is the Club LIGHT MAN design. Create the corresponding DARK MAN production sprite. Change only the material color to deep burgundy oxblood opaque lacquer, rich warm red-brown clearly distinct from black, satin sheen and subtle microscopic surface texture. Preserve exact counter geometry, size, framing, camera and lighting: one 42mm wide 8mm tall counter with broad rounded rim, scooped top dish and small circular low central plateau, waisted side with two horizontal grooves and rounded narrow foot. No wood grain, rosette, metal, crown or vertical reeding. Genuine transparent alpha background, no floor, no external shadow, no text, same centered square canvas and clear margin. Sharp photorealistic craftsmanship readable at small playing size."
+    },
+    {
+      "file": "light-king.png",
+      "generation": "exec-c8bfd269-67e0-4656-8e4c-6284d4df132c.png",
+      "references": [
+        "light-man.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Reference image is the Club LIGHT MAN ivory-lacquer draughts counter. Create the corresponding LIGHT KING sprite as exactly TWO copies of this counter physically stacked directly on each other, aligned concentrically, with a fine dark contact seam between them. Keep the identical smooth scooped top dish, broad softly rounded rim, small flat low circular central plateau, two horizontal grooves around each counter's waisted side and narrower rounded foot. Ivory satin opaque lacquer, same fine finish texture and studio light. Each tier 42mm diameter and 8mm tall; total roughly16mm. Orthographic camera elevated60 degrees above tabletop, no yaw, full stack visible on square canvas centered with12%clear margin. Genuine transparent alpha background, no floor, no external shadow, no text, no crown, no symbol, no third tier. The count of TWO counters must be instantly clear at playing size."
+    },
+    {
+      "file": "dark-king.png",
+      "generation": "exec-75878794-0ee8-4c30-840c-10694343dfa0.png",
+      "references": [
+        "light-king.png",
+        "dark-man.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Image1 is the exact Club LIGHT KING two-counter stack to recolor. Image2 is the DARK MAN oxblood-lacquer material reference. Create the matching DARK KING sprite. Change only the material color of image1 to the rich burgundy oxblood opaque satin lacquer of image2. Preserve exactly TWO counters, their physical stack, broad rounded rim, scooped dish and small central plateau on top, two grooves on each side wall, contact seam, camera, proportions, framing and lighting. Keep rich red-brown highlights and darker recesses, subtle microscopic lacquer texture. Genuine transparent alpha background, no floor or external cast shadow, no text, no crown or symbol, no extra tier. Sharp photorealistic original contemporary draughts piece readable at playing size."
+    }
+  ]
+}

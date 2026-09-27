@@ -34,8 +34,8 @@ function allowedAsset(path) {
   return path === "/offline" || path === "/manifest.webmanifest" || /^\/_next\/static\/[a-zA-Z0-9_./%~-]+\.(js|css|woff2?)$/.test(path)
     || path === "/assets/classic/marble.glb"
     || path === "/assets/khmer/atelier.glb"
-    || path === "/assets/draughts/rosette.glb"
-    || /^\/assets\/draughts\/rosette\/(light|dark)-(man|king)\.webp$/.test(path)
+    || /^\/assets\/draughts\/(rosette|club)\.glb$/.test(path)
+    || /^\/assets\/draughts\/(rosette|club)\/(light|dark)-(man|king)\.webp$/.test(path)
     || /^\/assets\/classic\/marble\/(light|dark)_(king|queen|bishop|knight|rook|pawn)\.png$/.test(path)
     || /^\/assets\/khmer\/atelier\/(light|dark)-(king|queen|bishop|horse|rook|pawn)\.webp$/.test(path)
     || /^\/assets\/materials\/wood-table\/(colour|normal|roughness)\.jpg$/.test(path)

@@ -5020,37 +5020,6 @@ option {
   font-weight: 950;
 }
 
-[data-review="best"] em,
-.review-summary-row [data-review="best"],
-.review-summary-pills [data-review="best"] {
-  background: #7dbd43;
-  color: #0b1207;
-}
-
-[data-review="excellent"] em,
-.review-summary-row [data-review="excellent"],
-.review-summary-pills [data-review="excellent"] {
-  background: #4a9f5f;
-  color: #f8fff8;
-}
-
-[data-review="blunder"] em,
-.review-summary-row [data-review="blunder"],
-.review-summary-pills [data-review="blunder"] {
-  background: #d64242;
-  color: #fff7f7;
-}
-
-[data-review="mistake"] em {
-  background: #b6782d;
-  color: #fff7ed;
-}
-
-[data-review="inaccuracy"] em {
-  background: #7a7895;
-  color: #f9f8ff;
-}
-
 .review-primary-button,
 .review-live-button {
   display: flex;

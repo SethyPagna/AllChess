@@ -15,4 +15,4 @@ npx tsx ops/scripts/assets/prepare-rosette.ts
 & 'C:/Program Files/Blender Foundation/Blender 5.2/blender.exe' -b -t 4 --python ops/assets/draughts/build_rosette.py
 ```
 
-The browser uses a per-game collection preference independently of board colours and 3D material finishes. The original Turned set remains available. This delivers a second geometric collection for the draughts family; the third distinct set, further board-surface artwork and physical-device validation remain under the active goal.
+The browser uses a per-game collection preference independently of board colours and 3D material finishes. The original Turned set remains available, alongside the later [Club collection](../club/README.md). Rosette is the default when no valid collection was saved. Further board-surface artwork and physical-device validation remain under the active goal.

@@ -152,11 +152,11 @@ describe("PieceIcon", () => {
     expect(traditionalTokin).toContain('data-piece-label="\u3068\u91d1"');
   });
 
-  test("renders draughts men and kings as checker discs", () => {
-    const man = renderToStaticMarkup(<PieceIcon code="p" owner="white" variantKey="english-draughts" />);
-    const king = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="english-draughts" promoted />);
-    const internationalKing = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="international-draughts" promoted />);
-    const turkishKing = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="turkish-draughts" promoted />);
+  test("keeps the Turned draughts option available as checker discs", () => {
+    const man = renderToStaticMarkup(<PieceIcon code="p" owner="white" variantKey="english-draughts" pieceSkin="checker" />);
+    const king = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="english-draughts" pieceSkin="checker" promoted />);
+    const internationalKing = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="international-draughts" pieceSkin="checker" promoted />);
+    const turkishKing = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="turkish-draughts" pieceSkin="checker" promoted />);
 
     expect(man).toContain('data-piece="checker-man"');
     expect(king).toContain('data-piece="checker-king"');

@@ -6,9 +6,9 @@ import { boardThemeOptions, getAppearancePresetOptions, type AppearancePresetPre
 import { PieceIcon } from "@/components/board/piece-icon";
 import { getGamePresentation } from "@/lib/variants/presentation";
 import { getVariant } from "@/lib/variants/catalog";
-import { pieceSetOptions, pieceSetSkin, type PieceSetId } from "./piece-sets";
+import { pieceSetOptions, pieceSetSkin, resolvePieceSet, type PieceSetId } from "./piece-sets";
 
-export function BoardToolbar({ variantKey, appearancePreset, onAppearanceChange, onFlip, onGuide, focusMode, onFocusChange, canFocus, is3D = false, pieceSet = "standard", onPieceSetChange }: {
+export function BoardToolbar({ variantKey, appearancePreset, onAppearanceChange, onFlip, onGuide, focusMode, onFocusChange, canFocus, is3D = false, pieceSet: pieceSetPreference, onPieceSetChange }: {
   variantKey: string;
   appearancePreset: AppearancePresetPreference;
   onAppearanceChange: (preset: AppearancePresetPreference) => void;
@@ -25,6 +25,7 @@ export function BoardToolbar({ variantKey, appearancePreset, onAppearanceChange,
   const presets = getAppearancePresetOptions(variantKey);
   const selected = presets.find(option => option.key === appearancePreset) ?? presets[0];
   const sets = pieceSetOptions(variantKey);
+  const pieceSet = resolvePieceSet(variantKey, pieceSetPreference);
   const separatePieces = sets.length > 1 && !!onPieceSetChange;
   const coloursOnly = is3D || separatePieces;
   const options = coloursOnly ? presets.filter((option, index) => presets.findIndex(item => item.boardTheme === option.boardTheme) === index).map(option => ({ ...option, label: boardThemeOptions.find(theme => theme.key === option.boardTheme)!.label })) : presets;

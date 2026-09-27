@@ -15,7 +15,7 @@ type PieceIconProps = {
   promoted?: boolean;
 };
 
-export type PieceSkin = "rosette" | "atelier" | "marble" | "khmer" | "western" | "silhouette" | "glyph" | "monogram" | "castle" | "pirate" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
+export type PieceSkin = "club" | "rosette" | "atelier" | "marble" | "khmer" | "western" | "silhouette" | "glyph" | "monogram" | "castle" | "pirate" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
 export type PieceSkinPreference = "default" | PieceSkin;
 
 export type PieceSkinOption = {
@@ -40,7 +40,7 @@ export function PieceIcon({ code, owner, pieceSkin = "default", variantKey, loca
   const normalized = code.toLowerCase();
   const label = getPieceDisplayName(normalized, variantKey, locale, promoted);
   const skin = resolvePieceSkin(variantKey, pieceSkin);
-  if (skin === "rosette") return <PhotographicPiece code={normalized} owner={owner} label={label} variantKey={variantKey} promoted={promoted} rosette/>;
+  if (skin === "rosette" || skin === "club") return <PhotographicPiece code={normalized} owner={owner} label={label} variantKey={variantKey} promoted={promoted} draughtsSet={skin}/>;
   if (skin === "marble" || skin === "atelier") return <PhotographicPiece code={normalized} owner={owner} label={label} variantKey={variantKey} promoted={promoted} khmer={skin==="atelier"}/>;
   if (variantKey === "ouk-chaktrang" && skin === "khmer") return <KhmerPiece code={normalized} owner={owner} label={label} promoted={promoted} />;
   if (variantKey === "makruk" && skin === "makruk") return <MakrukPiece code={normalized} owner={owner} label={label} promoted={promoted} />;
@@ -578,7 +578,7 @@ function getNativeGlyph({ code, owner, variantKey, promoted }: { code: string; o
 export function getPieceSkin(variantKey: string): PieceSkin {
   if (variantKey === "ouk-chaktrang") return "atelier";
   if (variantKey === "makruk") return "makruk";
-  if (isDraughtsPresentation(variantKey)) return "checker";
+  if (isDraughtsPresentation(variantKey)) return "rosette";
   if (isStonePresentation(variantKey)) return "stone";
   if (variantKey === "xiangqi" || variantKey === "janggi") return "disc";
   if (variantKey === "mini-shogi") return "mini-wedge";
@@ -602,7 +602,7 @@ export function getPieceSkinOptions(variantKey: string): PieceSkinOption[] {
     return [...defaults, option("tile"), option("disc")];
   }
   if (isDraughtsPresentation(variantKey)) {
-    return [...defaults, option("checker"), option("rosette"), option("stone")];
+    return [...defaults, option("checker"), option("rosette"), option("club"), option("stone")];
   }
   if (isStonePresentation(variantKey)) {
     return [...defaults, option("stone"), option("checker")];
@@ -717,6 +717,7 @@ function option(key: PieceSkin): PieceSkinOption {
 function pieceSkinLabel(key: PieceSkin) {
   if (key === "khmer") return "Khmer carved";
   const labels: Record<PieceSkin, string> = {
+    club: "Club",
     rosette: "Rosette",
     atelier: "Khmer atelier",
     marble: "Marble",
