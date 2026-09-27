@@ -1947,12 +1947,25 @@ function moveCastlingRook(state: GameState, kingMove: Move) {
   fromCell.piece = null;
 }
 
+function copyForRoyalSafetyProbe(state: GameState, squares: Square[]): GameState {
+  // Probes only replace pieces in these cells. Attack detection reads the
+  // remaining board and metadata, so history, clocks and hands can stay shared.
+  const board = state.board.slice();
+  for (const square of squares) {
+    const originalRow = state.board[square.row];
+    if (!originalRow?.[square.col]) continue;
+    if (board[square.row] === originalRow) board[square.row] = originalRow.slice();
+    board[square.row][square.col] = { ...originalRow[square.col] };
+  }
+  return { ...state, board };
+}
+
 function wouldLeaveRoyalInCheck(state: GameState, move: Move, owner: PlayerColor) {
-  const next: GameState = structuredClone(state);
+  const enPassant = enPassantCapturedSquare(state, move);
+  const next = copyForRoyalSafetyProbe(state, enPassant ? [move.from, move.to, enPassant] : [move.from, move.to]);
   const fromCell = cellAt(next, move.from);
   const toCell = cellAt(next, move.to);
   if (!fromCell?.piece || !toCell) return true;
-  const enPassant = enPassantCapturedSquare(state, move);
   if (enPassant) cellAt(next, enPassant)!.piece = null;
   toCell.piece = { ...fromCell.piece, promoted: move.promotion || fromCell.piece.promoted };
   fromCell.piece = null;
@@ -1960,11 +1973,11 @@ function wouldLeaveRoyalInCheck(state: GameState, move: Move, owner: PlayerColor
 }
 
 function wouldGiveRoyalCheck(state: GameState, move: Move, owner: PlayerColor) {
-  const next: GameState = structuredClone(state);
+  const enPassant = enPassantCapturedSquare(state, move);
+  const next = copyForRoyalSafetyProbe(state, enPassant ? [move.from, move.to, enPassant] : [move.from, move.to]);
   const fromCell = cellAt(next, move.from);
   const toCell = cellAt(next, move.to);
   if (!fromCell?.piece || !toCell) return true;
-  const enPassant = enPassantCapturedSquare(state, move);
   if (enPassant) cellAt(next, enPassant)!.piece = null;
   toCell.piece = { ...fromCell.piece, promoted: move.promotion || fromCell.piece.promoted };
   fromCell.piece = null;
@@ -1973,7 +1986,7 @@ function wouldGiveRoyalCheck(state: GameState, move: Move, owner: PlayerColor) {
 
 function wouldDropLeaveRoyalInCheck(state: GameState, move: Move, owner: PlayerColor) {
   if (!move.drop) return true;
-  const next: GameState = structuredClone(state);
+  const next = copyForRoyalSafetyProbe(state, [move.to]);
   const toCell = cellAt(next, move.to);
   if (!toCell || toCell.piece) return true;
   toCell.piece = { ...move.drop, promoted: false };
