@@ -6,7 +6,7 @@ import { boardThemeOptions, getAppearancePresetOptions, type AppearancePresetPre
 import { PieceIcon } from "@/components/board/piece-icon";
 import { getGamePresentation } from "@/lib/variants/presentation";
 import { getVariant } from "@/lib/variants/catalog";
-import { piece2DSkin, pieceSetOptions, pieceSetPreviewPieces, resolvePieceSet, type Piece2DStyle, type PieceSetId } from "./piece-sets";
+import { piece2DSkin, piece2DStyleOptions, pieceSetOptions, pieceSetPreviewPieces, resolvePieceSet, type Piece2DStyle, type PieceSetId } from "./piece-sets";
 
 export function BoardToolbar({ variantKey, appearancePreset, onAppearanceChange, onFlip, onGuide, focusMode, onFocusChange, canFocus, is3D = false, pieceSet: pieceSetPreference, onPieceSetChange, piece2DStyle = "collection", onPiece2DStyleChange }: {
   variantKey: string;
@@ -28,6 +28,7 @@ export function BoardToolbar({ variantKey, appearancePreset, onAppearanceChange,
   const selected = presets.find(option => option.key === appearancePreset) ?? presets[0];
   const sets = pieceSetOptions(variantKey);
   const collectionPreview = pieceSetPreviewPieces(variantKey);
+  const readableStyles = piece2DStyleOptions(variantKey);
   const pieceSet = resolvePieceSet(variantKey, pieceSetPreference);
   const separatePieces = sets.length > 1 && !!onPieceSetChange;
   const coloursOnly = is3D || separatePieces;
@@ -55,10 +56,10 @@ export function BoardToolbar({ variantKey, appearancePreset, onAppearanceChange,
         <summary className="focus-ring" aria-label="Customize board"><Palette size={16} /><span>Board style</span></summary>
         <div className="board-look-panel">
           {separatePieces ? <><div className="board-look-heading"><strong>Pieces</strong><span>2D + 3D</span></div><div className="piece-set-choices" data-collection-count={sets.length} role="group" aria-label="Piece collection">{sets.map(set => <button type="button" className="focus-ring piece-set-choice" key={set.key} aria-label={`Choose ${set.label} pieces`} aria-pressed={pieceSet === set.key} onClick={() => onPieceSetChange?.(set.key)}><span aria-hidden="true">{collectionPreview.map((sample, index) => <PieceIcon key={sample.code} {...sample} owner={variant.players[index]} variantKey={variantKey} pieceSkin={set.skin}/>)}</span><strong>{set.label}</strong>{pieceSet === set.key ? <Check size={14}/> : null}</button>)}</div></> : null}
-          {!is3D && variantKey === "ouk-chaktrang" && onPiece2DStyleChange ? <><div className="board-look-heading"><strong>2D style</strong></div><div className="piece-2d-choices" role="group" aria-label="2D piece style">{([{ key: "collection", label: "Artwork" }, { key: "clear", label: "Clear" }, { key: "letters", label: "Letters" }] as const).map(style => <button type="button" className="focus-ring piece-2d-choice" key={style.key} aria-label={`Use ${style.label} pieces`} aria-pressed={piece2DStyle === style.key} onClick={() => onPiece2DStyleChange(style.key)}><span aria-hidden="true"><PieceIcon code="k" owner={variant.players[0]} variantKey={variantKey} pieceSkin={piece2DSkin(variantKey, pieceSet, selected.pieceSkin, style.key)}/></span><span>{style.label}</span></button>)}</div></> : null}
+          {!is3D && readableStyles.length > 0 && onPiece2DStyleChange ? <><div className="board-look-heading"><strong>2D style</strong></div><div className="piece-2d-choices" role="group" aria-label="2D piece style">{readableStyles.map(style => <button type="button" className="focus-ring piece-2d-choice" key={style.key} aria-label={`Use ${style.label} pieces`} aria-pressed={piece2DStyle === style.key} onClick={() => onPiece2DStyleChange(style.key)}><span aria-hidden="true"><PieceIcon code="k" owner={variant.players[0]} variantKey={variantKey} pieceSkin={piece2DSkin(variantKey, pieceSet, selected.pieceSkin, style.key)}/></span><span>{style.label}</span></button>)}</div></> : null}
           <div className="board-look-heading"><strong>{coloursOnly ? "Board colours" : "Make it yours"}</strong><span>Saved for this game</span></div>
           <div className="board-look-presets">{options.map((option) => <button type="button" className="focus-ring board-look-preset" key={option.key} aria-pressed={isSelected(option)} aria-label={`Choose ${option.label}`} onClick={() => onAppearanceChange(option.key)}>
-            <span className="board-look-preview board-shell" data-board-theme={option.boardTheme} aria-hidden="true" style={is3D && ["ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi", "makruk", "turkish-draughts", "konane", "shatranj", "chaturanga", "jungle"].includes(variantKey) ? { background: "var(--board-light)" } : undefined}>{!is3D ? <PieceIcon code={presentation.pieces[1]} owner={variant.players[0]} variantKey={variantKey} pieceSkin={piece2DSkin(variantKey, pieceSet, option.pieceSkin, piece2DStyle)} /> : null}</span>
+            <span className="board-look-preview board-shell" data-board-theme={option.boardTheme} data-piece-set={pieceSet} aria-hidden="true" style={is3D && ["ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi", "makruk", "turkish-draughts", "konane", "shatranj", "chaturanga", "jungle"].includes(variantKey) ? { background: "var(--board-light)" } : undefined}>{!is3D ? <PieceIcon code={presentation.pieces[1]} owner={variant.players[0]} variantKey={variantKey} pieceSkin={piece2DSkin(variantKey, pieceSet, option.pieceSkin, piece2DStyle)} /> : null}</span>
             <span>{option.label}</span>{isSelected(option) ? <Check size={13} /> : null}
           </button>)}</div>
         </div>

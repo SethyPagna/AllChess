@@ -34,6 +34,9 @@ function allowedAsset(path) {
   return path === "/offline" || path === "/manifest.webmanifest" || /^\/_next\/static\/[a-zA-Z0-9_./%~-]+\.(js|css|woff2?)$/.test(path)
     || path === "/assets/classic/marble.glb"
     || /^\/assets\/khmer\/(atelier|courtyard)\.glb$/.test(path)
+    || path === "/assets/shogi/hori.glb"
+    || path === "/assets/shogi/hori/board-colour.webp"
+    || /^\/assets\/shogi\/hori\/(king-jewel|king|rook|bishop|gold|silver|knight|lance|pawn|promoted-(rook|bishop|silver|knight|lance|pawn))\.webp$/.test(path)
     || /^\/assets\/draughts\/(rosette|club)\.glb$/.test(path)
     || /^\/assets\/draughts\/(rosette|club)\/(light|dark)-(man|king)\.webp$/.test(path)
     || /^\/assets\/classic\/marble\/(light|dark)_(king|queen|bishop|knight|rook|pawn)\.png$/.test(path)

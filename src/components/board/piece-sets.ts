@@ -1,7 +1,7 @@
 import type { PieceSkinPreference } from "./piece-icon";
 import type { PieceCollection } from "./board-3d-config";
 
-export type PieceSetId = "standard" | "rosette" | "club" | "courtyard";
+export type PieceSetId = "standard" | "rosette" | "club" | "courtyard" | "hori";
 export type Piece2DStyle = "collection" | "clear" | "letters";
 export type PieceSetOption = { key: PieceSetId; label: string; skin: PieceSkinPreference; finishLabel?: string };
 type PieceSetPreview = { code: string; promoted?: boolean };
@@ -30,8 +30,31 @@ const khmerSets: PieceSetFamily = {
   preview: [{ code: "k" }, { code: "n" }]
 };
 
+const shogiSets: PieceSetFamily = {
+  defaultSet: "standard",
+  options: [
+    { key: "standard", label: "Printed", skin: "wedge", finishLabel: "Boxwood" },
+    { key: "hori", label: "Carved", skin: "hori", finishLabel: "Honey boxwood" }
+  ],
+  preview: [{ code: "k" }, { code: "r", promoted: true }]
+};
+const miniShogiSets: PieceSetFamily = {
+  ...shogiSets,
+  options: shogiSets.options.map(set => set.key === "standard" ? { ...set, skin: "mini-wedge" } : set)
+};
+
+const readable2DStyles = [
+  { key: "collection", label: "Artwork" }, { key: "clear", label: "Clear" }, { key: "letters", label: "Letters" }
+] as const;
+
+export function piece2DStyleOptions(variantKey: string) {
+  return ["ouk-chaktrang", "shogi", "mini-shogi"].includes(variantKey) ? readable2DStyles : [];
+}
+
 function pieceSetFamily(variantKey: string): PieceSetFamily | undefined {
   if (variantKey === "ouk-chaktrang") return khmerSets;
+  if (variantKey === "shogi") return shogiSets;
+  if (variantKey === "mini-shogi") return miniShogiSets;
   if (["english-draughts", "international-draughts", "turkish-draughts"].includes(variantKey)) return draughtsSets;
 }
 
@@ -55,6 +78,7 @@ export function readPieceSetPreference(variantKey: string, readPreference: (key:
 
 export function pieceSetModelPath(collection: PieceCollection, set: PieceSetId): string | undefined {
   if (collection === "khmer" && set === "courtyard") return "/assets/khmer/courtyard.glb";
+  if (collection === "shogi" && set === "hori") return "/assets/shogi/hori.glb";
   return collection === "draughts" && (set === "rosette" || set === "club") ? `/assets/draughts/${set}.glb` : undefined;
 }
 
@@ -63,7 +87,7 @@ export function pieceSetSkin(variantKey: string, set: PieceSetId, fallback: Piec
 }
 
 export function resolvePiece2DStyle(variantKey: string, value: string | null | undefined, legacyAppearance?: string | null): Piece2DStyle {
-  if (variantKey !== "ouk-chaktrang") return "collection";
+  if (!piece2DStyleOptions(variantKey).length) return "collection";
   if (value === "collection" || value === "clear" || value === "letters") return value;
   if (value == null) {
     if (legacyAppearance === "tablet") return "letters";
@@ -77,7 +101,7 @@ export function readPiece2DStylePreference(
   readPreference: (key: string) => string | null = key => window.localStorage.getItem(key),
   writePreference: (key: string, value: string) => void = (key, value) => window.localStorage.setItem(key, value)
 ): Piece2DStyle {
-  if (variantKey !== "ouk-chaktrang") return "collection";
+  if (!piece2DStyleOptions(variantKey).length) return "collection";
   const key = `allchess-piece-2d-style:${variantKey}`;
   let stored: string | null;
   try { stored = readPreference(key); }
@@ -95,6 +119,10 @@ export function readPiece2DStylePreference(
 export function piece2DSkin(variantKey: string, set: PieceSetId, fallback: PieceSkinPreference, style: Piece2DStyle): PieceSkinPreference {
   if (variantKey === "ouk-chaktrang") {
     if (style === "clear") return "khmer";
+    if (style === "letters") return "tile";
+  }
+  if (variantKey === "shogi" || variantKey === "mini-shogi") {
+    if (style === "clear") return variantKey === "mini-shogi" ? "mini-wedge" : "wedge";
     if (style === "letters") return "tile";
   }
   return pieceSetSkin(variantKey, set, fallback);

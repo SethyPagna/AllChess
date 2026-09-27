@@ -182,6 +182,9 @@ button:disabled { cursor: not-allowed; }
 .board-grid[data-board-geometry="intersections"] .board-square[data-terrain="palace"]::before,
 .board-grid[data-board-geometry="intersections"] .board-square[data-terrain="river"]::before { display: none; }
 .board-grid[data-board-geometry="plain-grid"] .board-square[data-last-move="true"]:not([data-square-state]) { box-shadow: inset 0 0 0 4px #b39a3299; }
+.board-shell[data-piece-set="hori"][data-board-theme="wood"] .board-grid { background: #d9b77d url("/assets/shogi/hori/board-colour.webp") center / 100% 100% no-repeat; }
+.board-look-preview[data-piece-set="hori"][data-board-theme="wood"] { background: #d9b77d url("/assets/shogi/hori/board-colour.webp") center / 100% 100% no-repeat !important; }
+.board-shell[data-piece-set="hori"][data-board-theme="wood"] .board-grid .board-square:not([data-square-state]) { background: transparent !important; }
 .board-square[data-legal-target="move"]::before { content: ""; position: absolute; width: 20%; height: 20%; border-radius: 50%; background: #20352d65; pointer-events: none; }
 .board-square[data-legal-target="move"][data-piece-label]::before { inset: 4%; width: 92%; height: 92%; border: 4px solid #20352d65; background: transparent; }
 .play-arena .game-studio[data-focus="true"] { grid-template-columns: minmax(0, var(--board-fixed-size)); max-width: 900px; }
@@ -394,3 +397,13 @@ button:disabled { cursor: not-allowed; }
 
 .photographic-piece { filter: drop-shadow(0 1px 1px #0005); }
 .photographic-piece image { image-rendering: auto; }
+.photographic-piece[data-skin="hori"][data-owner="gote"] { transform: rotate(180deg); }
+.native-piece-symbol:is([data-variant="shogi"], [data-variant="mini-shogi"])[data-skin="tile"] { background: linear-gradient(145deg, #fff7df, #ead5a4); color: #2c2217; border-color: #78633b; }
+.native-piece-symbol:is([data-variant="shogi"], [data-variant="mini-shogi"])[data-skin="tile"][data-promoted="true"] { color: #822d24; border-color: #8f5c3b; }
+.board-shell:is([data-variant="shogi"], [data-variant="mini-shogi"])[data-board-orientation="second"] .board-grid .piece-icon[data-owner="sente"] { transform: rotate(180deg); }
+.board-shell:is([data-variant="shogi"], [data-variant="mini-shogi"])[data-board-orientation="second"] .board-grid .piece-icon[data-owner="gote"] { transform: none; }
+.board-player-card-top .hand-piece-button .piece-icon:is([data-variant="shogi"], [data-variant="mini-shogi"]) { transform: rotate(180deg); }
+.board-player-card-bottom .hand-piece-button .piece-icon:is([data-variant="shogi"], [data-variant="mini-shogi"]) { transform: none; }
+.hand-tray[data-skin="hori"] .hand-tray-status { border-radius: .45rem; background: color-mix(in srgb, #d9b878 42%, var(--surface-raised)); }
+.hand-strip[data-skin="hori"] { gap: .3rem; }
+.hand-piece-button[data-skin="hori"] { border-radius: .45rem; background: color-mix(in srgb, #d9b878 72%, var(--surface-raised)); color: #1f160c; }

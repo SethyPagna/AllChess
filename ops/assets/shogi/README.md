@@ -1,5 +1,7 @@
 # AllChess Shogi tile collection
 
+Shogi and Mini Shogi now also offer **Carved (Hori)** alongside this original **Printed** set. The second collection has fifteen individually generated face images, a coordinated kaya-style board colour, genuinely recessed front/reverse lettering and embedded wood PBR maps. See [artwork and exact prompts](hori/README.md) and [editable model source](hori-model.md). The original remains the first-use default, with Clear and Letters available as independent 2D readability choices.
+
 Original pentagonal tile geometry authored locally in Blender 5.2.2 LTS for Shogi and Mini Shogi. Both players use the same boxwood appearance; the pointed ends identify ownership. Sente's king carries 玉 and Gote's carries 王. Eight base types and six promoted faces are provided for each side, with black front lettering and vermilion promotion lettering. These are separate face models, not a flip animation.
 
 - Editable scene: `collection.blend` (about 219 KB), with semantic roots, bevel modifiers, shared geometry, material roles, delivery camera and lights.

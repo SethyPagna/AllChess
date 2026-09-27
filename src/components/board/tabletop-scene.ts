@@ -23,7 +23,7 @@ function woodGrain() {
   return texture;
 }
 
-export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRenderer, width = .424, depth = .424, japanese = false, collection = "classic", onTextureReady = () => {}) {
+export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRenderer, width = .424, depth = .424, japanese = false, collection = "classic", onTextureReady = () => {}, boardSurfacePath?: string) {
   let disposed = false;
   const woodTextures: THREE.Texture[] = [];
   function woodTexture(name: string, colour = false) {
@@ -43,6 +43,17 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
   const woodRoughness = woodTexture("roughness");
   const grain = woodGrain();
   grain.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  let boardSurfaceReady = false, usingBoardSurface = false;
+  const boardSurface = boardSurfacePath ? new THREE.TextureLoader().load(boardSurfacePath, loaded => {
+    if (disposed) { loaded.dispose(); return; }
+    boardSurfaceReady = true;
+    onTextureReady();
+  }, undefined, () => { /* Retain the native grain if the optional artwork fails. */ }) : null;
+  if (boardSurface) {
+    boardSurface.colorSpace = THREE.SRGBColorSpace;
+    boardSurface.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    woodTextures.push(boardSurface);
+  }
   const environment = new RoomEnvironment();
   const generator = new THREE.PMREMGenerator(renderer);
   const environmentMap = generator.fromScene(environment, .04);
@@ -77,8 +88,8 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
     return mesh;
   }
   if (japanese) {
-    // A solid kaya-coloured block with softly cut legs; the plain grid sits flush.
-    block([width+.058,.066,depth+.058], [0,-.031,0], walnut, .003);
+    // Keep the case below the playable tile tops; coincident faces cause striping.
+    block([width+.058,.064,depth+.058], [0,-.032,0], walnut, .003);
     for (const x of [-width*.37,width*.37]) for (const z of [-depth*.37,depth*.37]) block([.036,.027,.036], [x,-.0775,z], walnut, .008);
     for (const compact of [false,true]) for (const stand of shogiStands(width, depth, compact)) {
       const meshes=[
@@ -123,6 +134,22 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
   scene.add(key, key.target, rim, fill);
   return {
     grain,
+    get boardSurface() { return boardSurfaceReady ? boardSurface : null; },
+    setBoardSurface(active: boolean) {
+      if (!boardSurface) return;
+      const useSurface = active && boardSurfaceReady;
+      if (useSurface === usingBoardSurface) return;
+      usingBoardSurface = useSurface;
+      walnut.map = useSurface ? boardSurface : grain;
+      walnut.color.set(useSurface ? 0xffffff : 0xc79b57);
+      walnut.normalMap = useSurface ? null : woodNormal;
+      walnut.bumpMap = useSurface ? boardSurface : null;
+      walnut.bumpScale = .000012;
+      walnut.roughnessMap = useSurface ? null : woodRoughness;
+      walnut.roughness = useSurface ? .58 : .75;
+      walnut.clearcoat = useSurface ? .12 : .2;
+      walnut.needsUpdate = true;
+    },
     setCompactHands(compact:boolean) {handStands.forEach(stand=>stand.meshes.forEach(mesh=>{mesh.visible=stand.compact===compact;}));},
     dispose() {
       disposed = true;

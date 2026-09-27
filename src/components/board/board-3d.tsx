@@ -86,17 +86,68 @@ export default function Board3D(props: Props) {
       offset.setLength(THREE.MathUtils.clamp(offset.length()*factor,controls.minDistance,controls.maxDistance));
       camera.position.copy(controls.target).add(offset);controls.update();
     };
-    const tabletop = createTabletopScene(scene, renderer, layout.width, layout.depth, japanese, props.collection, () => render());
+    const carvedShogi = japanese && props.pieceSet === "hori";
+    const tabletop = createTabletopScene(scene, renderer, layout.width, layout.depth, japanese, props.collection, () => {
+      lastPosition = ""; redraw();
+    }, carvedShogi ? "/assets/shogi/hori/board-colour.webp" : undefined);
     tabletop.setCompactHands(frame.compactHands);
     const meshes = new THREE.Group(); scene.add(meshes);
     const grid = new THREE.Group(); scene.add(grid);
     const gridGeometries: THREE.BufferGeometry[] = [];
     const gridMaterial = new THREE.MeshBasicMaterial({ color: 0x50381d });
+    let japaneseGridMaterial: THREE.ShaderMaterial | undefined;
     if (plainGrid) {
-      const vertical = new THREE.BoxGeometry(.0006, .0005, layout.depth), horizontal = new THREE.BoxGeometry(layout.width, .0005, .0006);
-      gridGeometries.push(vertical, horizontal);
-      for (let c = 0; c <= cols; c++) { const line = new THREE.Mesh(vertical, gridMaterial); line.position.set((c-cols/2)*layout.pitchX, .0021, 0); grid.add(line); }
-      for (let r = 0; r <= rows; r++) { const line = new THREE.Mesh(horizontal, gridMaterial); line.position.set(0, .0021, (r-rows/2)*layout.pitchZ); grid.add(line); }
+      if (japanese) {
+        // Physical ink with filtered pixel coverage: distant .6 mm bars must
+        // not disappear between samples. Derivatives follow orbit and zoom
+        // without CPU projection work or lifting the grid above the pieces.
+        japaneseGridMaterial = new THREE.ShaderMaterial({
+          uniforms: {
+            ink: { value: gridMaterial.color.clone() },
+            cellPitch: { value: new THREE.Vector2(layout.pitchX, layout.pitchZ) },
+            cellCount: { value: new THREE.Vector2(cols, rows) },
+            pixelRatio: { value: renderer.getPixelRatio() },
+          },
+          vertexShader: `
+            uniform vec2 cellPitch;
+            uniform vec2 cellCount;
+            varying vec2 gridPosition;
+            void main() {
+              gridPosition = position.xy / cellPitch + cellCount * 0.5;
+              gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+          `,
+          fragmentShader: `
+            uniform vec3 ink;
+            uniform vec2 cellPitch;
+            uniform float pixelRatio;
+            varying vec2 gridPosition;
+            void main() {
+              vec2 dx = dFdx(gridPosition), dy = dFdy(gridPosition);
+              vec2 unitsPerPixel = max(sqrt(dx * dx + dy * dy), vec2(0.000001));
+              vec2 distanceToLine = abs(fract(gridPosition + 0.5) - 0.5) / unitsPerPixel;
+              vec2 halfWidth = max(vec2(0.0003) / cellPitch / unitsPerPixel, vec2(0.35 * pixelRatio));
+              vec2 coverage = 1.0 - smoothstep(halfWidth - 0.5, halfWidth + 0.5, distanceToLine);
+              float alpha = 1.0 - (1.0 - coverage.x) * (1.0 - coverage.y);
+              if (alpha < 0.001) discard;
+              gl_FragColor = vec4(ink, alpha);
+              #include <tonemapping_fragment>
+              #include <colorspace_fragment>
+            }
+          `,
+          transparent: true, depthTest: true, depthWrite: false, premultipliedAlpha: false,
+        });
+        // The small margin retains both halves of the outer ink strokes.
+        const geometry = new THREE.PlaneGeometry(layout.width + .006, layout.depth + .006);
+        gridGeometries.push(geometry);
+        const ink = new THREE.Mesh(geometry, japaneseGridMaterial);
+        ink.rotation.x = -Math.PI / 2; ink.position.y = .00235; grid.add(ink);
+      } else {
+        const vertical = new THREE.BoxGeometry(.0006, .0005, layout.depth), horizontal = new THREE.BoxGeometry(layout.width, .0005, .0006);
+        gridGeometries.push(vertical, horizontal);
+        for (let c = 0; c <= cols; c++) { const line = new THREE.Mesh(vertical, gridMaterial); line.position.set((c-cols/2)*layout.pitchX, .0021, 0); grid.add(line); }
+        for (let r = 0; r <= rows; r++) { const line = new THREE.Mesh(horizontal, gridMaterial); line.position.set(0, .0021, (r-rows/2)*layout.pitchZ); grid.add(line); }
+      }
       if (rows === 9) {
         const starGeometry = new THREE.CircleGeometry(.0017, 16); gridGeometries.push(starGeometry);
         for (const x of [-1.5,1.5]) for (const z of [-1.5,1.5]) { const star = new THREE.Mesh(starGeometry, gridMaterial); star.rotation.x = -Math.PI/2; star.position.set(x*layout.pitchX,.0025,z*layout.pitchZ); grid.add(star); }
@@ -173,6 +224,8 @@ export default function Board3D(props: Props) {
       meshes.clear(); disposableMaterials.splice(0).forEach(material => material.dispose()); textures.splice(0).forEach(texture => texture.dispose());
       const finishMaterials = new Map<string, THREE.Material>();
       const palette = board3DPalettes[current.boardTheme];
+      const boardSurface = carvedShogi && current.boardTheme === "wood" ? tabletop.boardSurface : null;
+      tabletop.setBoardSurface(Boolean(boardSurface));
       function addPiece(piece: THREE.Object3D, light: boolean, target: Record<string, unknown>) {
         piece.traverse(child => {
           Object.assign(child.userData, target);
@@ -190,7 +243,7 @@ export default function Board3D(props: Props) {
               if (!texturedSet && (japanese || current.collection === "xiangqi" || draughts)) { copy.map = tabletop.grain; copy.bumpMap = tabletop.grain; copy.bumpScale = .000035; }
               if (current.finish !== "original") {
                 if (texturedSet) copy.map = null;
-                if (current.collection === "khmer" || (draughts && texturedSet)) {
+                if (current.collection === "khmer" || ((draughts || japanese) && texturedSet)) {
                   // Keep sculpted horse relief, but remove photographed timber pores from ceramic finishes.
                   if (!/Ses relief/.test(original.name)) copy.normalMap = null;
                   copy.roughnessMap = null;
@@ -222,13 +275,13 @@ export default function Board3D(props: Props) {
         const isSelected = current.selected && sameSquare(current.selected, cell.square);
         const legal = current.legalTargets.has(serializeSquare(cell.square));
         const last = current.lastMove && (sameSquare(current.lastMove.from, cell.square) || sameSquare(current.lastMove.to, cell.square));
-        const color = new THREE.Color((japanese || (draughts && plainGrid)) && current.boardTheme === "wood" ? 0xd9b77d : palette[checkered ? (cell.square.row + cell.square.col) % 2 : 0]);
+        const color = new THREE.Color(boardSurface ? 0xffffff : (japanese || (draughts && plainGrid)) && current.boardTheme === "wood" ? 0xd9b77d : palette[checkered ? (cell.square.row + cell.square.col) % 2 : 0]);
         if (water) color.set(0x236e78);
         const objective = current.variantKey === "king-of-the-hill" && [3,4].includes(cell.square.row) && [3,4].includes(cell.square.col) || current.variantKey === "racing-kings" && cell.square.row === 0;
         if (objective) color.lerp(new THREE.Color(0xd6a648), .4);
         if (last) color.lerp(new THREE.Color(0xd9bb45), .35);
         if (isSelected) color.set(0xd5b64b);
-        const material = intersection ? hitMaterial : new THREE.MeshPhysicalMaterial({ color, map: water ? null : tabletop.grain, bumpMap: water ? null : tabletop.grain, bumpScale: .000025, roughness: water ? .16 : papamu ? .55 : .34, clearcoat: water ? .9 : papamu ? .12 : .4, clearcoatRoughness: .28 }); if (!intersection) disposableMaterials.push(material);
+        const material = intersection ? hitMaterial : new THREE.MeshPhysicalMaterial({ color, map: water ? null : boardSurface ?? tabletop.grain, bumpMap: water ? null : boardSurface ?? tabletop.grain, bumpScale: boardSurface ? .000012 : .000025, roughness: water ? .16 : boardSurface ? .58 : papamu ? .55 : .34, clearcoat: water ? .9 : boardSurface || papamu ? .12 : .4, clearcoatRoughness: .28 }); if (!intersection) disposableMaterials.push(material);
         const tile = new THREE.Mesh(jungleTerrain ? water ? jungleTerrain.water : jungleTerrain.land : plainTiles?.[r][c] ?? tileGeometry, material); tile.position.set((c-(cols-1)/2)*layout.pitchX, 0, (r-(rows-1)/2)*layout.pitchZ); tile.userData.square = cell.square; tile.receiveShadow = !intersection; meshes.add(tile);
         if (jungleTerrain) {const marks=jungleTerrain.decorate(cell);marks.position.copy(tile.position);meshes.add(marks);}
         if (intersection && (isSelected || last)) {
@@ -386,7 +439,7 @@ export default function Board3D(props: Props) {
       [surfaceGeometry, riverGeometry, tileGeometry, dotGeometry, ringGeometry, promotionGeometry, labelGeometry, handHitGeometry].forEach(geometry => geometry.dispose());
       [hitMaterial, markerMaterial, waterMarkerMaterial, promotionMaterial].forEach(material => material.dispose());
       plainTiles?.flat().forEach(geometry => geometry.dispose());
-      gridGeometries.forEach(geometry => geometry.dispose()); gridMaterial.dispose();
+      gridGeometries.forEach(geometry => geometry.dispose()); gridMaterial.dispose(); japaneseGridMaterial?.dispose();
       if (model) disposeModel(model); jungleTerrain?.dispose(); tabletop.dispose(); renderer.dispose(); renderer.domElement.remove();
     };
   }, [props.collection, props.variantKey, props.pieceSet]);

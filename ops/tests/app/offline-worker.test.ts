@@ -58,7 +58,9 @@ function harness() {
 
 describe("public offline play pack", () => {
   test("downloads every photographic piece and PBR material and serves it after disconnecting", async () => {
-    const urls = ["/assets/classic/marble.glb", "/assets/khmer/atelier.glb", "/assets/khmer/courtyard.glb", "/assets/draughts/rosette.glb", "/assets/draughts/club.glb"];
+    const urls = ["/assets/classic/marble.glb", "/assets/khmer/atelier.glb", "/assets/khmer/courtyard.glb", "/assets/draughts/rosette.glb", "/assets/draughts/club.glb", "/assets/shogi/hori.glb"];
+    urls.push("/assets/shogi/hori/board-colour.webp");
+    for (const face of ["king-jewel", "king", "rook", "bishop", "gold", "silver", "knight", "lance", "pawn", "promoted-rook", "promoted-bishop", "promoted-silver", "promoted-knight", "promoted-lance", "promoted-pawn"]) urls.push(`/assets/shogi/hori/${face}.webp`);
     for (const side of ["light", "dark"]) {
       for (const name of ["king", "queen", "bishop", "knight", "rook", "pawn"]) urls.push(`/assets/classic/marble/${side}_${name}.png`);
       for (const set of ["atelier", "courtyard"]) for (const name of ["king", "queen", "bishop", "horse", "rook", "pawn"]) urls.push(`/assets/khmer/${set}/${side}-${name}.webp`);
@@ -102,6 +104,12 @@ describe("public offline play pack", () => {
     expect(await sw.request("/api/friends/rooms/private", "cors")).toBeUndefined();
     expect(await sw.request("/en/profile/player?_rsc=secret", "cors")).toBeUndefined();
     expect(await sw.request("/offline", "navigate", "POST")).toBeUndefined();
+  });
+
+  test.each(["/assets/shogi/hori/promoted-king.webp", "/assets/shogi/hori/promoted-gold.webp", "/assets/shogi/hori/unknown.webp", "/assets/xiangqi/hori.glb"])("rejects assets outside the native Hori contract: %s", async url => {
+    const sw = harness(); sw.manifest("invalid-hori", "shell", [{ url, value: "invalid asset" }]);
+    expect((await sw.message("DOWNLOAD_OFFLINE")).at(-1)).toMatchObject({ ready: false, error: expect.any(String) });
+    expect(sw.hits).toEqual(["/offline-pack.json"]);
   });
 
   test.each(["/_next/static/../../api/account.js", "/_next/static/%2e%2e/%2e%2e/api/account.js", "/_next/static/%2e%2e%2f%2e%2e%2fapi/account.js"])("rejects manifest path traversal: %s", async url => {
