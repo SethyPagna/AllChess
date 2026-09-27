@@ -1,5 +1,7 @@
 # Turned draughts collection
 
+The app also offers the independently modeled [Rosette collection](rosette/README.md), with generated transparent masters, embedded wood maps and a per-game 2D/3D collection picker. This document describes the original Turned set.
+
 Original geometry authored locally in Blender 5.2.2 LTS for English, international and Turkish draughts. Four semantic roots provide light/dark men and kings. Each counter has rounded shoulders, recessed top grooves, a fine brass side inlay and a recessed felt foot. A king is two actual stacked counters, 22 mm high, compared with an 11 mm man. Both have a 42 mm diameter on a 53 mm square pitch.
 
 - Editable source: `collection.blend`, including named meshes, material roles, delivery camera and lights.

@@ -165,3 +165,7 @@ Use visual empty states and optional guidance while preserving submitted filters
 ## 2026-09-27: Physical Cambodian assets and balanced perspective
 
 Use actual UV/PBR geometry for the Cambodian atelier, with original turned forms and a documented CC0 horse adaptation. Preserve editable sources and treat differences from generated 2D artwork honestly. Recolours do not satisfy the goal's requirement for distinct collections. Fit opposite screen edges using physical perspective depth, including captured-piece trays and the tallest pieces, rather than fixing the camera target at the world origin. See [delivery scope](khmer-atelier-3d.md).
+
+## 2026-09-27: Independent collections and deliberate camera control
+
+Keep collection identity separate from board colours and material recolours. Each selectable collection must connect its native 2D presentation with the correct 3D asset without changing game state. Save preferences per game and reject foreign set IDs. Use automatic bounds fitting during ordinary orbit; deliberate zoom/pan enters free composition until reset. See [delivery scope](rosette-collections.md).

@@ -9,8 +9,9 @@ import type { BoardCell, GameState, PlayerColor, Square } from "@/lib/variants";
 import { sameSquare, serializeSquare, getVariant } from "@/lib/variants";
 import type { BoardThemePreference } from "./appearance";
 import { board3DPalettes, collectionModelPath, collectionPieces, pieceModelName, shogiPromotedCodes, board3DLayout, type PieceCollection, type PieceFinish } from "./board-3d-config";
-import { tabletopFrame } from "./tabletop-camera";
+import { fitTabletopBounds, tabletopFrame } from "./tabletop-camera";
 import { tabletopGesture } from "./tabletop-gesture";
+import { pieceSetModelPath, type PieceSetId } from "./piece-sets";
 
 import { createKonaneCellGeometry } from "./konane-board";
 import { createJungleTerrainKit, jungleWaterTop } from "./jungle-board";
@@ -22,6 +23,7 @@ type Props = {
   collection: PieceCollection; variantKey: string; orientedRows: BoardCell[][]; legalTargets: Set<string>;
   selected: Square | null; lastMove?: { from: Square; to: Square }; onChoose: (square: Square) => void;
   boardTheme: BoardThemePreference; finish: PieceFinish;
+  pieceSet?: PieceSetId;
   hands?: GameState["hands"]; selectedHand?: { owner: PlayerColor; code: string } | null;
   onChooseHand?: (owner: PlayerColor, code: string) => void;
   onFallback: () => void;
@@ -59,12 +61,13 @@ export default function Board3D(props: Props) {
     const historical = props.collection === "shatranj" || props.collection === "chaturanga";
     const thai = props.collection === "makruk";
     const draughts = props.collection === "draughts";
+    const texturedSet = props.collection === "classic" || props.collection === "khmer" || !!pieceSetModelPath(props.collection, props.pieceSet ?? "standard");
     const plainGrid = japanese || thai || historical || props.variantKey === "turkish-draughts";
     const checkered = props.collection === "classic" || (draughts && !plainGrid);
     const intersection = props.collection === "xiangqi" || props.collection === "janggi";
     const lettered = japanese || intersection;
     let frame=tabletopFrame(props.collection,rows,cols,element.clientWidth||640,window.innerHeight);
-    let customized=false, adjustingCamera=false;
+    let customized=false, adjustingCamera=false, automaticOrbit=true;
     const camera = new THREE.PerspectiveCamera(frame.fieldOfView, frame.aspect, .01, 10);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.copy(frame.target); controls.enablePan = true; controls.screenSpacePanning=false;
@@ -72,12 +75,13 @@ export default function Board3D(props: Props) {
     controls.minDistance = frame.distance*.52; controls.maxDistance = frame.distance*1.65;
     controls.minPolarAngle = .45; controls.maxPolarAngle = Math.PI / 2.35;
     function applyCamera() {
-      adjustingCamera=true; customized=false;
+      adjustingCamera=true; customized=false; automaticOrbit=true;
       camera.position.copy(frame.position); controls.target.copy(frame.target); controls.update();
       adjustingCamera=false;
     }
     resetCamera.current = applyCamera; applyCamera();
     zoomCamera.current=factor=>{
+      automaticOrbit=false;
       const offset=camera.position.clone().sub(controls.target);
       offset.setLength(THREE.MathUtils.clamp(offset.length()*factor,controls.minDistance,controls.maxDistance));
       camera.position.copy(controls.target).add(offset);controls.update();
@@ -155,17 +159,17 @@ export default function Board3D(props: Props) {
           const materials = Array.isArray(child.material) ? child.material : [child.material];
           const paintedInk = lettered && materials.every(material => /ink/i.test(material.name));
           child.castShadow = !paintedInk; child.receiveShadow = !paintedInk;
-          if (current.finish === "original" && !(japanese || current.collection === "xiangqi" || draughts)) return;
+          if (current.finish === "original" && (texturedSet || !(japanese || current.collection === "xiangqi" || draughts))) return;
           const finish = (original: THREE.Material) => {
             if (!(original instanceof THREE.MeshStandardMaterial) || /brass|inlay|felt|ink/i.test(original.name)) return original;
             const id = `${original.uuid}:${light}`;
             let changed = finishMaterials.get(id);
             if (!changed) {
               const copy = original.clone();
-              if (japanese || current.collection === "xiangqi" || draughts) { copy.map = tabletop.grain; copy.bumpMap = tabletop.grain; copy.bumpScale = .000035; }
+              if (!texturedSet && (japanese || current.collection === "xiangqi" || draughts)) { copy.map = tabletop.grain; copy.bumpMap = tabletop.grain; copy.bumpScale = .000035; }
               if (current.finish !== "original") {
-                if (current.collection === "classic" || current.collection === "khmer") copy.map = null;
-                if (current.collection === "khmer") {
+                if (texturedSet) copy.map = null;
+                if (current.collection === "khmer" || (draughts && texturedSet)) {
                   // Keep sculpted horse relief, but remove photographed timber pores from ceramic finishes.
                   if (!/Ses relief/.test(original.name)) copy.normalMap = null;
                   copy.roughnessMap = null;
@@ -261,6 +265,12 @@ export default function Board3D(props: Props) {
       render();
     }
     update.current = redraw;
+    function fitAutomaticOrbit() {
+      const fitted=fitTabletopBounds(frame.bounds,camera.position.clone().sub(controls.target),frame.aspect);
+      adjustingCamera=true;
+      camera.position.copy(fitted.position);controls.target.copy(fitted.target);controls.update();
+      adjustingCamera=false;
+    }
     const resizeView = () => {
       const width=element.clientWidth;if(!width)return;
       const previous=frame;frame=tabletopFrame(props.collection,rows,cols,width,window.innerHeight);
@@ -268,16 +278,32 @@ export default function Board3D(props: Props) {
       camera.aspect=frame.aspect;camera.fov=frame.fieldOfView;camera.updateProjectionMatrix();
       controls.minDistance=frame.distance*.52;controls.maxDistance=frame.distance*1.65;
       if(customized) {
-        adjustingCamera=true;
-        camera.position.sub(controls.target).multiplyScalar(frame.distance/previous.distance).add(controls.target);controls.update();
-        adjustingCamera=false;
+        if(automaticOrbit)fitAutomaticOrbit();
+        else {
+          adjustingCamera=true;
+          camera.position.sub(controls.target).multiplyScalar(frame.distance/previous.distance).add(controls.target);controls.update();
+          adjustingCamera=false;
+        }
       } else applyCamera();
       tabletop.setCompactHands(frame.compactHands);redraw();
       meshes.children.filter(mesh=>mesh.userData.coordinate).forEach(mesh=>mesh.scale.setScalar(Math.min(1.5,Math.max(1,560/width))));render();
     };
     const resize = new ResizeObserver(resizeView); resize.observe(element);
     window.addEventListener("resize",resizeView);
-    controls.addEventListener("change",()=>{if(!adjustingCamera)customized=true;render();});
+    controls.addEventListener("change",()=>{if(!adjustingCamera){customized=true;if(automaticOrbit)fitAutomaticOrbit();}render();});
+    // Orbit stays fully framed until the user deliberately zooms or pans.
+    // Capture listeners run before OrbitControls, including the first wheel tick.
+    const cameraPointers=new Set<number>();
+    function cameraIntent(event:PointerEvent) {
+      cameraPointers.add(event.pointerId);
+      if(cameraPointers.size>1||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey)automaticOrbit=false;
+    }
+    function endCameraPointer(event:PointerEvent){cameraPointers.delete(event.pointerId);}
+    function manualZoom(){automaticOrbit=false;}
+    renderer.domElement.addEventListener("pointerdown",cameraIntent,true);
+    renderer.domElement.addEventListener("pointerup",endCameraPointer,true);
+    renderer.domElement.addEventListener("pointercancel",endCameraPointer,true);
+    renderer.domElement.addEventListener("wheel",manualZoom,{capture:true,passive:true});
     const gesture=tabletopGesture();
     function down(event: PointerEvent) {
       if (event.button !== 0) return;
@@ -315,7 +341,7 @@ export default function Board3D(props: Props) {
       resources.forEach(resource => resource.dispose());
       bitmaps.forEach(bitmap => bitmap.close());
     }
-    new GLTFLoader().load(collectionModelPath(props.collection), gltf => {
+    new GLTFLoader().load(pieceSetModelPath(props.collection, props.pieceSet ?? "standard") ?? collectionModelPath(props.collection), gltf => {
       if (disposed) { disposeModel(gltf.scene); return; }
       model = gltf.scene;
       const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
@@ -334,6 +360,7 @@ export default function Board3D(props: Props) {
     return () => {
       disposed = true; update.current = null; resetCamera.current = null; zoomCamera.current=null; resize.disconnect(); window.removeEventListener("resize",resizeView); controls.dispose();
       renderer.domElement.removeEventListener("pointerdown", down); renderer.domElement.removeEventListener("pointermove", move); renderer.domElement.removeEventListener("pointerup", up); renderer.domElement.removeEventListener("pointercancel", cancel); renderer.domElement.removeEventListener("webglcontextlost", lost);
+      renderer.domElement.removeEventListener("pointerdown",cameraIntent,true);renderer.domElement.removeEventListener("pointerup",endCameraPointer,true);renderer.domElement.removeEventListener("pointercancel",endCameraPointer,true);renderer.domElement.removeEventListener("wheel",manualZoom,true);
       disposableMaterials.forEach(material => material.dispose()); textures.forEach(texture => texture.dispose());
       [surfaceGeometry, riverGeometry, tileGeometry, dotGeometry, ringGeometry, promotionGeometry, labelGeometry, handHitGeometry].forEach(geometry => geometry.dispose());
       [hitMaterial, markerMaterial, waterMarkerMaterial, promotionMaterial].forEach(material => material.dispose());
@@ -341,7 +368,7 @@ export default function Board3D(props: Props) {
       gridGeometries.forEach(geometry => geometry.dispose()); gridMaterial.dispose();
       if (model) disposeModel(model); jungleTerrain?.dispose(); tabletop.dispose(); renderer.dispose(); renderer.domElement.remove();
     };
-  }, [props.collection, props.variantKey]);
+  }, [props.collection, props.variantKey, props.pieceSet]);
   return <div className="board-3d-stage">
     <div className="board-3d-camera" role="group" aria-label="3D camera">
       <button type="button" className="focus-ring" aria-label="Zoom out" title="Zoom out" onClick={()=>zoomCamera.current?.(1.2)}><Minus size={17}/></button>

@@ -14,6 +14,7 @@ import { useFriendRoom, saveFriendToken } from "./use-friend-room";
 import type { FriendRoomView } from "@/lib/realtime/friend-room";
 import dynamic from "next/dynamic";
 import { ChoicePicker } from "./choice-buttons";
+import { pieceSetOptions, pieceSetSkin, resolvePieceSet, type PieceSetId } from "./piece-sets";
 import { MakrukCountingPanel, MakrukEndgamePicker } from "./makruk-counting-panel";
 import { applyMakrukCountAction, readMakrukHonorCount, makrukCountVersion, replayMakrukCountActions, usesMakrukHonorCount, type MakrukCountAction } from "@/lib/variants/makruk-counting";
 import { createMakrukEndgame, makrukEndgames, type MakrukEndgameKey } from "@/lib/variants/makruk-endgames";
@@ -371,6 +372,7 @@ export function GameBoard({
   const [future, setFuture] = useState<GameState[]>([]);
   const [boardView, setBoardView] = useState<"2d" | "3d">("2d");
   const [pieceFinish, setPieceFinish] = useState<PieceFinish>("original");
+  const [pieceSet, setPieceSet] = useState<PieceSetId>("standard");
   const collection3D = get3DCollection(variantKey);
   const [selected, setSelected] = useState<Square | null>(null);
   const [selectedHandCode, setSelectedHandCode] = useState<string | null>(null);
@@ -494,6 +496,7 @@ export function GameBoard({
         setBoardView(get3DCollection(variantKey) && localStorage.getItem(`allchess-board-view:${variantKey}`) === "3d" ? "3d" : "2d");
         const finish = localStorage.getItem(`allchess-piece-finish:${variantKey}`);
         setPieceFinish(isPieceFinish(finish) ? finish : "original");
+        setPieceSet(resolvePieceSet(variantKey, localStorage.getItem(`allchess-piece-set:${variantKey}`)));
       } catch { /* Keep the accessible 2D default. */ }
     });
   }, [variantKey]);
@@ -554,7 +557,8 @@ export function GameBoard({
   const appearanceOptions = useMemo(() => getAppearancePresetOptions(variantKey), [variantKey]);
   const appearance = useMemo(() => resolveAppearancePreset(variantKey, appearancePreset), [appearancePreset, variantKey]);
   const boardTheme = appearance.boardTheme;
-  const pieceSkin = appearance.pieceSkin;
+  const pieceSkin = pieceSetSkin(variantKey, pieceSet, appearance.pieceSkin);
+  const pieceSetLabel = pieceSetOptions(variantKey).find(option => option.key === pieceSet)?.finishLabel;
   const supportsDrops = useMemo(() => getVariant(variantKey).supportsDrops, [variantKey]);
   const botStrength = useMemo(() => getVariantBotStrengthProfile(variantKey, botDifficulty), [botDifficulty, variantKey]);
   const botCalibrationLabel = botStrength.calibrationStatus.replace(/-/g, " ");
@@ -684,6 +688,12 @@ export function GameBoard({
   function changePieceFinish(finish: PieceFinish) {
     setPieceFinish(finish);
     try { localStorage.setItem(`allchess-piece-finish:${variantKey}`, finish); } catch { /* Session fallback. */ }
+  }
+
+  function changePieceSet(next: PieceSetId) {
+    const value = resolvePieceSet(variantKey, next);
+    setPieceSet(value);
+    try { localStorage.setItem(`allchess-piece-set:${variantKey}`, value); } catch { /* Session fallback. */ }
   }
 
   function commitPlayerMove(move: Move) {
@@ -1436,8 +1446,8 @@ export function GameBoard({
           </>}
           <button type="button" className="focus-ring" onClick={() => { try { downloadLocalMatch(localSnapshot); setRestoreError(""); } catch (cause) { setRestoreError(cause instanceof Error ? cause.message : "This game could not be exported."); } }}>Export game</button>
         </div> : null}
-        <BoardToolbar is3D={boardView === "3d" && !!collection3D} variantKey={variantKey} appearancePreset={appearancePreset} onAppearanceChange={changeAppearancePreset} onFlip={flipBoard} onGuide={rulesSummary ? () => setShowRules(true) : undefined} focusMode={focusMode && gameStarted} onFocusChange={() => setFocusMode((current) => !current)} canFocus={gameStarted} />
-        {collection3D ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>{collection3D === "jungle" ? "3D animals" : collection3D === "shatranj" ? "3D ceramic" : collection3D === "konane" ? "3D stones" : collection3D === "draughts" ? "3D counters" : collection3D === "xiangqi" ? "3D discs" : collection3D === "shogi" || collection3D === "janggi" ? "3D tiles" : "3D carved"}</button>{boardView === "3d" ? <div role="group" aria-label="Piece material" className="board-finish-buttons">{(["original", "porcelain", "slate"] as const).map(finish => <button key={finish} type="button" className="focus-ring" aria-pressed={pieceFinish === finish} onClick={() => changePieceFinish(finish)}>{finish === "original" ? collection3D === "jungle" ? "Ivory & jade" : collection3D === "shatranj" ? "Stonepaste" : collection3D === "chaturanga" ? "Sandalwood & rosewood" : collection3D === "konane" ? "Natural stone" : collection3D === "shogi" || collection3D === "xiangqi" ? "Boxwood" : collection3D === "draughts" ? "Maple & wenge" : collection3D === "janggi" ? "Ivory" : collection3D === "makruk" ? "Thai lacquer" : "Original" : finish === "porcelain" ? "Porcelain" : "Slate"}</button>)}</div> : null}</div> : null}
+        <BoardToolbar pieceSet={pieceSet} onPieceSetChange={changePieceSet} is3D={boardView === "3d" && !!collection3D} variantKey={variantKey} appearancePreset={appearancePreset} onAppearanceChange={changeAppearancePreset} onFlip={flipBoard} onGuide={rulesSummary ? () => setShowRules(true) : undefined} focusMode={focusMode && gameStarted} onFocusChange={() => setFocusMode((current) => !current)} canFocus={gameStarted} />
+        {collection3D ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>{collection3D === "jungle" ? "3D animals" : collection3D === "shatranj" ? "3D ceramic" : collection3D === "konane" ? "3D stones" : collection3D === "draughts" ? "3D counters" : collection3D === "xiangqi" ? "3D discs" : collection3D === "shogi" || collection3D === "janggi" ? "3D tiles" : "3D carved"}</button>{boardView === "3d" ? <div role="group" aria-label="Piece material" className="board-finish-buttons">{(["original", "porcelain", "slate"] as const).map(finish => <button key={finish} type="button" className="focus-ring" aria-pressed={pieceFinish === finish} onClick={() => changePieceFinish(finish)}>{finish === "original" ? collection3D === "jungle" ? "Ivory & jade" : collection3D === "shatranj" ? "Stonepaste" : collection3D === "chaturanga" ? "Sandalwood & rosewood" : collection3D === "konane" ? "Natural stone" : collection3D === "shogi" || collection3D === "xiangqi" ? "Boxwood" : collection3D === "draughts" ? pieceSetLabel ?? "Maple & wenge" : collection3D === "janggi" ? "Ivory" : collection3D === "makruk" ? "Thai lacquer" : "Original" : finish === "porcelain" ? "Porcelain" : "Slate"}</button>)}</div> : null}</div> : null}
         {friendId && gameStarted ? friend.room?.arrival ? <MatchArrivalPanel room={friend.room} connected={friend.connection === "connected"} busy={friend.busy} error={friend.error} onCancel={leaveUnplayedMatch} onFindAnother={() => findAnotherOpponent(true)} onSetup={() => findAnotherOpponent(false)} onReconnect={friend.reconnect} /> : <div className="room-live-status" role="status">
           <span>{friend.connection !== "connected"
             ? friend.connection === "offline" ? state.status === "waiting" || timeControl === "freestyle" ? "You’re offline · waiting for a connection" : "You’re offline · the room clock continues" : friend.connection === "connecting" ? "Connecting to your room…" : friend.connection === "unavailable" ? friend.error : "Reconnecting · checking the latest board…"
@@ -1455,7 +1465,7 @@ export function GameBoard({
         {variantKey === "ouk-chaktrang" && gameStarted ? <OukCountingPanel state={displayState} actor={botMode === "opponent" ? humanColor : state.turn} localTwoPlayer={!isOnlineMode && !isSpectating && botMode === "human"} disabled={localPaused || isReviewing || isOnlineMode || isSpectating || botMode === "both"} onAction={changeOukCount} /> : null}
         <div className="board-shell" data-view={boardView === "3d" && collection3D ? "3d" : "2d"} data-variant={displayState.variantKey} data-board-theme={boardTheme} data-variant-size={`${cols}x${rows}`} style={{ "--board-cols": cols, "--board-rows": rows } as CSSProperties}>
           <div className="board-stage">
-            {boardView === "3d" && collection3D ? <Board3D key={variantKey} collection={collection3D} variantKey={variantKey} orientedRows={orientedRows} legalTargets={legalTargets} selected={selected} onChoose={choose} boardTheme={boardTheme} lastMove={displayState.moves.at(-1)} finish={pieceFinish} hands={displayState.hands} selectedHand={!isReviewing && selectedHandCode ? { owner: state.turn, code: selectedHandCode } : null} onChooseHand={chooseHandPiece} onFallback={() => changeBoardView("2d")} /> : <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} lastMove={displayState.moves.at(-1)} variantKey={displayState.variantKey} />}
+            {boardView === "3d" && collection3D ? <Board3D key={`${variantKey}:${pieceSet}`} pieceSet={pieceSet} collection={collection3D} variantKey={variantKey} orientedRows={orientedRows} legalTargets={legalTargets} selected={selected} onChoose={choose} boardTheme={boardTheme} lastMove={displayState.moves.at(-1)} finish={pieceFinish} hands={displayState.hands} selectedHand={!isReviewing && selectedHandCode ? { owner: state.turn, code: selectedHandCode } : null} onChooseHand={chooseHandPiece} onFallback={() => changeBoardView("2d")} /> : <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} lastMove={displayState.moves.at(-1)} variantKey={displayState.variantKey} />}
             {selectedHandCode && selectedHandLabel ? <DropSelectionHint legalTargetCount={legalTargets.size} locale={locale} onCancel={cancelHandDrop} pieceCode={selectedHandCode} pieceLabel={selectedHandLabel} pieceOwner={state.turn} pieceSkin={pieceSkin} variantKey={displayState.variantKey} /> : null}
             {pendingPromotion ? (
               <PromotionChoiceCard locale={locale} onChoose={choosePromotion} pieceCode={pendingPromotion.pieceCode} pieceLabel={pendingPromotion.pieceLabel} pieceOwner={pendingPromotion.pieceOwner} pieceSkin={pieceSkin} promotedPieceLabel={pendingPromotion.promotedPieceLabel} variantKey={displayState.variantKey} />
@@ -1544,7 +1554,7 @@ export function GameBoard({
           {panelTab === "status" ? (
             <div className="grid gap-3">
               <PlayControlCard
-              showAppearance={boardView !== "3d" || !collection3D}
+              showAppearance={!pieceSetOptions(variantKey).length && (boardView !== "3d" || !collection3D)}
                 botLevelLabel={botLevel.label}
                 botMode={botMode}
                 appearancePreset={appearancePreset}

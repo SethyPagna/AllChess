@@ -6,8 +6,9 @@ import { boardThemeOptions, getAppearancePresetOptions, type AppearancePresetPre
 import { PieceIcon } from "@/components/board/piece-icon";
 import { getGamePresentation } from "@/lib/variants/presentation";
 import { getVariant } from "@/lib/variants/catalog";
+import { pieceSetOptions, pieceSetSkin, type PieceSetId } from "./piece-sets";
 
-export function BoardToolbar({ variantKey, appearancePreset, onAppearanceChange, onFlip, onGuide, focusMode, onFocusChange, canFocus, is3D = false }: {
+export function BoardToolbar({ variantKey, appearancePreset, onAppearanceChange, onFlip, onGuide, focusMode, onFocusChange, canFocus, is3D = false, pieceSet = "standard", onPieceSetChange }: {
   variantKey: string;
   appearancePreset: AppearancePresetPreference;
   onAppearanceChange: (preset: AppearancePresetPreference) => void;
@@ -17,12 +18,17 @@ export function BoardToolbar({ variantKey, appearancePreset, onAppearanceChange,
   onFocusChange: () => void;
   canFocus: boolean;
   is3D?: boolean;
+  pieceSet?: PieceSetId;
+  onPieceSetChange?: (set: PieceSetId) => void;
 }) {
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const presets = getAppearancePresetOptions(variantKey);
   const selected = presets.find(option => option.key === appearancePreset) ?? presets[0];
-  const options = is3D ? presets.filter((option, index) => presets.findIndex(item => item.boardTheme === option.boardTheme) === index).map(option => ({ ...option, label: boardThemeOptions.find(theme => theme.key === option.boardTheme)!.label })) : presets;
-  const isSelected = (option: typeof selected) => is3D ? selected.boardTheme === option.boardTheme : appearancePreset === option.key;
+  const sets = pieceSetOptions(variantKey);
+  const separatePieces = sets.length > 1 && !!onPieceSetChange;
+  const coloursOnly = is3D || separatePieces;
+  const options = coloursOnly ? presets.filter((option, index) => presets.findIndex(item => item.boardTheme === option.boardTheme) === index).map(option => ({ ...option, label: boardThemeOptions.find(theme => theme.key === option.boardTheme)!.label })) : presets;
+  const isSelected = (option: typeof selected) => coloursOnly ? selected.boardTheme === option.boardTheme : appearancePreset === option.key;
   const presentation = getGamePresentation(variantKey);
   const variant = getVariant(variantKey);
   useEffect(() => {
@@ -44,9 +50,10 @@ export function BoardToolbar({ variantKey, appearancePreset, onAppearanceChange,
       <details ref={detailsRef} className="board-look-picker">
         <summary className="focus-ring" aria-label="Customize board"><Palette size={16} /><span>Board style</span></summary>
         <div className="board-look-panel">
-          <div className="board-look-heading"><strong>{is3D ? "Board colours" : "Make it yours"}</strong><span>Saved for this game</span></div>
+          {separatePieces ? <><div className="board-look-heading"><strong>Pieces</strong><span>2D + 3D</span></div><div className="piece-set-choices" role="group" aria-label="Piece collection">{sets.map(set => <button type="button" className="focus-ring piece-set-choice" key={set.key} aria-label={`Choose ${set.label} pieces`} aria-pressed={pieceSet === set.key} onClick={() => onPieceSetChange?.(set.key)}><span aria-hidden="true"><PieceIcon code="p" owner={variant.players[0]} variantKey={variantKey} pieceSkin={set.skin}/><PieceIcon code="x" owner={variant.players[1]} variantKey={variantKey} pieceSkin={set.skin} promoted/></span><strong>{set.label}</strong>{pieceSet === set.key ? <Check size={14}/> : null}</button>)}</div></> : null}
+          <div className="board-look-heading"><strong>{coloursOnly ? "Board colours" : "Make it yours"}</strong><span>Saved for this game</span></div>
           <div className="board-look-presets">{options.map((option) => <button type="button" className="focus-ring board-look-preset" key={option.key} aria-pressed={isSelected(option)} aria-label={`Choose ${option.label}`} onClick={() => onAppearanceChange(option.key)}>
-            <span className="board-look-preview board-shell" data-board-theme={option.boardTheme} aria-hidden="true" style={is3D && ["ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi", "makruk", "turkish-draughts", "konane", "shatranj", "chaturanga", "jungle"].includes(variantKey) ? { background: "var(--board-light)" } : undefined}>{!is3D ? <PieceIcon code={presentation.pieces[1]} owner={variant.players[0]} variantKey={variantKey} pieceSkin={option.pieceSkin} /> : null}</span>
+            <span className="board-look-preview board-shell" data-board-theme={option.boardTheme} aria-hidden="true" style={is3D && ["ouk-chaktrang", "shogi", "mini-shogi", "xiangqi", "janggi", "makruk", "turkish-draughts", "konane", "shatranj", "chaturanga", "jungle"].includes(variantKey) ? { background: "var(--board-light)" } : undefined}>{!is3D ? <PieceIcon code={presentation.pieces[1]} owner={variant.players[0]} variantKey={variantKey} pieceSkin={pieceSetSkin(variantKey, pieceSet, option.pieceSkin)} /> : null}</span>
             <span>{option.label}</span>{isSelected(option) ? <Check size={13} /> : null}
           </button>)}</div>
         </div>

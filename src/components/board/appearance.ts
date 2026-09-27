@@ -1,7 +1,7 @@
 import { getPieceSkin, resolvePieceSkin, type PieceSkinPreference } from "@/components/board/piece-icon";
 
 export type BoardThemePreference = "classic" | "wood" | "jade" | "ocean" | "contrast" | "slate" | "plum";
-export type AppearancePresetPreference = "default" | "classic" | "castle" | "pirate" | "carved" | "glyph" | "badge" | "tablet" | "disc" | "stone" | "contrast" | "slate" | "plum";
+export type AppearancePresetPreference = "default" | "classic" | "castle" | "pirate" | "carved" | "glyph" | "badge" | "tablet" | "disc" | "stone" | "contrast" | "slate" | "plum" | "wood";
 
 export type AppearancePresetOption = {
   key: AppearancePresetPreference;
@@ -67,6 +67,7 @@ const familyPresets: Record<string, AppearancePresetOption[]> = {
   checker: [
     preset("default", "Auto matched", "classic", "default"),
     preset("classic", "Checker set", "classic", "checker"),
+    preset("wood", "Warm wood", "wood", "checker"),
     preset("stone", "Stone set", "contrast", "stone")
   ],
   stone: [

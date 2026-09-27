@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { PerspectiveCamera, Vector3 } from "three";
-import { tabletopFrame } from "@/components/board/tabletop-camera";
+import { fitTabletopBounds, tabletopFrame } from "@/components/board/tabletop-camera";
 import { tabletopGesture } from "@/components/board/tabletop-gesture";
 import { board3DLayout, get3DCollection } from "@/components/board/board-3d-config";
 import { shogiHandSlots, shogiStands } from "@/components/board/shogi-stands";
@@ -12,6 +12,17 @@ function cameraFor(frame:ReturnType<typeof tabletopFrame>) {
 }
 
 describe("responsive physical board framing",()=>{
+  test.each(variantCatalog.map(variant=>variant.key))("%s stays framed throughout an automatic orbit",key=>{
+    const variant=variantCatalog.find(v=>v.key===key)!,collection=get3DCollection(key)!;
+    for(const width of [296,692])for(const polar of [.45,.8,Math.PI/2.35])for(const azimuth of [0,Math.PI/4,Math.PI/2,Math.PI,Math.PI*1.5]) {
+      const frame=tabletopFrame(collection,variant.board.rows,variant.board.cols,width);
+      const direction=new Vector3().setFromSphericalCoords(1,polar,azimuth);
+      const fitted=fitTabletopBounds(frame.bounds,direction,frame.aspect);
+      const camera=cameraFor({...frame,...fitted});
+      expect(fitted.distance).toBeLessThan(frame.distance*1.65);
+      for(const corner of frame.bounds){const p=corner.clone().project(camera);expect(Math.max(Math.abs(p.x),Math.abs(p.y))).toBeLessThanOrEqual(.900001);}
+    }
+  });
   test.each(variantCatalog.map(variant=>variant.key))("%s keeps the full case, edge pieces and hands inside desktop and phone views",key=>{
     const variant=variantCatalog.find(v=>v.key===key)!,collection=get3DCollection(key)!;
     for(const width of [288,358,480,520,900]) {

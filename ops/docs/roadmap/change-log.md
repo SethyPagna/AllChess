@@ -4,6 +4,12 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ---
 
+## 2026-09-27 — Rosette draughts collections and fitted orbit
+
+- Add four generated sprite masters and a textured, carved Blender/GLB collection for all three draughts games, with real stacked kings and shared mesh data.
+- Select piece collections independently of board colours and save the choice per game in both views.
+- Keep automatic orbit fully framed while preserving deliberate free zoom/pan. See [scope and validation](rosette-collections.md).
+
 ## 2026-09-27 — Textured Cambodian models and balanced camera
 
 - Replace the Cambodian 3D study with a packed, textured Blender/GLB collection, original turned pieces and a licensed detailed horse sculpt.

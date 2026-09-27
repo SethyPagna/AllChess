@@ -150,6 +150,13 @@ button:disabled { cursor: not-allowed; }
 .board-look-heading strong { font-size: 14px; }
 .board-look-heading > span { color: var(--muted); font-size: 10px; }
 .board-look-presets { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.piece-set-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
+.piece-set-choice { position: relative; display: grid; justify-items: center; gap: 4px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-soft); }
+.piece-set-choice[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.piece-set-choice > span { display: flex; align-items: center; justify-content: center; }
+.piece-set-choice .piece-icon[data-skin] { width: 45px; height: 45px; flex: 0 0 45px; }
+.piece-set-choice > strong { font-size: 11px; }
+.piece-set-choice > svg { position: absolute; top: 6px; right: 6px; color: var(--accent); }
 .board-look-preset { position: relative; display: grid; justify-items: stretch; gap: 6px; padding: 5px 5px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--muted); font-size: 9px; }
 .board-look-preset[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--foreground); }
 .board-look-preset > svg { position: absolute; top: 8px; inset-inline-end: 8px; padding: 1px; background: var(--accent); color: var(--accent-foreground); border-radius: 50%; }

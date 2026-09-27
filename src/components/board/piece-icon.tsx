@@ -15,7 +15,7 @@ type PieceIconProps = {
   promoted?: boolean;
 };
 
-export type PieceSkin = "atelier" | "marble" | "khmer" | "western" | "silhouette" | "glyph" | "monogram" | "castle" | "pirate" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
+export type PieceSkin = "rosette" | "atelier" | "marble" | "khmer" | "western" | "silhouette" | "glyph" | "monogram" | "castle" | "pirate" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
 export type PieceSkinPreference = "default" | PieceSkin;
 
 export type PieceSkinOption = {
@@ -40,6 +40,7 @@ export function PieceIcon({ code, owner, pieceSkin = "default", variantKey, loca
   const normalized = code.toLowerCase();
   const label = getPieceDisplayName(normalized, variantKey, locale, promoted);
   const skin = resolvePieceSkin(variantKey, pieceSkin);
+  if (skin === "rosette") return <PhotographicPiece code={normalized} owner={owner} label={label} variantKey={variantKey} promoted={promoted} rosette/>;
   if (skin === "marble" || skin === "atelier") return <PhotographicPiece code={normalized} owner={owner} label={label} variantKey={variantKey} promoted={promoted} khmer={skin==="atelier"}/>;
   if (variantKey === "ouk-chaktrang" && skin === "khmer") return <KhmerPiece code={normalized} owner={owner} label={label} promoted={promoted} />;
   if (variantKey === "makruk" && skin === "makruk") return <MakrukPiece code={normalized} owner={owner} label={label} promoted={promoted} />;
@@ -601,7 +602,7 @@ export function getPieceSkinOptions(variantKey: string): PieceSkinOption[] {
     return [...defaults, option("tile"), option("disc")];
   }
   if (isDraughtsPresentation(variantKey)) {
-    return [...defaults, option("checker"), option("stone")];
+    return [...defaults, option("checker"), option("rosette"), option("stone")];
   }
   if (isStonePresentation(variantKey)) {
     return [...defaults, option("stone"), option("checker")];
@@ -716,6 +717,7 @@ function option(key: PieceSkin): PieceSkinOption {
 function pieceSkinLabel(key: PieceSkin) {
   if (key === "khmer") return "Khmer carved";
   const labels: Record<PieceSkin, string> = {
+    rosette: "Rosette",
     atelier: "Khmer atelier",
     marble: "Marble",
     khmer: "Khmer carved",

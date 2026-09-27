@@ -58,10 +58,11 @@ function harness() {
 
 describe("public offline play pack", () => {
   test("downloads every photographic piece and PBR material and serves it after disconnecting", async () => {
-    const urls = ["/assets/classic/marble.glb", "/assets/khmer/atelier.glb"];
+    const urls = ["/assets/classic/marble.glb", "/assets/khmer/atelier.glb", "/assets/draughts/rosette.glb"];
     for (const side of ["light", "dark"]) {
       for (const name of ["king", "queen", "bishop", "knight", "rook", "pawn"]) urls.push(`/assets/classic/marble/${side}_${name}.png`);
       for (const name of ["king", "queen", "bishop", "horse", "rook", "pawn"]) urls.push(`/assets/khmer/atelier/${side}-${name}.webp`);
+      for (const name of ["man", "king"]) urls.push(`/assets/draughts/rosette/${side}-${name}.webp`);
     }
     for (const name of ["colour", "normal", "roughness"]) urls.push(`/assets/materials/wood-table/${name}.jpg`);
     const sw = harness();
