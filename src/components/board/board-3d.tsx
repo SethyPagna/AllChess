@@ -9,7 +9,7 @@ import type { BoardCell, GameState, PlayerColor, Square } from "@/lib/variants";
 import { sameSquare, serializeSquare, getVariant } from "@/lib/variants";
 import type { BoardThemePreference } from "./appearance";
 import { board3DPalettes, collectionModelPath, collectionPieces, pieceModelName, shogiPromotedCodes, board3DLayout, type PieceCollection, type PieceFinish } from "./board-3d-config";
-import { fitTabletopBounds, tabletopFrame } from "./tabletop-camera";
+import { fitTabletopBounds, tabletopCoordinateFrame, tabletopCoordinateHeight, tabletopFrame } from "./tabletop-camera";
 import { tabletopGesture } from "./tabletop-gesture";
 import { pieceSetModelPath, type PieceSetId } from "./piece-sets";
 
@@ -72,7 +72,7 @@ export default function Board3D(props: Props) {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.copy(frame.target); controls.enablePan = true; controls.screenSpacePanning=false;
     controls.cursor.copy(frame.target); controls.maxTargetRadius=Math.max(layout.width,layout.depth);
-    controls.minDistance = frame.distance*.52; controls.maxDistance = frame.distance*1.65;
+    controls.minDistance = frame.distance*.52; controls.maxDistance = frame.maxDistance;
     controls.minPolarAngle = .45; controls.maxPolarAngle = Math.PI / 2.35;
     function applyCamera() {
       adjustingCamera=true; customized=false; automaticOrbit=true;
@@ -132,17 +132,38 @@ export default function Board3D(props: Props) {
     let modelReady = false;
     const disposableMaterials: THREE.Material[] = [];
     const textures: THREE.Texture[] = [];
-    const labelGeometry = new THREE.PlaneGeometry(japanese ? .016 : .012, japanese ? .016 : .012);
+    const labelGeometry = new THREE.PlaneGeometry(1, 1);
     const handHitGeometry = new THREE.BoxGeometry(.047, .022, .048);
     let lastPosition = "";
-    const render = () => { if (!disposed && !contextLost) renderer.render(scene, camera); };
+    const render = () => {
+      if (disposed || contextLost) return;
+      camera.updateMatrixWorld();
+      for (const mesh of meshes.children) if (mesh.userData.coordinate) {
+        const coordinate=tabletopCoordinateFrame(mesh.userData.coordinateAnchor,camera,element.clientWidth||640,mesh.userData.glyphHeight);
+        mesh.position.copy(coordinate.position);
+        mesh.quaternion.copy(camera.quaternion);
+        mesh.scale.set(coordinate.height*mesh.userData.glyphWidth,coordinate.height*mesh.userData.glyphHeight,1);
+      }
+      renderer.render(scene, camera);
+    };
     function label(text: string, x: number, z: number, hand = false) {
-      const canvas = document.createElement("canvas"); canvas.width = 96; canvas.height = 96;
+      const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d"); if (!ctx) return;
-      ctx.fillStyle = japanese ? "#302011" : "#dbcbaa"; ctx.font = japanese ? "600 58px sans-serif" : "500 58px sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(text, 48, 50);
+      const font="600 96px sans-serif"; ctx.font=font;
+      const metrics=ctx.measureText(text),reference=ctx.measureText(japanese?"田":"0");
+      const capHeight=reference.actualBoundingBoxAscent+reference.actualBoundingBoxDescent;
+      canvas.width=Math.ceil(metrics.actualBoundingBoxLeft+metrics.actualBoundingBoxRight)+6;
+      canvas.height=Math.ceil(metrics.actualBoundingBoxAscent+metrics.actualBoundingBoxDescent)+6;
+      ctx.font=font;ctx.fillStyle=japanese?"#302011":"#f2e0bb";
+      if(!japanese){ctx.strokeStyle="#2b2017";ctx.lineWidth=5;ctx.lineJoin="round";ctx.strokeText(text,3+metrics.actualBoundingBoxLeft,3+metrics.actualBoundingBoxAscent);}
+      ctx.fillText(text,3+metrics.actualBoundingBoxLeft,3+metrics.actualBoundingBoxAscent);
       const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); textures.push(texture);
       const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, toneMapped: false }); disposableMaterials.push(material);
-      const plane = new THREE.Mesh(labelGeometry, material); plane.rotation.x = -Math.PI/2; plane.position.set(x, .006, z); plane.userData.coordinate = !hand; plane.scale.setScalar(hand ? .7 : Math.min(1.5, Math.max(1, 560 / element!.clientWidth))); meshes.add(plane);
+      const plane = new THREE.Mesh(labelGeometry, material); plane.rotation.x = -Math.PI/2; plane.position.set(x, .006, z);
+      plane.userData.coordinate=!hand;plane.userData.glyphWidth=canvas.width/capHeight;plane.userData.glyphHeight=canvas.height/capHeight;
+      if(!hand)plane.userData.coordinateAnchor=plane.position.clone();
+      const height=hand ? .009 : tabletopCoordinateHeight(plane.position,camera,element!.clientWidth||640);
+      plane.scale.set(height*plane.userData.glyphWidth,height*plane.userData.glyphHeight,1);meshes.add(plane);
     }
     function redraw() {
       const current = latest.current;
@@ -276,7 +297,7 @@ export default function Board3D(props: Props) {
       const previous=frame;frame=tabletopFrame(props.collection,rows,cols,width,window.innerHeight);
       element.style.aspectRatio=String(frame.aspect);renderer.setSize(width,Math.round(width/frame.aspect));
       camera.aspect=frame.aspect;camera.fov=frame.fieldOfView;camera.updateProjectionMatrix();
-      controls.minDistance=frame.distance*.52;controls.maxDistance=frame.distance*1.65;
+      controls.minDistance=frame.distance*.52;controls.maxDistance=frame.maxDistance;
       if(customized) {
         if(automaticOrbit)fitAutomaticOrbit();
         else {
@@ -286,7 +307,7 @@ export default function Board3D(props: Props) {
         }
       } else applyCamera();
       tabletop.setCompactHands(frame.compactHands);redraw();
-      meshes.children.filter(mesh=>mesh.userData.coordinate).forEach(mesh=>mesh.scale.setScalar(Math.min(1.5,Math.max(1,560/width))));render();
+      render();
     };
     const resize = new ResizeObserver(resizeView); resize.observe(element);
     window.addEventListener("resize",resizeView);

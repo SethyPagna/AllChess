@@ -14,7 +14,7 @@ import { useFriendRoom, saveFriendToken } from "./use-friend-room";
 import type { FriendRoomView } from "@/lib/realtime/friend-room";
 import dynamic from "next/dynamic";
 import { ChoicePicker } from "./choice-buttons";
-import { pieceSetOptions, pieceSetSkin, readPieceSetPreference, resolvePieceSet, type PieceSetId } from "./piece-sets";
+import { piece2DSkin, pieceSetOptions, readPiece2DStylePreference, readPieceSetPreference, resolvePiece2DStyle, resolvePieceSet, type Piece2DStyle, type PieceSetId } from "./piece-sets";
 import { MakrukCountingPanel, MakrukEndgamePicker } from "./makruk-counting-panel";
 import { applyMakrukCountAction, readMakrukHonorCount, makrukCountVersion, replayMakrukCountActions, usesMakrukHonorCount, type MakrukCountAction } from "@/lib/variants/makruk-counting";
 import { createMakrukEndgame, makrukEndgames, type MakrukEndgameKey } from "@/lib/variants/makruk-endgames";
@@ -373,6 +373,7 @@ export function GameBoard({
   const [boardView, setBoardView] = useState<"2d" | "3d">("2d");
   const [pieceFinish, setPieceFinish] = useState<PieceFinish>("original");
   const [pieceSet, setPieceSet] = useState<PieceSetId>(() => resolvePieceSet(variantKey, null));
+  const [piece2DStyle, setPiece2DStyle] = useState<Piece2DStyle>("collection");
   const collection3D = get3DCollection(variantKey);
   const [selected, setSelected] = useState<Square | null>(null);
   const [selectedHandCode, setSelectedHandCode] = useState<string | null>(null);
@@ -492,6 +493,7 @@ export function GameBoard({
     queueMicrotask(() => {
       setAppearancePreset(initialAppearancePreset(variantKey));
       setPieceSet(readPieceSetPreference(variantKey));
+      setPiece2DStyle(readPiece2DStylePreference(variantKey));
       setBoardView("2d");
       setPieceFinish("original");
       try {
@@ -560,7 +562,7 @@ export function GameBoard({
   const appearanceOptions = useMemo(() => getAppearancePresetOptions(variantKey), [variantKey]);
   const appearance = useMemo(() => resolveAppearancePreset(variantKey, appearancePreset), [appearancePreset, variantKey]);
   const boardTheme = appearance.boardTheme;
-  const pieceSkin = pieceSetSkin(variantKey, pieceSet, appearance.pieceSkin);
+  const pieceSkin = piece2DSkin(variantKey, pieceSet, appearance.pieceSkin, piece2DStyle);
   const pieceSetLabel = pieceSetOptions(variantKey).find(option => option.key === pieceSet)?.finishLabel;
   const supportsDrops = useMemo(() => getVariant(variantKey).supportsDrops, [variantKey]);
   const botStrength = useMemo(() => getVariantBotStrengthProfile(variantKey, botDifficulty), [botDifficulty, variantKey]);
@@ -684,6 +686,12 @@ export function GameBoard({
     const value = resolvePieceSet(variantKey, next);
     setPieceSet(value);
     try { localStorage.setItem(`allchess-piece-set:${variantKey}`, value); } catch { /* Session fallback. */ }
+  }
+
+  function changePiece2DStyle(next: Piece2DStyle) {
+    const value = resolvePiece2DStyle(variantKey, next);
+    setPiece2DStyle(value);
+    try { localStorage.setItem(`allchess-piece-2d-style:${variantKey}`, value); } catch { /* Session fallback. */ }
   }
 
   function commitPlayerMove(move: Move) {
@@ -1422,8 +1430,8 @@ export function GameBoard({
           </>}
           <button type="button" className="focus-ring" onClick={() => { try { downloadLocalMatch(localSnapshot); setRestoreError(""); } catch (cause) { setRestoreError(cause instanceof Error ? cause.message : "This game could not be exported."); } }}>Export game</button>
         </div> : null}
-        <BoardToolbar pieceSet={pieceSet} onPieceSetChange={changePieceSet} is3D={boardView === "3d" && !!collection3D} variantKey={variantKey} appearancePreset={appearancePreset} onAppearanceChange={changeAppearancePreset} onFlip={flipBoard} onGuide={rulesSummary ? () => setShowRules(true) : undefined} focusMode={focusMode && gameStarted} onFocusChange={() => setFocusMode((current) => !current)} canFocus={gameStarted} />
-        {collection3D ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>{collection3D === "jungle" ? "3D animals" : collection3D === "shatranj" ? "3D ceramic" : collection3D === "konane" ? "3D stones" : collection3D === "draughts" ? "3D counters" : collection3D === "xiangqi" ? "3D discs" : collection3D === "shogi" || collection3D === "janggi" ? "3D tiles" : "3D carved"}</button>{boardView === "3d" ? <div role="group" aria-label="Piece material" className="board-finish-buttons">{(["original", "porcelain", "slate"] as const).map(finish => <button key={finish} type="button" className="focus-ring" aria-pressed={pieceFinish === finish} onClick={() => changePieceFinish(finish)}>{finish === "original" ? collection3D === "jungle" ? "Ivory & jade" : collection3D === "shatranj" ? "Stonepaste" : collection3D === "chaturanga" ? "Sandalwood & rosewood" : collection3D === "konane" ? "Natural stone" : collection3D === "shogi" || collection3D === "xiangqi" ? "Boxwood" : collection3D === "draughts" ? pieceSetLabel ?? "Maple & wenge" : collection3D === "janggi" ? "Ivory" : collection3D === "makruk" ? "Thai lacquer" : "Original" : finish === "porcelain" ? "Porcelain" : "Slate"}</button>)}</div> : null}</div> : null}
+        <BoardToolbar pieceSet={pieceSet} onPieceSetChange={changePieceSet} piece2DStyle={piece2DStyle} onPiece2DStyleChange={changePiece2DStyle} is3D={boardView === "3d" && !!collection3D} variantKey={variantKey} appearancePreset={appearancePreset} onAppearanceChange={changeAppearancePreset} onFlip={flipBoard} onGuide={rulesSummary ? () => setShowRules(true) : undefined} focusMode={focusMode && gameStarted} onFocusChange={() => setFocusMode((current) => !current)} canFocus={gameStarted} />
+        {collection3D ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>{collection3D === "jungle" ? "3D animals" : collection3D === "shatranj" ? "3D ceramic" : collection3D === "konane" ? "3D stones" : collection3D === "draughts" ? "3D counters" : collection3D === "xiangqi" ? "3D discs" : collection3D === "shogi" || collection3D === "janggi" ? "3D tiles" : "3D carved"}</button>{boardView === "3d" ? <div role="group" aria-label="Piece material" className="board-finish-buttons">{(["original", "porcelain", "slate"] as const).map(finish => <button key={finish} type="button" className="focus-ring" aria-pressed={pieceFinish === finish} onClick={() => changePieceFinish(finish)}>{finish === "original" ? collection3D === "jungle" ? "Ivory & jade" : collection3D === "shatranj" ? "Stonepaste" : collection3D === "chaturanga" ? "Sandalwood & rosewood" : collection3D === "konane" ? "Natural stone" : collection3D === "shogi" || collection3D === "xiangqi" ? "Boxwood" : (collection3D === "draughts" || collection3D === "khmer") ? pieceSetLabel ?? "Maple & wenge" : collection3D === "janggi" ? "Ivory" : collection3D === "makruk" ? "Thai lacquer" : "Original" : finish === "porcelain" ? "Porcelain" : "Slate"}</button>)}</div> : null}</div> : null}
         {friendId && gameStarted ? friend.room?.arrival ? <MatchArrivalPanel room={friend.room} connected={friend.connection === "connected"} busy={friend.busy} error={friend.error} onCancel={leaveUnplayedMatch} onFindAnother={() => findAnotherOpponent(true)} onSetup={() => findAnotherOpponent(false)} onReconnect={friend.reconnect} /> : <div className="room-live-status" role="status">
           <span>{friend.connection !== "connected"
             ? friend.connection === "offline" ? state.status === "waiting" || timeControl === "freestyle" ? "You’re offline · waiting for a connection" : "You’re offline · the room clock continues" : friend.connection === "connecting" ? "Connecting to your room…" : friend.connection === "unavailable" ? friend.error : "Reconnecting · checking the latest board…"

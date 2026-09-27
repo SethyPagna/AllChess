@@ -4,7 +4,8 @@ import { Box3, Mesh, MeshStandardMaterial, PerspectiveCamera, Texture, Vector3 }
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { collectionModelPath, collectionPieces, get3DCollection, board3DLayout, pieceModelName, shogiPromotedCodes } from "@/components/board/board-3d-config";
 import { createKonaneCellGeometry } from "@/components/board/konane-board";
-import { tabletopFrame } from "@/components/board/tabletop-camera";
+import { tabletopFrame, tabletopPieceTop } from "@/components/board/tabletop-camera";
+import { shogiStandTop } from "@/components/board/shogi-stands";
 import { createJungleTerrainKit } from "@/components/board/jungle-board";
 import { createInitialState, variantCatalog } from "@/lib/variants";
 
@@ -61,6 +62,8 @@ describe("playable 3D collections", () => {
           expect(size.z).toBeGreaterThan(.01); expect(size.z).toBeLessThan(.053);
           expect(size.y).toBeGreaterThan(.009); expect(size.y).toBeLessThan(.075);
           expect(Math.abs(box.min.y)).toBeLessThan(.003);
+          const placedTop=box.max.y+(collection==="konane"?-.006:.002);
+          expect(tabletopPieceTop[collection], `${collection} ${name} camera clearance`).toBeGreaterThan(placedTop+.001);
           if (collection === "khmer") {
             let triangles = 0;
             root!.traverse(child => { if (child instanceof Mesh) {
@@ -76,6 +79,11 @@ describe("playable 3D collections", () => {
             expect(size.x).toBeCloseTo(.042, 4);
           }
           if (collection === "shogi") {
+            const selectedStackTop=box.max.y+shogiStandTop+2*.012+.004;
+            for(const width of [296,692]) {
+              const bounds=tabletopFrame("shogi",9,9,width).bounds;
+              expect(Math.max(...bounds.map(point=>point.y)), `${side}_${name} captured stack clearance`).toBeGreaterThan(selectedStackTop+.001);
+            }
             const inks: MeshStandardMaterial[] = [];
             root!.traverse(child => { if (child instanceof Mesh) for (const material of Array.isArray(child.material) ? child.material : [child.material]) if (/ink/i.test(material.name)) inks.push(material); });
             expect(inks).toHaveLength(1);
@@ -116,7 +124,7 @@ describe("playable 3D collections", () => {
       expect(Math.abs(projected.x)).toBeLessThan(.99); expect(Math.abs(projected.y)).toBeLessThan(.94);
     }
     for (const x of [-layout.width/2+.017,layout.width/2-.017]) for (const z of [-layout.depth/2+.017,layout.depth/2-.017]) {
-      const projected = new Vector3(x,collection === "shogi" ? .013 : .065,z).project(camera);
+      const projected = new Vector3(x,tabletopPieceTop[collection],z).project(camera);
       expect(Math.abs(projected.x)).toBeLessThan(.99); expect(Math.abs(projected.y)).toBeLessThan(.94);
     }
   });

@@ -4,6 +4,8 @@ The default Ouk Chaktrang 3D set now uses `public/assets/khmer/atelier.glb`. Its
 
 This is a contemporary Cambodian-inspired set, not a historical replica. The individually generated [2D atelier masters](atelier/README.md) establish the boxwood/rosewood palette, tiered feet, lotus forms, hollow Touk bowl and restrained brass inlay. The 3D set interprets those designs; it is not an image-to-mesh reconstruction or a set of billboards.
 
+[Courtyard](courtyard/README.md) is the second selectable collection: original faceted sandstone/charcoal geometry with twelve separately generated sprites, a portable GLB and packed Blender source. Its provenance and reproduction are documented separately.
+
 ## Geometry and provenance
 
 - Khon, Neang, Koul, Touk and Trey are original editable revolved profiles. Lotus incisions and the bowl cavity are geometry, including the interior floor. The rim ring has no cap faces across the cavity.
@@ -27,4 +29,4 @@ The app preserves per-game appearance choices. Alternate material finishes remov
 
 ## Remaining quality scope
 
-This is one coordinated collection. Porcelain and slate recolours are material options, not three independently designed sets. Distinct additional Cambodian collections, additional board surface art, the remaining regional model replacements and physical-device GPU validation remain under the active goal.
+Atelier and Courtyard provide two coordinated collections. Porcelain and slate recolours are material options, not additional independently designed sets. A third Cambodian collection, additional board surface art, the remaining regional model replacements and physical-device GPU validation remain under the active goal.

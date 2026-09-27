@@ -58,10 +58,10 @@ function harness() {
 
 describe("public offline play pack", () => {
   test("downloads every photographic piece and PBR material and serves it after disconnecting", async () => {
-    const urls = ["/assets/classic/marble.glb", "/assets/khmer/atelier.glb", "/assets/draughts/rosette.glb", "/assets/draughts/club.glb"];
+    const urls = ["/assets/classic/marble.glb", "/assets/khmer/atelier.glb", "/assets/khmer/courtyard.glb", "/assets/draughts/rosette.glb", "/assets/draughts/club.glb"];
     for (const side of ["light", "dark"]) {
       for (const name of ["king", "queen", "bishop", "knight", "rook", "pawn"]) urls.push(`/assets/classic/marble/${side}_${name}.png`);
-      for (const name of ["king", "queen", "bishop", "horse", "rook", "pawn"]) urls.push(`/assets/khmer/atelier/${side}-${name}.webp`);
+      for (const set of ["atelier", "courtyard"]) for (const name of ["king", "queen", "bishop", "horse", "rook", "pawn"]) urls.push(`/assets/khmer/${set}/${side}-${name}.webp`);
       for (const set of ["rosette", "club"]) for (const name of ["man", "king"]) urls.push(`/assets/draughts/${set}/${side}-${name}.webp`);
     }
     for (const name of ["colour", "normal", "roughness"]) urls.push(`/assets/materials/wood-table/${name}.jpg`);

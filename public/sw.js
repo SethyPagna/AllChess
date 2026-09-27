@@ -33,11 +33,11 @@ function allowedAsset(path) {
   } catch { return false; }
   return path === "/offline" || path === "/manifest.webmanifest" || /^\/_next\/static\/[a-zA-Z0-9_./%~-]+\.(js|css|woff2?)$/.test(path)
     || path === "/assets/classic/marble.glb"
-    || path === "/assets/khmer/atelier.glb"
+    || /^\/assets\/khmer\/(atelier|courtyard)\.glb$/.test(path)
     || /^\/assets\/draughts\/(rosette|club)\.glb$/.test(path)
     || /^\/assets\/draughts\/(rosette|club)\/(light|dark)-(man|king)\.webp$/.test(path)
     || /^\/assets\/classic\/marble\/(light|dark)_(king|queen|bishop|knight|rook|pawn)\.png$/.test(path)
-    || /^\/assets\/khmer\/atelier\/(light|dark)-(king|queen|bishop|horse|rook|pawn)\.webp$/.test(path)
+    || /^\/assets\/khmer\/(atelier|courtyard)\/(light|dark)-(king|queen|bishop|horse|rook|pawn)\.webp$/.test(path)
     || /^\/assets\/materials\/wood-table\/(colour|normal|roughness)\.jpg$/.test(path)
     || ["/assets/khmer/collection.glb", "/assets/classic/collection.glb", "/assets/shogi/collection.glb", "/assets/xiangqi/collection.glb", "/assets/janggi/collection.glb", "/assets/makruk/collection.glb", "/assets/draughts/collection.glb", "/assets/konane/collection.glb", "/assets/shatranj/collection.glb", "/assets/chaturanga/collection.glb", "/assets/jungle/collection.glb", "/engines/stockfish/stockfish-18-lite-single.js", "/engines/stockfish/stockfish-18-lite-single.wasm", "/icons/app-192.png", "/icons/app-512.png", "/icons/maskable-512.png", "/icon.svg"].includes(path);
 }
