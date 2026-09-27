@@ -15,7 +15,7 @@ type PieceIconProps = {
   promoted?: boolean;
 };
 
-export type PieceSkin = "hori" | "courtyard" | "club" | "rosette" | "atelier" | "marble" | "khmer" | "western" | "silhouette" | "glyph" | "monogram" | "castle" | "pirate" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
+export type PieceSkin = "celadon" | "hori" | "courtyard" | "club" | "rosette" | "atelier" | "marble" | "khmer" | "western" | "silhouette" | "glyph" | "monogram" | "castle" | "pirate" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
 export type PieceSkinPreference = "default" | PieceSkin;
 
 export type PieceSkinOption = {
@@ -40,6 +40,7 @@ export function PieceIcon({ code, owner, pieceSkin = "default", variantKey, loca
   const normalized = code.toLowerCase();
   const label = getPieceDisplayName(normalized, variantKey, locale, promoted);
   const skin = resolvePieceSkin(variantKey, pieceSkin);
+  if (skin === "celadon") return <PhotographicPiece code={normalized} owner={owner} label={label} variantKey={variantKey} xiangqiSet="celadon"/>;
   if (skin === "hori") return <PhotographicPiece code={normalized} owner={owner} label={label} variantKey={variantKey} promoted={promoted} shogiSet="hori"/>;
   if (skin === "rosette" || skin === "club") return <PhotographicPiece code={normalized} owner={owner} label={label} variantKey={variantKey} promoted={promoted} draughtsSet={skin}/>;
   if (skin === "marble" || skin === "atelier" || skin === "courtyard") return <PhotographicPiece code={normalized} owner={owner} label={label} variantKey={variantKey} promoted={promoted} khmerSet={skin === "marble" ? undefined : skin}/>;
@@ -596,7 +597,8 @@ export function getPieceSkinOptions(variantKey: string): PieceSkinOption[] {
   if (variantKey === "shogi" || variantKey === "mini-shogi") {
     return [...defaults, option("wedge"), option("mini-wedge"), option("hori"), option("tile")];
   }
-  if (variantKey === "xiangqi" || variantKey === "janggi") {
+  if (variantKey === "xiangqi") return [...defaults, option("disc"), option("celadon"), option("tile")];
+  if (variantKey === "janggi") {
     return [...defaults, option("disc"), option("tile")];
   }
   if (variantKey === "jungle") {
@@ -718,6 +720,7 @@ function option(key: PieceSkin): PieceSkinOption {
 function pieceSkinLabel(key: PieceSkin) {
   if (key === "khmer") return "Khmer carved";
   const labels: Record<PieceSkin, string> = {
+    celadon: "Celadon",
     hori: "Carved",
     courtyard: "Courtyard",
     club: "Club",

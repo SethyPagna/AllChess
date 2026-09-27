@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, Bot, Filter, Play, RotateCcw, Search, X } from "lucide-react";
+import { BookOpen, Bot, Eye, Filter, Play, RotateCcw, Search, Swords, Users, X } from "lucide-react";
 
 import { ChoicePicker } from "@/components/board/choice-buttons";
 import { GameArtwork } from "@/components/games/game-artwork";
@@ -23,6 +23,7 @@ import {
 } from "@/lib/catalog";
 import type { LocaleCode } from "@/lib/i18n/locales";
 import { playGameHref } from "@/lib/routing/play-links";
+import { watchHref } from "@/lib/routing/watch-links";
 
 type CatalogBrowserProps = {
   entries: GameCatalogEntry[];
@@ -52,6 +53,26 @@ const familySelectLabels: Record<GameFamilyKey | "all", string> = {
   mill: "Mill games",
   regional: "Regional classics"
 };
+
+const primaryActions = {
+  online: { label: "Find match", Icon: Swords, describe: (name: string) => `Find an online match for ${name}` },
+  bot: { label: "Play bot", Icon: Bot, describe: (name: string) => `Play ${name} against a bot` },
+  offline: { label: "Play local", Icon: Play, describe: (name: string) => `Play ${name} locally` },
+  room: { label: "Play friend", Icon: Users, describe: (name: string) => `Play ${name} with a friend` },
+  spectate: { label: "Watch", Icon: Eye, describe: (name: string) => `Watch ${name}` }
+};
+
+function catalogPrimaryAction(entry: GameCatalogEntry, locale: LocaleCode, selectedMode: CatalogPlayMode | "all") {
+  const mode = selectedMode === "all" ? "offline" : selectedMode;
+  if (!getCatalogModeSupport(entry, mode).enabled || (mode !== "spectate" && !entry.variantKey)) return null;
+  const action = primaryActions[mode];
+  return {
+    ...action,
+    mode,
+    href: mode === "spectate" ? watchHref(locale, { variant: entry.variantKey }) : playGameHref(locale, entry.variantKey, { mode, time: "rapid" }),
+    accessibleLabel: mode === "spectate" && !entry.variantKey ? "Browse public rooms" : action.describe(displayGameName(entry))
+  };
+}
 
 export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "all", initialStatus = "all", locale }: CatalogBrowserProps) {
   const [query, setQuery] = useState("");
@@ -180,9 +201,11 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
       </div>
       <div className="catalog-count" role="status">{filtered.length} of {entries.length} games</div>
       <div className="catalog-grid">
-        {filtered.map((entry) => (
+        {filtered.map((entry) => {
+          const action = catalogPrimaryAction(entry, locale, mode);
+          return (
           <article key={entry.id} className="panel catalog-card visual-catalog-card">
-            {getCatalogModeSupport(entry, "offline").enabled && entry.variantKey ? <Link href={playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) as never} className="catalog-art-link focus-ring" aria-label={`Play ${displayGameName(entry)}`}><GameArtwork variantKey={entry.variantKey} locale={locale} /></Link> : <button type="button" className="catalog-art-link focus-ring" aria-label={`Read ${displayGameName(entry)} guide`} onClick={() => setSelectedEntry(entry)}><GameArtwork locale={locale} /></button>}
+            {action ? <Link href={action.href as never} className="catalog-art-link focus-ring" aria-label={action.accessibleLabel}><GameArtwork variantKey={entry.variantKey} locale={locale} /></Link> : <button type="button" className="catalog-art-link focus-ring" aria-label={`Read ${displayGameName(entry)} guide`} onClick={() => setSelectedEntry(entry)}><GameArtwork locale={locale} /></button>}
             <div className="catalog-card-head">
               <div>
                 <h2>{entry.name.english}</h2>
@@ -193,10 +216,10 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
               </button>
             </div>
             <div className="catalog-card-actions">
-              {getCatalogModeSupport(entry, "offline").enabled && entry.variantKey ? (
-                <Link href={playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) as never} className="action-primary focus-ring">
-                  <Play size={16} />
-                  Play
+              {action ? (
+                <Link href={action.href as never} className="action-primary focus-ring" aria-label={action.accessibleLabel}>
+                  <action.Icon size={16} aria-hidden="true" />
+                  {action.label}
                 </Link>
               ) : (
                 <button type="button" className="action-secondary focus-ring" onClick={() => setSelectedEntry(entry)}>
@@ -209,9 +232,10 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
               </span>
             </div>
           </article>
-        ))}
+          );
+        })}
       </div>
-      {selectedEntry ? <CatalogInfoOverlay entry={selectedEntry} locale={locale} onClose={() => setSelectedEntry(null)} /> : null}
+      {selectedEntry ? <CatalogInfoOverlay entry={selectedEntry} locale={locale} mode={mode} onClose={() => setSelectedEntry(null)} /> : null}
       {!filtered.length ? (
         <div className="panel catalog-empty-state">
           <Search size={22} />
@@ -235,7 +259,7 @@ export function CatalogBrowser({ entries, initialFamily = "all", initialMode = "
   );
 }
 
-export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCatalogEntry; locale: LocaleCode; onClose: () => void }) {
+export function CatalogInfoOverlay({ entry, locale, mode = "all", onClose }: { entry: GameCatalogEntry; locale: LocaleCode; mode?: CatalogPlayMode | "all"; onClose: () => void }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -246,7 +270,8 @@ export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCata
       if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
     };
   }, []);
-  const playHref = entry.variantKey ? playGameHref(locale, entry.variantKey, { mode: "offline", time: "rapid" }) : `/${locale}/games/${entry.id}`;
+  const action = catalogPrimaryAction(entry, locale, mode);
+  const botAction = action?.mode !== "bot" ? catalogPrimaryAction(entry, locale, "bot") : null;
 
   return (
     <dialog ref={dialogRef} className="catalog-rules-dialog" aria-label={`${displayGameName(entry)} guide`} onCancel={onClose} onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}>
@@ -261,16 +286,16 @@ export function CatalogInfoOverlay({ entry, locale, onClose }: { entry: GameCata
           </button>
         </div>
         <div className="catalog-rules-actions">
-          {getCatalogModeSupport(entry, "offline").enabled && entry.variantKey ? (
-            <Link href={playHref as never} className="action-primary focus-ring">
-              <Play size={16} />
-              Play
+          {action ? (
+            <Link href={action.href as never} className="action-primary focus-ring" aria-label={action.accessibleLabel}>
+              <action.Icon size={16} aria-hidden="true" />
+              {action.label}
             </Link>
           ) : null}
-          {getCatalogModeSupport(entry, "bot").enabled && entry.variantKey ? (
-            <Link href={playGameHref(locale, entry.variantKey, { mode: "bot", time: "rapid" }) as never} className="action-secondary focus-ring">
-              <Bot size={16} />
-              Bot Mode
+          {botAction ? (
+            <Link href={botAction.href as never} className="action-secondary focus-ring" aria-label={botAction.accessibleLabel}>
+              <Bot size={16} aria-hidden="true" />
+              {botAction.label}
             </Link>
           ) : null}
           <Link href={`/${locale}/games/${entry.id}` as never} className="action-secondary focus-ring">

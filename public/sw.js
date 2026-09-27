@@ -36,6 +36,9 @@ function allowedAsset(path) {
     || /^\/assets\/khmer\/(atelier|courtyard)\.glb$/.test(path)
     || path === "/assets/shogi/hori.glb"
     || path === "/assets/shogi/hori/board-colour.webp"
+    || path === "/assets/xiangqi/celadon.glb"
+    || path === "/assets/xiangqi/celadon/board-colour.webp"
+    || /^\/assets\/xiangqi\/celadon\/(red|black)-(general|advisor|elephant|horse|chariot|cannon|soldier)\.webp$/.test(path)
     || /^\/assets\/shogi\/hori\/(king-jewel|king|rook|bishop|gold|silver|knight|lance|pawn|promoted-(rook|bishop|silver|knight|lance|pawn))\.webp$/.test(path)
     || /^\/assets\/draughts\/(rosette|club)\.glb$/.test(path)
     || /^\/assets\/draughts\/(rosette|club)\/(light|dark)-(man|king)\.webp$/.test(path)
@@ -64,7 +67,7 @@ async function downloadPack() {
       || !manifest.assets.some(asset => asset.url === "/offline") || manifest.assets.some(asset => !allowedAsset(asset.url) || !/^[a-f0-9]{64}$/.test(asset.sha256) || !Number.isSafeInteger(asset.bytes) || asset.bytes <= 0)
       || new Set(manifest.assets.map(asset => asset.url)).size !== manifest.assets.length) throw new Error("The play pack could not be verified. Try again after the app updates.");
     const total = manifest.assets.reduce((sum, asset) => sum + asset.bytes, 0);
-    if (total > 80 * 1024 * 1024) throw new Error("The play pack is too large. Please try again after the app updates.");
+    if (total > 88 * 1024 * 1024) throw new Error("The play pack is too large. Please try again after the app updates.");
     const name = PREFIX + manifest.version;
     if (previous?.cache === name) { broadcast({ ready: true }); return; }
     staging = name;

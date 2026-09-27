@@ -127,7 +127,7 @@ describe("coordinated piece collections", () => {
     const writes: string[] = [];
     expect(readPiece2DStylePreference("ouk-chaktrang", key => key.startsWith("allchess-piece-2d-style:") ? null : blocked(), key => writes.push(key))).toBe("collection");
     expect(writes).toEqual([]);
-    for (const game of ["english-draughts", "xiangqi", "classic", "makruk"]) {
+    for (const game of ["english-draughts", "janggi", "classic", "makruk"]) {
       expect(readPiece2DStylePreference(game, blocked, blocked)).toBe("collection");
       expect(resolvePiece2DStyle(game, "letters", "tablet")).toBe("collection");
       expect(piece2DSkin(game, "standard", "default", "letters")).toBe(pieceSetSkin(game, "standard", "default"));

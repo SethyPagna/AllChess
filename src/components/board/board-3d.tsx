@@ -87,9 +87,11 @@ export default function Board3D(props: Props) {
       camera.position.copy(controls.target).add(offset);controls.update();
     };
     const carvedShogi = japanese && props.pieceSet === "hori";
+    const celadonXiangqi = props.collection === "xiangqi" && props.pieceSet === "celadon";
+    const boardSurfacePath = carvedShogi ? "/assets/shogi/hori/board-colour.webp" : celadonXiangqi ? "/assets/xiangqi/celadon/board-colour.webp" : undefined;
     const tabletop = createTabletopScene(scene, renderer, layout.width, layout.depth, japanese, props.collection, () => {
       lastPosition = ""; redraw();
-    }, carvedShogi ? "/assets/shogi/hori/board-colour.webp" : undefined);
+    }, boardSurfacePath);
     tabletop.setCompactHands(frame.compactHands);
     const meshes = new THREE.Group(); scene.add(meshes);
     const grid = new THREE.Group(); scene.add(grid);
@@ -224,8 +226,10 @@ export default function Board3D(props: Props) {
       meshes.clear(); disposableMaterials.splice(0).forEach(material => material.dispose()); textures.splice(0).forEach(texture => texture.dispose());
       const finishMaterials = new Map<string, THREE.Material>();
       const palette = board3DPalettes[current.boardTheme];
-      const boardSurface = carvedShogi && current.boardTheme === "wood" ? tabletop.boardSurface : null;
-      tabletop.setBoardSurface(Boolean(boardSurface));
+      const boardSurface = (carvedShogi || celadonXiangqi) && current.boardTheme === "wood" ? tabletop.boardSurface : null;
+      // Only the Japanese case and komadai share their board artwork. Keep
+      // Xiangqi's native rosewood case independent of the playing surface.
+      if (japanese) tabletop.setBoardSurface(Boolean(boardSurface));
       function addPiece(piece: THREE.Object3D, light: boolean, target: Record<string, unknown>) {
         piece.traverse(child => {
           Object.assign(child.userData, target);
@@ -243,8 +247,9 @@ export default function Board3D(props: Props) {
               if (!texturedSet && (japanese || current.collection === "xiangqi" || draughts)) { copy.map = tabletop.grain; copy.bumpMap = tabletop.grain; copy.bumpScale = .000035; }
               if (current.finish !== "original") {
                 if (texturedSet) copy.map = null;
-                if (current.collection === "khmer" || ((draughts || japanese) && texturedSet)) {
-                  // Keep sculpted horse relief, but remove photographed timber pores from ceramic finishes.
+                if (current.collection === "khmer" || ((draughts || japanese || celadonXiangqi) && texturedSet)) {
+                  // Keep sculpted horse relief; alternate finishes replace
+                  // the original timber or ceramic surface microtexture.
                   if (!/Ses relief/.test(original.name)) copy.normalMap = null;
                   copy.roughnessMap = null;
                 }
@@ -259,7 +264,11 @@ export default function Board3D(props: Props) {
         }); meshes.add(piece);
       }
       if (intersection) {
-        const surfaceMaterial = new THREE.MeshPhysicalMaterial({ color: current.boardTheme === "wood" ? 0xd5b987 : palette[0], map: tabletop.grain, bumpMap: tabletop.grain, bumpScale: .000025, roughness: .46, clearcoat: .2 }); disposableMaterials.push(surfaceMaterial);
+        const surfaceMaterial = new THREE.MeshPhysicalMaterial({
+          color: boardSurface ? 0xffffff : current.boardTheme === "wood" ? 0xd5b987 : palette[0],
+          map: boardSurface ?? tabletop.grain, bumpMap: boardSurface ?? tabletop.grain,
+          bumpScale: boardSurface ? .000012 : .000025, roughness: boardSurface ? .58 : .46, clearcoat: boardSurface ? .12 : .2
+        }); disposableMaterials.push(surfaceMaterial);
         const surface = new THREE.Mesh(surfaceGeometry, surfaceMaterial); surface.receiveShadow = true; meshes.add(surface);
         if (current.collection === "xiangqi") {
           const canvas = document.createElement("canvas"); canvas.width = 512; canvas.height = 96;
