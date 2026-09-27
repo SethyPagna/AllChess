@@ -12,7 +12,7 @@ The catalog now carries the selected mode through artwork, primary buttons and g
 
 - The optimized staged model and all generated source/runtime art pass 60 asset checks without weakened assertions: semantic roots, dimensions, actual blind cuts, ring/foot geometry, normal/UV validity, map variation, alpha, glyph identity and provenance.
 - 61 focused UI/offline integration checks, 13 catalog action checks and the final 34-case worker suite pass. The worker suite includes fifteen new boundary/malformed-manifest regressions.
-- TypeScript and full lint checks pass. A new full-suite run hit 15-second timeouts in existing asset/API tests during host resource contention and was stopped for the user's quota-saving wrap-up; it is incomplete, not a passing gate. The previous 851-test result belongs to the prior Shogi checkpoint. The production build compiled successfully; its remaining steps are still pending at this recorded checkpoint.
+- TypeScript, full lint and the production build pass. The build generates 209 pages and an offline manifest with 175 assets totaling 87,548,553 bytes (83.49 MiB), within the 88 MiB limit. A new full-suite run hit 15-second timeouts in existing asset/API tests during host resource contention and was stopped for the user's quota-saving wrap-up; it is incomplete, not a passing gate. The previous 851-test result belongs to the prior Shogi checkpoint.
 - Blender previews and individual generated pieces were reviewed. This does not replace production playing-size review.
 
 ## Resume before calling the collection visually complete
