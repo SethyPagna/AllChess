@@ -35,7 +35,7 @@ export const catalogPlayModes = ["online", "bot", "offline", "room", "spectate"]
 
 export const gameFamilies: Array<{ key: GameFamilyKey; label: string; description: string }> = [
   { key: "chess-family", label: "Chess family", description: "Chaturanga descendants, western chess variants, and royal objective games." },
-  { key: "asian-chess", label: "Asian chess systems", description: "Shogi, Xiangqi, Janggi, Thai Makruk, Khmer Ouk Chaktrang, Jungle, and regional relatives." },
+  { key: "asian-chess", label: "Asian chess", description: "Shogi, Xiangqi, Janggi, Thai Makruk, Khmer Ouk Chaktrang, Jungle, and regional relatives." },
   { key: "draughts", label: "Draughts and checkers", description: "Jump-capture games with men, kings, and compulsory capture variants." },
   { key: "mancala", label: "Mancala", description: "Sowing and capture games with pits, seeds, and stores." },
   { key: "go-family", label: "Go, Gomoku, and territory", description: "Stone-placement games focused on territory, connections, and patterns." },
@@ -220,7 +220,7 @@ const learningCatalogEntries: GameCatalogEntry[] = [
     rulesAdapter: "planned-rules-engine",
     botAdapter: "fairy-stockfish",
     ruleSourceLinks: [{ name: "Lichess Atomic rules", url: "https://lichess.org/variant/atomic" }],
-    shortRules: ["Captures explode adjacent non-pawn pieces.", "Kings may be affected by explosions.", "Checkmate and explosion objectives need variant-specific validation."],
+    shortRules: ["Captures explode adjacent non-pawn pieces.", "Kings may be affected by explosions.", "Win by exploding the opponent king or by checkmate."],
     winConditions: ["Explode the opponent king", "Checkmate in supported rules profile"]
   }),
   catalogEntry({
@@ -250,7 +250,7 @@ const learningCatalogEntries: GameCatalogEntry[] = [
     rulesAdapter: "planned-rules-engine",
     botAdapter: "heuristic",
     ruleSourceLinks: [{ name: "Chess.com four-player chess guide", url: "https://www.chess.com/terms/4-player-chess" }],
-    shortRules: ["Four armies start on an extended board.", "Turn order and teams depend on room mode.", "Scoring and checkmate policies must be room-explicit."],
+    shortRules: ["Four armies start on an extended board.", "Turn order and teams depend on room mode.", "Scoring and checkmate rules vary by format."],
     winConditions: ["Last player/team standing", "Points mode in selected rooms"]
   }),
   catalogEntry({
@@ -279,7 +279,7 @@ const learningCatalogEntries: GameCatalogEntry[] = [
     rulesAdapter: "planned-rules-engine",
     botAdapter: "mcts",
     ruleSourceLinks: [{ name: "Chess Variant Pages Banqi", url: "https://www.chessvariants.com/xiangqi.dir/banqi.html" }],
-    shortRules: ["Pieces begin face-down.", "Moves and captures depend on revealed ranks.", "Hidden-information review needs probability-aware explanations."],
+    shortRules: ["Pieces begin face-down.", "Moves and captures depend on revealed ranks.", "Pieces stay hidden until revealed."],
     winConditions: ["Capture all opposing pieces or force no moves under profile"]
   }),
   catalogEntry({
@@ -308,7 +308,7 @@ const learningCatalogEntries: GameCatalogEntry[] = [
     rulesAdapter: "planned-rules-engine",
     botAdapter: "none",
     ruleSourceLinks: [{ name: "Chess Variant Pages Sittuyin", url: "https://www.chessvariants.com/oriental.dir/burmese.html" }],
-    shortRules: ["Players place major pieces freely in their halves.", "Piece movement is related to Makruk and Shatranj.", "Setup phase must be supported before playability."],
+    shortRules: ["Players place major pieces freely in their halves.", "Piece movement is related to Makruk and Shatranj."],
     winConditions: ["Checkmate"]
   }),
   catalogEntry({

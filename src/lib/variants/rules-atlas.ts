@@ -33,7 +33,7 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     numberedBasics: [
       "Move pieces by FIDE rules.",
       "Kings cannot be captured; checkmate ends the game.",
-      "Castling, promotion, en passant, check, stalemate, repetition, fifty-move, timeout, and insufficient material must be handled.",
+      "Castling, promotion, and en passant follow standard chess rules.",
       "Win by checkmate, resignation, or timeout with mating material."
     ],
     specialRules: ["Castling", "Promotion to queen, rook, bishop, or knight", "En passant", "Check and checkmate"],
