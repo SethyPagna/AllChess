@@ -688,13 +688,23 @@ function rankCandidateMoves(
   searchTimeMs: number
 ) {
   const ordered = candidateMoves.map((move) => ({ move, score: staticMoveScore(state, move) })).sort((a, b) => b.score - a.score);
-  const fallbackMove = candidateMoves.find((move) => move.kind !== "drop" && !move.promotion && !move.promoteTo && !isCapture(state, move))
+  const directWin = candidateMoves.find((move) => {
+    if (state.variantKey === "jungle") return move.to.col === 3 && move.to.row === (state.turn === "white" ? 0 : state.board.length - 1);
+    const moving = state.board[move.from.row]?.[move.from.col]?.piece;
+    return state.variantKey === "king-of-the-hill" && moving && isRoyal(moving, state.variantKey) && variantObjectiveScore(state, move, moving.owner) > 0;
+  });
+  const fallbackMove = directWin ?? candidateMoves.find((move) => move.kind !== "drop" && !move.promotion && !move.promoteTo && !isCapture(state, move))
     ?? candidateMoves.find((move) => move.kind !== "drop")
     ?? ordered[0].move;
   const fallback = [{ move: fallbackMove, score: materialOnlyScore(state, perspective) }];
   if (Date.now() >= budget.deadline) return fallback;
   const quickDeadline = Math.min(budget.deadline, Date.now() + Math.max(1, searchTimeMs * 0.35));
   let ranked = [{ move: fallbackMove, score: quickMoveScore(state, fallbackMove, difficulty, perspective, budget) }];
+  const firstNext = budget.appliedMoves.get(state)?.get(fallbackMove);
+  if (firstNext?.status === "completed" && firstNext.result === perspective) {
+    budget.completedDepth = 1;
+    return ranked;
+  }
   for (const { move } of ordered) {
     if (move === fallbackMove) continue;
     if (Date.now() >= quickDeadline || budget.nodes >= difficulty.nodeBudget) break;
