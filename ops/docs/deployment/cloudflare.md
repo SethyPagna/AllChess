@@ -4,7 +4,7 @@ AllChess is Cloudflare-first. Supabase, Hyperdrive, Vercel databases, and Vercel
 
 ## Architecture
 
-- Runtime: Cloudflare Workers through the OpenNext Cloudflare adapter, deployed as Worker `chess`.
+- Runtime: Cloudflare Workers through the OpenNext Cloudflare adapter, configured as Worker `allchess`.
 - Database: D1 database `allchess`.
 - User objects: R2 bucket `allchess-objects`.
 - Preview objects: R2 bucket `allchess-objects-preview`.
@@ -12,6 +12,8 @@ AllChess is Cloudflare-first. Supabase, Hyperdrive, Vercel databases, and Vercel
 - Realtime: Durable Objects `GameRoomDO`, `MatchmakingDO`, and `PresenceDO`.
 - AI: Workers AI binding `AI`, with optional Groq, Mistral, Cerebras, Google AI, or OpenAI secrets for deeper review.
 - Other products: edsync must use separate Cloudflare resources.
+
+Both Wrangler configurations set `assets.html_handling` to `none`. Keep `/offline` routed to the Next app and `/offline.html` served as the separate reconnect fallback. Cloudflare's default clean-URL behavior otherwise serves the fallback at `/offline`, causing offline-pack integrity verification to reject the wrong shell. A Miniflare routing regression covers both configurations and the default-setting failure.
 
 ## One-Time Setup
 
@@ -25,7 +27,7 @@ npm run db:migrate:remote
 ```
 
 Copy the D1 database id into `ops/infra/cloudflare/wrangler.jsonc` and set the same value as `CLOUDFLARE_D1_DATABASE_ID` anywhere the app runs outside Workers.
-Use the existing Worker named `chess` when it exists; redeploy that target instead of creating a duplicate. Preferred short hostnames are `chess.<domain>` first, then `allchess.<domain>` if the shorter name is unavailable.
+Use the configured Worker named `allchess` in the account identified by the Wrangler configuration. Redeploy that target instead of creating a duplicate. A custom hostname is independent of the Worker name.
 
 ## Secrets
 
