@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 
 import { describe, expect, test } from "vitest";
@@ -48,6 +48,9 @@ describe("deployment scripts", () => {
       for (const scope of [config, config.env.production]) {
         expect(scope.r2_buckets).toContainEqual({ binding: "NEXT_INC_CACHE_R2_BUCKET", bucket_name: "allchess-opennext-cache" });
         expect(scope.vars.R2_CACHE_BINDING_NAME).toBeUndefined();
+        const migrations = resolve(dirname(configPath), scope.d1_databases[0].migrations_dir);
+        expect(migrations).toBe(join(repoRoot, "ops", "infra", "cloudflare", "d1", "migrations"));
+        expect(existsSync(join(migrations, "0001_initial.sql"))).toBe(true);
       }
     }
   });

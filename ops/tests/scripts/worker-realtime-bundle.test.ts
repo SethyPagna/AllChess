@@ -146,4 +146,3 @@ test("the generated worker preserves Next handling, presence exports and repeata
   await expect(run(process.execPath, [patchScript], { cwd: fixture })).rejects.toThrow("contains legacy realtime stubs");
   expect(await readFile(entry, "utf8")).toBe(legacy);
 });
-
