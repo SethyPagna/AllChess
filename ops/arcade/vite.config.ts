@@ -26,11 +26,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { constants as zlibConstants, gzipSync } from "node:zlib";
 import tailwindcss from "@tailwindcss/postcss";
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, normalizePath, type Plugin } from "vite";
 
 const arcadeRoot = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(arcadeRoot, "../..");
 const srcRoot = path.join(repoRoot, "src");
+const normalizedSrcRoot = `${normalizePath(srcRoot)}/`;
 const outDir = process.env.ARCADE_OUT_DIR ? path.resolve(process.env.ARCADE_OUT_DIR) : path.join(repoRoot, "dist", "arcade");
 const knowledgeSource = path.join(srcRoot, "data", "bot-knowledge.generated.json");
 const knowledgeModuleId = "\0allchess-arcade:bot-knowledge";
@@ -59,7 +60,7 @@ function arcadeSourcePaths(): Plugin {
     name: "allchess-arcade:source-paths",
     enforce: "pre",
     transform(code, id) {
-      if (!id.startsWith(srcRoot) || !/\.(tsx?|jsx?)$/.test(id)) return null;
+      if (!normalizePath(id).startsWith(normalizedSrcRoot) || !/\.(tsx?|jsx?)$/.test(id)) return null;
       let next = code;
       for (const [pattern, replacement] of replacements) next = next.replace(pattern, replacement);
       return next === code ? null : { code: next, map: null };
@@ -176,6 +177,7 @@ function arcadeStaticAssets(): Plugin {
 
 export default defineConfig({
   root: arcadeRoot,
+  cacheDir: path.join(repoRoot, "dist", ".vite-arcade"),
   base: "./",
   publicDir: false,
   resolve: {
