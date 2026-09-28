@@ -36,7 +36,7 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
       "Castling, promotion, en passant, check, stalemate, repetition, fifty-move, timeout, and insufficient material must be handled.",
       "Win by checkmate, resignation, or timeout with mating material."
     ],
-    specialRules: ["Castling", "Promotion", "En passant", "Check and checkmate"],
+    specialRules: ["Castling", "Promotion to queen, rook, bishop, or knight", "En passant", "Check and checkmate"],
     winConditions: ["Checkmate", "Timeout when the opponent has mating material", "Resignation"],
     drawConditions: ["Stalemate", "Insufficient material", "Repetition", "Fifty-move rule", "Mutual agreement"],
     illegalMoveNotes: ["A king may not move into check.", "A checked player must remove the check.", "Royal captures are never legal."]
@@ -59,15 +59,15 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     variantKey: "chess960",
     sourceLinks: [{ name: "FIDE Laws of Chess, Chess960 Guidelines", url: "https://rcc.fide.com/fide-laws-of-chess_fulltexthtml/" }],
     numberedBasics: [
-      "Back rank starts randomized.",
-      "Bishops start on opposite colors and king starts between rooks.",
-      "Castling ends with normal king/rook destination squares.",
-      "Checkmate/draw rules match classic chess."
+      "Each new game starts from one of the 960 legal back ranks; Black mirrors White.",
+      "Bishops start on opposite colors and the king starts between the rooks.",
+      "Castling puts the king on the g- or c-file and the rook on the f- or d-file; both may already stand there, the squares they cross must be empty, and the king may not start in, pass through, or land in check.",
+      "Checkmate, draw, and promotion rules match classic chess, including promotion to a rook, bishop, or knight."
     ],
-    specialRules: ["Randomized legal start positions", "Chess960 castling", "Standard check and promotion"],
+    specialRules: ["Randomized legal start positions", "Chess960 castling", "Standard check and promotion", "Underpromotion"],
     winConditions: ["Checkmate", "Timeout with mating material", "Resignation"],
     drawConditions: ["Stalemate", "Insufficient material", "Repetition", "Fifty-move rule", "Mutual agreement"],
-    illegalMoveNotes: ["Castling must obey check-through-check restrictions.", "Royal captures are never legal."]
+    illegalMoveNotes: ["Castling must obey check-through-check restrictions.", "Castling is lost once the king or that rook has moved.", "Royal captures are never legal."]
   },
   crazyhouse: {
     variantKey: "crazyhouse",
@@ -198,11 +198,11 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     sourceLinks: [{ name: "English Draughts Association rules", url: "https://www.english-draughts.org/rules" }],
     numberedBasics: [
       "Men move one square diagonally forward on the dark squares.",
-      "Captures are compulsory, and a jumping piece must continue while more jumps are available.",
-      "Men become kings on the far row; kings move and jump one square diagonally in any direction.",
+      "Captures are compulsory, but any capture may be chosen, not only the longest; a jumping piece must continue while more jumps are available.",
+      "Men become kings on the far row, and a jump that reaches it ends the move; kings move and jump one square diagonally in any direction.",
       "Win by capturing all opposing checkers or leaving the opponent with no legal move."
     ],
-    specialRules: ["Dark-square movement", "Compulsory captures", "Multi-jump continuation", "Kinging"],
+    specialRules: ["Dark-square movement", "Compulsory captures with free choice", "Multi-jump continuation", "Kinging"],
     winConditions: ["Capture all opposing checkers", "Block every opposing legal move"],
     drawConditions: ["Repetition or no-progress policy in selected room rules", "Mutual agreement"],
     illegalMoveNotes: ["A quiet move is illegal when any friendly checker can jump.", "A jump must land on the empty square beyond the captured checker.", "Only the same checker may move during a forced multi-jump continuation."]
@@ -213,27 +213,27 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     numberedBasics: [
       "Play on a 10x10 board with twenty men per side on the dark squares.",
       "Men move one square diagonally forward but may capture diagonally forward or backward.",
-      "Captures are compulsory, maximum-capture lines are required, and kings are flying kings.",
+      "Captures are compulsory, the longest capture line is required, and kings are flying kings. Captured pieces are removed when the move ends.",
       "Win by capturing all opposing checkers or leaving the opponent with no legal move."
     ],
     specialRules: ["10x10 board", "Backward man captures", "Maximum-capture rule", "Flying kings", "Kinging"],
     winConditions: ["Capture all opposing checkers", "Block every opposing legal move"],
     drawConditions: ["Repetition or no-progress policy in selected room rules", "Mutual agreement"],
-    illegalMoveNotes: ["A shorter capture line is illegal when a longer one exists.", "Flying kings must jump exactly one opposing checker before landing.", "A quiet move is illegal when any capture exists."]
+    illegalMoveNotes: ["A shorter capture line is illegal when a longer one exists.", "Flying kings must jump exactly one opposing checker and land on an empty square beyond it.", "A captured checker cannot be jumped twice in one move.", "A man passing the far row during a capture is crowned only if the capture ends there.", "A quiet move is illegal when any capture exists."]
   },
   "turkish-draughts": {
     variantKey: "turkish-draughts",
-    sourceLinks: [{ name: "MindSports Turkish Draughts rules", url: "https://mindsports.nl/index.php/dagaz/521-turkish-draughts" }],
+    sourceLinks: [{ name: "MindSports Turkish Draughts rules", url: "https://mindsports.nl/index.php/the-pit/592-turkish-draughts" }],
     numberedBasics: [
       "Play on an 8x8 board with two full rows of men per side.",
-      "Men move orthogonally forward or sideways and never move backward without capturing.",
-      "Captures are compulsory, maximum-capture lines are required, and kings fly orthogonally.",
+      "Men move and capture orthogonally, one square forward or sideways, never backward.",
+      "Captures are compulsory, the longest capture line is required, and kings fly orthogonally. Each captured piece is removed at once.",
       "Win by capturing all opposing checkers or leaving the opponent with no legal move."
     ],
     specialRules: ["Orthogonal movement", "Sideways men", "Orthogonal maximum-capture rule", "Flying kings", "Kinging"],
     winConditions: ["Capture all opposing checkers", "Block every opposing legal move"],
     drawConditions: ["Repetition or no-progress policy in selected room rules", "Mutual agreement"],
-    illegalMoveNotes: ["A backward quiet move by a man is illegal.", "A shorter capture line is illegal when a longer one exists.", "Flying kings must jump exactly one opposing checker before landing."]
+    illegalMoveNotes: ["A man may not move or capture backward.", "A shorter capture line is illegal when a longer one exists.", "Flying kings must jump exactly one opposing checker and land on an empty square beyond it.", "A king may not reverse direction between two jumps."]
   },
   konane: {
     variantKey: "konane",
@@ -258,7 +258,7 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
       "King has no royal safety.",
       "Win by having no pieces or no legal move under the selected antichess ruleset."
     ],
-    specialRules: ["Mandatory captures", "No check", "King is non-royal", "Promotion remains available"],
+    specialRules: ["Mandatory captures", "No check", "King is non-royal", "Pawns may promote to a king as well as a queen, rook, bishop, or knight"],
     winConditions: ["Lose all pieces", "Have no legal move under antichess rules"],
     drawConditions: ["Repetition/no-progress according to selected mode"],
     illegalMoveNotes: ["A non-capture is illegal when a capture exists.", "Check restrictions do not apply."]
@@ -267,12 +267,12 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     variantKey: "horde",
     sourceLinks: [{ name: "Lichess horde rules", url: "https://lichess.org/variant/horde" }],
     numberedBasics: [
-      "White plays a pawn horde; black has a normal army.",
+      "White plays the Lichess 36-pawn horde; black has a normal army.",
       "White wins by checkmating black.",
       "Black wins by eliminating the horde.",
       "Draw/check rules follow the supported horde ruleset."
     ],
-    specialRules: ["Asymmetric armies", "Horde elimination objective", "Standard black king safety"],
+    specialRules: ["Asymmetric armies", "First-rank horde pawns may advance two squares, with no en passant", "Horde elimination objective", "Standard black king safety"],
     winConditions: ["White checkmates black", "Black captures all horde pieces", "Timeout"],
     drawConditions: ["Stalemate/repetition/no-progress according to selected mode"],
     illegalMoveNotes: ["Black king safety still applies.", "Horde setup and promotion must remain valid."]
@@ -288,7 +288,7 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     ],
     specialRules: ["Center-square king objective", "Standard check and checkmate"],
     winConditions: ["Move king to the center", "Checkmate", "Timeout with mating material"],
-    drawConditions: ["Standard chess draw rules unless objective is achieved first"],
+    drawConditions: ["Standard chess draw rules unless objective is achieved first", "Bare kings are not a draw: either king can still reach the center"],
     illegalMoveNotes: ["A king may not move into check, even when aiming for the hill."]
   },
   "three-check": {
@@ -316,7 +316,7 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     ],
     specialRules: ["No pawns", "Checks are forbidden", "Race-to-eighth objective", "Black reply draw after White reaches"],
     winConditions: ["King reaches the eighth rank first", "White reaches and Black fails to answer on the next move"],
-    drawConditions: ["Black reaches the eighth rank immediately after White reaches first", "Repetition/no-progress according to room rules"],
+    drawConditions: ["Black reaches the eighth rank immediately after White reaches first", "Stalemate", "Fifty-move rule", "Repetition/no-progress according to room rules"],
     illegalMoveNotes: ["A move may not give check.", "A king may not move into check.", "Royal captures are never legal."]
   }
 };
@@ -324,9 +324,11 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
 const verifiedChessEdgeCases = [
   "Royal pieces cannot be captured in check-based games.",
   "Checkmate ends before any king capture can occur.",
+  "Threefold repetition draws automatically; a position repeats only with the same side to move, castling rights, and en passant option.",
   "Stalemate, bare kings, and fifty-move-style draw handling are covered for verified western rules.",
-  "Promotion, castling, self-check rejection, terminal-state blocking, and bot legal validation are tested."
+  "Promotion (including underpromotion), castling, self-check rejection, terminal-state blocking, and bot legal validation are tested."
 ];
+const orthodoxMaterialEdgeCase = "King and one minor piece against king, or bishops all on one square colour, is drawn at once, and a flag against a side that cannot mate is a draw.";
 
 const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
   "ouk-chaktrang": {
@@ -336,7 +338,7 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
   },
   classic: {
     status: "verified-playable",
-    verifiedEdgeCases: verifiedChessEdgeCases,
+    verifiedEdgeCases: [...verifiedChessEdgeCases, orthodoxMaterialEdgeCase],
     remainingGates: []
   },
   chaturanga: {
@@ -351,7 +353,12 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
   },
   chess960: {
     status: "verified-playable",
-    verifiedEdgeCases: [...verifiedChessEdgeCases, "Chess960 uses verified standard castling destinations after randomized setup."],
+    verifiedEdgeCases: [
+      ...verifiedChessEdgeCases,
+      orthodoxMaterialEdgeCase,
+      "All 960 back ranks are generated deterministically from the game id and recorded with the game; older fixed-setup saves still replay.",
+      "Chess960 castling is tested on both wings, including kings or rooks already on their destination squares, blocked paths, and attacked squares."
+    ],
     remainingGates: []
   },
   crazyhouse: {
@@ -399,7 +406,8 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
     verifiedEdgeCases: [
       "The 5x5 reduced setup is registered with one pawn and five back-rank pieces per side.",
       "Drops, nifu, dead-drop restrictions, and pawn-drop mate validation reuse the verified Shogi path.",
-      "The one-rank promotion zone is covered for both sides."
+      "The one-rank promotion zone is covered for both sides.",
+      "Fourfold repetition draws, and the side that checked on every move of the cycle loses, as in Shogi."
     ],
     remainingGates: []
   },
@@ -437,7 +445,7 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
     status: "verified-playable",
     verifiedEdgeCases: [
       "Dark-square 8x8 setup and forward man movement are covered.",
-      "Compulsory captures suppress quiet moves across the whole side.",
+      "Compulsory captures suppress quiet moves across the whole side, with free choice among captures.",
       "Jump captures remove the midpoint checker and Multi-jump continuation locks the turn to the same checker.",
       "Kinging and no-piece/no-legal-move wins are covered by runtime fixtures."
     ],
@@ -447,8 +455,8 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
     status: "verified-playable",
     verifiedEdgeCases: [
       "10x10 dark-square setup and forward quiet movement are covered.",
-      "Backward man captures and flying-king captures are covered.",
-      "Maximum-capture filtering rejects shorter capture lines when longer lines exist.",
+      "Backward man captures and flying-king captures, which must land beyond the jumped checker, are covered.",
+      "Maximum-capture filtering rejects shorter capture lines when longer lines exist; captured checkers cannot be jumped twice and a man is crowned only where its capture ends.",
       "Multi-jump continuation, kinging, and no-piece/no-legal-move wins reuse the verified draughts runtime path."
     ],
     remainingGates: []
@@ -457,7 +465,7 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
     status: "verified-playable",
     verifiedEdgeCases: [
       "Two-row 8x8 setup and orthogonal forward/sideways man movement are covered.",
-      "Backward quiet moves are rejected while orthogonal captures remain available.",
+      "Backward moves and backward captures by men are rejected; kings cannot reverse direction between jumps and captured pieces are removed at once.",
       "Orthogonal maximum-capture filtering rejects shorter capture lines when longer lines exist.",
       "Flying kings, multi-jump continuation, kinging, and no-piece/no-legal-move wins reuse the verified draughts runtime path."
     ],
@@ -485,19 +493,23 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
   horde: {
     status: "verified-playable",
     verifiedEdgeCases: [
-      "Asymmetric horde setup keeps the white pawn army against black's standard royal army.",
+      "The Lichess horde setup (36 white pawns) faces black's standard royal army, and first-rank pawns double-step without an en passant right.",
       "White checkmate, black horde-elimination, promotion, no-insufficient-material shortcut, and legal bot validation are tested."
     ],
     remainingGates: []
   },
   "king-of-the-hill": {
     status: "verified-playable",
-    verifiedEdgeCases: [...verifiedChessEdgeCases, "A king reaching the center ends the game immediately as a variant objective."],
+    verifiedEdgeCases: [
+      ...verifiedChessEdgeCases.filter((note) => !note.includes("bare kings")),
+      "Stalemate and fifty-move draws apply, but bare kings play on because either king can still reach the center.",
+      "A king reaching the center ends the game immediately as a variant objective."
+    ],
     remainingGates: []
   },
   "three-check": {
     status: "verified-playable",
-    verifiedEdgeCases: [...verifiedChessEdgeCases, "The third delivered check ends the game before ordinary continuation."],
+    verifiedEdgeCases: [...verifiedChessEdgeCases, "The third delivered check ends the game before ordinary continuation.", "A lone minor piece can still give checks, so only a bare king lacks winning material, including on time."],
     remainingGates: []
   },
   "racing-kings": {
@@ -505,7 +517,8 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
     verifiedEdgeCases: [
       "The no-pawn shared-side setup is registered.",
       "Checks are forbidden, including discovered line checks.",
-      "White's eighth-rank arrival gives Black one reply to draw; Black reaching first wins immediately."
+      "White's eighth-rank arrival gives Black one reply to draw; Black reaching first wins immediately.",
+      "White wins at once when Black cannot reach the eighth rank in reply; stalemate and the fifty-move rule draw."
     ],
     remainingGates: []
   }

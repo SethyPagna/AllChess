@@ -4,6 +4,10 @@ import "@/styles/globals.css";
 import "@/styles/studio.css";
 import "@/styles/discovery.css";
 import "@/styles/account.css";
+import "@/styles/minimal.css";
+import "@/styles/pages-play.css";
+import "@/styles/pages-community.css";
+import "@/styles/pages-account.css";
 
 export const metadata: Metadata = {
   title: "AllChess Multiplayer",
@@ -16,7 +20,7 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "AllChess", statusBarStyle: "default" }
 };
 
-export const viewport: Viewport = { themeColor: "#294c39" };
+export const viewport: Viewport = { themeColor: "#2c7350" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return children;

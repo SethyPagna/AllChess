@@ -1,4 +1,3 @@
-import { InfoHint } from "@/components/ui/info-hint";
 import { createPageMetadata } from "@/lib/metadata/page-metadata";
 import { WatchRoomPanel } from "@/components/watch/watch-room-panel";
 import { WatchStats } from "@/components/watch/watch-stats";
@@ -24,24 +23,23 @@ export default async function WatchPage({
   const { locale: rawLocale } = await params;
   const query = (await searchParams) ?? {};
   const locale = normalizeLocale(rawLocale);
+  const requestedVariant = query.variant ? getGameCatalogEntry(query.variant)?.variantKey : undefined;
   const requestedFilters = normalizeRoomListInput({
     query: query.q,
     sort: query.sort === "spectators" ? "spectators" : "recent",
     status: query.status === "active" || query.status === "waiting" ? query.status : "all",
+    variant: requestedVariant,
     limit: 12
   });
   const [stats, roomList] = await Promise.all([getRuntimeLiveStats(), getRuntimeRoomList(requestedFilters)]);
-  const hasRooms = stats.activeRooms > 0;
-  const requestedVariant = query.variant && getGameCatalogEntry(query.variant) ? query.variant : undefined;
 
   return (
-    <section className="watch-page grid gap-5">
-      <div className="compact-page-heading">
-        <h1 className="text-4xl font-black sm:text-5xl">Watch rooms</h1>
-        <InfoHint text="Choose a public room to watch a live game." />
-      </div>
-      <WatchStats stats={stats} />
-      <WatchRoomPanel hasRooms={hasRooms} locale={locale} requestedVariant={requestedVariant} roomList={roomList} />
+    <section className="cm-page">
+      <header className="cm-head">
+        <h1>Watch rooms</h1>
+        <WatchStats stats={stats} />
+      </header>
+      <WatchRoomPanel hasRooms={stats.activeRooms > 0} locale={locale} requestedVariant={requestedVariant} roomList={roomList} />
     </section>
   );
 }

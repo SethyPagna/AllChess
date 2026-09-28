@@ -225,7 +225,6 @@ describe("PieceIcon", () => {
         humanColor="white"
         isActive
         placement="bottom"
-        playerAvatarLabel="G1"
         playerLabel="Guest E129"
         thinking={false}
         timeControl="rapid"
@@ -251,9 +250,9 @@ describe("PieceIcon", () => {
     );
 
     expect(customGuestCard).toContain("<strong>Guest E129</strong>");
-    expect(customGuestCard).toContain('class="player-avatar" aria-hidden="true">G1</div>');
+    expect(customGuestCard).toContain('class="player-dot" data-color="white" aria-hidden="true"');
     expect(customGuestCard).not.toContain("Your profile");
-    expect(fallbackGuestCard).toContain("<strong>Guest White</strong>");
+    expect(fallbackGuestCard).toContain("<strong>You</strong>");
     expect(fallbackGuestCard).not.toContain("Your profile");
   });
 
@@ -324,7 +323,7 @@ describe("PieceIcon", () => {
 
     expect(card).toContain('aria-label="Sente hand pieces"');
     expect(card).toContain('class="hand-tray"');
-    expect(card).toContain('aria-label="Sente hand: Drop \u6b69"');
+    expect(card).toContain('aria-pressed="true"');
     expect(card).toContain('aria-label="Drop \u6b69, 2 in hand"');
     expect(card).toContain('title="Tap or drag \u6b69 to a legal empty square. Nifu, dead-rank, check, and pawn-drop mate rules are checked."');
     expect(card).toContain('class="hand-piece-button focus-ring is-selected"');
@@ -377,12 +376,9 @@ describe("PieceIcon", () => {
     );
 
     expect(shogiCard).toContain('aria-label="Sente hand empty"');
-    expect(shogiCard).toContain('aria-label="Sente hand: 0"');
-    expect(shogiCard).toContain('class="hand-empty-pill"');
-    expect(shogiCard).toContain('aria-hidden="true"');
-    expect(shogiCard).toContain(">0</span>");
+    expect(shogiCard).toContain('class="hand-tray sr-only"');
+    expect(shogiCard).not.toContain('class="hand-empty-pill"');
     expect(crazyhouseCard).toContain('aria-label="White pocket empty"');
-    expect(crazyhouseCard).toContain('aria-label="White pocket: 0"');
   });
 
   test("keeps non-western pieces as strong native symbols", () => {

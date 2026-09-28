@@ -1,36 +1,41 @@
 import Link from "next/link";
-import { Settings } from "lucide-react";
-
-import { InfoHint } from "@/components/ui/info-hint";
-import type { RuntimeProfileHistory } from "@/lib/profile/runtime";
-import type { ProfileHistorySummary } from "@/lib/profile/summary";
+import { Settings, UserRound } from "lucide-react";
 
 type ProfileHeroProps = {
   displayName: string;
-  history: RuntimeProfileHistory;
+  isGuest: boolean;
   locale: string;
-  summary: ProfileHistorySummary;
+  settingsLabel: string;
+  signInLabel: string | null;
 };
 
-export function ProfileHero({ displayName, history, locale, summary }: ProfileHeroProps) {
+export function ProfileHero({ displayName, isGuest, locale, settingsLabel, signInLabel }: ProfileHeroProps) {
   return (
-    <div className="panel account-profile-hero">
+    <header className="profile-head">
       <div className="profile-avatar" aria-hidden="true">
-        {displayName.slice(0, 2).toUpperCase()}
+        {isGuest ? <UserRound size={20} aria-hidden="true" /> : initials(displayName)}
       </div>
-      <div className="min-w-0">
-        <p className="text-xs font-black uppercase tracking-wide text-[var(--muted)]">Profile & history</p>
-        <h1 className="truncate text-4xl font-black">{displayName}</h1>
-        <div className="account-profile-meta">
-          <span>{history.source === "d1" ? "Player profile" : "Guest-ready"}</span>
-          <span>{summary.bestRating ? `${Math.round(summary.bestRating)} peak` : "Unrated"}</span>
-          <InfoHint text="Your recorded matches and ratings. Device-only saves remain in the game library." />
-        </div>
+      <h1 className="acct-title">{displayName}</h1>
+      <div className="profile-head-actions">
+        {signInLabel ? (
+          <Link href={`/${locale}/login`} className="action-secondary focus-ring">
+            {signInLabel}
+          </Link>
+        ) : null}
+        <Link href={`/${locale}/settings`} className="icon-btn profile-settings-link focus-ring" aria-label={settingsLabel} title={settingsLabel}>
+          <Settings size={18} aria-hidden="true" />
+        </Link>
       </div>
-      <Link href={`/${locale}/settings`} className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-2">
-        <Settings size={16} />
-        Settings
-      </Link>
-    </div>
+    </header>
   );
+}
+
+function initials(name: string) {
+  const letters = name
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => Array.from(word)[0])
+    .join("");
+  return (letters || "?").toUpperCase();
 }

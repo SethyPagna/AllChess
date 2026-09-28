@@ -124,8 +124,9 @@ describe("native Shogi collections", () => {
     for (const code of shogiPromotedCodes) expect(size(code, true)).toBe(size(code));
   });
 
+  const promotionMove = { from: { row: 6, col: 1 }, to: { row: 7, col: 1 }, promotion: true };
   test.each(games)("%s promotion choices display both actual Hori faces and localized names", variantKey => {
-    const html = renderToStaticMarkup(<PromotionChoiceCard locale="ja" onChoose={() => {}} pieceCode="b" pieceLabel="角" pieceOwner="gote" pieceSkin="hori" promotedPieceLabel="馬" variantKey={variantKey}/>);
+    const html = renderToStaticMarkup(<PromotionChoiceCard locale="ja" onChoose={() => {}} options={[{ move: promotionMove, code: "b", promoted: true, label: "馬", actionLabel: "Promote to 馬" }, { move: { ...promotionMove, promotion: false }, code: "b", promoted: false, label: "角", actionLabel: "Keep 角" }]} pieceLabel="角" pieceOwner="gote" pieceSkin="hori" variantKey={variantKey}/>);
     expect(html).toContain('/assets/shogi/hori/bishop.webp');
     expect(html).toContain('/assets/shogi/hori/promoted-bishop.webp');
     expect(html).toContain('data-owner="gote"');

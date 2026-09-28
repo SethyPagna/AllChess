@@ -99,3 +99,12 @@ test("Kōnane save files preserve NPS and legacy rule profiles across undo and r
     expect(getLegalMoves(imported.state,{row:7,col:legacy?7:0})).toEqual(getLegalMoves(next,{row:7,col:legacy?7:0}));
   }
 });
+
+test("a file that names the game by an alias imports under the canonical key", () => {
+  const canonical = createInitialState("xiangqi", "alias-import");
+  const aliased = { ...canonical, variantKey: "chinese-chess" };
+  const imported = importLocalMatch(JSON.stringify(rawFile(snapshot(aliased))));
+  expect(imported.state.variantKey).toBe("xiangqi");
+  // The general stays royal, so the flying-general rule still limits the same pieces.
+  for (const square of [{ row: 9, col: 4 }, { row: 7, col: 1 }]) expect(getLegalMoves(imported.state, square)).toEqual(getLegalMoves(canonical, square));
+});

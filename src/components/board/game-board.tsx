@@ -6,6 +6,7 @@ import { readLocalMatch } from "@/lib/game/local-match-store";
 import { historicalPieceHint } from "./historical-piece";
 import { jungleRank, jungleTrapOwner, restoreJungleOpening, usesJungleStandardRules } from "@/lib/variants/jungle-profile";
 import { restoreKonaneOpening, usesKonaneNpsRules } from "@/lib/variants/konane-profile";
+import { restoreHordeOpening } from "@/lib/variants/horde-profile";
 import type { LocalMatchSnapshot } from "@/lib/game/local-match";
 import { downloadLocalMatch } from "@/lib/game/local-match-transfer";
 import { FriendChat } from "./friend-chat";
@@ -13,7 +14,6 @@ import { MatchArrivalPanel } from "./match-arrival-panel";
 import { useFriendRoom, saveFriendToken } from "./use-friend-room";
 import type { FriendRoomView } from "@/lib/realtime/friend-room";
 import dynamic from "next/dynamic";
-import { ChoicePicker } from "./choice-buttons";
 import { piece2DSkin, pieceSetOptions, readPiece2DStylePreference, readPieceSetPreference, resolvePiece2DStyle, resolvePieceSet, type Piece2DStyle, type PieceSetId } from "./piece-sets";
 import { MakrukCountingPanel, MakrukEndgamePicker } from "./makruk-counting-panel";
 import { applyMakrukCountAction, readMakrukHonorCount, makrukCountVersion, replayMakrukCountActions, usesMakrukHonorCount, type MakrukCountAction } from "@/lib/variants/makruk-counting";
@@ -24,28 +24,17 @@ import { applyOukCountAction, readOukCount, type OukCountAction } from "@/lib/va
 import { prepareOukBotTurn } from "@/lib/bot/ouk-counting";
 import { createOukEndgame, oukEndgames, type OukEndgameKey } from "@/lib/variants/ouk-endgames";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import {
-  Bot,
-  Brain,
-  Crown,
-  PauseCircle,
-  PlayCircle,
-  SkipBack,
-  SkipForward,
-  Sparkles,
-  Swords,
-  Undo2,
-  X,
-} from "lucide-react";
+import { LogOut, X } from "lucide-react";
 
-import { botDifficultyLevels, getBotDifficultyLevel, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/lib/bot/config";
+import { getBotDifficultyLevel, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/lib/bot/config";
 import { getVariantBotStrengthProfile } from "@/lib/bot/strength";
 import type { BotMoveResult } from "@/lib/bot/runtime";
 import { getCatalogModeSupport, getGameCatalogEntry, type CatalogModeSupport } from "@/lib/catalog";
-import { applyBotMoveAfterThinking, settleBotThinkingSnapshot } from "@/lib/game/bot-clock";
+import { applyBotMoveAfterThinking, botReplyHistoryFrame, withoutFlaggedBotFrame } from "@/lib/game/bot-clock";
 import { tickGameClock } from "@/lib/game/clocks";
 import { redoTimeline, redoTimelineUntil, undoTimeline, undoTimelineUntil } from "@/lib/game/history";
-import { buildMoveTimeline, summarizeMoves, type MoveTimelineEntry } from "@/lib/game/review";
+import { formatTimelineNotation } from "@/lib/game/notation";
+import { buildMoveTimeline, type MoveTimelineEntry } from "@/lib/game/review";
 import { describeGameOutcome } from "@/lib/game/outcome";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getVocabulary } from "@/lib/i18n/vocabulary";
@@ -53,23 +42,22 @@ import type { VariantRuleSummary } from "@/lib/variants/rules-atlas";
 import { getTimeControl, type TimeControlKey } from "@/lib/game/time-controls";
 import { JanggiLocalSetup, JanggiRoomSetup } from "./janggi-formation-picker";
 import { copyJanggiFormations, pendingJanggiSide, readJanggiFormations, restoreJanggiOpening, withJanggiFormation, type JanggiFormation, type JanggiSide } from "@/lib/variants/janggi-formations";
-import { applyMove, createInitialState, getLegalMoves, getVariant, sameSquare, serializeSquare, type GameState, type Move, type Piece, type Square } from "@/lib/variants";
+import { applyMove, createInitialState, getLegalMoves, getVariant, restoreChess960Opening, sameSquare, serializeSquare, type GameState, type Move, type Piece, type Square } from "@/lib/variants";
 import { BoardGrid } from "@/components/board/board-grid";
 import { BoardToolbar } from "@/components/board/board-toolbar";
 import { BoardPlayerCard } from "@/components/board/board-player-card";
 import { getDropRuleNote } from "@/components/board/drop-guidance";
 import { GameGuideModal } from "@/components/board/game-guide-modal";
 import { MatchResultOverlay } from "@/components/board/match-result-overlay";
-import { boardThemeOptions, getAppearancePresetOptions, isAppearancePresetPreference, resolveAppearancePreset, type AppearancePresetPreference } from "@/components/board/appearance";
+import { isAppearancePresetPreference, resolveAppearancePreset, type AppearancePresetPreference } from "@/components/board/appearance";
 import { PieceIcon, getPieceDisplayName, type PieceSkinPreference } from "@/components/board/piece-icon";
-import { PlayActiveSetupCard } from "@/components/board/play-active-setup-card";
 import { PlayChatPanel } from "@/components/board/play-chat-panel";
 import { PlayControlCard } from "@/components/board/play-control-card";
 import { PlayMatchHeader } from "@/components/board/play-match-header";
 import { PlayPregameSetupCard } from "@/components/board/play-pregame-setup-card";
-import { playModeOptions, type PanelTab, type PlayMode } from "@/components/board/game-board-options";
-import { colorLabel, formatMove, pickHumanColor, quickSuggestionMove, squareName, withTimeControl } from "@/components/board/game-board-utils";
-import { PlaySectionTabs } from "@/components/board/play-section-tabs";
+import { playModeOptions, type PlayMode } from "@/components/board/game-board-options";
+import { colorLabel, formatMove, pickHumanColor, quickSuggestionMove, resignationResult, squareName, withTimeControl } from "@/components/board/game-board-utils";
+import { PlayMoveList } from "@/components/board/play-move-list";
 
 import { get3DCollection, isPieceFinish, type PieceFinish } from "./board-3d-config";
 
@@ -140,13 +128,18 @@ type SuggestedMove = {
   depthReached: number;
 };
 
+export type PromotionOption = {
+  move: Move;
+  code: string;
+  promoted: boolean;
+  label: string;
+  actionLabel: string;
+};
+
 type PendingPromotion = {
-  keepMove: Move;
-  promoteMove: Move;
-  pieceCode: string;
+  options: PromotionOption[];
   pieceLabel: string;
   pieceOwner: Piece["owner"];
-  promotedPieceLabel: string;
 };
 
 type MatchmakingState =
@@ -219,6 +212,15 @@ function reviewRouteLabel(move: Move, files: string[], rows: number) {
   return `${squareName(move.from, files, rows)}-${target}${move.promotion ? "+" : ""}`;
 }
 
+/** Western games read best as plain SAN; elsewhere the piece icon carries the piece, so the letter is dropped. */
+function moveListEntry(move: ReviewMoveRow, notation: string | undefined, western: boolean) {
+  const base = { ply: move.ply, pieceLabel: move.pieceLabel };
+  if (move.kind === "pass" || notation === "pass") return { ...base, text: "Pass", piece: null };
+  if (notation && western) return { ...base, text: notation, piece: null };
+  if (notation) return { ...base, text: move.piece ? notation.replace(/^\+?[A-Z](?=[a-z*x])/, "") : notation, piece: move.piece };
+  return { ...base, text: move.captureCount ? move.routeLabel.replace("-", "×") : move.routeLabel, piece: move.piece };
+}
+
 function findPieceAt(state: GameState | undefined, square: Square) {
   return state?.board[square.row]?.[square.col]?.piece ?? null;
 }
@@ -246,12 +248,12 @@ export function DropSelectionHint({ legalTargetCount, onCancel, pieceCode, piece
 
 type PromotionChoiceCardProps = {
   locale: string;
-  onChoose: (promote: boolean) => void;
-  pieceCode: string;
+  onCancel?: () => void;
+  onChoose: (move: Move) => void;
+  options: PromotionOption[];
   pieceLabel: string;
   pieceOwner: Piece["owner"];
   pieceSkin: PieceSkinPreference;
-  promotedPieceLabel: string;
   variantKey: string;
 };
 
@@ -262,24 +264,37 @@ type TerrainKeyLegendProps = {
   locale?: string;
 };
 
-const terrainKeyOrder: TerrainKey[] = ["promotion-zone", "palace", "river", "den", "trap", "camp"];
+// Promotion zones and palaces are named on each square and in the guide; only terrain that changes how pieces move gets a key.
+const keyedTerrain: TerrainKey[] = ["river", "den", "trap", "camp"];
 
-export function PromotionChoiceCard({ locale, onChoose, pieceCode, pieceLabel, pieceOwner, pieceSkin, promotedPieceLabel, variantKey }: PromotionChoiceCardProps) {
+/** One button per legal outcome: promote/keep for optional promotions, or the piece to become (Q/R/B/N) in Western chess. */
+export function PromotionChoiceCard({ locale, onCancel, onChoose, options, pieceLabel, pieceOwner, pieceSkin, variantKey }: PromotionChoiceCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  // The choice blocks the move, so focus goes straight to it; Escape backs out to the board.
+  useEffect(() => { cardRef.current?.querySelector("button")?.focus({ preventScroll: true }); }, []);
   return (
-    <div className="promotion-choice-card" role="dialog" aria-label={`${pieceLabel} promotion choice`}>
+    <div
+      ref={cardRef}
+      className="promotion-choice-card"
+      role="dialog"
+      aria-label={`${pieceLabel} promotion choice`}
+      onKeyDown={(event) => {
+        if (event.key !== "Escape" || !onCancel) return;
+        event.stopPropagation();
+        onCancel();
+      }}
+    >
       <span>
         <strong>{pieceLabel}</strong>
         <small>Choose promotion</small>
       </span>
-      <div>
-        <button type="button" className="focus-ring" aria-label={`Promote to ${promotedPieceLabel}`} onClick={() => onChoose(true)}>
-          <PieceIcon code={pieceCode} owner={pieceOwner} pieceSkin={pieceSkin} variantKey={variantKey} locale={locale} promoted />
-          <span>Promote to {promotedPieceLabel}</span>
-        </button>
-        <button type="button" className="focus-ring" aria-label={`Keep ${pieceLabel}`} onClick={() => onChoose(false)}>
-          <PieceIcon code={pieceCode} owner={pieceOwner} pieceSkin={pieceSkin} variantKey={variantKey} locale={locale} />
-          <span>Keep {pieceLabel}</span>
-        </button>
+      <div data-count={options.length}>
+        {options.map((option) => (
+          <button key={option.actionLabel} type="button" className="focus-ring" aria-label={option.actionLabel} title={option.actionLabel} onClick={() => onChoose(option.move)}>
+            <PieceIcon code={option.code} owner={pieceOwner} pieceSkin={pieceSkin} variantKey={variantKey} locale={locale} promoted={option.promoted} />
+            <span>{option.label}</span>
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -290,7 +305,7 @@ export function TerrainKeyLegend({ terrainKeys, locale = "en" }: TerrainKeyLegen
   const terrainLabels = getVocabulary(normalizeLocale(locale)).terrain;
   return (
     <div className="terrain-key" aria-label="Board terrain key">
-      <span className="terrain-key-label">Zones</span>
+      <span className="sr-only">Zones</span>
       {terrainKeys.map((terrain) => (
         <span key={terrain} className="terrain-key-item" data-terrain={terrain}>
           <i aria-hidden="true" />
@@ -368,7 +383,9 @@ export function GameBoard({
 }) {
   const [timeControl, setTimeControl] = useState<TimeControlKey>(initialTimeControl);
   const [state, setState] = useState(() => withTimeControl(initialState ?? createInitialState(variantKey), initialTimeControl));
-  const [history, setHistory] = useState<GameState[]>([]);
+  const [recordedHistory, setHistory] = useState<GameState[]>([]);
+  // A bot reply can land just after the live clock flagged the bot and record that turn a second time.
+  const history = useMemo(() => withoutFlaggedBotFrame(recordedHistory, state), [recordedHistory, state]);
   const [future, setFuture] = useState<GameState[]>([]);
   const [boardView, setBoardView] = useState<"2d" | "3d">("2d");
   const [pieceFinish, setPieceFinish] = useState<PieceFinish>("original");
@@ -394,7 +411,6 @@ export function GameBoard({
   const [notice, setNotice] = useState<string | null>(null);
   const [showOutcome, setShowOutcome] = useState(true);
   const [showRules, setShowRules] = useState(false);
-  const [panelTab, setPanelTab] = useState<PanelTab>("setup");
   const [reviewPly, setReviewPly] = useState<number | null>(null);
   const [reviewPlaying, setReviewPlaying] = useState(false);
   const quickMatchToken = useRef("");
@@ -421,10 +437,17 @@ export function GameBoard({
     const historyKey = room.state.id + ":" + room.state.ply + ":" + makrukCountVersion(room.state);
     if (friendHistoryRef.current !== historyKey) {
       friendHistoryRef.current = historyKey;
-      let position = restoreJungleOpening(restoreKonaneOpening(restoreJanggiOpening(createInitialState(variantKey, room.state.id), room.state), room.state), room.state);
+      let position = restoreHordeOpening(restoreChess960Opening(restoreJungleOpening(restoreKonaneOpening(restoreJanggiOpening(createInitialState(variantKey, room.state.id), room.state), room.state), room.state), room.state), room.state);
       if (variantKey === "makruk" && !usesMakrukHonorCount(room.state)) delete position.variantState;
       const frames: GameState[] = [];
-      for (const move of room.state.moves) { position = replayMakrukCountActions(position, room.state); frames.push(position); position = applyMove(position, move); }
+      for (const move of room.state.moves) {
+        position = replayMakrukCountActions(position, room.state);
+        frames.push(position);
+        if (position.status !== "active") break;
+        // Rooms recorded before a rules fix can hold a move the engine now rejects; keep the
+        // history up to it rather than failing the whole sync (the live board is room.state).
+        try { position = applyMove(position, move); } catch { break; }
+      }
       setHistory(frames);
     }
     setTimeControl(getTimeControl(room.time).key);
@@ -462,7 +485,7 @@ export function GameBoard({
     setTimeControl(saved.settings.timeControl); setHumanColor(saved.settings.humanColor); setSeatChoice(saved.settings.seatChoice); setBoardOrientation(saved.settings.boardOrientation);
     setGameStarted(true); setLocalPaused(paused && saved.state.status === "active");
     setSelected(null); setSelectedHandCode(null); setPendingPromotion(null); setSuggestedMove(null);
-    setThinking({ status: "idle", label: "" }); setReviewPly(null); setReviewPlaying(false); setShowOutcome(false); setPanelTab("status"); setNotice(null); setRestoreError("");
+    setThinking({ status: "idle", label: "" }); setReviewPly(null); setReviewPlaying(false); setShowOutcome(false); setNotice(null); setRestoreError("");
     setIgnoreInitialRoom(true); setRoomCreation({ status: "idle" }); setMatchmaking({ status: "idle" });
   }, [variantKey, adoptLocalSave]);
   useEffect(() => {
@@ -535,10 +558,8 @@ export function GameBoard({
 
   const timeline = useMemo(() => (history.length ? [...history, state] : [state]), [history, state]);
   const reviewMoves = useMemo(() => buildMoveTimeline(state.moves, timeline), [state.moves, timeline]);
-  const reviewSummary = useMemo(() => summarizeMoves(reviewMoves), [reviewMoves]);
   const displayPly = reviewPly ?? timeline.length - 1;
   const displayState = timeline[Math.min(displayPly, timeline.length - 1)] ?? state;
-  const activeReviewMove = displayPly > 0 ? reviewMoves[displayPly - 1] : null;
   const isReviewing = reviewPly !== null;
   const terrainKeys = useMemo(() => {
     const present = new Set<TerrainKey>();
@@ -547,7 +568,7 @@ export function GameBoard({
         if (cell.terrain && cell.terrain !== "land") present.add(cell.terrain);
       }
     }
-    return terrainKeyOrder.filter((terrain) => present.has(terrain));
+    return keyedTerrain.filter((terrain) => present.has(terrain));
   }, [displayState.board]);
   const selectedHandPiece = useMemo(() => (selectedHandCode ? createHandDropPiece(state.turn, selectedHandCode) : null), [selectedHandCode, state.turn]);
   const legalMoves = useMemo(() => (selected ? getLegalMoves(state, selected) : selectedHandPiece ? getLegalMoves(state, { drop: selectedHandPiece }) : []), [selected, selectedHandPiece, state]);
@@ -557,9 +578,9 @@ export function GameBoard({
   const rows = displayState.board.length;
   const cols = displayState.board[0]?.length ?? 8;
   const files = useMemo(() => Array.from({ length: cols }, (_, index) => String.fromCharCode(97 + index)), [cols]);
+  const moveNotations = useMemo(() => formatTimelineNotation(timeline, state.moves), [state.moves, timeline]);
   const reviewMoveRows = useMemo(() => buildReviewMoveRows({ files, locale, moves: reviewMoves, rawMoves: state.moves, rows, timeline, variantKey: displayState.variantKey }), [displayState.variantKey, files, locale, reviewMoves, rows, state.moves, timeline]);
   const botLevel = getBotDifficultyLevel(botDifficulty);
-  const appearanceOptions = useMemo(() => getAppearancePresetOptions(variantKey), [variantKey]);
   const appearance = useMemo(() => resolveAppearancePreset(variantKey, appearancePreset), [appearancePreset, variantKey]);
   const boardTheme = appearance.boardTheme;
   const pieceSkin = piece2DSkin(variantKey, pieceSet, appearance.pieceSkin, piece2DStyle);
@@ -636,8 +657,7 @@ export function GameBoard({
         locale={locale}
         onHandPieceClick={(code) => chooseHandPiece(color, code)}
         pieceSkin={pieceSkin}
-        playerAvatarLabel={isBotSeat ? "AI" : isHumanSeat ? "YOU" : "G2"}
-        playerLabel={isBotSeat ? undefined : guestName}
+        playerLabel={isBotSeat ? undefined : localGame ? (botMode === "opponent" ? undefined : colorLabel(color)) : guestName}
         placement={placement}
         selectedHandCode={!isReviewing && color === state.turn ? selectedHandCode : null}
         supportsDrops={supportsDrops}
@@ -756,17 +776,21 @@ export function GameBoard({
   }
 
   function commitMoveChoice(candidates: Move[], piece?: Piece | null) {
+    const pieceChoices = candidates.filter((candidate) => candidate.promoteTo !== undefined);
     const promoteMove = candidates.find((candidate) => candidate.promotion === true);
     const keepMove = candidates.find((candidate) => candidate.promotion !== true);
-    if (promoteMove && keepMove && piece) {
-      setPendingPromotion({
-        keepMove,
-        promoteMove,
-        pieceCode: piece.code,
-        pieceLabel: getPieceDisplayName(piece.code, variantKey, locale, piece.promoted),
-        pieceOwner: piece.owner,
-        promotedPieceLabel: getPieceDisplayName(piece.code, variantKey, locale, true)
-      });
+    if (piece && (pieceChoices.length > 1 || (promoteMove && keepMove))) {
+      const pieceLabel = getPieceDisplayName(piece.code, variantKey, locale, piece.promoted);
+      const options: PromotionOption[] = pieceChoices.length > 1
+        ? pieceChoices.map((move) => {
+            const label = getPieceDisplayName(move.promoteTo!, variantKey, locale);
+            return { move, code: move.promoteTo!, promoted: false, label, actionLabel: `Promote to ${label}` };
+          })
+        : [
+            { move: promoteMove!, code: piece.code, promoted: true, label: `Promote to ${getPieceDisplayName(piece.code, variantKey, locale, true)}`, actionLabel: `Promote to ${getPieceDisplayName(piece.code, variantKey, locale, true)}` },
+            { move: keepMove!, code: piece.code, promoted: false, label: `Keep ${pieceLabel}`, actionLabel: `Keep ${pieceLabel}` }
+          ];
+      setPendingPromotion({ options, pieceLabel, pieceOwner: piece.owner });
       setNotice(null);
       return true;
     }
@@ -819,24 +843,21 @@ export function GameBoard({
   function choose(square: Square) {
     if (!gameStarted) {
       setNotice("Choose a mode and press Start Game first.");
-      setPanelTab("setup");
       setPendingPromotion(null);
       return;
     }
     if (isReviewing) {
-      setNotice("Review mode is showing a saved position. Jump to live to keep playing.");
+      setNotice("You are reviewing an earlier position. Press the last-move button to return to the game.");
       setPendingPromotion(null);
       return;
     }
     if (isOnlineMode && !isMatchedOnlineGame) {
       setNotice("Searching for opponent. Board moves unlock after a live opponent is paired.");
-      setPanelTab("status");
       setPendingPromotion(null);
       return;
     }
     if (isSpectating) {
       setNotice("Spectate mode is read-only. Choose a playable mode to move pieces.");
-      setPanelTab("status");
       setPendingPromotion(null);
       return;
     }
@@ -870,9 +891,25 @@ export function GameBoard({
     setSelected(cell?.piece?.owner === state.turn ? square : null);
   }
 
-  function choosePromotion(promote: boolean) {
+  function focusBoardSquare(square: Square) {
+    document.querySelector<HTMLButtonElement>(`.board-grid [data-square="${squareName(square, files, rows)}"]`)?.focus({ preventScroll: true });
+  }
+
+  function choosePromotion(move: Move) {
     if (!pendingPromotion) return;
-    commitPlayerMove(promote ? pendingPromotion.promoteMove : pendingPromotion.keepMove);
+    // The clock may have run out while the picker was open; the move can no longer be played.
+    if (state.status !== "active") {
+      setPendingPromotion(null);
+      return;
+    }
+    commitPlayerMove(move);
+    focusBoardSquare(move.to);
+  }
+
+  function cancelPromotion() {
+    const from = pendingPromotion?.options[0]?.move.from;
+    setPendingPromotion(null);
+    if (from) focusBoardSquare(from);
   }
 
   const finishBotRequest = useCallback(
@@ -892,12 +929,13 @@ export function GameBoard({
       }
 
       const move = result.move;
-      const historySnapshot = settleBotThinkingSnapshot(snapshot, result.elapsedMs);
-      setHistory((current) => [...current, historySnapshot]);
+      const historySnapshot = botReplyHistoryFrame(snapshot, result.elapsedMs);
+      if (historySnapshot) setHistory((current) => [...current, historySnapshot]);
       setFuture([]);
       setState((current) => applyBotMoveAfterThinking(current, snapshot, move, result.elapsedMs));
       setSuggestedMove(null);
-      setNotice(source === "auto" ? "Bot replied automatically." : "Bot played the current side.");
+      // No frame means the bot's clock ran out while it was thinking, so the move was never played.
+      setNotice(!historySnapshot ? "The bot ran out of time." : source === "auto" ? "Bot replied automatically." : "Bot played the current side.");
       setSelected(null);
       setSelectedHandCode(null);
       setPendingPromotion(null);
@@ -989,9 +1027,18 @@ export function GameBoard({
     setPendingPromotion(null);
     setSuggestedMove(null);
     setNotice("Suggestion applied.");
-    setPanelTab("status");
     setReviewPly(null);
     setReviewPlaying(false);
+  }
+
+  /** Switching a bot mode off is always allowed and stops any search it started. */
+  function toggleBotMode(mode: "opponent" | "both") {
+    if (botMode === mode) {
+      if (activeBotRequestRef.current) cancelThinking();
+      setBotMode("human");
+      return;
+    }
+    setBotMode(mode);
   }
 
   function cancelThinking() {
@@ -1031,11 +1078,11 @@ export function GameBoard({
     const requestId = activeBotRequestRef.current;
     if (requestId) cancelRuntimeBotMove(requestId);
     activeBotRequestRef.current = null;
-    const winner = state.clocks.find((clock) => clock.color !== state.turn)?.color;
+    const result = resignationResult(state, humanColor, isBotMode && botMode === "opponent");
     setState((current) => ({
       ...current,
       status: "completed",
-      result: winner ?? "draw",
+      result,
       outcomeReason: "resignation"
     }));
     setFuture([]);
@@ -1104,11 +1151,16 @@ export function GameBoard({
     setNotice(null);
     setThinking({ status: "idle", label: "" });
     setShowOutcome(false);
-    setPanelTab("setup");
     setReviewPly(null);
     setReviewPlaying(false);
     setMatchmaking({ status: "idle" });
     setRoomCreation({ status: "idle" });
+  }
+
+  /** Reset from a control that unmounts with the game, so keyboard focus lands on the setup's Start button. */
+  function returnToSetup() {
+    reset();
+    window.requestAnimationFrame(() => sidePanelRef.current?.querySelector<HTMLElement>(".play-start-button")?.focus());
   }
 
   function leaveUnplayedMatch() {
@@ -1123,7 +1175,7 @@ export function GameBoard({
     setPlayMode("online"); setBotMode("human"); setSeatChoice("random"); setBoardOrientation("auto");
     if (search) {
       quickMatchToken.current = crypto.randomUUID() + crypto.randomUUID();
-      setState(current => ({ ...current, status: "waiting" })); setGameStarted(true); setPanelTab("status");
+      setState(current => ({ ...current, status: "waiting" })); setGameStarted(true);
       setNotice("Finding another opponent with the same game and clock…");
     }
   }
@@ -1149,7 +1201,6 @@ export function GameBoard({
     setNotice(null);
     setThinking({ status: "idle", label: "" });
     setShowOutcome(false);
-    setPanelTab("setup");
     setReviewPly(null);
     setReviewPlaying(false);
     setRoomCreation({ status: "idle" });
@@ -1164,7 +1215,7 @@ export function GameBoard({
     setSeatChoice(nextChoice);
     const nextColor = nextChoice === "random" && !gameStarted ? firstColor : pickHumanColor(state, nextChoice);
     setHumanColor(nextColor);
-    setNotice(nextChoice === "random" && !gameStarted ? "Random side will be chosen when the game starts." : `You are playing ${colorLabel(nextColor)}.`);
+    setNotice(null);
   }
 
   function startGame() {
@@ -1192,7 +1243,6 @@ export function GameBoard({
           : { status: "creating" }
         : { status: "idle" }
     );
-    setPanelTab("status");
     setNotice(
       playMode === "online"
         ? "Finding an opponent for a casual game. Sides are assigned when paired."
@@ -1222,7 +1272,7 @@ export function GameBoard({
       if (!response.ok) throw new Error(data.error);
       if (data.match) { enterMatchedRoom(data.match.roomId, token); return; }
       if (!data.left) throw new Error("Cancellation not confirmed.");
-      setMatchmaking({ status: "idle" }); setGameStarted(false); setState(current => ({ ...current, status: "waiting" })); setPanelTab("setup");
+      setMatchmaking({ status: "idle" }); setGameStarted(false); setState(current => ({ ...current, status: "waiting" }));
       setNotice("Search cancelled. Start again when ready.");
     } catch { if (token === quickMatchToken.current) setNotice("Cancellation not confirmed. Reconnect and try again."); }
     finally { cancellingSearchRef.current = false; setCancellingSearch(false); }
@@ -1241,23 +1291,11 @@ export function GameBoard({
     if (nextMode !== "bot") {
       setBotMode("human");
     }
-    if (nextMode === "online") {
-      setNotice("Quick Match finds an opponent for a casual game with your selected clock.");
-    } else if (nextMode === "room") {
-      setNotice("Room setup selected. Bot controls are disabled while waiting for a player.");
-    } else if (nextMode === "spectate") {
-      setNotice("Spectate mode selected. Bot controls are disabled while you watch rooms.");
-    } else {
-      setNotice(null);
-    }
+    setNotice(null);
   }
 
   function flipBoard() {
-    setBoardOrientation((current) => {
-      const next = current === "second" ? "first" : "second";
-      setNotice(`Board view flipped to ${next === "second" ? colorLabel(secondColor) : colorLabel(firstColor)} side.`);
-      return next;
-    });
+    setBoardOrientation((current) => (current === "second" ? "first" : "second"));
   }
 
   function startReview() {
@@ -1266,14 +1304,14 @@ export function GameBoard({
     setSelected(null);
     setSelectedHandCode(null);
     setSuggestedMove(null);
-    setNotice("Review mode opened. Use playback controls to inspect each position.");
+    setNotice(null);
   }
 
   function jumpToLive() {
     setReviewPly(null);
     setReviewPlaying(false);
     setSelectedHandCode(null);
-    setNotice("Back to current board.");
+    setNotice(null);
   }
 
   function setReviewCursor(nextPly: number) {
@@ -1413,25 +1451,72 @@ export function GameBoard({
     return () => window.clearInterval(timer);
   }, [gameStarted, localPaused, isSearchingOnline, isWatchingMode, playMode]);
 
+  // The live clock can flag the bot mid-search; its late reply must not play a move.
+  useEffect(() => {
+    const requestId = activeBotRequestRef.current;
+    if (state.status === "active" || !requestId) return;
+    cancelRuntimeBotMove(requestId);
+    activeBotRequestRef.current = null;
+    setThinking({ status: "idle", label: "" });
+  }, [state.status]);
+
   const historicalHint = historicalPieceHint(variantKey, selected ? displayState.board[selected.row]?.[selected.col]?.piece?.code : undefined);
   const selectedAnimal = variantKey === "jungle" && selected ? displayState.board[selected.row]?.[selected.col]?.piece : null;
   const trappedAnimal = selectedAnimal && selected && usesJungleStandardRules(displayState) && jungleTrapOwner(selected) && jungleTrapOwner(selected) !== selectedAnimal.owner;
   const animalHint = selectedAnimal ? `${getPieceDisplayName(selectedAnimal.code, variantKey, locale)} · ${trappedAnimal ? "in enemy trap · any animal can capture it" : `rank ${jungleRank(selectedAnimal.code, usesJungleStandardRules(displayState))} · ${selectedAnimal.code === "r" ? "swims · captures elephants on land" : ["l", "t"].includes(selectedAnimal.code) ? "jumps rivers unless a rat blocks the way" : "one square horizontally or vertically"}`}` : "";
 
+  const showSaveBar = gameStarted && localGame && (localPaused || localSave.status === "error" || localSave.status === "conflict");
+  const view3DLabel = collection3D === "jungle" ? "3D animals" : collection3D === "shatranj" ? "3D ceramic" : collection3D === "konane" ? "3D stones" : collection3D === "draughts" ? "3D counters" : collection3D === "xiangqi" ? "3D discs" : collection3D === "shogi" || collection3D === "janggi" ? "3D tiles" : "3D carved";
+  const originalFinishLabel = pieceSetLabel ?? (collection3D === "jungle" ? "Ivory & jade" : collection3D === "shatranj" ? "Stonepaste" : collection3D === "chaturanga" ? "Sandalwood & rosewood" : collection3D === "konane" ? "Natural stone" : collection3D === "shogi" || collection3D === "xiangqi" ? "Boxwood" : collection3D === "janggi" ? "Ivory" : collection3D === "makruk" ? "Thai lacquer" : "Original");
+  const moveListEntries = reviewMoveRows.map((move) => moveListEntry(move, moveNotations[move.ply - 1], getVariant(displayState.variantKey).family === "western"));
+  const statusNote = thinking.status === "thinking" ? thinking.label : notice ?? (suggestedMove ? `Hint: ${suggestedMove.notation}` : null);
+  function exportLocalGame() {
+    try { downloadLocalMatch(localSnapshot); setRestoreError(""); } catch (cause) { setRestoreError(cause instanceof Error ? cause.message : "This game could not be exported."); }
+  }
+  function toggleReviewPlayback() {
+    if (!reviewPlaying && reviewPly === null) setReviewPly(0);
+    setReviewPlaying((current) => !current);
+  }
+
   return (
-    <div className="game-board-layout game-studio grid gap-4" data-focus={focusMode && gameStarted ? "true" : undefined} style={{ "--board-ratio": cols / rows } as CSSProperties}>
-      <div className="board-column grid gap-3">
+    <div className="game-board-layout game-studio" data-focus={focusMode && gameStarted ? "true" : undefined} data-started={gameStarted ? "true" : undefined} style={{ "--board-ratio": cols / rows } as CSSProperties}>
+      <div className="board-column">
         {restoreError ? <p className="local-save-error" role="alert">{restoreError}</p> : null}
-        {gameStarted && localGame ? <div className="local-save-bar" role="status" aria-label="Local save status">
-          <span>{localSave.status === "error" || localSave.status === "conflict" ? localSave.error : localPaused ? "Paused · your clock waits for you" : (localSave.status === "saving" || localSave.status === "idle") ? "Saving on this device…" : "Saved on this device"}</span>
+        {showSaveBar ? <div className="local-save-bar" role="status" aria-label="Local save status">
+          <span>{localSave.status === "error" || localSave.status === "conflict" ? localSave.error : "Paused · your clock waits for you"}</span>
           {localSave.status === "conflict" ? <><button type="button" className="focus-ring" onClick={() => void reloadLocalSave()}>Open latest save</button><button type="button" className="focus-ring" onClick={keepLocalCopy}>Keep this board as a copy</button></> : <>
             {localSave.status === "error" ? <button type="button" className="focus-ring" onClick={() => localSave.retry(localSnapshot)}>Retry save</button> : null}
-            {state.status === "active" ? <button type="button" className="focus-ring" onClick={() => localPaused ? setLocalPaused(false) : pauseLocalGame()}>{localPaused ? "Resume game" : "Pause"}</button> : null}
+            {localPaused && state.status === "active" ? <button type="button" className="focus-ring action-primary" onClick={() => setLocalPaused(false)}>Resume game</button> : null}
           </>}
-          <button type="button" className="focus-ring" onClick={() => { try { downloadLocalMatch(localSnapshot); setRestoreError(""); } catch (cause) { setRestoreError(cause instanceof Error ? cause.message : "This game could not be exported."); } }}>Export game</button>
         </div> : null}
-        <BoardToolbar pieceSet={pieceSet} onPieceSetChange={changePieceSet} piece2DStyle={piece2DStyle} onPiece2DStyleChange={changePiece2DStyle} is3D={boardView === "3d" && !!collection3D} variantKey={variantKey} appearancePreset={appearancePreset} onAppearanceChange={changeAppearancePreset} onFlip={flipBoard} onGuide={rulesSummary ? () => setShowRules(true) : undefined} focusMode={focusMode && gameStarted} onFocusChange={() => setFocusMode((current) => !current)} canFocus={gameStarted} />
-        {collection3D ? <div className="board-view-buttons" role="group" aria-label="Board view"><button type="button" className="focus-ring" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D board</button><button type="button" className="focus-ring" aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>{collection3D === "jungle" ? "3D animals" : collection3D === "shatranj" ? "3D ceramic" : collection3D === "konane" ? "3D stones" : collection3D === "draughts" ? "3D counters" : collection3D === "xiangqi" ? "3D discs" : collection3D === "shogi" || collection3D === "janggi" ? "3D tiles" : "3D carved"}</button>{boardView === "3d" ? <div role="group" aria-label="Piece material" className="board-finish-buttons">{(["original", "porcelain", "slate"] as const).map(finish => <button key={finish} type="button" className="focus-ring" aria-pressed={pieceFinish === finish} onClick={() => changePieceFinish(finish)}>{finish === "original" ? pieceSetLabel ?? (collection3D === "jungle" ? "Ivory & jade" : collection3D === "shatranj" ? "Stonepaste" : collection3D === "chaturanga" ? "Sandalwood & rosewood" : collection3D === "konane" ? "Natural stone" : collection3D === "shogi" || collection3D === "xiangqi" ? "Boxwood" : collection3D === "janggi" ? "Ivory" : collection3D === "makruk" ? "Thai lacquer" : "Original") : finish === "porcelain" ? "Porcelain" : "Slate"}</button>)}</div> : null}</div> : null}
+        <BoardToolbar
+          pieceSet={pieceSet}
+          onPieceSetChange={changePieceSet}
+          piece2DStyle={piece2DStyle}
+          onPiece2DStyleChange={changePiece2DStyle}
+          is3D={boardView === "3d" && !!collection3D}
+          variantKey={variantKey}
+          appearancePreset={appearancePreset}
+          onAppearanceChange={changeAppearancePreset}
+          onFlip={flipBoard}
+          focusMode={focusMode && gameStarted}
+          onFocusChange={() => setFocusMode((current) => !current)}
+          canFocus={gameStarted}
+          viewControls={collection3D ? (
+            <div className="segmented board-view-toggle" role="group" aria-label="Board view">
+              <button type="button" className="focus-ring" aria-label="2D board" aria-pressed={boardView === "2d"} onClick={() => changeBoardView("2d")}>2D</button>
+              <button type="button" className="focus-ring" aria-label={view3DLabel} aria-pressed={boardView === "3d"} onClick={() => changeBoardView("3d")}>3D</button>
+            </div>
+          ) : null}
+          panelControls={boardView === "3d" && collection3D ? (
+            <>
+              <div className="board-look-heading"><strong>Material</strong></div>
+              <div role="group" aria-label="Piece material" className="board-finish-buttons">
+                {(["original", "porcelain", "slate"] as const).map(finish => <button key={finish} type="button" className="focus-ring" aria-pressed={pieceFinish === finish} onClick={() => changePieceFinish(finish)}>{finish === "original" ? originalFinishLabel : finish === "porcelain" ? "Porcelain" : "Slate"}</button>)}
+              </div>
+            </>
+          ) : null}
+        />
         {friendId && gameStarted ? friend.room?.arrival ? <MatchArrivalPanel room={friend.room} connected={friend.connection === "connected"} busy={friend.busy} error={friend.error} onCancel={leaveUnplayedMatch} onFindAnother={() => findAnotherOpponent(true)} onSetup={() => findAnotherOpponent(false)} onReconnect={friend.reconnect} /> : <div className="room-live-status" role="status">
           <span>{friend.connection !== "connected"
             ? friend.connection === "offline" ? state.status === "waiting" || timeControl === "freestyle" ? "You’re offline · waiting for a connection" : "You’re offline · the room clock continues" : friend.connection === "connecting" ? "Connecting to your room…" : friend.connection === "unavailable" ? friend.error : "Reconnecting · checking the latest board…"
@@ -1451,13 +1536,8 @@ export function GameBoard({
           <div className="board-stage">
             {boardView === "3d" && collection3D ? <Board3D key={`${variantKey}:${pieceSet}`} pieceSet={pieceSet} collection={collection3D} variantKey={variantKey} orientedRows={orientedRows} legalTargets={legalTargets} selected={selected} onChoose={choose} boardTheme={boardTheme} lastMove={displayState.moves.at(-1)} finish={pieceFinish} hands={displayState.hands} selectedHand={!isReviewing && selectedHandCode ? { owner: state.turn, code: selectedHandCode } : null} onChooseHand={chooseHandPiece} onFallback={() => changeBoardView("2d")} /> : <BoardGrid cols={cols} files={files} legalTargets={legalTargets} legalTargetMode={selectedHandPiece ? "drop" : "move"} locale={locale} onChoose={choose} onDragMove={dragBoardMove} onDropHandPiece={dropHandPiece} orientedRows={orientedRows} pieceSkin={pieceSkin} rows={rows} selected={selected} suggestedMove={suggestedMove} lastMove={displayState.moves.at(-1)} variantKey={displayState.variantKey} />}
             {selectedHandCode && selectedHandLabel ? <DropSelectionHint legalTargetCount={legalTargets.size} locale={locale} onCancel={cancelHandDrop} pieceCode={selectedHandCode} pieceLabel={selectedHandLabel} pieceOwner={state.turn} pieceSkin={pieceSkin} variantKey={displayState.variantKey} /> : null}
-            {pendingPromotion ? (
-              <PromotionChoiceCard locale={locale} onChoose={choosePromotion} pieceCode={pendingPromotion.pieceCode} pieceLabel={pendingPromotion.pieceLabel} pieceOwner={pendingPromotion.pieceOwner} pieceSkin={pieceSkin} promotedPieceLabel={pendingPromotion.promotedPieceLabel} variantKey={displayState.variantKey} />
-            ) : null}
-            {!gameStarted ? (
-              <div className="pregame-board-overlay" role="status">
-                <button type="button" className="focus-ring" aria-label="Open game setup" onClick={() => { setPanelTab("setup"); sidePanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }); }}><strong>Choose setup first</strong></button>
-              </div>
+            {pendingPromotion && state.status === "active" ? (
+              <PromotionChoiceCard locale={locale} onCancel={cancelPromotion} onChoose={choosePromotion} options={pendingPromotion.options} pieceLabel={pendingPromotion.pieceLabel} pieceOwner={pendingPromotion.pieceOwner} pieceSkin={pieceSkin} variantKey={displayState.variantKey} />
             ) : null}
             {outcome && !isReviewing ? (
               <MatchResultOverlay
@@ -1482,259 +1562,136 @@ export function GameBoard({
         {playerCard(bottomPlayerColor, "bottom")}
       </div>
 
-      <aside ref={sidePanelRef} className="game-side-panel play-panel grid content-start gap-4 p-4">
+      <aside ref={sidePanelRef} className="game-side-panel play-panel">
         <PlayMatchHeader
           localOnly={localOnly}
           currentVariantKey={variantKey}
           locale={locale}
           onOpenGuide={() => setShowRules(true)}
-          onSelectRoom={() => {
-            selectPlayMode("room");
-            setPanelTab("setup");
-            setNotice("Room setup selected. Bot controls are disabled while waiting for a player.");
-          }}
-          onSelectWatch={() => {
-            selectPlayMode("spectate");
-            setPanelTab("setup");
-          }}
+          onSelectRoom={() => selectPlayMode("room")}
+          onSelectWatch={() => selectPlayMode("spectate")}
           playMode={playMode}
           roomId={chatRoomId}
           showGuide={Boolean(rulesSummary)}
           timeControl={timeControl}
           title={title}
         />
-        {!gameStarted && localGame && !localOnly ? <SavedMatches locale={locale} variantKey={variantKey} onResume={restoreLocalGame} /> : null}
-        <PlaySectionTabs activeTab={panelTab} onChange={setPanelTab} />
-        <div className="play-tab-panel">
-          {panelTab === "setup" ? (
-            gameStarted ? (
-              <PlayActiveSetupCard modeLabel={modeDetails.label} onReset={reset} onShowStatus={() => setPanelTab("status")} timeControlLabel={getTimeControl(timeControl).label} />
-            ) : (
-              <><PlayPregameSetupCard
-                gameSetup={variantKey === "janggi" && localGame ? <JanggiLocalSetup values={readJanggiFormations(state)} onChange={changeJanggiFormation} /> : undefined}
-                joiningRoom={Boolean(inviteRoomId)}
-                botDifficulty={botDifficulty}
-                botLevelLabel={botLevel.label}
-                botStrengthDisplay={botStrength.display}
-                botStrengthLabel={botCalibrationLabel}
-                botTargetElo={botStrength.targetElo}
-                firstColorLabel={colorLabel(firstColor)}
-                isBotMode={isBotMode}
-                onBotDifficultyChange={setBotDifficulty}
-                onModeChange={selectPlayMode}
-                onSeatChoiceChange={changeSeatChoice}
-                onStartGame={startGame}
-                onTimeControlChange={changeTimeControl}
-                playMode={playMode}
-                modeSupport={modeSupport}
-                seatChoice={seatChoice}
-                secondColorLabel={colorLabel(secondColor)}
-                timeControl={timeControl}
-              />
-              {variantKey === "ouk-chaktrang" && (playMode === "offline" || playMode === "bot") ? <OukEndgamePicker onChoose={loadOukEndgame} /> : null}
-              {variantKey === "makruk" && (playMode === "offline" || playMode === "bot") ? <MakrukEndgamePicker onChoose={loadMakrukEndgame} /> : null}</>
-            )
-          ) : null}
-          {panelTab === "status" ? (
-            <div className="grid gap-3">
+        {gameStarted ? (
+          <>
+            <div className="match-meta" aria-label="Match details">
+              <span>{modeDetails.label}</span>
+              {isBotMode ? <span title={`${botStrength.display} · ${botCalibrationLabel}`}>{botLevel.label}</span> : null}
+              <span>{getTimeControl(timeControl).label}</span>
+              {localGame ? <span className="match-save" data-state={localSave.status}>{localSave.status === "error" || localSave.status === "conflict" ? "Not saved" : localSave.status === "saved" ? "Saved" : "Saving…"}</span> : null}
+              {isSpectating ? <button type="button" className="focus-ring icon-btn match-exit" aria-label="Stop watching" title="Stop watching" onClick={returnToSetup}><LogOut size={15} /></button> : null}
+            </div>
+            {isOnlineMode ? (
+              <div className="online-search-card" role="status" aria-label="Online matchmaking status">
+                <div>
+                  <strong>
+                    {playMode === "room"
+                      ? roomCreation.status === "creating"
+                        ? "Creating room…"
+                        : roomCreation.status === "failed" ? "Room unavailable"
+                        : friend.room?.arrival ? friend.room.arrival.status === "waiting" ? "Waiting for arrival" : "Match closed" : friend.room?.playerCount === 2 ? friend.room.matched ? "Opponent connected" : "Friend connected" : "Room ready"
+                      : matchmaking.status === "matched"
+                        ? "Opponent matched"
+                        : "Finding an opponent…"}
+                  </strong>
+                  <span>
+                    {playMode === "room"
+                      ? roomCreation.status === "ready"
+                        ? friend.room?.arrival ? friend.room.arrival.status === "waiting" ? "Play begins when both players connect." : "No game was played." : friend.room?.playerCount === 2 ? "Both seats are taken." : "Use Share to send the invite link."
+                        : roomCreation.status === "failed" ? roomCreation.message : "Preparing invite and spectator links."
+                      : matchmaking.status === "matched"
+                        ? `Room ${matchmaking.roomId.slice(0, 8)}`
+                        : matchmaking.status === "failed"
+                          ? matchmaking.message
+                          : `${getTimeControl(timeControl).label} · casual${onlineTicketLabel ? ` · ${onlineTicketLabel}` : ""}`}
+                  </span>
+                </div>
+                {playMode === "online" && matchmaking.status !== "matched" ? (
+                  <button type="button" className="focus-ring action-secondary" disabled={cancellingSearch} onClick={() => void cancelOnlineSearch()}>
+                    <X size={14} />
+                    <span>Cancel</span>
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
+            <PlayMoveList
+              entries={moveListEntries}
+              activePly={displayPly}
+              reviewing={isReviewing}
+              playing={reviewPlaying}
+              locale={locale}
+              pieceSkin={pieceSkin}
+              variantKey={displayState.variantKey}
+              onSelect={setReviewCursor}
+              onLive={jumpToLive}
+              onTogglePlay={toggleReviewPlayback}
+            />
+            {isSpectating ? null : (
               <PlayControlCard
-              showAppearance={!pieceSetOptions(variantKey).length && (boardView !== "3d" || !collection3D)}
-                botLevelLabel={botLevel.label}
                 botMode={botMode}
-                appearancePreset={appearancePreset}
-                appearanceOptions={appearanceOptions}
-                boardTheme={boardTheme}
-                boardThemeOptions={boardThemeOptions}
                 canEndGame={canEndGame}
                 canRedo={canRedo}
                 canUndo={canUndo}
                 canUseAssist={canUseAssist}
                 canUseBots={canUseBots}
-                gameStarted={gameStarted}
                 isThinking={isThinking}
+                paused={localPaused}
+                suggestedMoveReady={Boolean(suggestedMove)}
                 onApplySuggestion={applySuggestion}
                 onCancelThinking={cancelThinking}
-                onFlipBoard={flipBoard}
+                onExport={localGame ? exportLocalGame : undefined}
                 onMoveForCurrentSide={() => void playBotMove("manual")}
                 onOfferDraw={offerDraw}
-                onAppearancePresetChange={changeAppearancePreset}
                 onRedo={redo}
                 onResign={resignGame}
-                onReset={reset}
+                onReset={returnToSetup}
                 onSuggest={suggestMove}
-                onToggleAuto={() => setBotMode((current) => (current === "both" ? "human" : "both"))}
-                onToggleBot={() => {
-                  setBotMode((current) => {
-                    const next = current === "opponent" ? "human" : "opponent";
-                    setNotice(next === "opponent" ? "Bot opponent is on. Make a move and the bot will reply automatically." : "Bot opponent is off.");
-                    setPanelTab("status");
-                    return next;
-                  });
-                }}
+                onToggleAuto={() => toggleBotMode("both")}
+                onToggleBot={() => toggleBotMode("opponent")}
+                onTogglePause={localGame && state.status === "active" ? () => (localPaused ? setLocalPaused(false) : pauseLocalGame()) : undefined}
                 onUndo={undo}
-                pieceSkin={pieceSkin}
-                suggestedMoveReady={Boolean(suggestedMove)}
-                variantKey={displayState.variantKey}
               />
-              <div className="play-table-card">
-                {thinking.status === "thinking" ? <p className="mt-1 text-sm font-bold text-[var(--info)]">{thinking.label}</p> : null}
-                {isOnlineMode ? (
-                  <div className="online-search-card" role="status" aria-label="Online matchmaking status">
-                    <Swords size={18} />
-                    <div>
-                      <strong>
-                        {playMode === "room"
-                          ? roomCreation.status === "creating"
-                            ? "Creating room code"
-                            : roomCreation.status === "failed" ? "Room unavailable"
-                            : friend.room?.arrival ? friend.room.arrival.status === "waiting" ? "Waiting for arrival" : "Match closed" : friend.room?.playerCount === 2 ? friend.room.matched ? "Opponent connected" : "Friend connected" : "Invite room ready"
-                          : matchmaking.status === "matched"
-                            ? "Opponent matched"
-                            : "Auto-matching opponent"}
-                      </strong>
-                      <span>
-                        {playMode === "room"
-                          ? roomCreation.status === "creating"
-                            ? "Generating a room code for invites and spectator links."
-                            : roomCreation.status === "ready"
-                              ? friend.room?.arrival ? friend.room.arrival.status === "waiting" ? "Play begins when both players connect." : "No game was played. Choose another opponent above." : friend.room?.matched ? "Casual match · both seats are reserved. Share the spectator link to invite viewers." : `Room ${roomCreation.roomId} is ready. Use Share for invite and spectator links.`
-                              : roomCreation.status === "failed"
-                                ? roomCreation.message
-                                : "Use Share to copy an invite link, spectator link, or room code."
-                          : matchmaking.status === "matched"
-                            ? `Room ${matchmaking.roomId} is active.`
-                            : matchmaking.status === "queued"
-                              ? `Looking for a ${getTimeControl(timeControl).label} opponent.`
-                              : matchmaking.status === "failed"
-                                ? matchmaking.message
-                                : `Casual ${getTimeControl(timeControl).label} pairs by game and clock.`}
-                      </span>
-                      {playMode === "online" ? (
-                        <div className="online-queue-tags" aria-label="Online queue details">
-                          <span>{getTimeControl(timeControl).label}</span>
-                          <span>Casual</span>
-                          {onlineTicketLabel ? <span>{onlineTicketLabel}</span> : null}
-                          <span>{displayState.variantKey}</span>
-                        </div>
-                      ) : null}
-                    </div>
-                    {playMode === "online" && matchmaking.status !== "matched" ? (
-                      <button type="button" className="focus-ring online-search-cancel" disabled={cancellingSearch} onClick={() => void cancelOnlineSearch()}>
-                        <X size={14} />
-                        <span>Cancel</span>
-                      </button>
-                    ) : null}
-                  </div>
-                ) : isBotMode ? (
-                  <>
-                    <div className="studio-bot-choice" title={`${botStrength.display} · ${botCalibrationLabel}`}>
-                      <Bot size={18} />
-                      <div>
-                        <strong>Opponent strength</strong>
-                        <span title={botStrength.basis}>{botStrength.display}</span>
-                      </div>
-                      <ChoicePicker label="Bot difficulty" value={botDifficulty} onChange={setBotDifficulty} options={botDifficultyLevels.map(level => ({ key: level.key, label: level.label }))} />
-                    </div>
-                  </>
-                ) : (
-                  <div className="bot-profile-card status-mode-card" aria-label="Local play status">
-                    <Crown size={18} />
-                    <div>
-                      <strong>Offline Local</strong>
-                    </div>
-                  </div>
-                )}
-                {suggestedMove ? (
-                  <p className="play-status-note text-[var(--accent-strong)]">
-                    Suggestion: {suggestedMove.notation} - depth {suggestedMove.depthReached}
-                  </p>
-                ) : null}
-                {notice ? <p className="play-status-note text-[var(--warning)]">{notice}</p> : null}
-              </div>
-            </div>
-          ) : null}
-          {panelTab === "status" ? (
-            <div className="play-review-card play-review-compact">
-              <div className="review-engine-row">
-                <span className="review-title">
-                  <Brain size={16} className="text-[var(--accent)]" />
-                  Moves
-                </span>
-                <span className="review-summary-pills" aria-label="Move review summary">
-                  {isReviewing ? <em>Reviewing</em> : null}
-                  <span>{reviewSummary.moves} {reviewSummary.moves === 1 ? "move" : "moves"}</span>
-                  {reviewSummary.captures ? <span>{reviewSummary.captures} captured</span> : null}
-                </span>
-              </div>
-              {isReviewing ? <div className="review-position-card"><strong>{activeReviewMove ? `After ${activeReviewMove.notation}` : "Starting position"}</strong>{activeReviewMove?.label ? <span>{activeReviewMove.label}</span> : null}</div> : null}
-              <ol className="review-move-list move-list text-sm">
-                <li className={displayPly === 0 ? "is-active" : ""}>
-                  <button type="button" onClick={() => setReviewCursor(0)} className="focus-ring">
-                    <span className="review-move-side" data-owner={timeline[0]?.turn ?? state.turn}>{colorLabel(timeline[0]?.turn ?? state.turn).slice(0, 2)}</span>
-                    <strong>Starting position</strong>
-                  </button>
-                </li>
-                {reviewMoveRows.length ? (
-                  reviewMoveRows.map((move) => (
-                    <li key={`${move.notation}-${move.ply}`} className={displayPly === move.ply ? "is-active" : ""}>
-                      <button type="button" onClick={() => setReviewCursor(move.ply)} className="focus-ring" aria-label={`Review move ${move.ply} ${move.sideLabel} ${move.pieceLabel} ${move.routeLabel} ${move.notation}`}>
-                        <span className="review-move-side" data-owner={move.owner}>{move.sideLabel.slice(0, 2)}</span>
-                        <span className="review-move-piece">
-                          {move.piece ? <PieceIcon code={move.piece.code} owner={move.piece.owner} pieceSkin={pieceSkin} variantKey={displayState.variantKey} locale={locale} promoted={move.piece.promoted} /> : null}
-                          <strong>{move.notation}</strong>
-                        </span>
-                        <span className="review-move-meta">
-                          <small>{move.routeLabel}</small>
-                          {move.label ? <em>{move.label}</em> : null}
-                        </span>
-                      </button>
-                    </li>
-                  ))
-                ) : (
-                  <li>
-                    <button type="button" className="focus-ring" disabled>
-                      <span className="review-move-side" data-owner={state.turn}>{colorLabel(state.turn).slice(0, 2)}</span>
-                      <strong>No moves yet</strong>
-                    </button>
-                  </li>
-                )}
-              </ol>
-              <div className="review-controls" aria-label="Review playback controls">
-                <button type="button" onClick={() => setReviewCursor(0)} className="focus-ring" aria-label="First move" disabled={!reviewMoves.length}>
-                  <SkipBack size={20} />
-                </button>
-                <button type="button" onClick={() => setReviewCursor(displayPly - 1)} className="focus-ring" aria-label="Previous move" disabled={!reviewMoves.length || displayPly === 0}>
-                  <Undo2 size={20} />
-                </button>
-                <button type="button" onClick={() => setReviewPlaying((current) => !current)} className="focus-ring is-main" aria-label={reviewPlaying ? "Pause review" : "Play review"} disabled={!reviewMoves.length}>
-                  {reviewPlaying ? <PauseCircle size={24} /> : <PlayCircle size={24} />}
-                </button>
-                <button type="button" onClick={() => setReviewCursor(displayPly + 1)} className="focus-ring" aria-label="Next move" disabled={!reviewMoves.length || displayPly >= timeline.length - 1}>
-                  <PlayCircle size={20} />
-                </button>
-                <button type="button" onClick={() => setReviewCursor(timeline.length - 1)} className="focus-ring" aria-label="Last move" disabled={!reviewMoves.length}>
-                  <SkipForward size={20} />
-                </button>
-              </div>
-              <div className="review-inline-actions">
-                <button type="button" title="Open move-by-move review mode." onClick={startReview} className="focus-ring action-secondary">
-                  <Sparkles size={16} />
-                  Review
-                </button>
-                {isReviewing ? (
-                  <button type="button" onClick={jumpToLive} className="focus-ring action-secondary">
-                    Back to current
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
-        </div>
-        {playMode === "room" ? <FriendChat room={friend.room} busy={friend.busy || friend.connection !== "connected"} onSend={text => friend.send({ action: "chat", text })} /> : <details className="studio-chat-disclosure">
-          <summary className="focus-ring">{playMode === "bot" || playMode === "offline" ? "Local chat" : "Room chat"}<span>Open conversation</span></summary>
-          <p className="studio-chat-note">Messages stay on this device.</p>
-          <PlayChatPanel key={`${playMode}-${chatRoomId}`} gameStarted={gameStarted} isSpectating={isSpectating} locale={locale} playMode={playMode} roomId={chatRoomId} title={title} variantKey={displayState.variantKey} />
-        </details>}
+            )}
+            {statusNote ? <p className="play-note" role="status">{statusNote}</p> : null}
+            {playMode === "room" ? <FriendChat room={friend.room} busy={friend.busy || friend.connection !== "connected"} onSend={text => friend.send({ action: "chat", text })} /> : isOnlineMode || isSpectating ? (
+              <details className="studio-chat-disclosure">
+                <summary className="focus-ring">Chat</summary>
+                <PlayChatPanel key={`${playMode}-${chatRoomId}`} gameStarted={gameStarted} isSpectating={isSpectating} locale={locale} playMode={playMode} roomId={chatRoomId} title={title} variantKey={displayState.variantKey} />
+              </details>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <PlayPregameSetupCard
+              gameSetup={variantKey === "janggi" && localGame ? <JanggiLocalSetup values={readJanggiFormations(state)} onChange={changeJanggiFormation} /> : undefined}
+              joiningRoom={Boolean(inviteRoomId)}
+              botDifficulty={botDifficulty}
+              botLevelLabel={botLevel.label}
+              botStrengthLabel={botCalibrationLabel}
+              botTargetElo={botStrength.targetElo}
+              firstColorLabel={colorLabel(firstColor)}
+              isBotMode={isBotMode}
+              onBotDifficultyChange={setBotDifficulty}
+              onModeChange={selectPlayMode}
+              onSeatChoiceChange={changeSeatChoice}
+              onStartGame={startGame}
+              onTimeControlChange={changeTimeControl}
+              playMode={playMode}
+              modeSupport={modeSupport}
+              seatChoice={seatChoice}
+              secondColorLabel={colorLabel(secondColor)}
+              timeControl={timeControl}
+            />
+            {notice ? <p className="play-note" role="status">{notice}</p> : null}
+            {localGame && !localOnly ? <SavedMatches locale={locale} variantKey={variantKey} onResume={restoreLocalGame} /> : null}
+            {variantKey === "ouk-chaktrang" && localGame ? <OukEndgamePicker onChoose={loadOukEndgame} /> : null}
+            {variantKey === "makruk" && localGame ? <MakrukEndgamePicker onChoose={loadMakrukEndgame} /> : null}
+          </>
+        )}
       </aside>
       <GameGuideModal show={showRules} rulesSummary={rulesSummary} onClose={() => setShowRules(false)} />
     </div>

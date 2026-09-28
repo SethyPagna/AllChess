@@ -67,6 +67,15 @@ describe("friend room authority", () => {
     const result = await transitionFriendRoom(await joined(), "room", { action: "move", gameId: "test-game", token: host, version: 0, move }, 305001);
     expect(result.status).toBe(409); expect(result.stored!.state).toMatchObject({ status: "completed", result: "black", outcomeReason: "timeout" });
   });
+  test("a flag against a bare king is scored as a draw by the room authority", async () => {
+    const room = await joined();
+    room.state.board.forEach(row => row.forEach(cell => { cell.piece = null; }));
+    room.state.board[7][4].piece = { id: "white-king", code: "k", owner: "white", labelKey: "chess.king" };
+    room.state.board[7][3].piece = { id: "white-queen", code: "q", owner: "white", labelKey: "chess.queen" };
+    room.state.board[0][4].piece = { id: "black-king", code: "k", owner: "black", labelKey: "chess.king" };
+    const result = await transitionFriendRoom(room, "room", { action: "read" }, 305001);
+    expect(result.stored!.state).toMatchObject({ status: "completed", result: "draw", outcomeReason: "timeout" });
+  });
   test("presence expires without exposing seat credentials and recovers on rejoin", async () => {
     const room = await joined();
     const seen = await transitionFriendRoom(room, "room", { action: "read", token: host }, 5001);

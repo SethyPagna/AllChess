@@ -91,7 +91,7 @@ describe("analysis page review navigation", () => {
     });
     const markup = renderToStaticMarkup(element);
 
-    expect(markup).toContain("Saved review");
+    expect(markup).toContain("Summary");
     expect(markup).toContain("Key moments");
     expect(markup).toContain("Review label counts");
     expect(markup).toContain("analysis-detail-link");

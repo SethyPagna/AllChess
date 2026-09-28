@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { getVariant } from "@/lib/variants";
+import { getVariant, isChess960BackRank } from "@/lib/variants";
 import { getGameCatalogEntry, getCatalogModeSupport } from "@/lib/catalog";
 import { decodeLocalMatch, encodeLocalMatch, type LocalMatchSnapshot } from "./local-match";
 
@@ -9,6 +9,7 @@ const fileSchema = z.object({
   game: z.object({ id: z.string().min(1).max(100), variantKey: z.string().max(64), payload: z.string().max(4 * 1024 * 1024) }).strict()
 }).strict();
 const count = z.object({ phase: z.enum(["board", "pieces"]), side: z.enum(["white", "black"]), count: z.number().int().min(1).max(10000), limit: z.number().int().min(1).max(10000), firstMovePending: z.boolean(), startedAtPly: z.number().int().min(0).max(4096) });
+const ply = z.number().int().min(0).max(4096);
 const countEvents = z.array(z.object({ ply: z.number().int().min(0).max(4096), actor: z.enum(["white", "black"]), action: z.enum(["start-board", "start-pieces", "stop", "claim-draw"]) })).max(10000);
 // These values are consumed directly by counting controls and the rule engine.
 // Keep unfamiliar metadata intact for forward compatibility, but reject malformed
@@ -17,7 +18,16 @@ const ruleData = z.object({
   oukCount: count.optional(), makrukHonorCount: count.optional(),
   oukCountEvents: countEvents.optional(), makrukCountEvents: countEvents.optional(),
   oukLeapUsed: z.record(z.string(), z.boolean()).optional(),
-  shogiRepetition: z.object({ key: z.string(), count: z.number().int().min(0).max(4097), occurrences: z.record(z.string(), z.number().int().min(0).max(4097)), checker: z.enum(["sente", "gote"]).nullable() }).optional()
+  shogiRepetition: z.object({
+    key: z.string(), count: z.number().int().min(0).max(4097), occurrences: z.record(z.string(), z.number().int().min(0).max(4097)), checker: z.enum(["sente", "gote"]).nullable(),
+    // Older saves lack the perpetual-check window; the engine then scores repetitions as draws.
+    firstPly: z.record(z.string(), ply).optional(), lastQuietPly: z.object({ sente: ply.optional(), gote: ply.optional() }).optional()
+  }).optional(),
+  westernRepetition: z.string().max(12 * 4097).regex(/^[0-9a-z]+( [0-9a-z]+)*$/).optional(),
+  // Imports get a new id, so Chess960 castling relies on the recorded back rank.
+  chess960Profile: z.literal("random-v1").optional(),
+  chess960Position: z.number().int().min(0).max(959).optional(),
+  chess960BackRank: z.string().refine(isChess960BackRank).optional()
 }).passthrough();
 
 function checkedSnapshot(id: string, variantKey: string, payload: string) {
@@ -59,7 +69,9 @@ export function importLocalMatch(contents: string, newId = crypto.randomUUID()):
   if (!parsed.success) throw new Error("Choose a supported AllChess game file (.allchess.json).");
   const { id, variantKey, payload } = parsed.data.game;
   const snapshot = checkedSnapshot(id, variantKey, payload);
-  const copyFrame = (frame: LocalMatchSnapshot["state"]) => ({ ...frame, id: newId });
+  // A hand-made file may name the game by an alias ("chinese-chess"); rules code compares canonical keys.
+  const canonicalKey = getVariant(variantKey).key;
+  const copyFrame = (frame: LocalMatchSnapshot["state"]) => ({ ...frame, id: newId, variantKey: canonicalKey });
   return { ...snapshot, state: copyFrame(snapshot.state), history: snapshot.history.map(copyFrame), future: snapshot.future.map(copyFrame) };
 }
 

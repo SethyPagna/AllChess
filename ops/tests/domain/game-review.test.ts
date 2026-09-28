@@ -37,6 +37,13 @@ describe("factual move timeline", () => {
     expect(moves[1]).toMatchObject({ captureCount: 1, label: "Capture" });
     expect(summarizeMoves(moves)).toMatchObject({ moves: 2, captures: 1 });
     expect(buildMoveTimeline(after.moves, [after])[1].captureCount).toBeNull();
+
+    // Older saves stored the raw request (explicit kind "move", a promotion flag, other notation);
+    // it still identifies the same move, so the capture count survives.
+    const legacy = after.moves.map((move, index) => (index === 1 ? { ...move, kind: "move" as const, promotion: false, notation: "exd6 e.p." } : move));
+    expect(buildMoveTimeline(legacy, [initial, before, after])[1]).toMatchObject({ captureCount: 1, notation: "exd6 e.p." });
+    const different = after.moves.map((move, index) => (index === 1 ? { ...move, to: { row: 2, col: 4 } } : move));
+    expect(buildMoveTimeline(different, [initial, before, after])[1].captureCount).toBeNull();
   });
 
   test("records automatic draughts crowning from the actual resulting piece", () => {

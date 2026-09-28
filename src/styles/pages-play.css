@@ -1,0 +1,514 @@
+/* ---------- Play: board sized to the viewport, one calm side panel ---------- */
+
+.app-content:has(.play-arena) { padding-top: 16px; padding-bottom: 16px; }
+
+.play-arena,
+.play-arena:has(.game-studio) {
+  min-height: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  overflow: visible;
+}
+
+.play-arena .game-studio,
+.play-arena .game-board-layout.game-studio {
+  /* Height taken by everything in the board column except the board: padding, toolbar, two player strips, gaps. */
+  --board-chrome-h: 196px;
+  --board-fixed-size: clamp(280px, min(calc(100vw - var(--rail-w) - 380px - 2 * clamp(16px, 3vw, 40px)), calc((100dvh - var(--board-chrome-h)) * var(--board-ratio, 1))), 880px);
+  display: grid;
+  grid-template-columns: var(--board-fixed-size) 320px;
+  justify-content: center;
+  align-items: start;
+  gap: 20px;
+  width: 100%;
+  max-width: calc(var(--board-fixed-size) + 340px);
+  margin-inline: auto;
+}
+
+.play-arena .game-studio:has(.terrain-key) { --board-chrome-h: 228px; }
+
+.game-studio .board-column { display: grid; gap: 8px; min-width: 0; }
+.game-studio .board-shell { max-width: 100%; border-radius: 6px; }
+
+/* Board surface: no text pill on hover (the title tooltip names the piece); keyboard focus still gets it. */
+.game-studio .board-square[data-piece-label]::after { font-weight: 600; }
+.game-studio .board-square[data-piece-label]:not(:focus-visible)::after { opacity: 0; }
+
+/* Promotion zones: none painted in Western chess; a flat faint fill where they shape play (shogi, makruk). */
+.game-studio .board-shell:not(:is([data-variant="shogi"], [data-variant="mini-shogi"], [data-variant="makruk"], [data-variant="ouk-chaktrang"])) .board-square[data-terrain="promotion-zone"]::before { content: none; }
+.game-studio .board-square[data-terrain="promotion-zone"]::before { inset: 0; border: 0; border-radius: 0; background: color-mix(in srgb, var(--warning) 9%, transparent); }
+
+/* Intersection boards (xiangqi, janggi): half-cell wood margin so edge pieces sit on the board, with
+   file letters under each line and rank numbers beside each line, in that margin. Percent padding and
+   insets resolve so the cells stay square: horizontal 0.4 cell, vertical 0.4 cell x rows / cols. */
+.game-studio .board-grid[data-board-geometry="intersections"] {
+  --edge: calc(40% / var(--board-cols));
+  padding: calc(40% * var(--board-rows) / var(--board-cols) / var(--board-cols)) var(--edge);
+}
+.game-studio .board-grid[data-board-geometry="intersections"] > :is(.board-native-lines, .board-planning-layer) {
+  inset: var(--edge);
+  width: calc(100% - 2 * var(--edge));
+  height: calc(100% - 2 * var(--edge));
+}
+.game-studio .board-grid[data-board-geometry="intersections"] .board-square { overflow: visible; }
+.game-studio .board-grid[data-board-geometry="intersections"] .board-coordinate { font-size: clamp(9px, calc(var(--board-fixed-size) / var(--board-cols) * 0.2), 12px); }
+.game-studio .board-grid[data-board-geometry="intersections"] .board-rank { inset: 50% auto auto -20%; transform: translate(-50%, -50%); }
+.game-studio .board-grid[data-board-geometry="intersections"] .board-file { inset: 122% auto auto 50%; transform: translate(-50%, -50%); }
+
+.game-studio .terrain-key { gap: 14px; margin: 0 auto; color: var(--ink-2); font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.game-studio .terrain-key-item { gap: 6px; min-height: 0; padding: 0; border: 0; background: transparent; color: var(--ink-2); font-size: 12px; font-weight: 500; }
+.game-studio .terrain-key-item strong { font-weight: 500; }
+
+/* Player strips: side dot, name, clock on one line; no card chrome. */
+.game-studio .board-player-card,
+.game-studio .board-player-card.is-active {
+  width: var(--board-fixed-size);
+  max-width: 100%;
+  min-height: 40px;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.game-studio .player-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 38%, transparent);
+}
+.game-studio .player-dot:is([data-color="white"], [data-color="gote"]) { background: #f4f3ee; }
+.game-studio .player-dot:is([data-color="black"], [data-color="sente"]) { background: #202321; }
+.game-studio .player-dot[data-color="red"] { background: #c0392b; }
+.game-studio .player-dot[data-color="blue"] { background: #2d5fa3; }
+.game-studio .player-card-row { justify-content: flex-start; gap: 8px; }
+.game-studio .player-card-row strong { min-width: 0; color: var(--ink); font-size: 13px; font-weight: 600; }
+.game-studio .player-card-row .player-status { flex: none; color: var(--ink-2); font-size: 12px; }
+.game-studio .player-card-row span {
+  order: 2;
+  margin-inline-start: auto;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.game-studio .board-player-card.is-active .player-card-row span { background: var(--ink); color: var(--bg); }
+.game-studio .player-piece-rail { display: flex; grid-column: auto; align-items: center; justify-content: flex-end; gap: 8px; width: auto; min-width: 0; }
+.game-studio .captured-strip { grid-column: auto; min-width: 0; padding-left: 0; }
+.game-studio .captured-strip.is-empty { display: none; }
+
+/* Pieces in hand: plain chips with counts, shown only while there are any. */
+.game-studio .hand-tray { display: flex; justify-content: flex-end; }
+.game-studio .hand-strip { flex-wrap: wrap; justify-content: flex-end; gap: 4px; max-width: 176px; overflow: visible; }
+.game-studio .hand-piece-button,
+.game-studio .hand-piece-button:is([data-skin="wedge"], [data-skin="mini-wedge"], [data-skin="disc"]) {
+  min-width: 36px;
+  min-height: 30px;
+  padding: 2px 6px 2px 4px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-1);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: none;
+}
+.game-studio .hand-piece-button[data-hand-state="ready"]:hover { border-color: var(--line-strong); background: var(--surface-2); transform: none; }
+.game-studio .hand-piece-button.is-selected { border-color: var(--brand); background: var(--brand-soft); color: var(--ink); box-shadow: none; }
+.game-studio .hand-piece-button:disabled { opacity: 1; }
+
+/* Toolbar above the board: style popover, 2D/3D, rotate, focus. */
+.game-studio .board-toolbar { min-height: 36px; gap: 6px; justify-content: flex-start; }
+.game-studio .board-toolbar-actions { margin-inline-start: auto; gap: 2px; }
+.board-toolbar .board-look-picker > summary.icon-btn,
+.board-toolbar .board-toolbar-actions button.icon-btn {
+  width: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+}
+.board-toolbar .board-look-picker > summary.icon-btn:hover,
+.board-toolbar .board-look-picker[open] > summary.icon-btn,
+.board-toolbar .board-toolbar-actions button.icon-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--ink); }
+.board-toolbar .board-toolbar-actions button.icon-btn[aria-pressed="true"] { background: var(--brand-soft); color: var(--brand); }
+.game-studio .board-look-panel {
+  top: 42px;
+  width: min(340px, calc(100vw - 32px));
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  box-shadow: var(--pop-shadow);
+}
+.game-studio .board-look-heading { margin: 0 0 8px; }
+.game-studio .board-look-heading strong { color: var(--ink-2); font-size: 12px; font-weight: 600; }
+.game-studio .board-look-panel > * + .board-look-heading { margin-top: 14px; }
+.game-studio :is(.piece-set-choice, .piece-2d-choice, .board-look-preset) { border-color: var(--line); background: var(--surface-1); }
+.game-studio :is(.piece-set-choice, .piece-2d-choice, .board-look-preset)[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); }
+.game-studio .board-finish-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+.game-studio .board-look-panel .board-finish-buttons { margin: 0; padding: 0; border: 0; }
+.game-studio .board-finish-buttons button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-1);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 600;
+}
+.game-studio .board-finish-buttons button[aria-pressed="true"] { border-color: var(--brand); background: var(--brand-soft); color: var(--ink); }
+
+/* Segmented pill group (2D/3D, side choice). */
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-control);
+  background: var(--surface-2);
+}
+.segmented > button {
+  flex: 1 1 0;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.segmented > button:hover:not(:disabled) { color: var(--ink); }
+.segmented > button[aria-pressed="true"] { background: var(--surface-1); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
+.segmented > button:disabled { opacity: 0.4; cursor: not-allowed; }
+.board-view-toggle > button { min-height: 32px; padding: 0 10px; font-size: 12px; }
+
+/* Side panel. */
+.play-arena .game-studio .game-side-panel {
+  position: sticky;
+  top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-height: calc(100dvh - 32px);
+  padding: 14px;
+  overflow: visible;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  box-shadow: none;
+}
+.game-studio[data-focus="true"] > .game-side-panel { display: none; }
+.play-arena .game-studio[data-started="true"] .game-side-panel { min-height: min(calc(100dvh - 32px), calc(var(--board-fixed-size) / var(--board-ratio, 1) + 180px)); }
+
+.game-studio .play-panel-match-header { position: relative; display: block; padding: 0; background: transparent; box-shadow: none; border-radius: 0; }
+.game-studio .play-panel-match-header .play-title-row { display: flex; align-items: center; gap: 4px; }
+.game-studio .play-title-picker { min-width: 0; }
+.game-studio .play-panel-match-header .play-title-block h1 {
+  min-width: 0;
+  margin: 0;
+  overflow: visible;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.game-studio .play-title-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  margin-inline-start: -6px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+}
+.game-studio .play-title-button:hover { background: var(--surface-2); }
+.game-studio .play-title-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.game-studio .play-title-button svg { flex: none; color: var(--ink-3); }
+.game-studio .play-panel-match-header .play-title-actions { gap: 2px; margin-inline-start: auto; }
+.game-studio .play-panel-match-header .play-title-actions .icon-btn,
+.game-studio .play-panel-match-header .play-share-menu > .icon-btn {
+  width: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+}
+.game-studio .play-panel-match-header .play-title-actions .icon-btn:hover { background: var(--surface-2); color: var(--ink); }
+.game-studio :is(.play-title-picker-menu, .play-share-menu-panel) {
+  z-index: 60;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  box-shadow: var(--pop-shadow);
+}
+
+/* Pregame setup. */
+.setup-card { display: grid; gap: 12px; }
+.setup-card > .mode-tabs > button { min-height: 36px; padding-inline: 8px; }
+.setup-pickers { display: grid; gap: 8px; }
+.setup-pickers[data-count="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.setup-card > .segmented { display: flex; }
+.setup-note { margin: 0; color: var(--ink-2); font-size: 12px; }
+.game-studio .play-start-button { width: 100%; min-height: 44px; border-radius: var(--radius-control); font-size: 14px; }
+
+.game-studio .choice-picker summary {
+  min-height: 46px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface-1);
+  color: var(--ink);
+}
+.game-studio .choice-picker summary:hover { background: var(--surface-2); }
+.game-studio .choice-picker[open] summary { border-color: var(--brand); }
+.game-studio .choice-picker summary svg { flex: none; color: var(--ink-3); }
+.game-studio .choice-picker small { color: var(--ink-2); font-size: 11px; }
+.game-studio .choice-picker strong { overflow: hidden; font-size: 13px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.game-studio .choice-picker-options {
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  box-shadow: var(--pop-shadow);
+}
+.game-studio .choice-picker-options button { min-height: 36px; padding: 0 10px; border-radius: 6px; color: var(--ink); font-size: 13px; }
+.game-studio .choice-picker-options button:hover,
+.game-studio .choice-picker-options button[aria-pressed="true"] { background: var(--surface-2); color: var(--ink); }
+.game-studio .choice-picker-options button svg { color: var(--brand); }
+
+/* In-game: meta line, notes, moves, actions. */
+.match-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: -4px; color: var(--ink-2); font-size: 12px; }
+.match-meta > span:not(.match-save) + span:not(.match-save)::before { content: "\00B7"; margin-inline-end: 8px; color: var(--ink-3); }
+.match-save { margin-inline-start: auto; color: var(--ink-2); }
+.match-meta > .match-exit { width: 32px; height: 32px; margin: -6px -6px -6px auto; }
+.match-save[data-state="error"],
+.match-save[data-state="conflict"] { color: var(--bad); }
+
+.play-note { margin: 0; padding: 8px 10px; border-radius: var(--radius-control); background: var(--surface-2); color: var(--ink-2); font-size: 12px; line-height: 1.4; }
+
+.game-studio .online-search-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface-2);
+}
+.game-studio .online-search-card strong { color: var(--ink); font-size: 13px; font-weight: 600; }
+.game-studio .online-search-card span { color: var(--ink-2); font-size: 12px; }
+.game-studio .online-search-card button { min-height: 32px; padding: 0 10px; font-size: 12px; }
+
+.move-panel {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 132px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface-1);
+}
+.move-pairs {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 4px 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  scrollbar-width: thin;
+}
+.move-pairs > li { display: grid; grid-template-columns: 34px minmax(0, 1fr) minmax(0, 1fr); align-items: center; padding-inline-end: 4px; }
+.move-pairs > li:nth-child(even) { background: color-mix(in srgb, var(--surface-2) 55%, transparent); }
+.move-no { padding-inline-start: 10px; color: var(--ink-2); font-size: 12px; }
+.move-cell {
+  --board-fixed-size: 144px;
+  --board-cols: 8;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 28px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ink);
+  font-weight: 500;
+  text-align: start;
+}
+.move-cell > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.move-cell .piece-icon { flex: 0 0 18px; width: 18px; height: 18px; font-size: 14px; }
+.move-cell:hover { background: var(--surface-3); }
+.move-cell[data-latest="true"] { background: var(--surface-3); font-weight: 600; }
+.move-cell[aria-current="true"] { background: var(--brand); color: var(--brand-ink); font-weight: 600; }
+.move-empty { margin: auto; padding: 24px 12px; color: var(--ink-2); font-size: 13px; text-align: center; }
+.review-controls { display: flex; justify-content: space-between; padding: 2px 4px; border-top: 1px solid var(--line); }
+.review-controls .icon-btn { width: 40px; min-height: 32px; }
+
+.play-actions { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+.play-action {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 3px;
+  min-width: 0;
+  min-height: 52px;
+  padding: 6px 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface-1);
+  color: var(--ink-2);
+  font-size: 11px;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+.play-action::-webkit-details-marker { display: none; }
+.play-action:hover:not(:disabled) { background: var(--surface-2); color: var(--ink); }
+.play-action:disabled { opacity: 0.4; cursor: default; }
+.play-action.is-primary { border-color: var(--brand); background: var(--brand); color: var(--brand-ink); }
+.play-action.is-primary:hover:not(:disabled) { background: color-mix(in srgb, var(--brand) 88%, var(--ink)); color: var(--brand-ink); }
+.play-action.is-danger:hover:not(:disabled) { border-color: color-mix(in srgb, var(--bad) 45%, var(--line)); color: var(--bad); }
+.play-more { position: relative; display: grid; }
+.play-more[open] > .play-action { background: var(--surface-2); color: var(--ink); }
+.play-more-menu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  inset-inline-end: 0;
+  z-index: 60;
+  display: grid;
+  width: 232px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  box-shadow: var(--pop-shadow);
+}
+.play-more-menu hr { margin: 4px 0; border: 0; border-top: 1px solid var(--line); }
+.play-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  text-align: start;
+}
+.play-menu-item svg { flex: none; color: var(--ink-2); }
+.play-menu-item:hover:not(:disabled) { background: var(--surface-2); }
+.play-menu-item:disabled { opacity: 0.4; }
+.play-menu-item[aria-pressed="true"]::after { content: "On"; margin-inline-start: auto; color: var(--brand); font-size: 11px; font-weight: 600; }
+
+.game-studio .local-save-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: var(--board-fixed-size);
+  max-width: 100%;
+  padding: 6px 6px 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 12px;
+}
+.game-studio .local-save-bar button { min-height: 30px; padding: 0 10px; border-radius: 6px; font-size: 12px; }
+
+.game-studio .studio-chat-disclosure { padding-top: 8px; border-top: 1px solid var(--line); }
+.game-studio .studio-chat-disclosure > summary { padding: 6px 0; color: var(--ink-2); font-size: 13px; font-weight: 600; cursor: pointer; }
+
+/* Focus mode: board only, rail fades until needed. */
+.play-arena .game-studio[data-focus="true"] {
+  --board-fixed-size: clamp(280px, min(calc(100vw - var(--rail-w) - 2 * clamp(16px, 3vw, 40px) - 20px), calc((100dvh - var(--board-chrome-h)) * var(--board-ratio, 1))), 1000px);
+  grid-template-columns: var(--board-fixed-size);
+  max-width: none;
+}
+.shell:has(.game-studio[data-focus="true"]) .rail { opacity: 0.3; transition: opacity 200ms; }
+.shell:has(.game-studio[data-focus="true"]) .rail:hover,
+.shell:has(.game-studio[data-focus="true"]) .rail:focus-within { opacity: 1; }
+
+@media (max-width: 900px) {
+  .app-content:has(.play-arena) { padding-top: 12px; padding-bottom: calc(var(--tabbar-h) + 24px + env(safe-area-inset-bottom)); }
+  .play-arena .game-studio,
+  .play-arena .game-board-layout.game-studio,
+  .play-arena .game-studio[data-focus="true"] {
+    --board-fixed-size: clamp(240px, min(calc(100vw - 32px), calc((100dvh - 290px) * var(--board-ratio, 1))), 640px);
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 12px;
+    max-width: 640px;
+  }
+  .play-arena .game-studio .board-column { width: var(--board-fixed-size); max-width: 100%; }
+  .play-arena .game-studio .game-side-panel {
+    position: static;
+    width: 100%;
+    max-height: none;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+  .game-studio .play-actions { order: -2; }
+  .game-studio .game-side-panel > .play-note { order: -1; }
+  .move-panel { flex: none; max-height: 34dvh; min-height: 112px; }
+  .play-more-menu { width: min(260px, calc(100vw - 32px)); }
+}
+
+@media (max-width: 420px) {
+  .setup-pickers[data-count="2"] { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Phones: Start stays docked above the tab bar on a solid strip until the game starts (the setup card unmounts then). */
+@media (max-width: 900px) {
+  .shell .app-content:has(.play-start-dock) { padding-bottom: calc(var(--tabbar-h) + 84px + env(safe-area-inset-bottom)); }
+  .shell .game-studio .play-start-dock {
+    position: fixed;
+    inset-inline: 0;
+    bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+    z-index: 5;
+    padding: 8px max(16px, calc((100vw - 640px) / 2));
+    border-top: 1px solid var(--line);
+    background: var(--bg);
+  }
+}
+
+/* Promotion choice: calm card; four piece buttons in Western chess. */
+.game-studio .promotion-choice-card { padding: 10px; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--surface-1); box-shadow: var(--pop-shadow); }
+.game-studio .promotion-choice-card :is(strong, small) { font-weight: 600; }
+.game-studio .promotion-choice-card > span small { color: var(--ink-2); font-size: 11px; }
+.game-studio .promotion-choice-card div[data-count="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.game-studio .promotion-choice-card div[data-count="4"] button { flex-direction: column; min-height: 56px; font-size: 11px; }
+.game-studio .promotion-choice-card div[data-count="4"] button .piece-icon { width: 28px; height: 28px; font-size: 22px; }
+.game-studio .promotion-choice-card button { border-color: var(--line); border-radius: var(--radius-control); background: var(--surface-1); color: var(--ink); font-weight: 600; transform: none; }
+.game-studio .promotion-choice-card button:hover { background: var(--surface-2); transform: none; }
+.game-studio .promotion-choice-card button:first-child { border-color: var(--brand); background: var(--brand-soft); color: var(--ink); }

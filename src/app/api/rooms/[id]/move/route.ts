@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
 import { applyAuthoritativeRoomMove, createRoomSnapshot } from "@/lib/realtime/rooms";
+import { refineMoveRequest } from "@/lib/realtime/move-request";
 import { fetchDurableJson } from "@/lib/realtime/durable-client";
 import type { ServerRealtimeMessage } from "@/lib/realtime/types";
 import type { Move } from "@/lib/variants";
@@ -26,8 +27,10 @@ const moveSchema: z.ZodType<Move> = z.object({
   from: squareSchema,
   to: squareSchema,
   promotion: z.boolean().optional(),
+  // Western promotion piece (q, r, b, n; antichess also k). Omitted means queen.
+  promoteTo: z.string().regex(/^[a-z]$/).optional(),
   drop: pieceSchema.optional()
-});
+}).superRefine(refineMoveRequest);
 
 const roomMoveSchema = z.object({
   move: moveSchema,
@@ -36,7 +39,11 @@ const roomMoveSchema = z.object({
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const body = roomMoveSchema.parse(await request.json().catch(() => ({})));
+  const parsed = roomMoveSchema.safeParse(await request.json().catch(() => ({})));
+  if (!parsed.success) {
+    return NextResponse.json({ type: "move_rejected", reason: "That move is not legal." }, { status: 400 });
+  }
+  const body = parsed.data;
   const env = await getCloudflareRuntimeEnv();
 
   if (env.ALLCHESS_D1) {

@@ -1,8 +1,7 @@
 /* Shared secondary-page rhythm and useful, compact empty states. */
-:is(.account-page, .records-page, .watch-page, .leaderboards-page, .analysis-page) { display: grid; gap: 16px; }
+:is(.records-page, .watch-page, .leaderboards-page, .analysis-page) { display: grid; gap: 16px; }
 .compact-page-heading h1 { font-size: 28px; font-weight: 650; letter-spacing: -.035em; line-height: 1.2; }
-:is(.account-page, .records-page, .watch-page, .leaderboards-page, .analysis-page, .auth-page) .panel,
-.auth-page.panel, .settings-stack.panel { box-shadow: none; }
+:is(.records-page, .watch-page, .leaderboards-page, .analysis-page) .panel { box-shadow: none; }
 .studio-empty-state { display: grid; justify-items: center; align-content: center; gap: 16px; padding: 36px 20px; min-height: 220px; text-align: center; }
 .studio-empty-icon { display: grid; place-items: center; width: 68px; height: 68px; border: 1px solid var(--border); border-radius: 22px; color: var(--accent); background: var(--accent-soft); transform: rotate(-5deg); }
 .studio-empty-icon svg { transform: rotate(5deg); }
@@ -28,16 +27,10 @@
 .leaderboard-family-list a { min-height: 40px; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 12px; font-weight: 500; }
 .leaderboard-family-list a:hover { background: var(--accent-soft); }
 .leaderboard-card h2 { font-size: 16px; font-weight: 650; }
-.profile-avatar { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 17px; background: var(--accent-soft); color: var(--accent); font-size: 20px; font-weight: 650; }
-.account-profile-hero { gap: 14px; }
-.account-profile-hero h1 { font-size: clamp(20px, 3vw, 28px); font-weight: 650; line-height: 1.3; }
-.account-profile-hero p { font-size: 10px; font-weight: 600; letter-spacing: .08em; }
-.account-profile-meta span { font-size: 11px; font-weight: 500; padding: 0; background: none; }
-.account-profile-meta span + span::before { content: "·"; padding-inline: 4px 8px; }
-.account-stat-grid, .watch-page .lobby-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-.account-stat-card, .watch-page .lobby-stat-card { gap: 6px; padding: 14px; }
-.account-stat-card strong, .watch-page .lobby-stat-card strong { font-size: 22px; font-weight: 600; }
-.account-stat-card span, .watch-page .lobby-stat-card span { font-size: 11px; font-weight: 500; }
+.watch-page .lobby-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.watch-page .lobby-stat-card { gap: 6px; padding: 14px; }
+.watch-page .lobby-stat-card strong { font-size: 22px; font-weight: 600; }
+.watch-page .lobby-stat-card span { font-size: 11px; font-weight: 500; }
 .watch-room-tools { order: 0; }
 .watch-room-tools .watch-room-search input { font-weight: 400; }
 .watch-filter-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
@@ -54,25 +47,6 @@
 .analysis-review-shell.studio-disclosure { display: block; padding-block: 0; align-self: start; }
 .analysis-review-shell.studio-disclosure[open] { padding-bottom: 16px; }
 .review-empty-note { margin: 12px 0 0; font-size: 12px; color: var(--muted); }
-.settings-stack { max-width: 760px; }
-.settings-theme-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; width: min(100%, 340px); }
-.settings-theme-options button { display: grid; place-items: center; gap: 8px; min-height: 74px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; color: var(--muted); background: var(--surface); font-size: 12px; }
-.settings-theme-options button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
-.settings-row-title h2 { font-size: 15px; font-weight: 650; }
-.auth-page { display: block; width: min(100%, 440px); margin: 0 auto; }
-.auth-page > .game-artwork { height: 136px; border-radius: 11px 11px 0 0; }
-.settings-language-choice { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--muted); }
-.notification-empty { display: grid; gap: 14px; padding: 20px; justify-items: center; color: var(--muted); font-size: 12px; }
-.notification-empty strong { justify-self: start; color: var(--foreground); font-size: 13px; font-weight: 650; }
-.notification-empty > svg { margin-top: 10px; color: var(--accent); }
-.auth-page .auth-intro { padding: 22px 26px 8px; gap: 0; }
-.auth-page .auth-intro h1 { font-size: 27px; font-weight: 650; line-height: 1.2; }
-.auth-page .auth-form-card { padding: 16px 26px 26px; }
-.auth-form-card label { font-size: 12px; font-weight: 600; }
-.auth-form-card button, .auth-input { font-size: 13px; font-weight: 600; }
-.auth-form-card > form:last-child { margin-top: 12px; }
-.auth-form-card > form:last-child button { width: 100%; min-height: 44px; }
-.auth-form-card .auth-error { margin-bottom: 16px; font-weight: 500; }
 @media (max-width: 700px) {
   .watch-room-tools { display: grid; grid-template-columns: minmax(0, 1fr) 44px; }
   .watch-room-tools > .watch-room-search { grid-column: 1; }
@@ -85,24 +59,15 @@
   .leaderboard-filter-stat { justify-content: flex-start; }
   .analysis-command-bar { grid-template-columns: minmax(0, 1fr) auto; }
   .analysis-command-bar > span:first-child { grid-column: 1 / -1; }
-  .settings-row:has(.settings-theme-options) { flex-wrap: wrap; }
-  .settings-theme-options { width: 100%; }
 }
 @media (max-width: 420px) {
   .compact-page-heading h1 { font-size: 26px; }
   .studio-empty-state { min-height: 220px; padding: 28px 16px; }
   .studio-empty-title h2 { font-size: 17px; }
-  .account-stat-card, .watch-page .lobby-stat-card { padding: 10px; }
-  .account-stat-card strong { font-size: 18px; }
-  .account-profile-hero { grid-template-columns: 44px minmax(0, 1fr); padding: 14px; }
-  .profile-avatar { width: 44px; height: 44px; border-radius: 14px; font-size: 16px; }
-  .account-profile-hero > a { grid-column: 1 / -1; }
+  .watch-page .lobby-stat-card { padding: 10px; }
   .leaderboard-family-list > div { grid-template-columns: minmax(0, 1fr); }
-  .auth-page .auth-intro { padding-inline: 20px; }
-  .auth-page .auth-form-card { padding: 14px 20px 20px; }
 }
 @media (max-width: 600px) {
-  .settings-stack .language-menu-panel, .settings-stack .notification-panel { position: fixed; inset-inline: 16px; top: auto; bottom: 16px; width: auto; max-width: none; max-height: 70dvh; transform-origin: bottom center; }
   .info-hint-bubble { position: fixed; inset-inline: 16px; top: auto; bottom: 16px; width: auto; max-width: none; z-index: 100; }
   .studio-empty-title .info-hint-bubble { max-width: none; }
 }

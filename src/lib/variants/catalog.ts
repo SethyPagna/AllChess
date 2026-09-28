@@ -79,6 +79,8 @@ export const variantCatalog: VariantDefinition[] = [
     supportsCastling: true,
     supportsCheck: true,
     objective: "Checkmate with randomized back ranks.",
+    // Legacy fixed setup (games without `chess960Profile`). New games replace both back
+    // ranks with a "random-v1" position derived from the game id; see ./chess960.ts.
     setup: ["nrkbqrbn", "pppppppp", "........", "........", "........", "........", "PPPPPPPP", "NRKBQRBN"],
     aliases: ["fischer-random"]
   },
@@ -287,7 +289,7 @@ export const variantCatalog: VariantDefinition[] = [
     supportsCastling: true,
     supportsCheck: true,
     objective: "The horde tries to overwhelm the standard army.",
-    setup: ["rnbqkbnr", "pppppppp", "........", "PPPPPPPP", "PPPPPPPP", "PPPPPPPP", "PPPPPPPP", "........"],
+    setup: ["rnbqkbnr", "pppppppp", "........", ".PP..PP.", "PPPPPPPP", "PPPPPPPP", "PPPPPPPP", "PPPPPPPP"],
     aliases: []
   },
   {

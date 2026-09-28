@@ -592,7 +592,7 @@ describe("bot difficulty ladder", () => {
       "turkish-draughts": "a6a5",
       konane: "b8b8",
       antichess: "b8c6",
-      horde: "g8f6",
+      horde: "d7d6",
       "king-of-the-hill": "e7e5",
       "three-check": "e7e5",
       "racing-kings": "a2a3",

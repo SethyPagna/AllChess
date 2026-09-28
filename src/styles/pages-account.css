@@ -1,0 +1,533 @@
+/* Minimal redesign: settings, profile, login, variants catalog. Uses tokens from minimal.css. */
+
+/* ---------- Shared ---------- */
+
+.prefs-page,
+.auth-shell,
+.profile-page {
+  width: 100%;
+  max-width: 720px;
+  margin-inline: auto;
+}
+
+.catalog-page {
+  width: 100%;
+  max-width: 1100px;
+  margin-inline: auto;
+}
+
+.acct-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.acct-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.acct-link:hover { background: var(--surface-2); color: var(--ink); }
+
+/* ---------- Settings: one calm column of rows ---------- */
+
+.prefs-page .acct-title { margin-bottom: 16px; }
+
+.prefs-group {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+}
+
+.prefs-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  min-height: 60px;
+  padding: 12px 16px;
+}
+
+.prefs-row + .prefs-row { border-top: 1px solid var(--line); }
+.prefs-label { color: var(--ink); font-size: 14px; font-weight: 500; }
+
+.prefs-theme > button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.prefs-theme > button svg { color: var(--ink-3); }
+.prefs-theme > button[aria-pressed="true"] svg { color: var(--brand); }
+.dark .prefs-theme > button[aria-pressed="true"] { background: var(--surface-3); box-shadow: 0 0 0 1px var(--line-strong); }
+
+.prefs-select { position: relative; display: inline-flex; align-items: center; }
+
+.prefs-select select {
+  min-width: 168px;
+  height: var(--control-h);
+  padding-block: 0;
+  padding-inline: 12px 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface-1);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  appearance: none;
+  cursor: pointer;
+}
+
+.prefs-select select:hover:not(:disabled) { border-color: var(--line-strong); }
+.prefs-select select:disabled { opacity: 0.6; cursor: default; }
+.prefs-select svg { position: absolute; inset-inline-end: 10px; color: var(--ink-3); pointer-events: none; }
+
+@media (max-width: 480px) {
+  .prefs-row { padding-inline: 14px; }
+  .prefs-theme > button { padding-inline: 10px; }
+  .prefs-theme > button svg { display: none; }
+  .prefs-select select { min-width: 150px; }
+}
+
+/* ---------- Profile: compact header, stat strip, one list ---------- */
+
+.profile-page { display: grid; gap: 16px; }
+
+.profile-head { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+.profile-avatar {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.profile-head .acct-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-head-actions { display: flex; flex: none; align-items: center; gap: 4px; }
+
+/* The rail already lists Settings on desktop; the gear stays for phones. */
+@media (min-width: 901px) {
+  .profile-settings-link { display: none; }
+}
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+}
+
+.profile-stats > div { min-width: 0; padding: 12px 16px; }
+.profile-stats > div + div { border-inline-start: 1px solid var(--line); }
+.profile-stats dt { color: var(--ink-2); font-size: 12px; font-weight: 500; }
+
+.profile-stats dd {
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-list {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+}
+
+.profile-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.profile-list-head h2 { margin: 0; color: var(--ink); font-size: 14px; font-weight: 600; }
+.profile-list ul { margin: 0; padding: 0; list-style: none; }
+.profile-list li + li { border-top: 1px solid var(--line); }
+
+.profile-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(52px, auto);
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 16px;
+  color: var(--ink);
+  transition: background 120ms ease;
+}
+
+.profile-row:hover { background: var(--surface-2); }
+.profile-row:focus-visible { outline-offset: -2px; }
+.profile-row-game { display: grid; gap: 2px; min-width: 0; }
+.profile-row-game :is(strong, small) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-row-game strong { font-size: 13.5px; font-weight: 600; }
+.profile-row-game small { color: var(--ink-2); font-size: 12px; }
+.profile-row-result { color: var(--ink-2); font-size: 13px; font-weight: 600; }
+.profile-row-result[data-result="win"] { color: var(--brand); }
+.profile-row-result[data-result="loss"] { color: var(--bad); }
+.profile-row-delta { color: var(--ink-2); font-size: 12px; font-variant-numeric: tabular-nums; text-align: end; }
+
+.profile-empty { display: grid; justify-items: center; gap: 12px; padding: 32px 16px; text-align: center; }
+.profile-empty p { margin: 0; color: var(--ink-2); font-size: 14px; }
+
+@media (max-width: 600px) {
+  .profile-stats > div { padding: 10px 12px; }
+  .profile-stats dd { font-size: 16px; }
+  .profile-row { gap: 8px; padding-inline: 14px; }
+}
+
+/* ---------- Login: one centred compact card ---------- */
+
+.auth-shell { display: grid; justify-items: center; padding-top: clamp(8px, 8vh, 72px); }
+
+.auth-card {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  max-width: 380px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+}
+
+.auth-card .acct-title { text-align: center; }
+
+.auth-card .auth-error {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--bad) 35%, var(--line));
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--bad) 8%, var(--surface-1));
+  color: var(--bad);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.auth-form { display: grid; gap: 12px; }
+.auth-field { display: grid; gap: 6px; color: var(--ink-2); font-size: 12px; font-weight: 500; }
+
+.auth-field input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--ink-3);
+  border-radius: var(--radius-control);
+  background: var(--bg);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.auth-field input:hover { border-color: var(--ink-2); }
+.auth-field input:focus-visible { border-color: var(--brand); outline-offset: 0; }
+.auth-wide { width: 100%; min-height: 40px; }
+.auth-form .auth-wide { margin-top: 4px; }
+
+.auth-quiet {
+  justify-self: center;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.auth-quiet:hover { background: var(--surface-2); color: var(--ink); }
+.auth-card > form:last-child { display: grid; justify-items: center; margin-top: -8px; }
+.auth-form .auth-quiet { margin-top: -4px; }
+
+.auth-divider { display: flex; align-items: center; gap: 12px; color: var(--ink-3); font-size: 12px; }
+.auth-divider::before,
+.auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+@media (max-width: 480px) {
+  .auth-card { padding: 20px 16px; }
+}
+
+/* ---------- Games catalog: board games as art cards, rules-only games as one list ---------- */
+
+.catalog-browser { gap: 12px; }
+.catalog-head { display: flex; align-items: center; gap: 8px; margin: 0; }
+.catalog-head .acct-title { flex: 1; min-width: 0; }
+.catalog-head .catalog-search-field { order: 0; width: 220px; padding-inline-end: 4px; }
+.catalog-search-label { display: flex; flex: 1; align-self: stretch; align-items: center; gap: 8px; min-width: 0; cursor: text; }
+.catalog-search-field > button { width: 28px; height: 28px; flex: none; border-radius: 6px; }
+.catalog-search-field > button:hover { background: var(--surface-2); color: var(--ink); }
+.catalog-more { position: relative; flex: none; }
+.catalog-more > .icon-btn[data-active="true"] { background: var(--brand-soft); color: var(--brand); }
+
+.catalog-more-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  inset-inline-end: 0;
+  z-index: 50;
+  display: grid;
+  gap: 12px;
+  width: min(300px, calc(100vw - 32px));
+  padding: 12px;
+}
+
+.catalog-option-group { display: grid; gap: 8px; }
+.catalog-option-group > span { color: var(--ink-2); font-size: 12px; font-weight: 500; }
+.catalog-option-group > div { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.catalog-option-group button {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-1);
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.catalog-option-group button:hover { border-color: var(--line-strong); color: var(--ink); }
+.catalog-option-group button[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--bg); font-weight: 600; }
+.catalog-more-panel > .acct-link { justify-self: start; margin-inline-start: -8px; }
+
+/* The 4px padding keeps the chips' outside focus ring inside the scroll box. */
+.catalog-browser > .catalog-chips { order: 0; width: auto; margin: -4px; padding: 4px; scrollbar-width: none; }
+
+.catalog-card-name {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalog-card-tag {
+  position: absolute;
+  top: 8px;
+  inset-inline-start: 8px;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-1);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.catalog-more-games {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+}
+
+.catalog-more-games > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+
+.catalog-more-games > summary::-webkit-details-marker { display: none; }
+.catalog-more-games > summary:hover { background: var(--surface-2); }
+.catalog-more-games > summary:focus-visible { outline-offset: -2px; }
+.catalog-more-count { color: var(--ink-2); font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.catalog-more-games > summary::after {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-inline-start: auto;
+  border-right: 1.5px solid var(--ink-3);
+  border-bottom: 1.5px solid var(--ink-3);
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 150ms ease;
+}
+
+.catalog-more-games[open] > summary::after { transform: translateY(2px) rotate(-135deg); }
+
+.catalog-more-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 24px;
+  margin: 0;
+  padding: 0 16px 4px;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.catalog-more-list li + li { border-top: 1px solid var(--line); }
+.catalog-more-list li:nth-child(-n + 3) { border-top: 0; }
+
+.catalog-more-list a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.catalog-more-list a:hover .catalog-more-name { color: var(--brand); }
+.catalog-more-list a:focus-visible { outline-offset: -2px; }
+.catalog-more-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.catalog-more-family { flex: none; color: var(--ink-2); font-size: 13px; font-weight: 400; }
+
+@media (max-width: 900px) {
+  .catalog-more-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .catalog-more-list li:nth-child(3) { border-top: 1px solid var(--line); }
+}
+
+@media (max-width: 600px) {
+  .catalog-head { flex-wrap: wrap; }
+  .catalog-head .catalog-search-field { order: 3; width: 100%; min-height: var(--control-h); }
+  .catalog-browser > .catalog-chips { margin-inline: -16px; padding-inline: 16px; }
+  .catalog-chips button { min-height: var(--control-h); }
+  .catalog-more-list { grid-template-columns: minmax(0, 1fr); }
+  .catalog-more-list li:nth-child(2) { border-top: 1px solid var(--line); }
+}
+
+/* Game guide sheet (shared with the play picker; markup lives in catalog-browser). */
+
+.catalog-rules-dialog .catalog-rules-sheet {
+  width: min(100%, 560px);
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  box-shadow: var(--pop-shadow);
+}
+
+.catalog-rules-sheet .catalog-rules-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.catalog-rules-sheet .catalog-rules-head span { color: var(--ink-3); font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.catalog-rules-sheet .catalog-rules-head h2 { margin: 2px 0 0; color: var(--ink); font-size: 20px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.25; }
+
+.catalog-rules-sheet .catalog-icon-button {
+  width: var(--control-h);
+  height: var(--control-h);
+  margin: -6px -8px 0 0;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--ink-2);
+}
+
+.catalog-rules-sheet .catalog-icon-button:hover { border-color: transparent; background: var(--surface-2); color: var(--ink); }
+.catalog-rules-sheet .catalog-rules-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.catalog-rules-sheet .catalog-rules-actions a { min-height: var(--control-h); padding: 0 14px; font-size: 13px; }
+.catalog-rules-sheet .catalog-guide-sections { display: grid; gap: 0; margin-top: 16px; border-top: 1px solid var(--line); }
+.catalog-rules-sheet .catalog-guide-sections details { overflow: visible; border: 0; border-bottom: 1px solid var(--line); border-radius: 0; background: transparent; }
+
+.catalog-rules-sheet .catalog-guide-sections summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.catalog-rules-sheet .catalog-guide-sections summary::after { float: none; color: var(--ink-3); font-size: 16px; font-weight: 400; }
+.catalog-rules-sheet .catalog-guide-sections :is(ol, ul) { gap: 8px; padding: 0 0 14px; }
+
+.catalog-rules-sheet .catalog-guide-list li {
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.catalog-rules-sheet .catalog-guide-list li strong { width: 20px; height: 20px; background: var(--surface-2); color: var(--ink-2); font-size: 11px; font-weight: 600; }
+.catalog-rules-sheet .catalog-guide-list-plain li { display: block; padding-inline-start: 10px; border-inline-start: 2px solid var(--line); }
+.catalog-rules-sheet .catalog-guide-status-grid { gap: 6px; padding: 0 0 14px; }
+
+.catalog-rules-sheet .catalog-guide-status-grid span {
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: var(--surface-2);
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.catalog-rules-sheet .catalog-mode-grid { gap: 6px; padding: 0 0 14px; }
+.catalog-rules-sheet .catalog-mode-row { gap: 2px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius-control); background: transparent; }
+.catalog-rules-sheet .catalog-mode-row :is(strong, span) { font-size: 12px; font-weight: 600; }
+.catalog-rules-sheet .catalog-mode-row span { color: var(--brand); }
+.catalog-rules-sheet .catalog-mode-row p { color: var(--ink-2); font-size: 12px; font-weight: 400; line-height: 1.4; }
+.catalog-rules-sheet .catalog-source-list { gap: 6px; padding: 0 0 14px; }
+.catalog-rules-sheet .catalog-source-list a { min-height: 32px; padding: 6px 10px; font-size: 12px; font-weight: 500; }
+
+@media (max-width: 600px) {
+  .catalog-rules-dialog { padding: 8px; }
+  .catalog-rules-dialog .catalog-rules-sheet { max-height: calc(100dvh - 16px); padding: 16px; }
+  .catalog-rules-sheet .catalog-guide-status-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- Game detail: 36px crumb, sources as one quiet line ---------- */
+
+.game-page .cm-crumb { justify-self: start; min-height: var(--control-h); margin-block: -6px; margin-inline-start: -4px; padding: 0 4px; }
+.game-sources-line { margin: 0; color: var(--ink-2); font-size: 13px; line-height: 1.6; }
+
+.game-sources-line a {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 4px;
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 3px;
+}
+
+.game-sources-line a:hover { color: var(--ink); text-decoration-color: currentColor; }

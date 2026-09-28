@@ -3,6 +3,8 @@ import { advanceOukCount, settleOukCount } from "./ouk-counting";
 import { advanceMakrukHonorCount, settleMakrukHonorCount, usesMakrukHonorCount } from "./makruk-counting";
 import { usesKonaneNpsRules } from "./konane-profile";
 import { jungleRank, jungleTerrain, jungleTrapOwner, usesJungleStandardRules } from "./jungle-profile";
+import { chess960BackRank, chess960IndexForId, readChess960BackRank, withChess960BackRank } from "./chess960";
+import { isInsufficientMaterialDraw } from "./mating-material";
 import type { BoardCell, GameState, Move, Piece, PlayerColor, Square, VariantDefinition } from "./types";
 
 const pieceLabels: Record<string, string> = {
@@ -50,7 +52,12 @@ type ShogiRepetitionState = {
   key: string;
   count: number;
   occurrences: Record<string, number>;
+  /** The mover when the latest move gave check, otherwise null. */
   checker: PlayerColor | null;
+  /** Ply at which each position first occurred, keyed by positionDigest(key). Older saves lack it. */
+  firstPly?: Record<string, number>;
+  /** Ply of each side's latest move that did not give check. Older saves lack it. */
+  lastQuietPly?: Partial<Record<PlayerColor, number>>;
 };
 
 type ShogiImpasseState = {
@@ -95,9 +102,13 @@ export function createInitialState(variantKey: string, id = crypto.randomUUID())
   if (variant.key === "makruk") state.variantState = { makrukProfile: "honor-v1" };
   if (variant.key === "konane") state.variantState = { konaneProfile: "nps-v1" };
   if (variant.key === "jungle") state.variantState = { jungleProfile: "standard-v1" };
+  if (variant.key === "horde") state.variantState = { hordeProfile: "lichess-v1" };
   if (variant.supportsDrops) {
     state.hands = Object.fromEntries(variant.players.map((player) => [player, {}])) as GameState["hands"];
   }
+  // Chess960 "random-v1": the back rank is derived from the game id, so the same id
+  // always rebuilds the same setup. The chosen rank is recorded in variantState.
+  if (variant.key === "chess960") return withChess960BackRank(state, chess960BackRank(chess960IndexForId(id)));
   return state;
 }
 
@@ -126,21 +137,26 @@ export function getLegalMoves(state: GameState, fromOrHand: Square | { drop: Pie
   if (!cell?.piece || cell.piece.owner !== state.turn) return [];
 
   const variant = getVariant(state.variantKey);
-  const pseudoMoves =
-    variant.supportsCastling && cell.piece.code === "k"
-      ? [...getPseudoLegalMoves(state, from), ...castlingMoves(state, from, cell.piece)]
-      : getPseudoLegalMoves(state, from);
+  const pseudoMoves = getPseudoLegalMoves(state, from);
 
   let legalMoves = pseudoMoves.filter((move) => {
     const target = cellAt(state, move.to)?.piece;
-    if (variant.supportsCheck && target && isRoyal(target)) return false;
+    if (variant.supportsCheck && target && isRoyal(target, variant.key)) return false;
     if (!variant.supportsCheck) return true;
     if (variant.key === "racing-kings" && wouldGiveRoyalCheck(state, move, cell.piece!.owner)) return false;
     return !wouldLeaveRoyalInCheck(state, move, cell.piece!.owner);
   });
 
+  if (variant.supportsCastling && cell.piece.code === "k") {
+    // Castling runs its own king-safety probes (origin, path and final position).
+    legalMoves.push(...castlingOptions(state, from, cell.piece).map((option) => option.move));
+  }
+
   if (isShogiFamily(variant.key)) {
     legalMoves = withShogiPromotionChoices(variant, cell.piece, from, legalMoves);
+  }
+  if (cell.piece.code === "p" && westernPromotionChoices(variant).length) {
+    legalMoves = withWesternPromotionChoices(variant, cell.piece, legalMoves);
   }
 
   if (variant.key === "antichess" && hasAnyCaptureMove(state, state.turn)) {
@@ -150,7 +166,12 @@ export function getLegalMoves(state: GameState, fromOrHand: Square | { drop: Pie
     const continuation = draughtsContinuationFor(state);
     if (continuation && (!sameSquare(from, continuation.square) || continuation.owner !== state.turn)) return [];
     const requiredCaptures = draughtsRequiredCaptureLength(state, state.turn, continuation?.square);
-    if (requiredCaptures > 0) return legalMoves.filter((move) => draughtsCaptureLengthForMove(state, move) === requiredCaptures);
+    if (requiredCaptures > 0) {
+      // Capturing is compulsory everywhere, but English draughts leaves the choice among captures free (no majority rule).
+      return variant.key === "english-draughts"
+        ? legalMoves.filter((move) => draughtsCapturedSquare(state, move, cell.piece!) !== null)
+        : legalMoves.filter((move) => draughtsCaptureLengthForMove(state, move) === requiredCaptures);
+    }
   }
   if (variant.key === "konane" && !usesKonaneNpsRules(state)) {
     const continuation = konaneContinuationFor(state);
@@ -428,8 +449,9 @@ function westernPawnMoves(state: GameState, piece: Piece, from: Square, allowDou
   if (isInside(state, one) && !cellAt(state, one)?.piece) {
     moves.push({ from, to: one });
     const startRow = ["black", "blue", "gote"].includes(piece.owner) ? 1 : state.board.length - 2;
+    const hordeFirstRank = state.variantKey === "horde" && piece.owner === "white" && from.row === state.board.length - 1;
     const two = { row: from.row + forward * 2, col: from.col };
-    if (allowDouble && from.row === startRow && isInside(state, two) && !cellAt(state, two)?.piece) {
+    if (allowDouble && (from.row === startRow || hordeFirstRank) && isInside(state, two) && !cellAt(state, two)?.piece) {
       moves.push({ from, to: two });
     }
   }
@@ -460,15 +482,15 @@ function enPassantCapturedSquare(state: GameState, move: Move): Square | null {
 }
 
 function draughtsPieceMoves(state: GameState, piece: Piece, from: Square) {
-  return [...draughtsQuietMoves(state, piece, from), ...draughtsCaptureMoves(state, piece, from)];
+  return [...draughtsQuietMoves(state, piece, from), ...draughtsCaptureMoves(state, piece, from, draughtsTrailAt(state, from))];
 }
 
 function draughtsQuietMoves(state: GameState, piece: Piece, from: Square) {
   if (state.variantKey === "turkish-draughts" && piece.code === "x") {
-    return rayMoves(state, piece, from, draughtsAllOrthogonalDirections);
+    return flyingDraughtsKingQuietMoves(state, from, draughtsAllOrthogonalDirections);
   }
   if (state.variantKey === "international-draughts" && piece.code === "x") {
-    return rayMoves(state, piece, from, draughtsAllDiagonalDirections);
+    return flyingDraughtsKingQuietMoves(state, from, draughtsAllDiagonalDirections);
   }
 
   const directions = draughtsQuietDirections(piece, state.variantKey);
@@ -484,12 +506,23 @@ function draughtsQuietMoves(state: GameState, piece: Piece, from: Square) {
   return moves;
 }
 
-function draughtsCaptureMoves(state: GameState, piece: Piece, from: Square) {
+/** A flying king slides over empty squares only; it takes a piece by jumping it, never by landing on it. */
+function flyingDraughtsKingQuietMoves(state: GameState, from: Square, directions: Array<[number, number]>) {
+  const moves: Move[] = [];
+  for (const [dr, dc] of directions) {
+    for (let to = { row: from.row + dr, col: from.col + dc }; isInside(state, to) && !cellAt(state, to)?.piece; to = { row: to.row + dr, col: to.col + dc }) {
+      moves.push({ from, to });
+    }
+  }
+  return moves;
+}
+
+function draughtsCaptureMoves(state: GameState, piece: Piece, from: Square, trail: DraughtsTrail) {
   if (state.variantKey === "turkish-draughts" && piece.code === "x") {
-    return turkishDraughtsKingCaptures(state, piece, from);
+    return turkishDraughtsKingCaptures(state, piece, from, trail);
   }
   if (state.variantKey === "international-draughts" && piece.code === "x") {
-    return internationalDraughtsKingCaptures(state, piece, from);
+    return internationalDraughtsKingCaptures(state, piece, from, trail);
   }
 
   const directions = draughtsCaptureDirections(state.variantKey, piece);
@@ -520,26 +553,32 @@ function draughtsQuietDirections(piece: Piece, variantKey?: string): Array<[numb
 }
 
 function draughtsCaptureDirections(variantKey: string, piece: Piece): Array<[number, number]> {
-  if (variantKey === "turkish-draughts") return draughtsAllOrthogonalDirections;
+  // Turkish men capture forward or sideways, never backward.
+  if (variantKey === "turkish-draughts") return draughtsQuietDirections(piece, variantKey);
   if (variantKey === "international-draughts" || piece.code === "x") return draughtsAllDiagonalDirections;
   return draughtsQuietDirections(piece, variantKey);
 }
 
-function internationalDraughtsKingCaptures(state: GameState, piece: Piece, from: Square) {
-  return flyingDraughtsKingCaptures(state, piece, from, draughtsAllDiagonalDirections);
+function internationalDraughtsKingCaptures(state: GameState, piece: Piece, from: Square, trail: DraughtsTrail) {
+  return flyingDraughtsKingCaptures(state, piece, from, draughtsAllDiagonalDirections, trail.taken);
 }
 
-function turkishDraughtsKingCaptures(state: GameState, piece: Piece, from: Square) {
-  return flyingDraughtsKingCaptures(state, piece, from, draughtsAllOrthogonalDirections);
+function turkishDraughtsKingCaptures(state: GameState, piece: Piece, from: Square, trail: DraughtsTrail) {
+  // A Turkish king may not turn 180 degrees between two captures.
+  const heading = trail.heading;
+  const directions = heading ? draughtsAllOrthogonalDirections.filter(([dr, dc]) => dr !== -heading.row || dc !== -heading.col) : draughtsAllOrthogonalDirections;
+  return flyingDraughtsKingCaptures(state, piece, from, directions, trail.taken);
 }
 
-function flyingDraughtsKingCaptures(state: GameState, piece: Piece, from: Square, directions: Array<[number, number]>) {
+function flyingDraughtsKingCaptures(state: GameState, piece: Piece, from: Square, directions: Array<[number, number]>, taken: Square[]) {
   const moves: Move[] = [];
 
   for (const [dr, dc] of directions) {
     let square = { row: from.row + dr, col: from.col + dc };
     let jumpedEnemy: Piece | null = null;
     while (isInside(state, square)) {
+      // A piece already taken in this sequence stays in the way and cannot be jumped again.
+      if (taken.some((takenSquare) => sameSquare(takenSquare, square))) break;
       const target = cellAt(state, square)?.piece;
       if (!target && jumpedEnemy) {
         moves.push({ from, to: { ...square } });
@@ -597,7 +636,7 @@ function draughtsRequiredCaptureLength(state: GameState, owner: PlayerColor, onl
     for (const cell of row) {
       if (cell.piece?.owner !== owner) continue;
       if (onlyFrom && !sameSquare(cell.square, onlyFrom)) continue;
-      longest = Math.max(longest, draughtsMaxCaptureLengthFrom(state, cell.piece, cell.square));
+      longest = Math.max(longest, draughtsMaxCaptureLengthFrom(state, cell.piece, cell.square, draughtsTrailAt(state, cell.square)));
     }
   }
   return longest;
@@ -605,26 +644,52 @@ function draughtsRequiredCaptureLength(state: GameState, owner: PlayerColor, onl
 
 function draughtsCaptureLengthForMove(state: GameState, move: Move) {
   const piece = cellAt(state, move.from)?.piece;
-  if (!piece) return 0;
-  const capturedSquare = draughtsCapturedSquare(state, move, piece);
-  if (!capturedSquare) return 0;
-  const next = draughtsStateAfterCapture(state, move, piece, capturedSquare);
-  if (shouldCrownDraughtsMan(getVariant(state.variantKey), piece, move.to)) return 1;
-  return 1 + draughtsMaxCaptureLengthFrom(next, piece, move.to);
+  return piece ? draughtsCaptureLength(state, move, piece, draughtsTrailAt(state, move.from)) : 0;
 }
 
-function draughtsMaxCaptureLengthFrom(state: GameState, piece: Piece, from: Square): number {
-  const captures = draughtsCaptureMoves(state, piece, from);
+function draughtsMaxCaptureLengthFrom(state: GameState, piece: Piece, from: Square, trail: DraughtsTrail): number {
+  const captures = draughtsCaptureMoves(state, piece, from, trail);
   if (captures.length === 0) return 0;
-  return Math.max(
-    ...captures.map((move) => {
-      const capturedSquare = draughtsCapturedSquare(state, move, piece);
-      if (!capturedSquare) return 0;
-      const next = draughtsStateAfterCapture(state, move, piece, capturedSquare);
-      if (shouldCrownDraughtsMan(getVariant(state.variantKey), piece, move.to)) return 1;
-      return 1 + draughtsMaxCaptureLengthFrom(next, piece, move.to);
-    })
-  );
+  return Math.max(...captures.map((move) => draughtsCaptureLength(state, move, piece, trail)));
+}
+
+/** Pieces taken by `move` plus the longest sequence the same piece must continue with. */
+function draughtsCaptureLength(state: GameState, move: Move, piece: Piece, trail: DraughtsTrail): number {
+  const capturedSquare = draughtsCapturedSquare(state, move, piece);
+  if (!capturedSquare) return 0;
+  if (draughtsCrowningEndsCapture(state.variantKey, piece, move.to)) return 1;
+  const next = draughtsStateAfterCapture(state, move, piece, capturedSquare);
+  return 1 + draughtsMaxCaptureLengthFrom(next, piece, move.to, draughtsTrailAfter(state.variantKey, trail, move, capturedSquare));
+}
+
+/**
+ * English men are crowned, and their move ends, on reaching the far row. International (FMJD) and
+ * Turkish (MindSports) men only pass it mid-capture and are crowned where the capture ends. Kings never stop.
+ */
+function draughtsCrowningEndsCapture(variantKey: string, piece: Piece, to: Square) {
+  return variantKey === "english-draughts" && piece.code === "p" && shouldCrownDraughtsMan(getVariant(variantKey), piece, to);
+}
+
+/**
+ * What an unfinished capture sequence restricts. International (FMJD) removes taken pieces only
+ * when the sequence ends, so their squares block the rest of it and cannot be jumped again (the
+ * engine lifts them at once and blocks their squares instead). Turkish removes them as they are
+ * jumped, but a king may not reverse the direction (`heading`) of its last jump.
+ */
+type DraughtsTrail = { taken: Square[]; heading: Square | null };
+
+const freshDraughtsTrail: DraughtsTrail = { taken: [], heading: null };
+
+function draughtsTrailAt(state: GameState, from: Square): DraughtsTrail {
+  const continuation = draughtsContinuationFor(state);
+  return continuation && sameSquare(continuation.square, from) ? continuation.trail : freshDraughtsTrail;
+}
+
+function draughtsTrailAfter(variantKey: string, trail: DraughtsTrail, move: Move, capturedSquare: Square): DraughtsTrail {
+  return {
+    taken: variantKey === "international-draughts" ? [...trail.taken, capturedSquare] : [],
+    heading: { row: Math.sign(move.to.row - move.from.row), col: Math.sign(move.to.col - move.from.col) }
+  };
 }
 
 function draughtsStateAfterCapture(state: GameState, move: Move, piece: Piece, capturedSquare: Square): GameState {
@@ -638,13 +703,22 @@ function draughtsStateAfterCapture(state: GameState, move: Move, piece: Piece, c
   return next;
 }
 
-function draughtsContinuationFor(state: GameState): { square: Square; owner: PlayerColor } | null {
+function draughtsContinuationFor(state: GameState): { square: Square; owner: PlayerColor; trail: DraughtsTrail } | null {
   const value = state.variantState?.draughtsContinuation;
   if (!value || typeof value !== "object") return null;
-  const candidate = value as { row?: unknown; col?: unknown; owner?: unknown };
+  const candidate = value as { row?: unknown; col?: unknown; owner?: unknown; taken?: unknown; heading?: unknown };
   if (typeof candidate.row !== "number" || typeof candidate.col !== "number") return null;
   if (candidate.owner !== "white" && candidate.owner !== "black") return null;
-  return { square: { row: candidate.row, col: candidate.col }, owner: candidate.owner };
+  // Continuations saved before the trail was recorded carry on without its restrictions.
+  const trail: DraughtsTrail = {
+    taken: Array.isArray(candidate.taken) ? candidate.taken.filter(isSquareValue) : [],
+    heading: isSquareValue(candidate.heading) ? candidate.heading : null
+  };
+  return { square: { row: candidate.row, col: candidate.col }, owner: candidate.owner, trail };
+}
+
+function isSquareValue(value: unknown): value is Square {
+  return typeof value === "object" && value !== null && typeof (value as Square).row === "number" && typeof (value as Square).col === "number";
 }
 
 function isDraughtsVariant(variantKey: string) {
@@ -991,7 +1065,7 @@ function flyingGeneralMoves(state: GameState, piece: Piece, from: Square) {
     while (isInside(state, to)) {
       const target = cellAt(state, to)?.piece;
       if (target) {
-        if (target.owner !== piece.owner && isRoyal(target)) moves.push({ from, to: { ...to } });
+        if (target.owner !== piece.owner && isRoyal(target, state.variantKey)) moves.push({ from, to: { ...to } });
         break;
       }
       to = { row: to.row + dr, col: to.col };
@@ -1072,20 +1146,19 @@ function canJungleCapture(state: GameState, attacker: Piece, from: Square, defen
   return jungleRank(attacker.code, standard) >= defenderRank;
 }
 
-export function applyMove(state: GameState, move: Move): GameState {
+export function applyMove(state: GameState, request: Move): GameState {
   if (state.status !== "active") {
     throw new Error("errors.gameCompleted");
   }
 
   const variant = getVariant(state.variantKey);
-  const legal = move.kind === "pass"
-    ? isLegalPassMove(state)
-    : move.kind === "drop" && move.drop
-      ? getLegalMoves(state, { drop: move.drop }).some((candidate) => sameSquare(candidate.to, move.to))
-      : getLegalMoves(state, move.from).some((candidate) => matchesMoveRequest(variant, candidate, move));
-  if (!legal) {
+  // Execute and record the legal candidate the request resolved to (its kind, promotion
+  // choice, drop and canonical castling square), never the raw request.
+  const resolved = findLegalMove(state, request);
+  if (!resolved) {
     throw new Error("errors.invalidMove");
   }
+  const move: Move = structuredClone(resolved);
 
   const next: GameState = structuredClone(state);
   const toCell = move.kind === "pass" ? null : cellAt(next, move.to);
@@ -1093,6 +1166,7 @@ export function applyMove(state: GameState, move: Move): GameState {
 
   let movingPiece: Piece;
   let captured: Piece | null = null;
+  let jumpedSquare: Square | null = null;
 
   if (move.kind === "pass") {
     movingPiece = { id: `${state.turn}-pass-${state.ply}`, code: "pass", owner: state.turn, labelKey: "chess.pawn" };
@@ -1113,35 +1187,44 @@ export function applyMove(state: GameState, move: Move): GameState {
     if (!fromCell?.piece) throw new Error("errors.invalidMove");
 
     movingPiece = fromCell.piece;
-    const jumpedSquare = isDraughtsVariant(variant.key) ? draughtsCapturedSquare(next, move, movingPiece) : variant.key === "konane" ? konaneCapturedSquare(next, move, movingPiece) : enPassantCapturedSquare(next, move);
-    const jumpedCell = jumpedSquare ? cellAt(next, jumpedSquare) : null;
-    captured = jumpedCell?.piece ?? toCell!.piece;
-    if (captured) {
-      next.captured.push(captured);
-      if (jumpedCell?.piece) {
-        jumpedCell.piece = null;
+    const castle = variant.supportsCastling && movingPiece.code === "k" ? castlingOptions(state, move.from, movingPiece, false).find((option) => sameSquare(option.move.to, move.to)) : undefined;
+    if (castle) {
+      // Chess960 squares may overlap (king or rook already on its destination), so
+      // lift both pieces before placing them.
+      const rookCell = cellAt(next, castle.rookFrom)!;
+      const rook = rookCell.piece;
+      fromCell.piece = null;
+      rookCell.piece = null;
+      cellAt(next, castle.kingTo)!.piece = movingPiece;
+      cellAt(next, castle.rookTo)!.piece = rook;
+    } else {
+      jumpedSquare = isDraughtsVariant(variant.key) ? draughtsCapturedSquare(next, move, movingPiece) : variant.key === "konane" ? konaneCapturedSquare(next, move, movingPiece) : enPassantCapturedSquare(next, move);
+      const jumpedCell = jumpedSquare ? cellAt(next, jumpedSquare) : null;
+      captured = jumpedCell?.piece ?? toCell!.piece;
+      if (captured) {
+        next.captured.push(captured);
+        if (jumpedCell?.piece) {
+          jumpedCell.piece = null;
+        }
+        addCapturedPieceToHand(next, movingPiece.owner, captured);
       }
-      addCapturedPieceToHand(next, movingPiece.owner, captured);
-    }
-    if (usesKonaneNpsRules(next) && jumpedSquare) {
-      // All landing prefixes are legal choices. A longer straight move removes
-      // each intervening enemy atomically and earns only one clock increment.
-      const dr = Math.sign(move.to.row - move.from.row), dc = Math.sign(move.to.col - move.from.col);
-      const distance = Math.max(Math.abs(move.to.row - move.from.row), Math.abs(move.to.col - move.from.col));
-      for (let step = 3; step < distance; step += 2) {
-        const cell = cellAt(next, { row: move.from.row + dr*step, col: move.from.col + dc*step })!;
-        next.captured.push(cell.piece!); cell.piece = null;
+      if (usesKonaneNpsRules(next) && jumpedSquare) {
+        // All landing prefixes are legal choices. A longer straight move removes
+        // each intervening enemy atomically and earns only one clock increment.
+        const dr = Math.sign(move.to.row - move.from.row), dc = Math.sign(move.to.col - move.from.col);
+        const distance = Math.max(Math.abs(move.to.row - move.from.row), Math.abs(move.to.col - move.from.col));
+        for (let step = 3; step < distance; step += 2) {
+          const cell = cellAt(next, { row: move.from.row + dr*step, col: move.from.col + dc*step })!;
+          next.captured.push(cell.piece!); cell.piece = null;
+        }
       }
-    }
-    const promoted = shouldPromote(variant, movingPiece, move.to, move.promotion);
-    toCell!.piece = {
-      ...movingPiece,
-      code: promoted ? promotionCodeFor(variant, movingPiece) : movingPiece.code,
-      promoted: promoted || movingPiece.promoted
-    };
-    fromCell.piece = null;
-    if (variant.supportsCastling && movingPiece.code === "k" && Math.abs(move.to.col - move.from.col) === 2) {
-      moveCastlingRook(next, move);
+      const promoted = shouldPromote(variant, movingPiece, move.to, move.promotion);
+      toCell!.piece = {
+        ...movingPiece,
+        code: promoted ? move.promoteTo ?? promotionCodeFor(variant, movingPiece) : movingPiece.code,
+        promoted: promoted || movingPiece.promoted
+      };
+      fromCell.piece = null;
     }
   }
 
@@ -1162,7 +1245,7 @@ export function applyMove(state: GameState, move: Move): GameState {
   }
 
   if (variant.key === "antichess") {
-    return withAntichessOutcome(next);
+    return withWesternRepetition(state, withAntichessOutcome(next));
   }
 
   if (variant.key === "jungle") {
@@ -1170,7 +1253,7 @@ export function applyMove(state: GameState, move: Move): GameState {
   }
 
   if (isDraughtsVariant(variant.key)) {
-    return withDraughtsOutcome(next, movingPiece.owner, movingPiece, move, Boolean(captured));
+    return withDraughtsOutcome(next, movingPiece.owner, movingPiece, move, jumpedSquare);
   }
 
   if (variant.key === "konane") {
@@ -1182,7 +1265,7 @@ export function applyMove(state: GameState, move: Move): GameState {
   }
 
   if (variant.key === "racing-kings") {
-    return withRacingKingsOutcome(next, movingPiece.owner, move.to);
+    return withWesternRepetition(state, withRacingKingsOutcome(next, movingPiece.owner, move.to));
   }
 
   if (variant.key === "ouk-chaktrang") {
@@ -1195,19 +1278,20 @@ export function applyMove(state: GameState, move: Move): GameState {
   }
 
   if (variant.key === "chaturanga" || variant.key === "shatranj") {
-    return withHistoricalBareKingOutcome(next, movingPiece.owner, move.to);
+    return withWesternRepetition(state, withHistoricalBareKingOutcome(next, movingPiece.owner, move.to));
   }
 
-  if (!variant.supportsCheck && captured && isRoyal(captured)) {
+  if (!variant.supportsCheck && captured && isRoyal(captured, variant.key)) {
     next.status = "completed";
     next.result = movingPiece.owner;
     next.outcomeReason = "royal-captured";
     return next;
   }
   if (isShogiFamily(variant.key)) {
-    return withShogiOutcome(next, movingPiece.owner, move.to);
+    return withShogiOutcome(next, movingPiece.owner, move.to, state);
   }
   const outcome = withOutcome(next, movingPiece.owner, move.to);
+  if (variant.family === "western") return withWesternRepetition(state, outcome);
   return variant.key === "ouk-chaktrang" ? settleOukCount(outcome) : settleMakrukHonorCount(outcome);
 }
 
@@ -1272,7 +1356,7 @@ function withJungleOutcome(state: GameState, mover: PlayerColor, destination: Sq
   return state;
 }
 
-function withDraughtsOutcome(state: GameState, mover: PlayerColor, movedPieceBeforePromotion: Piece, move: Move, captured: boolean): GameState {
+function withDraughtsOutcome(state: GameState, mover: PlayerColor, movedPieceBeforePromotion: Piece, move: Move, capturedSquare: Square | null): GameState {
   const opponent = getVariant(state.variantKey).players.find((player) => player !== mover);
   if (!opponent) return state;
 
@@ -1284,15 +1368,19 @@ function withDraughtsOutcome(state: GameState, mover: PlayerColor, movedPieceBef
     return state;
   }
 
-  const movedPiece = cellAt(state, move.to)?.piece;
-  const becameKing = movedPieceBeforePromotion.code === "p" && movedPiece?.code === "x";
-  if (captured && movedPiece && !becameKing && draughtsMaxCaptureLengthFrom(state, movedPiece, move.to) > 0) {
-    state.turn = mover;
-    state.variantState = {
-      ...(state.variantState ?? {}),
-      draughtsContinuation: { row: move.to.row, col: move.to.col, owner: mover }
-    };
-    return state;
+  if (capturedSquare && !draughtsCrowningEndsCapture(state.variantKey, movedPieceBeforePromotion, move.to)) {
+    // The variant state still holds the trail that led to this jump.
+    const trail = draughtsTrailAfter(state.variantKey, draughtsTrailAt(state, move.from), move, capturedSquare);
+    if (draughtsMaxCaptureLengthFrom(state, movedPieceBeforePromotion, move.to, trail) > 0) {
+      // A man passing its crowning row mid-capture stays a man; it is crowned only where the capture ends.
+      if (movedPieceBeforePromotion.code === "p") cellAt(state, move.to)!.piece = movedPieceBeforePromotion;
+      state.turn = mover;
+      state.variantState = {
+        ...(state.variantState ?? {}),
+        draughtsContinuation: { row: move.to.row, col: move.to.col, owner: mover, taken: trail.taken, heading: trail.heading }
+      };
+      return state;
+    }
   }
 
   state.variantState = { ...(state.variantState ?? {}), draughtsContinuation: null };
@@ -1353,7 +1441,13 @@ function withRacingKingsOutcome(state: GameState, mover: PlayerColor, destinatio
   }
 
   if (moverReachedTarget && mover === "white") {
-    state.variantState = { ...(state.variantState ?? {}), racingKingsWhiteReached: true };
+    if (canKingReachRow(state, state.turn, 0)) {
+      state.variantState = { ...(state.variantState ?? {}), racingKingsWhiteReached: true };
+    } else {
+      state.status = "completed";
+      state.result = "white";
+      state.outcomeReason = "objective";
+    }
     return state;
   }
 
@@ -1361,9 +1455,35 @@ function withRacingKingsOutcome(state: GameState, mover: PlayerColor, destinatio
     state.status = "completed";
     state.result = mover;
     state.outcomeReason = "objective";
+    return state;
   }
 
+  // Checks are illegal here, so a side with no legal move is always stalemated.
+  if (!hasAnyLegalMove(state, state.turn)) {
+    state.status = "completed";
+    state.result = "draw";
+    state.outcomeReason = "stalemate";
+    return state;
+  }
+
+  const drawReason = drawReasonFor(state);
+  if (drawReason) {
+    state.status = "completed";
+    state.result = "draw";
+    state.outcomeReason = drawReason;
+  }
   return state;
+}
+
+function canKingReachRow(state: GameState, color: PlayerColor, row: number) {
+  for (const cells of state.board) {
+    for (const cell of cells) {
+      if (cell.piece?.owner === color && cell.piece.code === "k") {
+        return getLegalMoves(state, cell.square).some((move) => move.to.row === row);
+      }
+    }
+  }
+  return false;
 }
 
 function withJanggiOutcome(state: GameState, mover: PlayerColor, destination?: Square): GameState {
@@ -1528,21 +1648,23 @@ function readMakrukCounting(state: GameState): MakrukCountingState | undefined {
   return candidate as MakrukCountingState;
 }
 
-function withShogiOutcome(state: GameState, mover: PlayerColor, destination: Square): GameState {
+function withShogiOutcome(state: GameState, mover: PlayerColor, destination: Square, previous: GameState): GameState {
   const next = withOutcome(state, mover, destination);
   if (next.status === "completed") return next;
 
-  updateShogiVariantState(next, mover);
+  updateShogiVariantState(next, mover, previous);
   const repetition = readShogiRepetition(next);
   if (repetition && repetition.count >= 4) {
+    const perpetual = perpetualChecker(repetition);
     next.status = "completed";
-    next.result = repetition.checker === mover ? opponentOf(mover) : "draw";
-    next.outcomeReason = repetition.checker === mover ? "perpetual-check" : "repetition";
+    next.result = perpetual ? opponentOf(perpetual) : "draw";
+    next.outcomeReason = perpetual ? "perpetual-check" : "repetition";
     return next;
   }
 
-  const impasse = readShogiImpasse(next);
-  if (impasse?.senteKingEntered && impasse.goteKingEntered) {
+  // Mini-shogi has no impasse rule, and a side in check must answer it before impasse can apply.
+  const impasse = next.variantKey === "shogi" ? readShogiImpasse(next) : undefined;
+  if (impasse?.senteKingEntered && impasse.goteKingEntered && !isInCheck(next, next.turn)) {
     next.status = "completed";
     if (impasse.sentePoints >= 24 && impasse.gotePoints >= 24) {
       next.result = "draw";
@@ -1559,18 +1681,41 @@ function withShogiOutcome(state: GameState, mover: PlayerColor, destination: Squ
   return next;
 }
 
-function updateShogiVariantState(state: GameState, mover: PlayerColor) {
+function updateShogiVariantState(state: GameState, mover: PlayerColor, previous: GameState) {
   const key = shogiPositionKey(state);
-  const previous = readShogiRepetition(state);
-  const occurrences = { ...(previous?.occurrences ?? {}) };
+  const earlier = readShogiRepetition(previous) ?? startShogiRepetition(previous);
+  const occurrences = { ...earlier.occurrences };
   const count = (occurrences[key] ?? 0) + 1;
   occurrences[key] = count;
-  const defender = state.turn;
-  const checker = isInCheck(state, defender) ? mover : null;
+  const checker = isInCheck(state, state.turn) ? mover : null;
+  // Positions counted before these fields existed keep no first ply, so they can only end in a draw.
+  const firstPly = { ...(earlier.firstPly ?? {}) };
+  if (count === 1) firstPly[positionDigest(key)] = state.ply;
+  const lastQuietPly: Partial<Record<PlayerColor, number>> = { ...(earlier.lastQuietPly ?? { sente: previous.ply, gote: previous.ply }) };
+  if (!checker) lastQuietPly[mover] = state.ply;
 
   state.variantState = { ...(state.variantState ?? {}) };
-  state.variantState.shogiRepetition = { key, count, occurrences, checker } satisfies ShogiRepetitionState;
+  state.variantState.shogiRepetition = { key, count, occurrences, checker, firstPly, lastQuietPly } satisfies ShogiRepetitionState;
   state.variantState.shogiImpasse = calculateShogiImpasse(state);
+}
+
+/** The position before the first recorded move is its own first occurrence. */
+function startShogiRepetition(state: GameState): ShogiRepetitionState {
+  const key = shogiPositionKey(state);
+  return { key, count: 1, occurrences: { [key]: 1 }, checker: null, firstPly: { [positionDigest(key)]: state.ply }, lastQuietPly: { sente: state.ply, gote: state.ply } };
+}
+
+/**
+ * Sennichite: the side that gave check with every one of its moves since the repeated
+ * position first appeared loses. Mutual continuous checks, or history recorded before
+ * these fields existed, fall back to a plain repetition draw.
+ */
+function perpetualChecker(repetition: ShogiRepetitionState): PlayerColor | null {
+  const firstPly = repetition.firstPly?.[positionDigest(repetition.key)];
+  const lastQuietPly = repetition.lastQuietPly;
+  if (firstPly === undefined || !lastQuietPly) return null;
+  const checkers = (["sente", "gote"] as const).filter((side) => (lastQuietPly[side] ?? Infinity) <= firstPly);
+  return checkers.length === 1 ? checkers[0] : null;
 }
 
 function shogiPositionKey(state: GameState) {
@@ -1606,6 +1751,73 @@ function readShogiRepetition(state: GameState): ShogiRepetitionState | undefined
   return candidate as ShogiRepetitionState;
 }
 
+/**
+ * Threefold repetition (FIDE 9.2) draws a game the move left active, automatically like the fifty-move
+ * rule. `variantState.westernRepetition` lists position digests, oldest first, since the last capture
+ * or pawn move; drop variants keep the whole game because captured material can return to the board.
+ */
+function withWesternRepetition(previous: GameState, next: GameState): GameState {
+  if (next.status !== "active") return next;
+  const digest = positionDigest(westernPositionKey(next));
+  const irreversible = next.halfmoveClock === 0 && !getVariant(next.variantKey).supportsDrops;
+  const recorded = previous.variantState?.westernRepetition;
+  const earlier = irreversible ? [] : typeof recorded === "string" && recorded ? recorded.split(" ") : [positionDigest(westernPositionKey(previous))];
+  const positions = [...earlier, digest];
+  next.variantState = { ...next.variantState, westernRepetition: positions.join(" ") };
+  if (positions.filter((position) => position === digest).length >= 3) {
+    next.status = "completed";
+    next.result = "draw";
+    next.outcomeReason = "repetition";
+  }
+  return next;
+}
+
+/**
+ * Same pieces, side to move, castling rights, en passant option, pockets and (three-check) check counts.
+ * A promoted piece differs only where captures go to a pocket, since it returns there as a pawn.
+ */
+function westernPositionKey(state: GameState) {
+  const drops = getVariant(state.variantKey).supportsDrops;
+  let board = "";
+  for (const row of state.board) {
+    for (const cell of row) board += cell.piece ? `${cell.piece.owner[0]}${cell.piece.code}${drops && cell.piece.promoted ? "+" : ""}` : ".";
+    board += "/";
+  }
+  const castling = getCastlingRights(state).map((right) => `${right.owner[0]}${right.side[0]}`).join("");
+  const hands = Object.entries(state.hands ?? {})
+    .map(([owner, hand]) => `${owner}:${Object.entries(hand ?? {}).filter(([, count]) => count > 0).sort(([a], [b]) => a.localeCompare(b)).map(([code, count]) => `${code}${count}`).join(",")}`)
+    .sort()
+    .join("|");
+  const checks = state.variantKey === "three-check" ? `${state.checks.white ?? 0},${state.checks.black ?? 0}` : "";
+  return `${state.turn};${board};${castling};${enPassantFile(state)};${hands};${checks}`;
+}
+
+/** Positions differ only when an en passant capture is actually legal (FIDE 9.2.3.1). */
+function enPassantFile(state: GameState) {
+  const last = state.moves.at(-1);
+  if (!last || (last.kind && last.kind !== "move")) return -1;
+  const target = { row: (last.from.row + last.to.row) / 2, col: last.to.col };
+  for (const dc of [-1, 1]) {
+    const from = { row: last.to.row, col: last.to.col + dc };
+    if (enPassantCapturedSquare(state, { from, to: target }) && getLegalMoves(state, from).some((move) => sameSquare(move.to, target))) return target.col;
+  }
+  return -1;
+}
+
+/** 53-bit string hash (cyrb53): a compact stand-in for a long position key; collisions are negligible at game length. */
+function positionDigest(key: string) {
+  let h1 = 0xdeadbeef;
+  let h2 = 0x41c6ce57;
+  for (let index = 0; index < key.length; index += 1) {
+    const code = key.charCodeAt(index);
+    h1 = Math.imul(h1 ^ code, 2654435761);
+    h2 = Math.imul(h2 ^ code, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+
 function calculateShogiImpasse(state: GameState): ShogiImpasseState {
   return {
     sentePoints: countShogiMaterialPoints(state, "sente"),
@@ -1634,7 +1846,7 @@ function isShogiKingEntered(state: GameState, owner: PlayerColor) {
   for (const row of state.board) {
     for (const cell of row) {
       if (cell.piece?.owner === owner && cell.piece.code === "k") {
-        return owner === "sente" ? cell.square.row <= 2 : cell.square.row >= state.board.length - 3;
+        return isShogiPromotionSquare(getVariant(state.variantKey), owner, cell.square);
       }
     }
   }
@@ -1667,7 +1879,7 @@ function withOutcome(state: GameState, mover: PlayerColor, destination?: Square)
   const variant = getVariant(state.variantKey);
   const movedPiece = destination ? cellAt(state, destination)?.piece : null;
 
-  if (variant.key === "king-of-the-hill" && destination && movedPiece && isRoyal(movedPiece) && isCenterSquare(state, destination)) {
+  if (variant.key === "king-of-the-hill" && destination && movedPiece && isRoyal(movedPiece, variant.key) && isCenterSquare(state, destination)) {
     state.status = "completed";
     state.result = mover;
     state.outcomeReason = "objective";
@@ -1676,11 +1888,10 @@ function withOutcome(state: GameState, mover: PlayerColor, destination?: Square)
 
   if (!variant.supportsCheck) return state;
 
-  const drawReason = drawReasonFor(state);
-  if (drawReason) {
+  if (isCountingLimitReached(state)) {
     state.status = "completed";
     state.result = "draw";
-    state.outcomeReason = drawReason;
+    state.outcomeReason = "counting-rule";
     return state;
   }
 
@@ -1700,38 +1911,28 @@ function withOutcome(state: GameState, mover: PlayerColor, destination?: Square)
     state.status = "completed";
     state.result = defenderInCheck || variant.key === "xiangqi" ? mover : "draw";
     state.outcomeReason = defenderInCheck ? "checkmate" : state.result === "draw" ? "stalemate" : "no-legal-moves";
+    return state;
+  }
+
+  // Mate and variant wins take precedence over these draws (FIDE 9.6.2).
+  const drawReason = drawReasonFor(state);
+  if (drawReason) {
+    state.status = "completed";
+    state.result = "draw";
+    state.outcomeReason = drawReason;
   }
 
   return state;
 }
 
-function drawReasonFor(state: GameState): "insufficient-material" | "fifty-move" | "counting-rule" | null {
-  const variant = getVariant(state.variantKey);
-  const makrukCounting = variant.key === "makruk" && !usesMakrukHonorCount(state) ? readMakrukCounting(state) : undefined;
-  if (makrukCounting && makrukCounting.remainingMoves <= 0) return "counting-rule";
-  if (variant.family === "western" && state.halfmoveClock >= 100) return "fifty-move";
-  if (!["classic", "chess960", "king-of-the-hill", "three-check"].includes(variant.key)) return null;
+function isCountingLimitReached(state: GameState) {
+  const makrukCounting = state.variantKey === "makruk" && !usesMakrukHonorCount(state) ? readMakrukCounting(state) : undefined;
+  return Boolean(makrukCounting && makrukCounting.remainingMoves <= 0);
+}
 
-  const royalOwners = new Set<PlayerColor>();
-  let hasNonRoyal = false;
-
-  for (const row of state.board) {
-    for (const cell of row) {
-      const piece = cell.piece;
-      if (!piece) continue;
-      if (isRoyal(piece)) {
-        royalOwners.add(piece.owner);
-      } else {
-        hasNonRoyal = true;
-      }
-    }
-  }
-
-  if (!hasNonRoyal && variant.players.every((player) => royalOwners.has(player))) {
-    return "insufficient-material";
-  }
-
-  return null;
+function drawReasonFor(state: GameState): "insufficient-material" | "fifty-move" | null {
+  if (getVariant(state.variantKey).family === "western" && state.halfmoveClock >= 100) return "fifty-move";
+  return isInsufficientMaterialDraw(state) ? "insufficient-material" : null;
 }
 
 export function serializeSquare(square: Square) {
@@ -1805,7 +2006,8 @@ function janggiPalaceRayDirections(state: GameState, from: Square): Array<[numbe
       [1, 1]
     ];
   }
-  if (from.col === 4) return [];
+  // Palace diagonals run corner-centre-corner only; edge midpoints have none.
+  if (from.col === 4 || from.row === centerRow) return [];
   const rowDirection = from.row < centerRow ? 1 : -1;
   const colDirection = from.col < 4 ? 1 : -1;
   return [[rowDirection, colDirection]];
@@ -1834,26 +2036,114 @@ function crossesXiangqiRiver(piece: Piece, to: Square) {
   return piece.owner === "red" ? to.row < 5 : to.row > 4;
 }
 
-function castlingMoves(state: GameState, from: Square, king: Piece) {
+/**
+ * Castling (classic and Chess960).
+ *
+ * The king always ends on the g-file (col 6) or c-file (col 2) and the castling rook
+ * on the f-file (col 5) or d-file (col 3). Every square either piece crosses or lands
+ * on must be empty apart from those two pieces, neither piece may have moved, and the
+ * king may not start in, pass through, or land on an attacked square.
+ *
+ * Move encoding (`Move.from` is always the king's square):
+ * - the king travels two or more files: `to` is the king's destination square
+ *   (classic e1-g1 / e1-c1 are unchanged);
+ * - the king travels zero or one file: `to` is the castling rook's square, because
+ *   the destination is either the king's own square or a normal one-step king move.
+ * `applyMove` also accepts the king-takes-own-rook form (`to` = rook square) for any
+ * castling, which is how UCI_Chess960 engines report it, and records the canonical form.
+ */
+type CastlingSide = "king" | "queen";
+type CastlingOption = { side: CastlingSide; kingFrom: Square; kingTo: Square; rookFrom: Square; rookTo: Square; move: Move };
+export type CastlingRight = { owner: PlayerColor; side: CastlingSide; kingSquare: Square; rookSquare: Square };
+
+function castlingHome(state: GameState, owner: PlayerColor) {
   const variant = getVariant(state.variantKey);
-  if (!variant.supportsCastling || from.col !== 4 || hasMovedFrom(state, from) || isInCheck(state, king.owner)) return [];
+  if (!variant.supportsCastling || (owner !== "white" && owner !== "black")) return null;
+  const row = owner === "white" ? variant.board.rows - 1 : 0;
+  const rank = variant.key === "chess960" ? readChess960BackRank(state) : (variant.setup[row] ?? "").toLowerCase();
+  const kingCol = rank.indexOf("k");
+  if (kingCol < 0) return null;
+  const queenRookCol = kingCol > 0 ? rank.lastIndexOf("r", kingCol - 1) : -1;
+  const kingRookCol = rank.indexOf("r", kingCol + 1);
+  return { row, kingCol, rooks: [["king", kingRookCol], ["queen", queenRookCol]] as Array<[CastlingSide, number]> };
+}
 
-  const row = from.row;
-  const candidates = [
-    { rookFrom: { row, col: 7 }, through: [{ row, col: 5 }, { row, col: 6 }], to: { row, col: 6 } },
-    { rookFrom: { row, col: 0 }, through: [{ row, col: 3 }, { row, col: 2 }], to: { row, col: 2 }, empty: [{ row, col: 1 }] }
-  ];
-  const moves: Move[] = [];
+/** A square keeps its castling right only while no move has left it or landed on it. */
+function hasTouchedSquare(state: GameState, square: Square) {
+  return state.moves.some((move) => (move.kind !== "drop" && sameSquare(move.from, square)) || sameSquare(move.to, square));
+}
 
-  for (const { rookFrom, through, to, empty = [] } of candidates) {
+/** Castling rights that remain structurally available (unmoved king and rook), ignoring checks and blockers. */
+export function getCastlingRights(state: GameState): CastlingRight[] {
+  const rights: CastlingRight[] = [];
+  for (const owner of ["white", "black"] as const) {
+    const home = castlingHome(state, owner);
+    if (!home) continue;
+    const kingSquare = { row: home.row, col: home.kingCol };
+    const king = cellAt(state, kingSquare)?.piece;
+    if (!king || king.owner !== owner || king.code !== "k" || hasTouchedSquare(state, kingSquare)) continue;
+    for (const [side, rookCol] of home.rooks) {
+      if (rookCol < 0) continue;
+      const rookSquare = { row: home.row, col: rookCol };
+      const rook = cellAt(state, rookSquare)?.piece;
+      if (rook && rook.owner === owner && rook.code === "r" && !hasTouchedSquare(state, rookSquare)) rights.push({ owner, side, kingSquare, rookSquare });
+    }
+  }
+  return rights;
+}
+
+function castlingOptions(state: GameState, from: Square, king: Piece, checkSafety = true): CastlingOption[] {
+  if (king.code !== "k") return [];
+  const home = castlingHome(state, king.owner);
+  if (!home || from.row !== home.row || from.col !== home.kingCol || hasTouchedSquare(state, from)) return [];
+  const row = home.row;
+  const options: CastlingOption[] = [];
+
+  for (const [side, rookCol] of home.rooks) {
+    if (rookCol < 0) continue;
+    const rookFrom = { row, col: rookCol };
     const rook = cellAt(state, rookFrom)?.piece;
-    if (!rook || rook.owner !== king.owner || rook.code !== "r" || hasMovedFrom(state, rookFrom)) continue;
-    if (through.some((square) => cellAt(state, square)?.piece) || empty.some((square) => cellAt(state, square)?.piece)) continue;
-    if (through.some((square) => variant.players.some((player) => player !== king.owner && isSquareAttacked(state, square, player)))) continue;
-    moves.push({ from, to });
+    if (!rook || rook.owner !== king.owner || rook.code !== "r" || hasTouchedSquare(state, rookFrom)) continue;
+    const kingTo = { row, col: side === "king" ? 6 : 2 };
+    const rookTo = { row, col: side === "king" ? 5 : 3 };
+    // The king's and rook's spans always overlap, so their union is one contiguous run.
+    const low = Math.min(from.col, kingTo.col, rookFrom.col, rookTo.col);
+    const high = Math.max(from.col, kingTo.col, rookFrom.col, rookTo.col);
+    let blocked = false;
+    for (let col = low; col <= high && !blocked; col += 1) {
+      blocked = Boolean(cellAt(state, { row, col })?.piece) && col !== from.col && col !== rookFrom.col;
+    }
+    if (blocked) continue;
+    const move: Move = { from, to: Math.abs(kingTo.col - from.col) >= 2 ? kingTo : rookFrom };
+    options.push({ side, kingFrom: from, kingTo, rookFrom, rookTo, move });
   }
 
-  return moves;
+  if (!checkSafety || !options.length) return options;
+  if (isInCheck(state, king.owner)) return [];
+  return options.filter((option) => isCastlingPathSafe(state, option, king));
+}
+
+function isCastlingPathSafe(state: GameState, option: CastlingOption, king: Piece) {
+  const enemies = getVariant(state.variantKey).players.filter((player) => player !== king.owner);
+  const step = Math.sign(option.kingTo.col - option.kingFrom.col);
+  // Probe each square the king crosses with the king standing on it, so pawn
+  // diagonals (which only attack occupied squares) are seen. The castling rook
+  // stays on its square during these probes.
+  for (let col = option.kingFrom.col + step; step !== 0 && col !== option.kingTo.col; col += step) {
+    const square = { row: option.kingFrom.row, col };
+    const probe = copyForRoyalSafetyProbe(state, [option.kingFrom, square]);
+    cellAt(probe, option.kingFrom)!.piece = null;
+    cellAt(probe, square)!.piece = king;
+    if (enemies.some((enemy) => isSquareAttacked(probe, square, enemy))) return false;
+  }
+  // The final position decides the landing square, including lines the rook used to block.
+  const probe = copyForRoyalSafetyProbe(state, [option.kingFrom, option.rookFrom, option.kingTo, option.rookTo]);
+  const rook = cellAt(probe, option.rookFrom)!.piece;
+  cellAt(probe, option.kingFrom)!.piece = null;
+  cellAt(probe, option.rookFrom)!.piece = null;
+  cellAt(probe, option.kingTo)!.piece = king;
+  cellAt(probe, option.rookTo)!.piece = rook;
+  return !isInCheck(probe, king.owner);
 }
 
 function hasMovedFrom(state: GameState, square: Square) {
@@ -1918,12 +2208,73 @@ function mustPromoteShogiPiece(piece: Piece, to: Square, boardRows: number) {
   return false;
 }
 
+function sameMoveKind(candidate: Move, requested: Move) {
+  return (candidate.kind ?? "move") === (requested.kind ?? "move");
+}
+
 function matchesMoveRequest(variant: VariantDefinition, candidate: Move, requested: Move) {
-  if (!sameSquare(candidate.to, requested.to)) return false;
+  if (!sameSquare(candidate.to, requested.to) || !sameMoveKind(candidate, requested)) return false;
+  if (candidate.promoteTo !== undefined || requested.promoteTo !== undefined) {
+    // Western promotion choice: an omitted piece means a queen; a piece requested
+    // for a move that offers no choice never matches.
+    return candidate.promoteTo !== undefined && candidate.promoteTo === normalizePromoteTo(requested.promoteTo);
+  }
   if (!isShogiFamily(variant.key)) return true;
   if (requested.promotion === true) return candidate.promotion === true;
   if (requested.promotion === false) return candidate.promotion !== true;
   return true;
+}
+
+/** Pieces a Western pawn may choose on the last rank, queen first. Empty when the variant has a fixed promotion. */
+export function westernPromotionChoices(variant: VariantDefinition): string[] {
+  if (variant.family !== "western" || !variant.supportsPromotion) return [];
+  // Chaturanga and Shatranj promote to their single historical piece.
+  if (variant.key === "chaturanga" || variant.key === "shatranj") return [];
+  return variant.key === "antichess" ? ["q", "r", "b", "n", "k"] : ["q", "r", "b", "n"];
+}
+
+function normalizePromoteTo(value: string | undefined) {
+  return value === undefined ? "q" : value.toLowerCase();
+}
+
+function withWesternPromotionChoices(variant: VariantDefinition, piece: Piece, moves: Move[]): Move[] {
+  const choices = westernPromotionChoices(variant);
+  const expanded: Move[] = [];
+  for (const move of moves) {
+    if (!shouldPromote(variant, piece, move.to)) {
+      expanded.push(move);
+      continue;
+    }
+    for (const promoteTo of choices) expanded.push({ ...move, promotion: true, promoteTo });
+  }
+  return expanded;
+}
+
+function findLegalBoardMove(state: GameState, variant: VariantDefinition, request: Move): Move | null {
+  const candidates = getLegalMoves(state, request.from);
+  const direct = candidates.find((candidate) => matchesMoveRequest(variant, candidate, request));
+  if (direct) return direct;
+  // King-takes-own-rook castling (the UCI_Chess960 form) resolves to the canonical candidate.
+  const king = cellAt(state, request.from)?.piece;
+  if (!variant.supportsCastling || king?.code !== "k" || request.promoteTo !== undefined) return null;
+  const option = castlingOptions(state, request.from, king, false).find((candidate) => sameSquare(candidate.rookFrom, request.to));
+  return option ? candidates.find((candidate) => sameMoveKind(candidate, request) && sameSquare(candidate.to, option.move.to) && candidate.promoteTo === undefined) ?? null : null;
+}
+
+/**
+ * The legal candidate a move request refers to, or null. The candidate's kind must equal
+ * the request's (omitted means "move"). Board moves resolve Western promotion choices
+ * (`promoteTo`, default queen) and the king-takes-own-rook castling form; drops need a
+ * piece and match by destination; passes are checked by the rules.
+ */
+export function findLegalMove(state: GameState, request: Move): Move | null {
+  if (state.status !== "active") return null;
+  if (request.kind === "pass") return isLegalPassMove(state) ? { kind: "pass", from: request.from, to: request.to } : null;
+  if (request.kind === "drop") {
+    if (!request.drop) return null;
+    return getLegalMoves(state, { drop: request.drop }).find((candidate) => sameSquare(candidate.to, request.to)) ?? null;
+  }
+  return findLegalBoardMove(state, getVariant(state.variantKey), request);
 }
 
 function promotionCodeFor(variant: VariantDefinition, piece: Piece) {
@@ -1933,18 +2284,6 @@ function promotionCodeFor(variant: VariantDefinition, piece: Piece) {
   if (variant.family === "western" && piece.code === "p") return "q";
   if ((variant.key === "makruk" || variant.key === "ouk-chaktrang") && piece.code === "p") return "m";
   return piece.code;
-}
-
-function moveCastlingRook(state: GameState, kingMove: Move) {
-  const row = kingMove.from.row;
-  const kingSide = kingMove.to.col > kingMove.from.col;
-  const rookFrom = { row, col: kingSide ? 7 : 0 };
-  const rookTo = { row, col: kingSide ? 5 : 3 };
-  const fromCell = cellAt(state, rookFrom);
-  const toCell = cellAt(state, rookTo);
-  if (!fromCell?.piece || !toCell) return;
-  toCell.piece = fromCell.piece;
-  fromCell.piece = null;
 }
 
 function copyForRoyalSafetyProbe(state: GameState, squares: Square[]): GameState {
@@ -2016,7 +2355,7 @@ function isSquareAttacked(state: GameState, square: Square, byColor: PlayerColor
 function findRoyal(state: GameState, color: PlayerColor) {
   for (const row of state.board) {
     for (const cell of row) {
-      if (cell.piece?.owner === color && isRoyal(cell.piece)) return cell;
+      if (cell.piece?.owner === color && isRoyal(cell.piece, state.variantKey)) return cell;
     }
   }
   return null;
@@ -2121,7 +2460,7 @@ function isBareRoyalSide(state: GameState, owner: PlayerColor) {
     for (const cell of row) {
       const piece = cell.piece;
       if (piece?.owner !== owner) continue;
-      if (isRoyal(piece)) {
+      if (isRoyal(piece, state.variantKey)) {
         royalCount += 1;
       } else {
         nonRoyalCount += 1;
@@ -2140,8 +2479,9 @@ function addCapturedPieceToHand(state: GameState, owner: PlayerColor, captured: 
   state.hands[owner][code] = (state.hands[owner][code] ?? 0) + 1;
 }
 
-function isRoyal(piece: Piece) {
-  return piece.code === "k" || piece.code === "g";
+/** "g" is the royal general in Xiangqi and Janggi, but the capturable gold general in Shogi. */
+export function isRoyal(piece: Piece, variantKey: string) {
+  return piece.code === "k" || (piece.code === "g" && (variantKey === "xiangqi" || variantKey === "janggi"));
 }
 
 function isCenterSquare(state: GameState, square: Square) {
@@ -2249,5 +2589,7 @@ function notationFor(piece: Piece | null, move: Move) {
   const label = piece?.code.toUpperCase() ?? "?";
   if (move.kind === "drop") return `${label}*${move.to.row},${move.to.col}`;
   if (move.kind === "remove") return `${label}x${move.from.row},${move.from.col}`;
-  return `${label}${move.from.row},${move.from.col}-${move.to.row},${move.to.col}`;
+  // Queen promotions keep the historical key; underpromotions name the chosen piece.
+  const promotion = move.promoteTo && move.promoteTo !== "q" ? `=${move.promoteTo.toUpperCase()}` : "";
+  return `${label}${move.from.row},${move.from.col}-${move.to.row},${move.to.col}${promotion}`;
 }

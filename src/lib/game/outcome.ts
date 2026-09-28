@@ -85,10 +85,12 @@ function outcomeContext(state: GameState, reason: NonNullable<GameState["outcome
     "royal-captured": "This ruleset allows the royal piece to be captured, so capture immediately decides the result.",
     "lost-all-pieces": "In Antichess, successfully losing every piece wins the game.",
     "no-legal-moves": "The side to move has no legal move; this variant-specific ending is applied instead of standard stalemate.",
-    "insufficient-material": "Neither side has enough material left to force checkmate. With only the two kings, the game is immediately drawn.",
+    "insufficient-material": "Neither side has enough material left to checkmate. With only the two kings, a lone bishop or knight, or only bishops on one square colour, the game is immediately drawn.",
     "fifty-move": "Fifty full moves passed without a pawn move or capture, so standard chess rules allow the game to be drawn.",
     "counting-rule": "The variant-specific endgame count expired before checkmate was delivered.",
-    repetition: "The same position occurred four times with the same side to move, so the Shogi repetition rule ended the game.",
+    repetition: getVariant(state.variantKey).family === "western"
+      ? "The same position occurred three times with the same side to move and the same castling and en passant options, so the game is drawn by repetition."
+      : "The same position occurred four times with the same side to move, so the Shogi repetition rule ended the game.",
     "perpetual-check": "The repeated position was sustained by continuous checking, so the checking side loses under Shogi rules.",
     impasse: "Both Shogi kings entered the promotion zones, and the material-point profile adjudicated the position.",
     scoring: "Both players passed in a scoring ruleset, so the remaining material points decided the result.",
@@ -106,7 +108,10 @@ function outcomeContext(state: GameState, reason: NonNullable<GameState["outcome
       : state.variantState?.makrukCountOutcome === "accepted" ? "The chasing player accepted the draw available during their opponent's board count."
         : "The escaping player's count exceeded the fixed honor limit. Only that player's moves advance it."
     : null;
-  return [makrukCountDetail ?? oukCountDetail ?? reasonText[reason], `${sideToMove} was the side to move when the game ended.`, base];
+  const drawnTimeoutDetail = reason === "timeout" && result === "draw"
+    ? "The clock reached zero, but the opponent cannot checkmate with the material left, so the game is drawn."
+    : null;
+  return [makrukCountDetail ?? oukCountDetail ?? drawnTimeoutDetail ?? reasonText[reason], `${sideToMove} was the side to move when the game ended.`, base];
 }
 
 function inferOutcomeReason(state: GameState): NonNullable<GameState["outcomeReason"]> {
@@ -118,4 +123,10 @@ function inferOutcomeReason(state: GameState): NonNullable<GameState["outcomeRea
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+export function outcomeReasonLabel(reason: string) {
+  if (reason === "timeout") return "Timeout";
+  const label = Object.hasOwn(reasonLabels, reason) ? reasonLabels[reason as keyof typeof reasonLabels] : reason.replace(/-/g, " ");
+  return capitalize(label);
 }

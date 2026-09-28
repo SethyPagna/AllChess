@@ -1,27 +1,24 @@
 import Link from "next/link";
-import { BarChart3, History, Play } from "lucide-react";
+import { History, Swords } from "lucide-react";
 
-import { EmptyState } from "@/components/ui/empty-state";
+import { EmptyNote } from "@/components/community/empty-note";
 import { playSetupHref } from "@/lib/routing/play-links";
 
-type HistoryEmptyStateProps = {
-  hasSavedRows: boolean;
-  locale: string;
-};
+export function HistoryEmptyState({ hasSavedRows, locale }: { hasSavedRows: boolean; locale: string }) {
+  if (hasSavedRows) {
+    return (
+      <EmptyNote title="No matching games" text="Try another search or result.">
+        <Link className="action-secondary focus-ring" href={`/${locale}/history`}>Clear filters</Link>
+      </EmptyNote>
+    );
+  }
 
-export function HistoryEmptyState({ hasSavedRows, locale }: HistoryEmptyStateProps) {
   return (
-    <EmptyState className="panel" icon={History} title={hasSavedRows ? "No matching games" : "No saved matches yet"} help={hasSavedRows ? "Try a different search or result filter." : "Saved games, review links, and rating changes appear here after recorded account matches. Local saves are in the game library."}>
-      <div className="watch-actions">
-        <Link className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2" href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never}>
-          <Play size={16} />
-          Play
-        </Link>
-        <Link className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-2" href={`/${locale}/leaderboards`}>
-          <BarChart3 size={16} />
-          Ratings
-        </Link>
-      </div>
-    </EmptyState>
+    <EmptyNote icon={History} title="No online games yet" text="Online games you finish appear here, with review links and rating changes.">
+      <Link className="action-primary focus-ring" href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never}>
+        <Swords size={16} />
+        Play online
+      </Link>
+    </EmptyNote>
   );
 }

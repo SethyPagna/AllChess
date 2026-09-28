@@ -1,4 +1,4 @@
-import { applyMove, getLegalMoves, getVariant, sameSquare, type GameState, type Move, type PlayerColor } from "@/lib/variants";
+import { applyMove, getLegalMoves, getVariant, isRoyal, sameSquare, type GameState, type Move, type PlayerColor } from "@/lib/variants";
 import { lookupBotKnowledge, type BotKnowledgeSource, type BotMoveExplanation } from "@/lib/bot/training";
 import { isStockfishRuntimeReady, moveToUci, requestStockfishMove, shouldUseStockfish, warmStockfishRuntime, type BotEngineMode } from "@/lib/bot/stockfish-engine";
 import { botDifficultyLevels, getBotDifficultyLevel, isBeginnerBotDifficulty, isCeilingBotDifficulty, isMasterBotDifficulty, MAX_BOT_REPLY_MS, type BotDifficulty, type BotDifficultyKey, type BotPlayStyle } from "@/lib/bot/config";
@@ -495,6 +495,8 @@ export function createBotSearchStateKey(state: GameState) {
   if (getVariant(state.variantKey).supportsCastling || state.variantKey === "ouk-chaktrang") {
     for (const move of state.moves) {
       if (move.from.row === 0 || move.from.row === state.board.length - 1) movedHomeSquares |= 1 << ((move.from.row === 0 ? 0 : 8) + move.from.col);
+      // Landing on a home square (capturing an unmoved rook) also removes a castling right.
+      if (move.to.row === 0 || move.to.row === state.board.length - 1) movedHomeSquares |= 1 << ((move.to.row === 0 ? 0 : 8) + move.to.col);
     }
   }
 
@@ -846,11 +848,17 @@ function staticMoveScore(state: GameState, move: Move) {
   const centerRow = (state.board.length - 1) / 2;
   const centerCol = ((state.board[0]?.length ?? 1) - 1) / 2;
   const centerDistance = Math.abs(move.to.row - centerRow) + Math.abs(move.to.col - centerCol);
-  const captureScore = target?.piece ? (pieceValues[target.piece.code] ?? 100) * 10 - (moving ? (pieceValues[moving.code] ?? 100) : 0) / 8 : 0;
+  // Chess960 castling can target the king's own rook; that is never a capture.
+  const capturedPiece = target?.piece && target.piece.owner !== moving?.owner ? target.piece : null;
+  const captureScore = capturedPiece ? (pieceValues[capturedPiece.code] ?? 100) * 10 - (moving ? (pieceValues[moving.code] ?? 100) : 0) / 8 : 0;
   const developmentScore = moving && ["n", "b", "h", "e", "a", "g"].includes(moving.code) ? 20 : 0;
   const centerScore = Math.max(0, 12 - centerDistance * 2);
-  const promotionScore = move.promotion ? 860 : moving?.code === "p" && (move.to.row === 0 || move.to.row === state.board.length - 1) ? 760 : 0;
-  const castlingScore = moving?.code === "k" && Math.abs(move.to.col - move.from.col) === 2 ? 90 : 0;
+  // Western promotion choices score by the chosen piece, so a queen still leads and
+  // knight/rook/bishop underpromotions stay searchable without crowding it out.
+  const promotionScore = move.promoteTo
+    ? Math.min(pieceValues[move.promoteTo] ?? 900, 900) - 40
+    : move.promotion ? 860 : moving?.code === "p" && (move.to.row === 0 || move.to.row === state.board.length - 1) ? 760 : 0;
+  const castlingScore = isCastlingMove(state, move, moving) ? 90 : 0;
 
   return captureScore + promotionScore + castlingScore + developmentScore + centerScore;
 }
@@ -1302,14 +1310,23 @@ function opponentColors(state: GameState, perspective: PlayerColor) {
 function findRoyalSquare(state: GameState, color: PlayerColor) {
   for (const row of state.board) {
     for (const cell of row) {
-      if (cell.piece?.owner === color && ["k", "g"].includes(cell.piece.code)) return cell.square;
+      if (cell.piece?.owner === color && isRoyal(cell.piece, state.variantKey)) return cell.square;
     }
   }
   return null;
 }
 
 function isCapture(state: GameState, move: Move) {
-  return Boolean(state.board[move.to.row]?.[move.to.col]?.piece);
+  const target = state.board[move.to.row]?.[move.to.col]?.piece;
+  const moving = state.board[move.from.row]?.[move.from.col]?.piece;
+  return Boolean(target && target.owner !== moving?.owner);
+}
+
+function isCastlingMove(state: GameState, move: Move, moving: GameState["board"][number][number]["piece"] | undefined) {
+  if (moving?.code !== "k" || move.kind === "drop" || move.from.row !== move.to.row || !getVariant(state.variantKey).supportsCastling) return false;
+  const target = state.board[move.to.row]?.[move.to.col]?.piece;
+  // Classic e1-g1 style, longer Chess960 king travel, or the king-onto-own-rook form.
+  return Math.abs(move.to.col - move.from.col) >= 2 || (target?.owner === moving.owner && target.code === "r");
 }
 
 function tryMove(state: GameState, move: Move) {

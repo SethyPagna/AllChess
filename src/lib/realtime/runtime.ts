@@ -6,7 +6,7 @@ import type { LiveStats, RoomSnapshot } from "@/lib/realtime/types";
 export type RuntimeRoomList = {
   mode: "d1" | "demo";
   rooms: RoomSnapshot[];
-  filters: { limit: number; query: string; sort: RoomListSort; status: RoomListStatusFilter };
+  filters: { limit: number; query: string; sort: RoomListSort; status: RoomListStatusFilter; variant?: string };
 };
 
 export function normalizeRoomListInput(input: number | RoomListInput = {}): RoomListInput {
@@ -19,7 +19,8 @@ export function normalizeRoomListInput(input: number | RoomListInput = {}): Room
     limit: normalizeRoomLimit(input.limit),
     query: normalizeRoomQuery(input.query),
     sort: input.sort === "spectators" ? "spectators" : "recent",
-    status: input.status === "active" || input.status === "waiting" ? input.status : "all"
+    status: input.status === "active" || input.status === "waiting" ? input.status : "all",
+    variant: normalizeRoomVariant(input.variant)
   };
 }
 
@@ -59,11 +60,16 @@ function normalizeRoomQuery(value: string | undefined) {
   return (value ?? "").trim().slice(0, 80);
 }
 
+function normalizeRoomVariant(value: string | undefined) {
+  return (value ?? "").trim().slice(0, 64) || undefined;
+}
+
 function roomListResponseFilters(input: RoomListInput) {
   return {
     limit: input.limit ?? 20,
     query: input.query ?? "",
     sort: input.sort ?? "recent",
-    status: input.status ?? "all"
+    status: input.status ?? "all",
+    ...(input.variant ? { variant: input.variant } : {})
   };
 }

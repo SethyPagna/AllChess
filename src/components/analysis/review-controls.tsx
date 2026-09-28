@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Play, SkipBack, SkipForward } from "lucide-react";
 
 import { AnalysisReviewPlayback } from "@/components/analysis/review-playback";
 import { reviewLabelTone, type ReviewMoment } from "@/lib/analysis/review-moments";
@@ -24,29 +23,6 @@ type ReviewMomentLinkProps = {
   ply?: number;
 };
 
-export function EmptyReviewPlaybackControls() {
-  return (
-    <div className="analysis-review-controls" aria-label="Review playback controls">
-      <button type="button" disabled title="First move unlocks when this game has saved move history.">
-        <SkipBack size={15} />
-        First
-      </button>
-      <button type="button" disabled title="Playback unlocks after a completed game is saved.">
-        <Play size={15} />
-        Play
-      </button>
-      <button type="button" disabled title="Next move unlocks when review snapshots are available.">
-        <SkipForward size={15} />
-        Next
-      </button>
-      <button type="button" disabled title="Last move unlocks when this game has saved move history.">
-        <SkipForward size={15} />
-        Last
-      </button>
-    </div>
-  );
-}
-
 export function ReviewPlaybackLinks({
   autoPlay,
   gameId,
@@ -64,6 +40,8 @@ export function ReviewPlaybackLinks({
 
   return (
     <AnalysisReviewPlayback
+      atEnd={selectedMoveIndex >= moves.length - 1}
+      atStart={selectedMoveIndex <= 0}
       autoPlay={autoPlay}
       firstHref={analysisPlyHref(locale, gameId, firstMove?.ply ?? 1)}
       lastHref={analysisPlyHref(locale, gameId, lastMove?.ply ?? firstMove?.ply ?? 1)}
@@ -89,6 +67,6 @@ export function ReviewMomentLink({ gameId, locale, moment, ply }: ReviewMomentLi
       {content}
     </Link>
   ) : (
-    <span>{content}</span>
+    <span className="analysis-detail-link">{content}</span>
   );
 }

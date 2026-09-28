@@ -36,7 +36,6 @@ export default async function LoginPage({
       error={error}
       copy={{
         title: t("auth.title"),
-        subtitle: t("auth.subtitle"),
         email: t("auth.email"),
         password: t("auth.password"),
         login: t("nav.login"),

@@ -829,7 +829,7 @@ describe("variant engine", () => {
     const whitePieces = pieces.filter((piece) => piece.owner === "white");
     const blackPieces = pieces.filter((piece) => piece.owner === "black");
 
-    expect(whitePieces).toHaveLength(32);
+    expect(whitePieces).toHaveLength(36);
     expect(whitePieces.every((piece) => piece.code === "p")).toBe(true);
     expect(blackPieces).toHaveLength(16);
     expect(blackPieces.some((piece) => piece.code === "k")).toBe(true);

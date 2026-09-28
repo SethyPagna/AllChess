@@ -1,8 +1,8 @@
-import { moveToUci } from "@/lib/bot/stockfish-engine";
+import { moveToUci, uciToLegalMove } from "@/lib/bot/stockfish-engine";
 import { readMakrukHonorCount } from "@/lib/variants/makruk-counting";
 import { getBotStrengthBand, getVariantBotStrengthProfile, normalizeBotTierKey, type BotTierKey, type VariantBotStrengthProfile } from "@/lib/bot/strength";
 import { botDifficultyLevels, MAX_BOT_REPLY_MS } from "@/lib/bot/config";
-import { applyMove, createInitialState, getLegalMoves, variantCatalog, type GameState, type Move, type VariantDefinition } from "@/lib/variants";
+import { applyMove, createInitialState, getLegalMoves, getVariant, variantCatalog, type GameState, type Move, type VariantDefinition } from "@/lib/variants";
 import { getVariantRuleSummary, type VariantRuleCompletion } from "@/lib/variants/rules-atlas";
 import generatedKnowledge from "@/data/bot-knowledge.generated.json";
 
@@ -601,7 +601,7 @@ const curatedKnowledgeEntries: BotKnowledgeEntry[] = [
     id: "horde-start-front-pawn",
     variantKey: "horde",
     positionKey: "horde|turn:white|moves:",
-    moveUci: "e5e6",
+    moveUci: "e4e5",
     source: "opening-book",
     minTier: "easy",
     confidence: 0.84,
@@ -1007,14 +1007,14 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
   },
   {
     variantKey: "horde",
-    line: ["e5e6", "g8f6"],
+    line: ["e4e5", "d7d6"],
     family: "asymmetric horde",
-    plan: "Cache a front-pawn squeeze and a developing response for the standard army.",
+    plan: "Cache a front-pawn squeeze and a central pawn challenge for the standard army.",
     risk: "The horde needs connected pawns, while Black must avoid getting boxed in."
   },
   {
     variantKey: "horde",
-    line: ["d5d6", "g8f6"],
+    line: ["d4d5", "e7e6"],
     family: "asymmetric horde center",
     plan: "Cache a second horde front-pawn push so the bot can start from either central file.",
     risk: "Disconnected horde pawns are fragile, so cached moves stop before unsupported pawn races."
@@ -1546,7 +1546,9 @@ function legalMoveByUci(state: GameState, uci: string) {
       if (move) return move;
     }
   }
-  return null;
+  // Western entries may omit the promotion suffix (a queen) or use UCI_Chess960
+  // king-takes-rook castling; resolve those through the engine's own matching.
+  return getVariant(state.variantKey).family === "western" && /^[a-h][1-8][a-h][1-8]$/.test(uci) ? uciToLegalMove(state, uci) : null;
 }
 
 function sourcePriority(source: BotKnowledgeSource) {

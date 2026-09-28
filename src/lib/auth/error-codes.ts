@@ -19,7 +19,7 @@ export function errorCodeForSignUpFailure(error: string) {
 }
 
 export function isLoginErrorCode(value: string | null): value is LoginErrorCode {
-  return Boolean(value && value in loginErrorMessages);
+  return typeof value === "string" && Object.hasOwn(loginErrorMessages, value);
 }
 
 export function messageForLoginError(value: string | null) {

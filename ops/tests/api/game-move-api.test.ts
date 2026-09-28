@@ -92,4 +92,24 @@ describe("game move API", () => {
     await expect(response.json()).resolves.toEqual({ error: "Stale game state.", expectedPly: 4 });
     expect(calls.some((call) => call.sql.includes("insert into moves"))).toBe(false);
   });
+
+  test("accepts Konane opening removals and rejects removals in other games", async () => {
+    const { POST } = await import("@/app/api/games/[id]/move/route");
+    const send = (move: unknown) => POST(
+      new Request("http://allchess.test/api/games/d1-game/move", { method: "POST", body: JSON.stringify({ move }) }),
+      { params: Promise.resolve({ id: "d1-game" }) }
+    );
+
+    runtime.env = { ALLCHESS_D1: createMoveApiD1(createInitialState("konane", "d1-game")).db };
+    const removed = await send({ kind: "remove", from: { row: 0, col: 0 }, to: { row: 0, col: 0 } });
+    expect(removed.status).toBe(200);
+    const body = await removed.json() as { state: { moves: Array<{ kind?: string }> } };
+    expect(body.state.moves.at(-1)?.kind).toBe("remove");
+
+    const classic = createMoveApiD1(createInitialState("classic", "d1-game"));
+    runtime.env = { ALLCHESS_D1: classic.db };
+    const rejected = await send({ kind: "remove", from: { row: 6, col: 4 }, to: { row: 6, col: 4 } });
+    expect(rejected.status).toBe(400);
+    expect(classic.calls.some((call) => call.sql.includes("insert into moves"))).toBe(false);
+  });
 });

@@ -9,8 +9,8 @@ import type { LocalMatchSummary, LocalMatchSnapshot } from "@/lib/game/local-mat
 import { listLocalMatches, readLocalMatch, removeLocalMatch, subscribeLocalMatches, writeLocalMatch } from "@/lib/game/local-match-store";
 import { downloadLocalMatch, importLocalMatch, maxMatchFileBytes } from "@/lib/game/local-match-transfer";
 
-export function SavedMatches({ locale, variantKey, offline = false, onResume }: {
-  locale: string; variantKey?: string; offline?: boolean;
+export function SavedMatches({ locale, variantKey, offline = false, hideWhenEmpty = false, onResume }: {
+  locale: string; variantKey?: string; offline?: boolean; hideWhenEmpty?: boolean;
   onResume?: (snapshot: LocalMatchSnapshot, revision: number) => void;
 }) {
   const [matches, setMatches] = useState<LocalMatchSummary[]>([]), [error, setError] = useState("");
@@ -52,6 +52,7 @@ export function SavedMatches({ locale, variantKey, offline = false, onResume }: 
     catch { setError("This match changed in another window. Check its latest save before removing it."); refresh(); }
     finally { setLoading(null); }
   }
+  if (hideWhenEmpty && !matches.length && !imported && !error) return null;
   return <details className="saved-matches">
     <summary className="focus-ring"><BookmarkCheck size={17} /><span>Saved games</span><small>{matches.length} {variantKey ? "for this game" : "on this device"}</small></summary>
     <div className="saved-match-transfer">

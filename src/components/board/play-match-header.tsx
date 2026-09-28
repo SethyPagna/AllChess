@@ -54,6 +54,7 @@ export function PlayMatchHeader({
   const gamePickerRef = useRef<HTMLDivElement>(null);
   const gamePickerButtonRef = useRef<HTMLButtonElement>(null);
   const shareRef = useRef<HTMLDivElement>(null);
+  const shareButtonRef = useRef<HTMLButtonElement>(null);
   const roomHref = playGameHref(locale, currentVariantKey, { mode: "room", time: timeControl, room: roomId });
   const hasInvite = /^[a-f0-9-]{36}$/.test(roomId);
   const spectateHref = playGameHref(locale, currentVariantKey, { mode: "spectate", time: timeControl, room: roomId });
@@ -102,8 +103,11 @@ export function PlayMatchHeader({
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         event.preventDefault();
-        closePicker({ restoreFocus: true });
-        setShareOpen(false);
+        if (gamePickerOpen) closePicker({ restoreFocus: true });
+        if (shareOpen) {
+          setShareOpen(false);
+          shareButtonRef.current?.focus();
+        }
       }
     }
 
@@ -135,12 +139,15 @@ export function PlayMatchHeader({
       <div className="play-title-block">
         <div className="play-title-row">
           <div ref={gamePickerRef} className="play-title-picker">
-            <button ref={gamePickerButtonRef} type="button" className="focus-ring play-title-button" aria-label="Choose game" aria-expanded={gamePickerOpen} aria-controls="play-game-title-picker" onClick={() => setGamePickerOpen((current) => !current)} title="Change game or search other playable games.">
-              <h1>{title}</h1>
-              <ChevronDown size={18} />
-            </button>
+            <h1 className="play-title">
+              <button ref={gamePickerButtonRef} type="button" className="focus-ring play-title-button" aria-expanded={gamePickerOpen} aria-controls="play-game-title-picker" onClick={() => setGamePickerOpen((current) => !current)} title="Change game or search other playable games.">
+                <span className="play-title-text">{title}</span>
+                <ChevronDown size={18} />
+                <span className="sr-only">, choose game</span>
+              </button>
+            </h1>
             {gamePickerOpen ? (
-              <div id="play-game-title-picker" className="play-title-picker-menu" role="dialog" aria-modal="false" aria-label="Choose game">
+              <div id="play-game-title-picker" className="play-title-picker-menu popover" role="dialog" aria-modal="false" aria-label="Choose game">
                 <label className="play-title-picker-search">
                   <Search size={15} />
                   <span className="sr-only">Search games</span>
@@ -186,18 +193,16 @@ export function PlayMatchHeader({
           </div>
           <div className="play-title-actions" aria-label="Match actions">
             {showGuide ? (
-              <button type="button" title="Open guide, win conditions, and draw notes." onClick={onOpenGuide} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" aria-label="Game guide">
-                <BookOpen size={16} />
-                <span className="button-label">Guide</span>
+              <button type="button" title="Rules and guide" onClick={onOpenGuide} className="focus-ring icon-btn" aria-label="Game guide">
+                <BookOpen size={17} />
               </button>
             ) : null}
             {!localOnly ? <div ref={shareRef} className="play-share-menu">
-              <button type="button" onClick={() => setShareOpen((current) => !current)} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Create a room code, invite link, or spectator link." aria-label="Share game" aria-expanded={shareOpen} aria-controls="play-share-menu">
-                <Share2 size={16} />
-                <span className="button-label">Share</span>
+              <button ref={shareButtonRef} type="button" onClick={() => setShareOpen((current) => !current)} className="focus-ring icon-btn" title="Invite or share" aria-label="Share game" aria-expanded={shareOpen} aria-controls="play-share-menu">
+                <Share2 size={17} />
               </button>
               {shareOpen ? (
-                <div id="play-share-menu" className="play-share-menu-panel" role="dialog" aria-label="Share game options">
+                <div id="play-share-menu" className="play-share-menu-panel popover" role="dialog" aria-label="Share game options">
                   {hasInvite ? <div className="play-share-code">
                     <span>Room code</span>
                     <code>{roomId}</code>

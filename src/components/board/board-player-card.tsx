@@ -22,7 +22,6 @@ type BoardPlayerCardProps = {
   locale?: string;
   onHandPieceClick?: (code: string) => void;
   pieceSkin?: PieceSkinPreference;
-  playerAvatarLabel?: string;
   playerLabel?: string;
   placement: "top" | "bottom";
   selectedHandCode?: string | null;
@@ -35,6 +34,7 @@ type BoardPlayerCardProps = {
 const visibleCaptureLimit = 14;
 const handPieceDragType = "application/x-allchess-hand-piece";
 
+/** One line per player: side dot, name and clock; held pieces sit on the same line only when there are any. */
 export function BoardPlayerCard({
   botLevelLabel,
   botModeActive,
@@ -50,7 +50,6 @@ export function BoardPlayerCard({
   locale = "en",
   onHandPieceClick,
   pieceSkin = "default",
-  playerAvatarLabel,
   playerLabel,
   placement,
   selectedHandCode = null,
@@ -59,7 +58,6 @@ export function BoardPlayerCard({
   timeControl,
   variantKey
 }: BoardPlayerCardProps) {
-  const isHuman = color === humanColor;
   const isBot = botModeActive;
   const materialAdvantage = Math.max(0, materialValue(capturedPieces) - materialValue(opponentCapturedPieces));
   const visibleCaptures = capturedPieces.slice(0, visibleCaptureLimit);
@@ -69,34 +67,27 @@ export function BoardPlayerCard({
   const handTotal = handEntries.reduce((total, [, count]) => total + count, 0);
   const resolvedPieceSkin = resolvePieceSkin(variantKey, pieceSkin);
   const handLabel = variantKey === "crazyhouse" ? "Pocket" : "Hand";
-  const selectedHandLabel = selectedHandCode ? getPieceDisplayName(selectedHandCode, variantKey, locale) : null;
   const vocabulary = getVocabulary(normalizeLocale(locale));
-  const handStatus = selectedHandLabel && canUseHand ? `${vocabulary.actions.drop} ${selectedHandLabel}` : String(handTotal);
-  const handTitle = selectedHandLabel && canUseHand ? `${vocabulary.actions.drop} ${selectedHandLabel} to a highlighted square.` : `${handLabel}: ${handTotal} ${handTotal === 1 ? "piece" : "pieces"} available.`;
   const showHandTray = supportsDrops || handEntries.length > 0;
-  const displayName = isBot ? `${botLevelLabel} bot` : playerLabel ?? `Guest ${colorLabel(color)}`;
-  const avatarLabel = playerAvatarLabel ?? (isBot ? "AI" : isHuman ? "YOU" : colorLabel(color).slice(0, 2));
+  const side = colorLabel(color);
+  const displayName = isBot ? `${botLevelLabel} bot` : playerLabel ?? (color === humanColor ? "You" : side);
 
   return (
-    <div className={`board-player-card board-player-card-${placement} ${isActive ? "is-active" : ""}`} aria-label={`${colorLabel(color)} player card`}>
-      <div className="player-avatar" aria-hidden="true">{avatarLabel}</div>
+    <div className={`board-player-card board-player-card-${placement} ${isActive ? "is-active" : ""}`} aria-label={`${side} player card`}>
+      <span className="player-dot" data-color={color} aria-hidden="true" />
       <div className="player-card-main">
         <div className="player-card-row">
-          <strong>{displayName}</strong>
-          <span aria-label={`${colorLabel(color)} clock`}>{clock ? formatClock(clock.remainingMs, { untimed: timeControl === "freestyle" }) : "--:--"}</span>
+          <strong title={isBot ? botStrengthDisplay : undefined}>{displayName}</strong>
+          {isBot && thinking ? <small className="player-status">thinking…</small> : null}
+          <span aria-label={`${side} clock`}>{clock ? formatClock(clock.remainingMs, { untimed: timeControl === "freestyle" }) : "--:--"}</span>
         </div>
-        <p>{isBot ? `${botStrengthDisplay}${thinking ? " - thinking" : ""}` : `${colorLabel(color)} side`}</p>
       </div>
       <div className="player-piece-rail">
         {showHandTray ? (
-          <div className="hand-tray" data-hand-state={selectedHandLabel && canUseHand ? "selected" : canUseHand ? "ready" : handTotal ? "held" : "empty"} data-skin={resolvedPieceSkin}>
-            <span className="hand-tray-status" aria-label={`${colorLabel(color)} ${handLabel.toLowerCase()}: ${handStatus}`} title={handTitle}>
-              <strong>{handLabel}</strong>
-              <span>{handStatus}</span>
-            </span>
-            <div className={`hand-strip ${handEntries.length ? "" : "is-empty"}`} aria-label={`${colorLabel(color)} ${handLabel.toLowerCase()} ${handEntries.length ? "pieces" : "empty"}`} data-skin={resolvedPieceSkin}>
-              <span className="sr-only">Tap or drag a piece in hand to a legal empty square. Drop restrictions are included on each piece.</span>
-              {handEntries.length ? handEntries.map(([code, count]) => {
+          <div className={`hand-tray${handEntries.length ? "" : " sr-only"}`} data-hand-state={selectedHandCode && canUseHand ? "selected" : canUseHand ? "ready" : handTotal ? "held" : "empty"} data-skin={resolvedPieceSkin}>
+            <div className={`hand-strip ${handEntries.length ? "" : "is-empty"}`} role="group" aria-label={`${side} ${handLabel.toLowerCase()} ${handEntries.length ? "pieces" : "empty"}`} data-skin={resolvedPieceSkin}>
+              {handEntries.length ? <span className="sr-only">Tap or drag a piece in hand to a legal empty square. Drop restrictions are included on each piece.</span> : null}
+              {handEntries.map(([code, count]) => {
                 const pieceLabel = getPieceDisplayName(code, variantKey, locale);
                 const actionLabel = `${canUseHand ? vocabulary.actions.drop : "Held"} ${pieceLabel}, ${count} in hand`;
                 const helpText = getHandPieceHelpText({ canUseHand, pieceLabel, pieceCode: code, variantKey });
@@ -105,6 +96,7 @@ export function BoardPlayerCard({
                     key={`${color}-${code}`}
                     type="button"
                     aria-label={actionLabel}
+                    aria-pressed={canUseHand ? selectedHandCode === code : undefined}
                     className={`hand-piece-button focus-ring ${selectedHandCode === code ? "is-selected" : ""}`}
                     data-hand-piece={code}
                     data-hand-state={selectedHandCode === code ? "selected" : canUseHand ? "ready" : "held"}
@@ -126,7 +118,7 @@ export function BoardPlayerCard({
                     <span aria-hidden="true">{count}</span>
                   </button>
                 );
-              }) : <span className="hand-empty-pill" aria-hidden="true" title={`${handLabel} is empty. Captured pieces will appear here.`}>0</span>}
+              })}
             </div>
           </div>
         ) : null}

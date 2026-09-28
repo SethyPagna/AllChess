@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { useTheme } from "@/components/shell/theme-provider";
 
+/** The icon follows the `.dark` class that the init script sets before paint, so it is right before hydration. */
 export function ThemeToggle({ labels }: { labels: Record<"light" | "dark" | "system", string> }) {
   const { resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -14,20 +15,18 @@ export function ThemeToggle({ labels }: { labels: Record<"light" | "dark" | "sys
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
-  const isDark = mounted && resolvedTheme === "dark";
-  const Icon = isDark ? Sun : Moon;
-  const nextTheme = isDark ? "light" : "dark";
-  const label = isDark ? labels.light : labels.dark;
+  const label = mounted && resolvedTheme === "dark" ? labels.light : labels.dark;
 
   return (
     <button
       type="button"
       aria-label={label}
       title={label}
-      onClick={() => setTheme(nextTheme)}
-      className="btn btn-square focus-ring action-secondary shell-icon-control text-[var(--muted)]"
+      onClick={() => setTheme(document.documentElement.classList.contains("dark") ? "light" : "dark")}
+      className="icon-btn shell-icon-control focus-ring"
     >
-      <Icon aria-hidden="true" size={17} />
+      <Sun aria-hidden="true" size={16} className="theme-icon-sun" />
+      <Moon aria-hidden="true" size={16} className="theme-icon-moon" />
     </button>
   );
 }

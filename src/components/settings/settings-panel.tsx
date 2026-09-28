@@ -1,9 +1,9 @@
+import Link from "next/link";
 import { Suspense } from "react";
+import { ChevronDown } from "lucide-react";
 
-import { LocaleSwitcher } from "@/components/shell/locale-switcher";
-import { NotificationCenter } from "@/components/shell/notification-center";
+import { LanguageSelect } from "@/components/settings/language-select";
 import { ThemeChoices } from "@/components/settings/theme-choices";
-import { InfoHint } from "@/components/ui/info-hint";
 import { localeNames, type LocaleCode } from "@/lib/i18n/locales";
 
 type SettingsPanelProps = {
@@ -12,14 +12,14 @@ type SettingsPanelProps = {
 };
 
 export function SettingsPanel({ locale, t }: SettingsPanelProps) {
+  const languageLabel = t("settings.language");
+
   return (
-    <div className="panel settings-stack">
-      <div className="settings-row">
-        <div className="settings-row-title">
-          <h2>Display</h2>
-          <InfoHint text={`${t("settings.light")}, ${t("settings.dark")}, and ${t("settings.system")} appearance controls.`} />
-        </div>
+    <div className="prefs-group">
+      <div className="prefs-row">
+        <span className="prefs-label">{t("settings.theme")}</span>
         <ThemeChoices
+          label={t("settings.theme")}
           labels={{
             light: t("settings.light"),
             dark: t("settings.dark"),
@@ -27,21 +27,24 @@ export function SettingsPanel({ locale, t }: SettingsPanelProps) {
           }}
         />
       </div>
-      <div className="settings-row">
-        <div className="settings-row-title">
-          <h2>{t("settings.language")}</h2>
-          <InfoHint text="Open the language menu to switch by full language name while keeping this page path." />
-        </div>
-        <Suspense fallback={<span className="action-secondary grid h-10 w-10 place-items-center text-sm">...</span>}>
-          <div className="settings-language-choice"><span>{localeNames[locale]}</span><LocaleSwitcher active={locale} /></div>
+      <div className="prefs-row">
+        <label className="prefs-label" htmlFor="prefs-language">{languageLabel}</label>
+        <Suspense
+          fallback={
+            <span className="prefs-select">
+              <select id="prefs-language" disabled defaultValue={locale}>
+                <option value={locale}>{localeNames[locale]}</option>
+              </select>
+              <ChevronDown size={14} aria-hidden="true" />
+            </span>
+          }
+        >
+          <LanguageSelect id="prefs-language" active={locale} />
         </Suspense>
       </div>
-      <div className="settings-row">
-        <div className="settings-row-title">
-          <h2>Notifications</h2>
-          <InfoHint text="Your notification inbox. Live match status is shown inside your game." />
-        </div>
-        <NotificationCenter />
+      <div className="prefs-row">
+        <span className="prefs-label">{t("nav.account")}</span>
+        <Link href={`/${locale}/login`} className="action-secondary focus-ring">{t("nav.login")}</Link>
       </div>
     </div>
   );

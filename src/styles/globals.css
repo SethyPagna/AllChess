@@ -565,15 +565,6 @@ option {
   transform: translateX(-2px);
 }
 
-.language-menu-panel .language-option {
-  background: transparent;
-}
-
-.language-menu-panel .language-option.is-active {
-  background: var(--accent);
-  color: #06130d;
-}
-
 .notification-menu summary {
   position: relative;
 }
@@ -2501,7 +2492,7 @@ option {
   border-radius: 7px;
   background:
     linear-gradient(140deg, rgb(255 255 255 / 18%), transparent 36%),
-    linear-gradient(160deg, color-mix(in srgb, var(--surface) 58%, var(--board-light)), color-mix(in srgb, var(--surface) 42%, var(--board-dark)));
+    linear-gradient(160deg, color-mix(in srgb, white 58%, var(--board-light)), color-mix(in srgb, white 42%, var(--board-dark)));
   color: #245d39;
   font-size: calc((var(--board-fixed-size) / var(--board-cols)) * 0.56);
   -webkit-text-stroke: 0;

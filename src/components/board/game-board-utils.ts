@@ -23,6 +23,12 @@ export function pickHumanColor(state: GameState, choice: SeatChoice) {
   return Math.random() > 0.5 ? first : second;
 }
 
+/** The person at the board resigns: against a bot that is always the human, even while the bot is on move. */
+export function resignationResult(state: Pick<GameState, "clocks" | "turn">, humanColor: string, botOpponent: boolean): NonNullable<GameState["result"]> {
+  const loser = botOpponent ? humanColor : state.turn;
+  return state.clocks.find((clock) => clock.color !== loser)?.color ?? "draw";
+}
+
 export function colorLabel(color: string) {
   const labels: Record<string, string> = {
     black: "Black",

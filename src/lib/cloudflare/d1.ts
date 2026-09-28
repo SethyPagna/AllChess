@@ -24,6 +24,7 @@ export type RoomListInput = {
   query?: string;
   sort?: RoomListSort;
   limit?: number;
+  variant?: string;
 };
 
 export type RecordMoveInput = {
@@ -370,6 +371,11 @@ export function createD1GameRepository(db: D1Database): GameRepository {
         bindings.push(searchPattern, searchPattern, searchPattern, searchPattern, searchPattern);
       }
 
+      if (input.variant) {
+        whereClauses.push("r.variant_key = ?");
+        bindings.push(input.variant);
+      }
+
       const orderBy = input.sort === "spectators" ? "r.spectator_count desc, r.created_at desc" : "r.created_at desc";
       bindings.push(Math.max(1, Math.min(input.limit ?? 20, 50)));
 
@@ -428,6 +434,9 @@ export function createD1GameRepository(db: D1Database): GameRepository {
 
     async recordMove(input) {
       const lastMove = input.state.moves[input.state.moves.length - 1];
+      // Persist the engine's canonical move (chosen promotion piece, canonical castling
+      // square) rather than the raw request, which may omit `promoteTo`.
+      const move = canonicalRecordedMove(input.move, lastMove);
       await db
         .prepare(
           `update games
@@ -442,12 +451,12 @@ export function createD1GameRepository(db: D1Database): GameRepository {
           `insert into moves (game_id, ply, move, notation, board_state_after)
            values (?, ?, ?, ?, ?)`
         )
-        .bind(input.gameId, input.state.ply, JSON.stringify(input.move), lastMove?.notation ?? "", JSON.stringify(input.state))
+        .bind(input.gameId, input.state.ply, JSON.stringify(move), lastMove?.notation ?? "", JSON.stringify(input.state))
         .run();
 
-      const actor = getMoveActor(input.state, input.move);
+      const actor = getMoveActor(input.state, move);
       await ensureParticipants(db, input.gameId, input.state, actor ? [{ color: actor }] : undefined);
-      await persistNormalizedMove(db, input.gameId, input.state, input.move, actor, lastMove?.notation ?? "");
+      await persistNormalizedMove(db, input.gameId, input.state, move, actor, lastMove?.notation ?? "");
       await persistPosition(db, input.gameId, input.state);
       await persistClocks(db, input.gameId, input.state, actor);
 
@@ -1041,6 +1050,16 @@ async function persistClocks(db: D1Database, gameId: string, state: GameState, m
     )
     .bind(gameId, participantId(gameId, movedBy), movedClock?.remainingMs ?? null, JSON.stringify({ ply: state.ply, turn: state.turn }))
     .run();
+}
+
+function canonicalRecordedMove(requested: Move, recorded?: Move & { notation?: string }): Move {
+  if (!recorded) return requested;
+  const sameKind = (recorded.kind ?? "move") === (requested.kind ?? "move");
+  const sameFrom = recorded.from?.row === requested.from?.row && recorded.from?.col === requested.from?.col;
+  if (!sameKind || !sameFrom) return requested;
+  const move: Move & { notation?: string } = { ...recorded };
+  delete move.notation;
+  return move;
 }
 
 function getMoveActor(state: GameState, move: Move) {

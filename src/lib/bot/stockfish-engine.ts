@@ -1,4 +1,4 @@
-import { getLegalMoves, getVariant, type GameState, type Move } from "@/lib/variants";
+import { findLegalMove, getCastlingRights, getLegalMoves, getVariant, sameSquare, type GameState, type Move } from "@/lib/variants";
 import { getBotStrengthBand, type BotTierKey } from "@/lib/bot/strength";
 
 export type BotEngineMode = "auto" | "stockfish" | "internal";
@@ -82,7 +82,10 @@ export function buildStockfishCommands(state: GameState, difficultyKey: BotDiffi
   if (config.limitStrength) commands.push(`setoption name UCI_Elo value ${config.elo}`);
   if (state.variantKey === "chess960") commands.push("setoption name UCI_Chess960 value true");
   commands.push("ucinewgame");
-  commands.push(playedMoves.length ? `position startpos moves ${playedMoves.join(" ")}` : "position startpos");
+  // Chess960 games do not start from the orthodox array, so send the live position.
+  // Classic keeps the move list so the engine sees repetition history.
+  if (state.variantKey === "chess960") commands.push(`position fen ${buildChess960Fen(state)}`);
+  else commands.push(playedMoves.length ? `position startpos moves ${playedMoves.join(" ")}` : "position startpos");
   commands.push(`go movetime ${moveTimeMs} depth ${config.depth}`);
   return commands;
 }
@@ -139,10 +142,55 @@ export async function requestStockfishMove(state: GameState, difficultyKey: BotD
   });
 }
 
+/**
+ * FEN for the current Chess960 position with Shredder-FEN castling rights (rook files:
+ * uppercase for White, lowercase for Black), which Stockfish reads with UCI_Chess960.
+ */
+export function buildChess960Fen(state: GameState) {
+  const placement = state.board
+    .map((row) => {
+      let text = "";
+      let empty = 0;
+      for (const cell of row) {
+        const piece = cell.piece;
+        if (!piece) {
+          empty += 1;
+          continue;
+        }
+        if (empty) text += String(empty);
+        empty = 0;
+        text += piece.owner === "white" ? piece.code.toUpperCase() : piece.code.toLowerCase();
+      }
+      return empty ? text + String(empty) : text;
+    })
+    .join("/");
+  const rights = getCastlingRights(state);
+  const castling = (["white", "black"] as const)
+    .flatMap((owner) =>
+      (["king", "queen"] as const).flatMap((side) => {
+        const right = rights.find((candidate) => candidate.owner === owner && candidate.side === side);
+        if (!right) return [];
+        const file = String.fromCharCode(97 + right.rookSquare.col);
+        return [owner === "white" ? file.toUpperCase() : file];
+      })
+    )
+    .join("");
+  const fullmove = Math.floor(state.ply / 2) + 1;
+  return `${placement} ${state.turn === "white" ? "w" : "b"} ${castling || "-"} ${enPassantTarget(state)} ${state.halfmoveClock ?? 0} ${fullmove}`;
+}
+
+function enPassantTarget(state: GameState) {
+  const last = state.moves.at(-1);
+  if (!last || (last.kind && last.kind !== "move") || last.from.col !== last.to.col || Math.abs(last.to.row - last.from.row) !== 2) return "-";
+  const pawn = state.board[last.to.row]?.[last.to.col]?.piece;
+  if (pawn?.code !== "p") return "-";
+  return squareToUci(state, { row: (last.from.row + last.to.row) / 2, col: last.to.col });
+}
+
 export function moveToUci(state: GameState, move: Move) {
   const from = squareToUci(state, move.from);
   const to = squareToUci(state, move.to);
-  const promotion = move.promotion ? "q" : "";
+  const promotion = move.promoteTo ?? (move.promotion ? "q" : "");
   return `${from}${to}${promotion}`;
 }
 
@@ -151,9 +199,13 @@ export function uciToLegalMove(state: GameState, uci: string) {
   const from = uciSquareToSquare(state, uci.slice(0, 2));
   const to = uciSquareToSquare(state, uci.slice(2, 4));
   if (!from || !to) return null;
+  const suffix = uci.slice(4).toLowerCase();
   const promotionRequested = uci.length > 4;
-  const candidates = getLegalMoves(state, from).filter((move) => move.to.row === to.row && move.to.col === to.col);
-  if (!candidates.length) return null;
+  const candidates = getLegalMoves(state, from).filter((move) => sameSquare(move.to, to));
+  // Western promotions: the UCI suffix names the piece (e7e8n -> knight); none means a queen.
+  if (candidates.some((move) => move.promoteTo !== undefined)) return findLegalMove(state, { from, to, promoteTo: suffix || undefined });
+  // UCI_Chess960 castling is reported as the king taking its own rook.
+  if (!candidates.length) return promotionRequested ? null : findLegalMove(state, { from, to });
   if (!promotionRequested) return candidates.find((move) => move.promotion !== true) ?? candidates[0] ?? null;
   const explicitPromotion = candidates.find((move) => move.promotion === true);
   if (explicitPromotion) return explicitPromotion;

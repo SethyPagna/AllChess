@@ -21,7 +21,8 @@ export async function GET(request: Request) {
       limit: Number.isFinite(limit) ? limit : 20,
       query: searchParams.get("q") ?? undefined,
       sort: searchParams.get("sort") === "spectators" ? "spectators" : "recent",
-      status: status === "active" || status === "waiting" ? status : "all"
+      status: status === "active" || status === "waiting" ? status : "all",
+      variant: searchParams.get("variant") ?? undefined
     })
   );
 }

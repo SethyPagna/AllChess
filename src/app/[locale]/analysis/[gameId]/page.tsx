@@ -1,7 +1,9 @@
-import { AnalysisCommandBar } from "@/components/analysis/analysis-command-bar";
+import Link from "next/link";
+import { Brain, ChevronLeft, Swords } from "lucide-react";
+
 import { AnalysisReviewTools } from "@/components/analysis/analysis-review-tools";
 import { AnalysisSummaryCard } from "@/components/analysis/analysis-summary-card";
-import { InfoHint } from "@/components/ui/info-hint";
+import { EmptyNote } from "@/components/community/empty-note";
 import {
   countReviewLabels,
   createReviewMomentLinks,
@@ -15,6 +17,7 @@ import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { createPageMetadata } from "@/lib/metadata/page-metadata";
 import { safeDecodeRouteSegment } from "@/lib/routing/params";
+import { playSetupHref } from "@/lib/routing/play-links";
 
 export const dynamic = "force-dynamic";
 
@@ -39,26 +42,40 @@ export default async function AnalysisPage({
   const t = createTranslator(locale);
   const decodedGameId = safeDecodeRouteSegment(gameId) ?? gameId;
   const review = await getRuntimeAnalysisReview(decodedGameId);
-  const hasAnalysis = Boolean(review.analysis);
-  const statusLabel = hasAnalysis ? "Saved review" : "No saved review";
   const selectedMoveIndex = normalizeSelectedMoveIndex(query.ply, review.moves);
   const reviewMoments = extractReviewMoments(review.analysis?.report);
   const reviewMomentByMove = createReviewMomentByMove(reviewMoments, review.moves);
-  const reviewLabelCounts = countReviewLabels(reviewMoments);
-  const reviewMomentLinks = createReviewMomentLinks(reviewMoments, reviewMomentByMove);
-  const trainingIdeas = extractTrainingIdeas(review.analysis?.report);
+  const hasContent = Boolean(review.analysis) || review.moves.length > 0;
 
   return (
-    <section className="analysis-page mx-auto grid max-w-5xl gap-5">
-      <div className="compact-page-heading">
-        <h1 className="text-4xl font-black">{t("analysis.title")}</h1>
-        <InfoHint text={t("analysis.subtitle")} />
-      </div>
-      <AnalysisCommandBar gameId={decodedGameId} locale={locale} statusLabel={statusLabel} />
-      <div className="analysis-grid">
-        <AnalysisSummaryCard analysis={review.analysis} gameId={decodedGameId} locale={locale} moveCount={review.moves.length} reviewLabelCounts={reviewLabelCounts} reviewMomentLinks={reviewMomentLinks} trainingIdeas={trainingIdeas} />
-        <AnalysisReviewTools autoPlay={query.autoplay === "1"} gameId={decodedGameId} locale={locale} moves={review.moves} reviewMomentByMove={reviewMomentByMove} selectedMoveIndex={selectedMoveIndex} />
-      </div>
+    <section className="cm-page">
+      <header className="cm-head">
+        <Link href={`/${locale}/history`} className="icon-btn focus-ring cm-back" aria-label="Back to history" title="History">
+          <ChevronLeft size={18} />
+        </Link>
+        <h1>{t("analysis.title")}</h1>
+      </header>
+      {hasContent ? (
+        <div className="analysis-layout">
+          <AnalysisSummaryCard
+            analysis={review.analysis}
+            gameId={decodedGameId}
+            locale={locale}
+            moveCount={review.moves.length}
+            reviewLabelCounts={countReviewLabels(reviewMoments)}
+            reviewMomentLinks={createReviewMomentLinks(reviewMoments, reviewMomentByMove)}
+            trainingIdeas={extractTrainingIdeas(review.analysis?.report)}
+          />
+          <AnalysisReviewTools autoPlay={query.autoplay === "1"} gameId={decodedGameId} locale={locale} moves={review.moves} reviewMomentByMove={reviewMomentByMove} selectedMoveIndex={selectedMoveIndex} />
+        </div>
+      ) : (
+        <EmptyNote icon={Brain} title="No saved review yet" text="Finished games you save get a move-by-move review here.">
+          <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="action-primary focus-ring">
+            <Swords size={16} />
+            Play online
+          </Link>
+        </EmptyNote>
+      )}
     </section>
   );
 }

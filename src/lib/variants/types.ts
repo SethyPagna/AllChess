@@ -24,6 +24,12 @@ export type Move = {
   from: Square;
   to: Square;
   promotion?: boolean;
+  /**
+   * Western chess promotion choice: the lowercase piece code the pawn becomes
+   * (q, r, b or n; antichess also allows k). Legal-move candidates always carry it
+   * for promotion moves; a request that omits it promotes to a queen.
+   */
+  promoteTo?: string;
   drop?: Piece;
 };
 

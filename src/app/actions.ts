@@ -26,7 +26,7 @@ export async function signInWithPassword(formData: FormData) {
 
   const env = await getCloudflareRuntimeEnv();
   if (!env.ALLCHESS_D1) {
-    redirect(`/${locale}/lobby?demo=1`);
+    redirect(`/${locale}`);
   }
 
   const result = await signInWithD1(env.ALLCHESS_D1, parsed.data.email, parsed.data.password);
@@ -35,8 +35,8 @@ export async function signInWithPassword(formData: FormData) {
   }
 
   await setSessionCookie(result.sessionId, result.maxAge);
-  revalidatePath(`/${locale}/lobby`);
-  redirect(`/${locale}/lobby`);
+  revalidatePath(`/${locale}`);
+  redirect(`/${locale}`);
 }
 
 export async function signUpWithPassword(formData: FormData) {
@@ -48,7 +48,7 @@ export async function signUpWithPassword(formData: FormData) {
 
   const env = await getCloudflareRuntimeEnv();
   if (!env.ALLCHESS_D1) {
-    redirect(`/${locale}/lobby?demo=1`);
+    redirect(`/${locale}`);
   }
 
   const result = await signUpWithD1(env.ALLCHESS_D1, parsed.data.email, parsed.data.password);
@@ -57,23 +57,23 @@ export async function signUpWithPassword(formData: FormData) {
   }
 
   await setSessionCookie(result.sessionId, result.maxAge);
-  revalidatePath(`/${locale}/lobby`);
-  redirect(`/${locale}/lobby`);
+  revalidatePath(`/${locale}`);
+  redirect(`/${locale}`);
 }
 
 export async function continueAsGuest(formData: FormData) {
   const locale = localeFromFormData(formData);
   const env = await getCloudflareRuntimeEnv();
   if (!env.ALLCHESS_D1) {
-    redirect(`/${locale}/lobby?demo=1`);
+    redirect(`/${locale}`);
   }
 
   const result = await createGuestSessionWithD1(env.ALLCHESS_D1);
   if (result.ok) {
     await setSessionCookie(result.sessionId, result.maxAge);
   }
-  revalidatePath(`/${locale}/lobby`);
-  redirect(`/${locale}/lobby`);
+  revalidatePath(`/${locale}`);
+  redirect(`/${locale}`);
 }
 
 export async function signInWithGoogle(formData: FormData) {

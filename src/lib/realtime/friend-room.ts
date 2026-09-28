@@ -5,6 +5,7 @@ import { getTimeControl } from "@/lib/game/time-controls";
 import { tickGameClock } from "@/lib/game/clocks";
 import { getGameCatalogEntry, getCatalogModeSupport } from "@/lib/catalog";
 import { janggiFormationKeys, pendingJanggiSide, withJanggiFormation, type JanggiSetup } from "@/lib/variants/janggi-formations";
+import { moveKindAllowed, refineMoveRequest } from "./move-request";
 
 // Piece drops and passes use an off-board source sentinel; the engine validates destinations.
 const square = z.object({ row: z.number().int().min(-1).max(19), col: z.number().int().min(-1).max(19) });
@@ -14,7 +15,7 @@ export const friendActionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("create"), token, variantKey: z.string().max(64), time: z.enum(["bullet", "blitz", "rapid", "classical", "correspondence", "freestyle"]), side: z.enum(["first", "second", "random"]) }),
   z.object({ action: z.literal("join"), token }),
   z.object({ action: z.literal("read"), token: token.optional() }),
-  z.object({ action: z.literal("move"), token, gameId, version: z.number().int().min(0), countVersion: z.number().int().min(0).optional(), move: z.object({ from: square, to: square, kind: z.enum(["move", "drop", "pass", "remove"]).optional(), promotion: z.boolean().optional(), drop: z.object({ id: z.string().max(100), code: z.string().max(8), labelKey: z.string().max(64), owner: z.enum(["white", "black", "red", "blue", "sente", "gote"]), promoted: z.boolean().optional() }).optional() }) }),
+  z.object({ action: z.literal("move"), token, gameId, version: z.number().int().min(0), countVersion: z.number().int().min(0).optional(), move: z.object({ from: square, to: square, kind: z.enum(["move", "drop", "pass", "remove"]).optional(), promotion: z.boolean().optional(), promoteTo: z.string().regex(/^[a-z]$/).optional(), drop: z.object({ id: z.string().max(100), code: z.string().max(8), labelKey: z.string().max(64), owner: z.enum(["white", "black", "red", "blue", "sente", "gote"]), promoted: z.boolean().optional() }).optional() }).superRefine(refineMoveRequest) }),
   z.object({ action: z.literal("count"), token, gameId, version: z.number().int().min(0), countVersion: z.number().int().min(0), countAction: z.enum(["start-board", "stop", "claim-draw"]) }),
   z.object({ action: z.literal("leave-before-start"), token, gameId }),
   z.object({ action: z.literal("formation"), token, gameId, formation: z.enum(janggiFormationKeys) }),
@@ -123,6 +124,7 @@ export async function transitionFriendRoom(stored: FriendRoom | null, id: string
     if (usesMakrukHonorCount(room.state) && action.countVersion !== undefined && action.countVersion !== makrukCountVersion(room.state)) return fail(409, "The count changed. Review the latest position.");
     if (action.version !== room.state.ply) return fail(409, "The board changed. Your position has been refreshed.");
     if (seat !== room.state.turn || (action.move.drop && action.move.drop.owner !== seat)) return fail(403, "Wait for your turn.");
+    if (!moveKindAllowed(room.state.variantKey, action.move.kind)) return fail(400, "That move is not legal.");
     try { room.state = applyMove(room.state, action.move); } catch { return fail(400, "That move is not legal."); }
     if (room.drawOffer && room.drawOffer !== seat) delete room.drawOffer;
   }

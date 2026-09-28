@@ -2,11 +2,12 @@ import { z } from "zod";
 import { getVariant, type GameState } from "@/lib/variants";
 import { botDifficultyLevels } from "@/lib/bot/config";
 import { timeControls, type TimeControlKey } from "./time-controls";
+import { isFlaggedTurnRepeat, type TurnFrame } from "./bot-clock";
 
 const colors = z.enum(["white", "black", "red", "blue", "sente", "gote"]);
 const square = z.object({ row: z.number().int().min(-1).max(19), col: z.number().int().min(-1).max(19) });
 const piece = z.object({ id: z.string().max(120), code: z.string().min(1).max(8), owner: colors, labelKey: z.string().max(120), promoted: z.boolean().optional() });
-const move = z.object({ kind: z.enum(["move", "drop", "pass", "remove"]).optional(), from: square, to: square, promotion: z.boolean().optional(), drop: piece.optional(), notation: z.string().max(200) });
+const move = z.object({ kind: z.enum(["move", "drop", "pass", "remove"]).optional(), from: square, to: square, promotion: z.boolean().optional(), promoteTo: z.string().regex(/^[a-z]$/).optional(), drop: piece.optional(), notation: z.string().max(200) });
 const frame = z.object({
   id: z.string().min(1).max(100), variantKey: z.string().max(64),
   board: z.array(z.array(z.object({ square, terrain: z.enum(["land", "river", "palace", "camp", "den", "trap", "promotion-zone"]).optional(), piece: piece.nullable() })).max(20)).max(20),
@@ -31,13 +32,20 @@ export type LocalMatchRecord = LocalMatchSummary & { version: 1; payload: string
 const envelope = z.object({ settings, cursor: z.number().int().min(0).max(2047), moves: z.array(move).max(4096), frames: z.array(frame).min(1).max(2048) });
 const maxExpandedMatchSize = 64 * 1024 * 1024;
 
+/** A bot reply that arrived after its clock ran out used to leave a second frame
+ * for the flagged ply. Keep only the flagged frame, so the timeline has one frame per ply. */
+function withoutFlaggedRepeats<T extends TurnFrame>(frames: T[], cursor: number) {
+  const repeated = (frame: T, index: number) => index + 1 < frames.length && isFlaggedTurnRepeat(frame, frames[index + 1]);
+  return { frames: frames.filter((frame, index) => !repeated(frame, index)), cursor: cursor - frames.slice(0, cursor).filter(repeated).length };
+}
+
 /** Deduplicate immutable cells, pieces, and rule data across the entire timeline.
  * Moves are stored once, not once per historical position. No engine replay can
  * accidentally discard a counting claim, a multi-capture continuation, or a clock. */
 export function encodeLocalMatch(snapshot: LocalMatchSnapshot): string {
-  const states = [...snapshot.history, snapshot.state, ...snapshot.future];
+  const { frames: states, cursor } = withoutFlaggedRepeats([...snapshot.history, snapshot.state, ...snapshot.future], snapshot.history.length);
   if (states.length > 2048 || states.at(-1)!.moves.length > 4096) throw new Error("This match exceeds the saved timeline limit.");
-  const value = { settings: snapshot.settings, cursor: snapshot.history.length, moves: states.at(-1)!.moves, frames: states.map(state => ({ ...state, moves: undefined })) };
+  const value = { settings: snapshot.settings, cursor, moves: states.at(-1)!.moves, frames: states.map(state => ({ ...state, moves: undefined })) };
   const nodes: unknown[] = [], expandedSizes: number[] = [], keys = new Map<string, number>();
   function intern(item: unknown, depth = 0): number {
     if (depth > 32) throw new Error("This match is too complex to save.");
@@ -95,14 +103,15 @@ export function decodeLocalMatch(record: LocalMatchRecord): LocalMatchSnapshot |
     const parsed = envelope.safeParse(values[packed.root]); if (!parsed.success) return null;
     const data = parsed.data, variant = getVariant(record.variantKey);
     if (data.cursor >= data.frames.length || !variant.players.includes(data.settings.humanColor)) return null;
-    const firstPly = data.frames[0].ply;
-    for (const [index, position] of data.frames.entries()) {
+    const { frames, cursor } = withoutFlaggedRepeats(data.frames, data.cursor);
+    const firstPly = frames[0].ply;
+    for (const [index, position] of frames.entries()) {
       if (position.id !== record.id || position.variantKey !== record.variantKey || position.ply !== firstPly + index || position.ply > data.moves.length || !variant.players.includes(position.turn)) return null;
       if (position.clocks.some((clock, i) => clock.color !== variant.players[i]) || position.board.length !== variant.board.rows) return null;
       if (position.board.some((row, r) => row.length !== variant.board.cols || row.some((cell, c) => cell.square.row !== r || cell.square.col !== c || (cell.piece && !variant.players.includes(cell.piece.owner))))) return null;
     }
-    if (data.frames.at(-1)!.ply !== data.moves.length) return null;
-    const states = data.frames.map(position => ({ ...position, moves: data.moves.slice(0, position.ply) })) as GameState[];
-    return { state: states[data.cursor], history: states.slice(0, data.cursor), future: states.slice(data.cursor + 1), settings: data.settings as LocalMatchSettings };
+    if (frames.at(-1)!.ply !== data.moves.length) return null;
+    const states = frames.map(position => ({ ...position, moves: data.moves.slice(0, position.ply) })) as GameState[];
+    return { state: states[cursor], history: states.slice(0, cursor), future: states.slice(cursor + 1), settings: data.settings as LocalMatchSettings };
   } catch { return null; }
 }

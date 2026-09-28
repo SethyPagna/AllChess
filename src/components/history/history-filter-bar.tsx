@@ -1,26 +1,41 @@
-import { FormChoicePicker } from "@/components/ui/form-choice-picker";
+import Link from "next/link";
 import { Search } from "lucide-react";
 
-import type { RuntimeRecentHistory } from "@/lib/history/runtime";
+import type { HistoryResultFilter, RuntimeRecentHistory } from "@/lib/history/runtime";
 
-type HistoryFilterBarProps = {
-  hasSavedRows: boolean;
-  history: RuntimeRecentHistory;
-};
+const resultFilters: { key: HistoryResultFilter; label: string }[] = [
+  { key: "all", label: "All" },
+  { key: "win", label: "Wins" },
+  { key: "loss", label: "Losses" },
+  { key: "draw", label: "Draws" },
+  { key: "unfinished", label: "Unfinished" }
+];
 
-export function HistoryFilterBar({ hasSavedRows, history }: HistoryFilterBarProps) {
+function historyHref(locale: string, values: { q?: string; result?: HistoryResultFilter } = {}) {
+  const query = new URLSearchParams();
+  if (values.q) query.set("q", values.q);
+  if (values.result && values.result !== "all") query.set("result", values.result);
+  const suffix = query.toString();
+  return suffix ? `/${locale}/history?${suffix}` : `/${locale}/history`;
+}
+
+export function HistoryFilterBar({ history, locale }: { history: RuntimeRecentHistory; locale: string }) {
+  const { query, result } = history.filters;
+
   return (
-    <form className={`record-filter-row panel ${hasSavedRows ? "" : "is-empty"}`} aria-label="History filters">
-      <label className="catalog-search" title="Search saved games by game, variant, opponent, mode, or result.">
-        <Search size={18} />
-        <span className="sr-only">Search history</span>
-        <input aria-label="Search history" name="q" defaultValue={history.filters.query} placeholder="Search saved games" />
-      </label>
-      <FormChoicePicker key={history.filters.result} name="result" label="Filter history result" defaultValue={history.filters.result} options={[{key: "all", label: "All games"}, {key: "win", label: "Wins"}, {key: "loss", label: "Losses"}, {key: "draw", label: "Draws"}, {key: "unfinished", label: "Unfinished"}]} />
-      <button type="submit" className="focus-ring record-filter-chip">
-        Search
-      </button>
-      <span className="record-filter-chip" aria-disabled="true">Recent first</span>
+    <form className="cm-toolbar" aria-label="History filters" action={`/${locale}/history`}>
+      <div className="cm-search" title="Search by game, opponent, mode, or result.">
+        <button type="submit" className="focus-ring" aria-label="Search" title="Search"><Search size={15} /></button>
+        <input type="search" name="q" defaultValue={query} placeholder="Search saved games" aria-label="Search history" enterKeyHint="search" />
+      </div>
+      {result !== "all" ? <input type="hidden" name="result" value={result} /> : null}
+      <div className="cm-chips" role="group" aria-label="Filter history result">
+        {resultFilters.map((filter) => (
+          <Link key={filter.key} href={historyHref(locale, { q: query, result: filter.key }) as never} className="cm-chip focus-ring" aria-current={result === filter.key ? true : undefined}>
+            {filter.label}
+          </Link>
+        ))}
+      </div>
     </form>
   );
 }

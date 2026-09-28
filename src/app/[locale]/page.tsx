@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, Bot, Swords } from "lucide-react";
+import { Bot, Swords } from "lucide-react";
 
 import { IntroBoard } from "@/components/home/intro-board";
 import { GameLibrary } from "@/components/home/game-library";
@@ -21,22 +21,22 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function HomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
-  const t = createTranslator(locale);
   const entries = await getRuntimeCatalogEntries();
+  const playableCount = entries.filter((entry) => entry.variantKey).length;
 
   return (
     <div className="studio-home">
-      <header className="studio-welcome"><Link href={`/${locale}`}>{t("app.name")}</Link><Link href={`/${locale}/watch`}>Watch a game <ArrowUpRight size={15} /></Link></header>
       <section className="studio-hero" aria-label="AllChess intro">
         <div className="intro-copy">
           <h1>Your next <em>move.</em></h1>
+          <p>{playableCount} board games to play online, with a bot, or with a friend.</p>
           <div className="intro-actions">
-            <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="focus-ring action-primary inline-flex items-center gap-2 px-5 py-3">
-              <Swords size={18} />
+            <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="focus-ring action-primary">
+              <Swords size={16} />
               Quick match
             </Link>
-            <Link href={playSetupHref(locale, { mode: "bot", time: "rapid" }) as never} className="focus-ring action-secondary inline-flex items-center gap-2 px-5 py-3">
-              <Bot size={18} />
+            <Link href={playSetupHref(locale, { mode: "bot", time: "rapid" }) as never} className="focus-ring action-secondary">
+              <Bot size={16} />
               Play a bot
             </Link>
           </div>

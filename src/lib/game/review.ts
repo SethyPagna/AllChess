@@ -47,6 +47,11 @@ export function summarizeMoves(moves: readonly MoveTimelineEntry[]) {
   };
 }
 
+// Stored moves from older saves can differ from the engine's canonical record in optional
+// fields (an explicit kind "move", a promotion flag on an automatic promotion), so those
+// count as equal when either side leaves them out.
 function sameMove(a: RecordedMove, b: RecordedMove) {
-  return a.notation === b.notation && a.kind === b.kind && a.from.row === b.from.row && a.from.col === b.from.col && a.to.row === b.to.row && a.to.col === b.to.col && a.promotion === b.promotion && a.drop?.code === b.drop?.code && a.drop?.owner === b.drop?.owner;
+  const kind = (move: RecordedMove) => move.kind ?? (move.drop ? "drop" : "move");
+  const optionalEqual = <T>(left: T | undefined, right: T | undefined) => left === undefined || right === undefined || left === right;
+  return kind(a) === kind(b) && a.from.row === b.from.row && a.from.col === b.from.col && a.to.row === b.to.row && a.to.col === b.to.col && optionalEqual(a.promotion, b.promotion) && optionalEqual(a.promoteTo, b.promoteTo) && a.drop?.code === b.drop?.code && a.drop?.owner === b.drop?.owner;
 }
