@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, type ReactNode } from "react";
-import { Bot, Download, Flag, Handshake, Lightbulb, MoreHorizontal, Pause, Play, PlayCircle, Redo2, RotateCcw, Square, Undo2, Users } from "lucide-react";
+import { Bot, Download, Flag, Handshake, Lightbulb, MoreHorizontal, Pause, Play, PlayCircle, Redo2, RotateCcw, SkipForward, Square, Undo2, Users } from "lucide-react";
 
 import { closeDetails, useDismissableDetails } from "@/components/ui/use-dismissable-details";
 
@@ -14,6 +14,7 @@ type PlayControlCardProps = {
   canUndo: boolean;
   canUseAssist: boolean;
   canUseBots: boolean;
+  canPass?: boolean;
   isThinking: boolean;
   paused?: boolean;
   suggestedMoveReady: boolean;
@@ -22,6 +23,7 @@ type PlayControlCardProps = {
   onExport?: () => void;
   onMoveForCurrentSide: () => void;
   onOfferDraw: () => void;
+  onPass?: () => void;
   onRedo: () => void;
   onResign: () => void;
   onReset: () => void;
@@ -32,7 +34,6 @@ type PlayControlCardProps = {
   onUndo: () => void;
 };
 
-/** The in-game action bar: four everyday actions, everything else tucked into one menu. */
 export function PlayControlCard({
   botMode,
   canEndGame,
@@ -40,6 +41,7 @@ export function PlayControlCard({
   canUndo,
   canUseAssist,
   canUseBots,
+  canPass = false,
   isThinking,
   paused = false,
   suggestedMoveReady,
@@ -48,6 +50,7 @@ export function PlayControlCard({
   onExport,
   onMoveForCurrentSide,
   onOfferDraw,
+  onPass,
   onRedo,
   onResign,
   onReset,
@@ -59,13 +62,16 @@ export function PlayControlCard({
 }: PlayControlCardProps) {
   const moreRef = useRef<HTMLDetailsElement>(null);
   useDismissableDetails(moreRef);
+  function closeMenu() {
+    closeDetails(moreRef, { restoreFocus: true });
+  }
   const menuItem = (label: string, icon: ReactNode, onClick: () => void, options: { disabled?: boolean; pressed?: boolean } = {}) => (
     <button
       type="button"
       className="focus-ring play-menu-item"
       aria-pressed={options.pressed}
       disabled={options.disabled}
-      onClick={() => { onClick(); closeDetails(moreRef, { restoreFocus: true }); }}
+      onClick={() => { onClick(); closeMenu(); }}
     >
       {icon}
       <span>{label}</span>
@@ -96,10 +102,17 @@ export function PlayControlCard({
         {suggestedMoveReady ? <PlayCircle size={17} /> : <Lightbulb size={17} />}
         <span>{suggestedMoveReady ? "Play" : "Suggest"}</span>
       </button>
-      <button type="button" className="focus-ring play-action" onClick={onOfferDraw} disabled={!canEndGame} title="End the game as a draw">
-        <Handshake size={17} />
-        <span>Draw</span>
-      </button>
+      {onPass ? (
+        <button type="button" className="focus-ring play-action" onClick={onPass} disabled={!canPass} aria-label="Pass turn" title="Pass this turn when not in check">
+          <SkipForward size={17} />
+          <span>Pass</span>
+        </button>
+      ) : (
+        <button type="button" className="focus-ring play-action" onClick={onOfferDraw} disabled={!canEndGame} title="End the game as a draw">
+          <Handshake size={17} />
+          <span>Draw</span>
+        </button>
+      )}
       <button type="button" className="focus-ring play-action is-danger" onClick={onResign} disabled={!canEndGame} title="Resign this game">
         <Flag size={17} />
         <span>Resign</span>
@@ -110,6 +123,7 @@ export function PlayControlCard({
           <span>More</span>
         </summary>
         <div className="play-more-menu popover">
+          {onPass ? menuItem("Draw", <Handshake size={15} />, onOfferDraw, { disabled: !canEndGame }) : null}
           {menuItem("Redo", <Redo2 size={15} />, onRedo, { disabled: !canRedo })}
           {menuItem("Move for me", <PlayCircle size={15} />, onMoveForCurrentSide, { disabled: !canUseAssist })}
           {canUseBots || botMode !== "human" ? (

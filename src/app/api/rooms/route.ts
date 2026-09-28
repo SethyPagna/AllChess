@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
+import { legacyWriteRetired, legacyWritesEnabled } from "@/lib/realtime/legacy-writes";
 import { createRoomSnapshot } from "@/lib/realtime/rooms";
 import { getRuntimeRoomList } from "@/lib/realtime/runtime";
 
@@ -28,6 +29,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (!legacyWritesEnabled()) return legacyWriteRetired();
   const body = createRoomSchema.parse(await request.json().catch(() => ({})));
   const snapshot = createRoomSnapshot({ variantKey: body.variantKey, rated: body.rated });
   const env = await getCloudflareRuntimeEnv();

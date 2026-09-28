@@ -63,7 +63,7 @@ export const variantCatalog: VariantDefinition[] = [
     supportsCastling: false,
     supportsCheck: true,
     objective: "Checkmate or bare the opposing king using ferz and alfil movement.",
-    setup: ["rnakfanr", "pppppppp", "........", "........", "........", "........", "PPPPPPPP", "RNAFKANR"],
+    setup: ["rnafkanr", "pppppppp", "........", "........", "........", "........", "PPPPPPPP", "RNAFKANR"],
     aliases: ["persian-chess"]
   },
   {

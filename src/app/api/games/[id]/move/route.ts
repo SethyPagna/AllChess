@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
+import { legacyWriteRetired, legacyWritesEnabled } from "@/lib/realtime/legacy-writes";
 import { moveKindAllowed, refineMoveRequest } from "@/lib/realtime/move-request";
 import { applyMove, type GameState, type Move } from "@/lib/variants";
 
@@ -40,6 +41,7 @@ const moveSchema = z.object({
 });
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!legacyWritesEnabled()) return legacyWriteRetired();
   const { id } = await params;
   const body = moveSchema.safeParse(await request.json().catch(() => ({})));
   if (!body.success) return NextResponse.json({ error: "errors.invalidMove" }, { status: 400 });

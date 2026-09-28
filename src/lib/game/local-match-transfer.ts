@@ -10,6 +10,8 @@ const fileSchema = z.object({
 }).strict();
 const count = z.object({ phase: z.enum(["board", "pieces"]), side: z.enum(["white", "black"]), count: z.number().int().min(1).max(10000), limit: z.number().int().min(1).max(10000), firstMovePending: z.boolean(), startedAtPly: z.number().int().min(0).max(4096) });
 const ply = z.number().int().min(0).max(4096);
+// Positions recorded for repetition: blocks of space-separated digests; saves made before blocks hold one string.
+const positionHistory = (block: z.ZodString) => z.union([block, z.array(block).max(4097)]);
 const countEvents = z.array(z.object({ ply: z.number().int().min(0).max(4096), actor: z.enum(["white", "black"]), action: z.enum(["start-board", "start-pieces", "stop", "claim-draw"]) })).max(10000);
 // These values are consumed directly by counting controls and the rule engine.
 // Keep unfamiliar metadata intact for forward compatibility, but reject malformed
@@ -23,7 +25,9 @@ const ruleData = z.object({
     // Older saves lack the perpetual-check window; the engine then scores repetitions as draws.
     firstPly: z.record(z.string(), ply).optional(), lastQuietPly: z.object({ sente: ply.optional(), gote: ply.optional() }).optional()
   }).optional(),
-  westernRepetition: z.string().max(12 * 4097).regex(/^[0-9a-z]+( [0-9a-z]+)*$/).optional(),
+  westernRepetition: positionHistory(z.string().max(12 * 4097).regex(/^[0-9a-z]+( [0-9a-z]+)*$/)).optional(),
+  // Xiangqi and Janggi mark a position "+" when its side to move is in check.
+  repetitionHistory: positionHistory(z.string().max(13 * 4097).regex(/^[0-9a-z]+\+?( [0-9a-z]+\+?)*$/)).optional(),
   // Imports get a new id, so Chess960 castling relies on the recorded back rank.
   chess960Profile: z.literal("random-v1").optional(),
   chess960Position: z.number().int().min(0).max(959).optional(),

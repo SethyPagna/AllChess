@@ -52,7 +52,7 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     ],
     specialRules: ["Minister", "Elephant jump", "One-step pawns", "No castling", "Bare-king objective"],
     winConditions: ["Checkmate", "Bare the opposing king", "Timeout"],
-    drawConditions: ["Mutual bare kings", "Repetition/no-progress according to selected room rules"],
+    drawConditions: ["Mutual bare kings", "Threefold repetition (automatic)", "Fifty-move rule"],
     illegalMoveNotes: ["The elephant must land exactly two diagonal squares away.", "Pawns may not double-push.", "A player may not leave their king in check."]
   },
   chess960: {
@@ -80,7 +80,7 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     ],
     specialRules: ["Piece pockets", "Drops", "Pawn drop rank limits", "Promoted-pawn demotion"],
     winConditions: ["Checkmate", "Timeout when the opponent has mating material", "Resignation"],
-    drawConditions: ["Stalemate", "Repetition/no-progress according to selected room rules", "Mutual agreement"],
+    drawConditions: ["Stalemate", "Threefold repetition (automatic)", "Fifty-move rule", "Mutual agreement"],
     illegalMoveNotes: ["Drops must be on empty squares.", "Pawns may not be dropped on the first or last rank.", "A player may not leave their king in check."]
   },
   shatranj: {
@@ -90,11 +90,11 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
       "The ferz moves one square diagonally and the alfil jumps exactly two squares diagonally.",
       "Pawns move one square forward, capture diagonally, and promote to ferz.",
       "There is no castling, double pawn push, or en passant.",
-      "Win by checkmate or by baring the opposing king."
+      "Win by checkmate, by stalemating the opponent, or by baring the opposing king unless its next move bares your king too."
     ],
     specialRules: ["Ferz", "Alfil jump", "One-step pawns", "No castling", "Bare-king objective"],
-    winConditions: ["Checkmate", "Bare the opposing king", "Timeout"],
-    drawConditions: ["Mutual bare kings", "Repetition/no-progress according to selected room rules"],
+    winConditions: ["Checkmate", "Stalemate the opponent", "Bare the opposing king", "Timeout"],
+    drawConditions: ["Mutual bare kings", "Threefold repetition (automatic)", "Fifty-move rule"],
     illegalMoveNotes: ["The alfil must land exactly two diagonal squares away.", "Pawns may not double-push.", "A player may not leave their king in check."]
   },
   xiangqi: {
@@ -107,8 +107,8 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
       "Checkmate or stalemate wins for the attacking side."
     ],
     specialRules: ["Palace confinement", "River limits", "Horse leg blocks", "Elephant eye blocks", "Cannon screen captures", "Flying general"],
-    winConditions: ["Checkmate", "Stalemate against the side to move", "Timeout"],
-    drawConditions: ["Perpetual/repetition according to selected rules mode", "Mutual agreement"],
+    winConditions: ["Checkmate", "Stalemate against the side to move", "Opponent gives perpetual check through a threefold repetition", "Timeout"],
+    drawConditions: ["Threefold repetition without perpetual check (automatic)", "Mutual agreement"],
     illegalMoveNotes: ["Generals may not face directly.", "A player may not ignore check.", "Blocked horse/elephant moves are illegal."]
   },
   shogi: {
@@ -121,10 +121,10 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
       "Captured pieces become pieces in hand.",
       "Drops are legal except illegal pawn drops, non-moving drops, and pawn-drop mate.",
       "Promotion applies in the promotion zone.",
-      "Checkmate wins; illegal moves lose in strict rules."
+      "Checkmate or leaving the opponent without a legal move wins; passing is not allowed."
     ],
     specialRules: ["Piece drops", "Promotion zone", "Nifu pawn restriction", "Pawn-drop mate restriction"],
-    winConditions: ["Checkmate", "Illegal move in strict competitive mode", "Resignation", "Timeout"],
+    winConditions: ["Checkmate", "Opponent has no legal move", "Illegal move in strict competitive mode", "Resignation", "Timeout"],
     drawConditions: ["Repetition rules according to selected mode", "Impasse scoring in supported rules mode"],
     illegalMoveNotes: ["Do not drop a pawn on a file with an unpromoted friendly pawn.", "Do not drop a piece where it can never move.", "Do not leave your king in check."]
   },
@@ -135,10 +135,10 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
       "Play Shogi on a 5x5 board with king, gold, silver, bishop, rook, and pawn per side.",
       "Captured pieces become pieces in hand and can be dropped back unpromoted.",
       "The promotion zone is only the farthest rank from each player.",
-      "Checkmate wins; illegal pawn drops and self-check restrictions still apply."
+      "Checkmate or leaving the opponent without a legal move wins; illegal pawn drops and self-check restrictions still apply."
     ],
     specialRules: ["5x5 board", "Drops", "One-rank promotion zone", "Nifu pawn restriction", "Pawn-drop mate restriction"],
-    winConditions: ["Checkmate", "Resignation", "Timeout"],
+    winConditions: ["Checkmate", "Opponent has no legal move", "Resignation", "Timeout"],
     drawConditions: ["Repetition/no-progress according to selected room rules"],
     illegalMoveNotes: ["Do not drop a pawn on a file with an unpromoted friendly pawn.", "Do not drop pawns, lances, or knights where they can never move.", "Do not leave your king in check."]
   },
@@ -152,8 +152,8 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
       "Checkmate wins. In this app's casual profile, leaving a bikjang challenge unanswered draws; two passes compare material points."
     ],
     specialRules: ["Palace diagonals", "Cannon screens", "No river", "Facing generals", "Optional pass in rules mode"],
-    winConditions: ["Checkmate", "Timeout", "Higher material score after consecutive passes"],
-    drawConditions: ["Unanswered bikjang in this casual profile", "Repetition", "Mutual agreement"],
+    winConditions: ["Checkmate", "Timeout", "Higher material score after consecutive passes or a threefold repetition", "Opponent gives perpetual check through a threefold repetition"],
+    drawConditions: ["Unanswered bikjang in this casual profile", "Mutual agreement"],
     illegalMoveNotes: ["A cannon cannot screen or capture another cannon.", "Passing is unavailable in check.", "A player may not remain in check."]
   },
   "ouk-chaktrang": {
@@ -260,7 +260,7 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     ],
     specialRules: ["Mandatory captures", "No check", "King is non-royal", "Pawns may promote to a king as well as a queen, rook, bishop, or knight"],
     winConditions: ["Lose all pieces", "Have no legal move under antichess rules"],
-    drawConditions: ["Repetition/no-progress according to selected mode"],
+    drawConditions: ["Threefold repetition (automatic)"],
     illegalMoveNotes: ["A non-capture is illegal when a capture exists.", "Check restrictions do not apply."]
   },
   horde: {
@@ -274,7 +274,7 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     ],
     specialRules: ["Asymmetric armies", "First-rank horde pawns may advance two squares, with no en passant", "Horde elimination objective", "Standard black king safety"],
     winConditions: ["White checkmates black", "Black captures all horde pieces", "Timeout"],
-    drawConditions: ["Stalemate/repetition/no-progress according to selected mode"],
+    drawConditions: ["Stalemate", "Threefold repetition (automatic)", "Fifty-move rule"],
     illegalMoveNotes: ["Black king safety still applies.", "Horde setup and promotion must remain valid."]
   },
   "king-of-the-hill": {
@@ -316,7 +316,7 @@ export const variantRuleSummaries: Record<string, VariantRuleSummaryBase> = {
     ],
     specialRules: ["No pawns", "Checks are forbidden", "Race-to-eighth objective", "Black reply draw after White reaches"],
     winConditions: ["King reaches the eighth rank first", "White reaches and Black fails to answer on the next move"],
-    drawConditions: ["Black reaches the eighth rank immediately after White reaches first", "Stalemate", "Fifty-move rule", "Repetition/no-progress according to room rules"],
+    drawConditions: ["Black reaches the eighth rank immediately after White reaches first", "Stalemate", "Fifty-move rule", "Threefold repetition (automatic)"],
     illegalMoveNotes: ["A move may not give check.", "A king may not move into check.", "Royal captures are never legal."]
   }
 };
@@ -376,7 +376,8 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
     verifiedEdgeCases: [
       "Ferz one-step diagonal movement and alfil two-square jump movement are covered.",
       "Pawns move one step, cannot double-push, and promote to ferz on the back rank.",
-      "The bare-king objective ends the game when the opponent has only a royal piece left.",
+      "The bare-king objective wins once the bared king has no reply that bares the mover too; baring back draws.",
+      "Stalemating the opponent wins, and new games start both shahs on the e-file; older games keep their original opening layout.",
       "No castling is exposed for the historical ruleset and bot legal validation uses the native moves."
     ],
     remainingGates: []
@@ -386,9 +387,10 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
     verifiedEdgeCases: [
       "Generals stay inside the palace and may not face across an open file.",
       "Horse-leg, elephant-eye, river, cannon-screen, checkmate, and stalemate-loss behavior are covered.",
-      "Royal capture is rejected; legal-move validation decides terminal positions."
+      "Royal capture is rejected; legal-move validation decides terminal positions.",
+      "Threefold repetition draws, and a side that checked on every move since the position first appeared loses instead."
     ],
-    remainingGates: []
+    remainingGates: ["WXF perpetual chasing is not adjudicated; only perpetual check and plain repetition end the game automatically."]
   },
   shogi: {
     status: "verified-playable",
@@ -407,9 +409,9 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
       "The 5x5 reduced setup is registered with one pawn and five back-rank pieces per side.",
       "Drops, nifu, dead-drop restrictions, and pawn-drop mate validation reuse the verified Shogi path.",
       "The one-rank promotion zone is covered for both sides.",
-      "Fourfold repetition draws, and the side that checked on every move of the cycle loses, as in Shogi."
+      "On a fourfold repetition, the side that checked on every move of the cycle loses, as in Shogi."
     ],
-    remainingGates: []
+    remainingGates: ["Other fourfold repetitions are drawn as in Shogi; the cited Minishogi rules score them as a loss for sente, who moved first."]
   },
   janggi: {
     status: "verified-playable",
@@ -418,6 +420,7 @@ const ruleCompletionByVariant: Record<string, VariantRuleCompletion> = {
       "Cannons require a non-cannon screen, cannot capture cannons, and can use palace diagonal lines.",
       "Facing generals use bikjang handling: the next player must resolve the open file or the game is drawn.",
       "Pass is legal outside check, consecutive passes trigger material scoring, and bikjang pass keeps the draw policy.",
+      "A threefold repetition is decided by material points, unless one side checked on every move since the position first appeared; that side loses.",
       "A legal cache-first Janggi bot seed, native review context, D1 persistence, and play-route smoke coverage are verified."
     ],
     remainingGates: []

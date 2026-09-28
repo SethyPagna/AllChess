@@ -268,7 +268,7 @@ describe("Chess960 replay and saved games", () => {
       { from: sq(6, 4), to: sq(4, 4) },
       { from: sq(1, 4), to: sq(3, 4) }
     ]);
-    expect(played.variantState).toEqual({ westernRepetition: expect.any(String) });
+    expect(played.variantState).toEqual({ westernRepetition: [expect.any(String)] });
 
     const restored = restoreChess960Opening(createInitialState("chess960", played.id), played);
     expect(restored.board).toEqual(legacyStart.board);

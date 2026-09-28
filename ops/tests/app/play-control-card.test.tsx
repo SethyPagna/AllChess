@@ -196,4 +196,16 @@ describe("PlayControlCard", () => {
     expect(menuItems).not.toContain("Export game");
     expect(menuItems.at(-1)).toBe("New game");
   });
+
+  test("Janggi keeps Pass in the compact bar and Draw in More", () => {
+    const onPass = vi.fn();
+    const { names, button, menuItems } = renderCard(createProps({ onPass, canPass: true }));
+    expect(names.slice(0, 5)).toEqual(["Undo", "Suggest a move", "Pass turn", "Resign", "More game actions"]);
+    expect(menuItems).toContain("Draw");
+    expect(button("Pass turn").disabled).toBe(false);
+    button("Pass turn").onClick?.();
+    expect(onPass).toHaveBeenCalledOnce();
+    expect(renderCard(createProps({ onPass, canPass: false })).button("Pass turn").disabled).toBe(true);
+    expect(renderCard(createProps()).names).not.toContain("Pass turn");
+  });
 });

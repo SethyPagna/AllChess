@@ -71,6 +71,7 @@ export function describeGameOutcome(state: GameState, viewer: PlayerColor = stat
 function outcomeContext(state: GameState, reason: NonNullable<GameState["outcomeReason"]>, result: GameOutcome["result"], winner: PlayerColor | null) {
   const sideToMove = capitalize(String(state.turn));
   const winnerText = winner ? capitalize(String(winner)) : null;
+  const shogiRepetition = state.variantKey === "shogi" || state.variantKey === "mini-shogi";
   const base =
     result === "draw"
       ? "No player receives the win for this finished position."
@@ -88,10 +89,14 @@ function outcomeContext(state: GameState, reason: NonNullable<GameState["outcome
     "insufficient-material": "Neither side has enough material left to checkmate. With only the two kings, a lone bishop or knight, or only bishops on one square colour, the game is immediately drawn.",
     "fifty-move": "Fifty full moves passed without a pawn move or capture, so standard chess rules allow the game to be drawn.",
     "counting-rule": "The variant-specific endgame count expired before checkmate was delivered.",
-    repetition: getVariant(state.variantKey).family === "western"
-      ? "The same position occurred three times with the same side to move and the same castling and en passant options, so the game is drawn by repetition."
-      : "The same position occurred four times with the same side to move, so the Shogi repetition rule ended the game.",
-    "perpetual-check": "The repeated position was sustained by continuous checking, so the checking side loses under Shogi rules.",
+    repetition: shogiRepetition
+      ? "The same position occurred four times with the same side to move, so the Shogi repetition rule ended the game."
+      : state.variantKey === "janggi"
+        ? "The same position occurred three times with the same side to move, so the material points decided the result."
+        : "The same position occurred three times with the same side to move.",
+    "perpetual-check": shogiRepetition
+      ? "The repeated position was sustained by continuous checking, so the checking side loses under Shogi rules."
+      : "The same position occurred three times while one side gave check with every move, so the checking side loses.",
     impasse: "Both Shogi kings entered the promotion zones, and the material-point profile adjudicated the position.",
     scoring: "Both players passed in a scoring ruleset, so the remaining material points decided the result.",
     resignation: "A player resigned, so the opponent receives the win without more moves being played.",

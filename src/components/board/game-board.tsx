@@ -7,6 +7,7 @@ import { historicalPieceHint } from "./historical-piece";
 import { jungleRank, jungleTrapOwner, restoreJungleOpening, usesJungleStandardRules } from "@/lib/variants/jungle-profile";
 import { restoreKonaneOpening, usesKonaneNpsRules } from "@/lib/variants/konane-profile";
 import { restoreHordeOpening } from "@/lib/variants/horde-profile";
+import { restoreShatranjOpening } from "@/lib/variants/shatranj-profile";
 import type { LocalMatchSnapshot } from "@/lib/game/local-match";
 import { downloadLocalMatch } from "@/lib/game/local-match-transfer";
 import { FriendChat } from "./friend-chat";
@@ -34,6 +35,7 @@ import { applyBotMoveAfterThinking, botReplyHistoryFrame, withoutFlaggedBotFrame
 import { tickGameClock } from "@/lib/game/clocks";
 import { redoTimeline, redoTimelineUntil, undoTimeline, undoTimelineUntil } from "@/lib/game/history";
 import { formatTimelineNotation } from "@/lib/game/notation";
+import { createMoveSuggestion, resolveMoveSuggestion, suggestionSelection, type MoveSuggestion } from "@/lib/game/move-suggestion";
 import { buildMoveTimeline, type MoveTimelineEntry } from "@/lib/game/review";
 import { describeGameOutcome } from "@/lib/game/outcome";
 import { normalizeLocale } from "@/lib/i18n/locales";
@@ -42,7 +44,7 @@ import type { VariantRuleSummary } from "@/lib/variants/rules-atlas";
 import { getTimeControl, type TimeControlKey } from "@/lib/game/time-controls";
 import { JanggiLocalSetup, JanggiRoomSetup } from "./janggi-formation-picker";
 import { copyJanggiFormations, pendingJanggiSide, readJanggiFormations, restoreJanggiOpening, withJanggiFormation, type JanggiFormation, type JanggiSide } from "@/lib/variants/janggi-formations";
-import { applyMove, createInitialState, getLegalMoves, getVariant, restoreChess960Opening, sameSquare, serializeSquare, type GameState, type Move, type Piece, type Square } from "@/lib/variants";
+import { applyMove, createInitialState, findLegalMove, getLegalMoves, getVariant, restoreChess960Opening, sameSquare, serializeSquare, type GameState, type Move, type Piece, type Square } from "@/lib/variants";
 import { BoardGrid } from "@/components/board/board-grid";
 import { BoardToolbar } from "@/components/board/board-toolbar";
 import { BoardPlayerCard } from "@/components/board/board-player-card";
@@ -56,7 +58,7 @@ import { PlayControlCard } from "@/components/board/play-control-card";
 import { PlayMatchHeader } from "@/components/board/play-match-header";
 import { PlayPregameSetupCard } from "@/components/board/play-pregame-setup-card";
 import { playModeOptions, type PlayMode } from "@/components/board/game-board-options";
-import { colorLabel, formatMove, pickHumanColor, quickSuggestionMove, resignationResult, squareName, withTimeControl } from "@/components/board/game-board-utils";
+import { colorLabel, pickHumanColor, quickSuggestionMove, resignationResult, squareName, withTimeControl } from "@/components/board/game-board-utils";
 import { PlayMoveList } from "@/components/board/play-move-list";
 
 import { get3DCollection, isPieceFinish, type PieceFinish } from "./board-3d-config";
@@ -119,14 +121,7 @@ type ThinkingState = {
   label: string;
 };
 
-type SuggestedMove = {
-  from: Square;
-  to: Square;
-  promotion?: boolean;
-  notation: string;
-  score: number | null;
-  depthReached: number;
-};
+type SuggestedMove = MoveSuggestion;
 
 export type PromotionOption = {
   move: Move;
@@ -437,7 +432,7 @@ export function GameBoard({
     const historyKey = room.state.id + ":" + room.state.ply + ":" + makrukCountVersion(room.state);
     if (friendHistoryRef.current !== historyKey) {
       friendHistoryRef.current = historyKey;
-      let position = restoreHordeOpening(restoreChess960Opening(restoreJungleOpening(restoreKonaneOpening(restoreJanggiOpening(createInitialState(variantKey, room.state.id), room.state), room.state), room.state), room.state), room.state);
+      let position = restoreShatranjOpening(restoreHordeOpening(restoreChess960Opening(restoreJungleOpening(restoreKonaneOpening(restoreJanggiOpening(createInitialState(variantKey, room.state.id), room.state), room.state), room.state), room.state), room.state), room.state);
       if (variantKey === "makruk" && !usesMakrukHonorCount(room.state)) delete position.variantState;
       const frames: GameState[] = [];
       for (const move of room.state.moves) {
@@ -731,6 +726,12 @@ export function GameBoard({
     setPendingPromotion(null);
   }
 
+  function passTurn() {
+    if (!canHumanMove()) return;
+    const move = findLegalMove(state, { kind: "pass", from: { row: -1, col: -1 }, to: { row: -1, col: -1 } });
+    if (move) commitPlayerMove(move);
+  }
+
   function changeOukCount(action: OukCountAction) {
     if (!gameStarted || localPaused || isReviewing || isOnlineMode || isSpectating || botMode === "both") return;
     const count = readOukCount(state);
@@ -966,17 +967,10 @@ export function GameBoard({
   );
 
   async function suggestMove() {
-    if (state.status !== "active" || activeBotRequestRef.current || isReviewing) return;
+    if (!canUseAssist || activeBotRequestRef.current) return;
     const quickMove = quickSuggestionMove(state);
     if (quickMove) {
-      setSuggestedMove({
-        from: quickMove.from,
-        to: quickMove.to,
-        promotion: quickMove.promotion,
-        notation: formatMove(quickMove, files, rows),
-        score: null,
-        depthReached: 0
-      });
+      setSuggestedMove(createMoveSuggestion(state, quickMove));
       setSelected(quickMove.from);
       setSelectedHandCode(null);
       setNotice(null);
@@ -998,37 +992,23 @@ export function GameBoard({
       setNotice("No legal moves are available.");
       return;
     }
-    setSuggestedMove({
-      from: result.move.from,
-      to: result.move.to,
-      promotion: result.move.promotion,
-      notation: formatMove(result.move, files, rows),
-      score: result.score,
-      depthReached: result.depthReached
-    });
-    setSelected(result.move.from);
-    setSelectedHandCode(null);
+    setSuggestedMove(createMoveSuggestion(state, result.move, result.score, result.depthReached));
+    const selection = suggestionSelection(result.move);
+    setSelected(selection.square);
+    setSelectedHandCode(selection.handCode);
     setNotice(null);
   }
 
   function applySuggestion() {
-    if (!suggestedMove) return;
-    const move = getLegalMoves(state, suggestedMove.from).find((candidate) => matchesSuggestedMove(candidate, suggestedMove));
+    if (!canUseAssist || !suggestedMove) return;
+    const move = resolveMoveSuggestion(state, suggestedMove);
     if (!move) {
       setNotice("That suggestion is no longer legal.");
       setSuggestedMove(null);
       return;
     }
-    setHistory((current) => [...current, state]);
-    setFuture([]);
-    setState((current) => applyMove(current, move));
-    setSelected(null);
-    setSelectedHandCode(null);
-    setPendingPromotion(null);
-    setSuggestedMove(null);
+    commitPlayerMove(move);
     setNotice("Suggestion applied.");
-    setReviewPly(null);
-    setReviewPlaying(false);
   }
 
   /** Switching a bot mode off is always allowed and stops any search it started. */
@@ -1646,6 +1626,8 @@ export function GameBoard({
                 onExport={localGame ? exportLocalGame : undefined}
                 onMoveForCurrentSide={() => void playBotMove("manual")}
                 onOfferDraw={offerDraw}
+                onPass={variantKey === "janggi" ? passTurn : undefined}
+                canPass={variantKey === "janggi" && canHumanMove() && Boolean(findLegalMove(state, { kind: "pass", from: { row: -1, col: -1 }, to: { row: -1, col: -1 } }))}
                 onRedo={redo}
                 onResign={resignGame}
                 onReset={returnToSetup}
@@ -1696,10 +1678,4 @@ export function GameBoard({
       <GameGuideModal show={showRules} rulesSummary={rulesSummary} onClose={() => setShowRules(false)} />
     </div>
   );
-}
-
-function matchesSuggestedMove(candidate: Move, suggestedMove: SuggestedMove) {
-  if (!sameSquare(candidate.to, suggestedMove.to)) return false;
-  if (suggestedMove.promotion === undefined) return true;
-  return Boolean(candidate.promotion) === suggestedMove.promotion;
 }

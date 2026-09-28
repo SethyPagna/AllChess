@@ -72,6 +72,7 @@ Observed write flows:
 - `POST /api/games` creates a `GameState`, inserts `games`, and may create a private room.
 - `POST /api/games/:id/move` accepts a client-submitted `state`, applies a move, and persists the new state.
 - `POST /api/rooms` creates a `RoomSnapshot`, inserts `games`, and inserts `rooms`.
+- Outside development and test, these three writes, `POST /api/rooms/:id/move` and the `GameRoomDO` move handlers answer 410 (sockets get `move_rejected`): they carry no seat identity, and online play uses friend rooms (`/api/friends/rooms`).
 - `POST /api/analysis` can insert `analysis_reports`.
 - `POST /api/bots/benchmark` returns a D1/R2 storage plan but does not currently persist benchmark rows.
 

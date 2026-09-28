@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
+import { legacyWriteRetired, legacyWritesEnabled } from "@/lib/realtime/legacy-writes";
 import { applyAuthoritativeRoomMove, createRoomSnapshot } from "@/lib/realtime/rooms";
 import { refineMoveRequest } from "@/lib/realtime/move-request";
 import { fetchDurableJson } from "@/lib/realtime/durable-client";
@@ -38,6 +39,7 @@ const roomMoveSchema = z.object({
 });
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!legacyWritesEnabled()) return legacyWriteRetired();
   const { id } = await params;
   const parsed = roomMoveSchema.safeParse(await request.json().catch(() => ({})));
   if (!parsed.success) {

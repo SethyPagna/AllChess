@@ -3,6 +3,7 @@ import { DurableObject } from "cloudflare:workers";
 import { friendActionSchema, transitionFriendRoom, settleMatchArrival, nextFriendRoomAlarm, type FriendRoom } from "./friend-room";
 import type { DurableObjectState } from "@cloudflare/workers-types";
 
+import { legacyWriteRetired, legacyWriteRetiredReason, legacyWritesEnabled } from "@/lib/realtime/legacy-writes";
 import { applyAuthoritativeRoomMove, createDemoLiveStats, createRoomSnapshot } from "@/lib/realtime/rooms";
 import type { ClientRealtimeMessage, LiveStats, RoomSnapshot, ServerRealtimeMessage } from "@/lib/realtime/types";
 
@@ -54,6 +55,7 @@ export class GameRoomDO extends DurableObject {
     if (request.headers.get("upgrade") === "websocket") return this.handleSocket(url.searchParams.get("variantKey") ?? "classic", pathRoomId ?? undefined);
     if (request.method === "GET") return json(await this.getSnapshot(url.searchParams.get("variantKey") ?? "classic", pathRoomId ?? undefined));
     if (request.method === "POST" && url.pathname.endsWith("/move")) {
+      if (!legacyWritesEnabled()) return legacyWriteRetired();
       const body = (await request.json().catch(() => null)) as Extract<ClientRealtimeMessage, { type: "make_move" }> | null;
       const snapshot = await this.getSnapshot(undefined, body?.roomId ?? pathRoomId ?? undefined);
       if (!body?.move || body.expectedMoveVersion !== snapshot.moveVersion) {
@@ -125,6 +127,10 @@ export class GameRoomDO extends DurableObject {
     }
 
     if (message.type === "make_move") {
+      if (!legacyWritesEnabled()) {
+        this.sendSocketMessage(server, { type: "move_rejected", reason: legacyWriteRetiredReason, expectedMoveVersion: this.snapshot?.moveVersion ?? 0 } satisfies ServerRealtimeMessage);
+        return;
+      }
       const snapshot = await this.getSnapshot(variantKey, message.roomId || roomId);
       if (message.expectedMoveVersion !== snapshot.moveVersion) {
         this.sendSocketMessage(server, { type: "move_rejected", reason: "Stale move.", expectedMoveVersion: snapshot.moveVersion } satisfies ServerRealtimeMessage);

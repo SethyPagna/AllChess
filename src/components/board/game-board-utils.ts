@@ -1,5 +1,5 @@
 import { getTimeControl, type TimeControlKey } from "@/lib/game/time-controls";
-import { getLegalMoves, sameSquare, type GameState, type Move, type Square } from "@/lib/variants";
+import { getLegalMoves, sameSquare, type GameState, type Square } from "@/lib/variants";
 
 type SeatChoice = "random" | "first" | "second";
 
@@ -39,10 +39,6 @@ export function colorLabel(color: string) {
     white: "White"
   };
   return labels[color] ?? color;
-}
-
-export function formatMove(move: Pick<Move, "from" | "to" | "promotion">, files: string[], rows: number) {
-  return `${squareName(move.from, files, rows)} to ${squareName(move.to, files, rows)}${move.promotion ? " +" : ""}`;
 }
 
 export function squareName(square: Square, files: string[], rows: number) {

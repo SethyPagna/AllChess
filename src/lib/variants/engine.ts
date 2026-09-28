@@ -103,6 +103,7 @@ export function createInitialState(variantKey: string, id = crypto.randomUUID())
   if (variant.key === "konane") state.variantState = { konaneProfile: "nps-v1" };
   if (variant.key === "jungle") state.variantState = { jungleProfile: "standard-v1" };
   if (variant.key === "horde") state.variantState = { hordeProfile: "lichess-v1" };
+  if (variant.key === "shatranj") state.variantState = { shatranjProfile: "same-file-v1" };
   if (variant.supportsDrops) {
     state.hands = Object.fromEntries(variant.players.map((player) => [player, {}])) as GameState["hands"];
   }
@@ -1147,6 +1148,14 @@ function canJungleCapture(state: GameState, attacker: Piece, from: Square, defen
 }
 
 export function applyMove(state: GameState, request: Move): GameState {
+  const next = applyMoveWithoutIncrement(state, request);
+  // A capture sequence (draughts, legacy Konane) is one move: its hops keep the turn and only the last earns the increment.
+  const moverClock = next.turn !== state.turn ? next.clocks.find((clock) => clock.color === state.turn) : undefined;
+  if (moverClock) moverClock.remainingMs += moverClock.incrementMs;
+  return next;
+}
+
+function applyMoveWithoutIncrement(state: GameState, request: Move): GameState {
   if (state.status !== "active") {
     throw new Error("errors.gameCompleted");
   }
@@ -1231,10 +1240,6 @@ export function applyMove(state: GameState, request: Move): GameState {
   next.ply += 1;
   next.turn = next.turn === next.clocks[0]?.color ? next.clocks[1]?.color ?? "black" : next.clocks[0]?.color ?? "white";
   next.moves.push({ ...move, notation: notationFor(movingPiece, move) });
-  const moverClock = next.clocks.find((clock) => clock.color === movingPiece.owner);
-  if (moverClock) {
-    moverClock.remainingMs += moverClock.incrementMs;
-  }
   next.halfmoveClock = move.kind !== "pass" && (captured || movingPiece.code === "p") ? 0 : (state.halfmoveClock ?? 0) + 1;
 
   if (variant.key === "horde" && countPieces(next, "white") === 0) {
@@ -1261,7 +1266,7 @@ export function applyMove(state: GameState, request: Move): GameState {
   }
 
   if (variant.key === "janggi") {
-    return withJanggiOutcome(next, movingPiece.owner, move.to);
+    return withRepetitionAdjudication(state, withJanggiOutcome(next, movingPiece.owner, move.to));
   }
 
   if (variant.key === "racing-kings") {
@@ -1292,6 +1297,7 @@ export function applyMove(state: GameState, request: Move): GameState {
   }
   const outcome = withOutcome(next, movingPiece.owner, move.to);
   if (variant.family === "western") return withWesternRepetition(state, outcome);
+  if (variant.key === "xiangqi") return withRepetitionAdjudication(state, outcome);
   return variant.key === "ouk-chaktrang" ? settleOukCount(outcome) : settleMakrukHonorCount(outcome);
 }
 
@@ -1304,13 +1310,28 @@ function withHistoricalBareKingOutcome(state: GameState, mover: PlayerColor, des
     state.outcomeReason = "objective";
     return state;
   }
-  if (barePlayers.some((player) => player !== mover)) {
+  // Shatranj gives a bared king one reply: baring the opponent back draws, any other reply loses.
+  const shatranj = variant.key === "shatranj";
+  if (shatranj && barePlayers.includes(mover)) {
+    state.status = "completed";
+    state.result = state.turn;
+    state.outcomeReason = "objective";
+    return state;
+  }
+  if (barePlayers.some((player) => player !== mover) && !(shatranj && canBareMoverOnReply(state, mover))) {
     state.status = "completed";
     state.result = mover;
     state.outcomeReason = "objective";
     return state;
   }
   return withOutcome(state, mover, destination);
+}
+
+function canBareMoverOnReply(state: GameState, mover: PlayerColor) {
+  const moverPieces = state.board.flat().filter((cell) => cell.piece?.owner === mover && cell.piece.code !== "k");
+  if (moverPieces.length !== 1) return false;
+  const target = moverPieces[0].square;
+  return state.board.flat().some((cell) => cell.piece?.owner === state.turn && getLegalMoves(state, cell.square).some((move) => sameSquare(move.to, target)));
 }
 
 function withAntichessOutcome(state: GameState): GameState {
@@ -1405,7 +1426,6 @@ function withKonaneOutcome(state: GameState, mover: PlayerColor, move: Move, cap
       },
       konaneContinuation: null
     };
-    return state;
   }
 
   const movedPiece = cellAt(state, move.to)?.piece;
@@ -1753,23 +1773,79 @@ function readShogiRepetition(state: GameState): ShogiRepetitionState | undefined
 
 /**
  * Threefold repetition (FIDE 9.2) draws a game the move left active, automatically like the fifty-move
- * rule. `variantState.westernRepetition` lists position digests, oldest first, since the last capture
+ * rule. `variantState.westernRepetition` lists position digests in blocks, oldest first, since the last capture
  * or pawn move; drop variants keep the whole game because captured material can return to the board.
  */
 function withWesternRepetition(previous: GameState, next: GameState): GameState {
   if (next.status !== "active") return next;
   const digest = positionDigest(westernPositionKey(next));
   const irreversible = next.halfmoveClock === 0 && !getVariant(next.variantKey).supportsDrops;
-  const recorded = previous.variantState?.westernRepetition;
-  const earlier = irreversible ? [] : typeof recorded === "string" && recorded ? recorded.split(" ") : [positionDigest(westernPositionKey(previous))];
+  const earlier = irreversible ? [] : readPositionHistory(previous.variantState?.westernRepetition) ?? [positionDigest(westernPositionKey(previous))];
   const positions = [...earlier, digest];
-  next.variantState = { ...next.variantState, westernRepetition: positions.join(" ") };
+  next.variantState = { ...next.variantState, westernRepetition: positionHistoryBlocks(positions) };
   if (positions.filter((position) => position === digest).length >= 3) {
     next.status = "completed";
     next.result = "draw";
     next.outcomeReason = "repetition";
   }
   return next;
+}
+
+/**
+ * Xiangqi (WXF) and Janggi (PyChess reference): on the third occurrence of a position, a side that gave
+ * check with every one of its moves since the position first appeared loses. Otherwise Xiangqi is drawn
+ * and Janggi is decided by material points. Perpetual chasing is not adjudicated.
+ * `variantState.repetitionHistory` lists positions since the last capture, oldest first, each marked "+"
+ * when its side to move is in check.
+ */
+function withRepetitionAdjudication(previous: GameState, next: GameState): GameState {
+  if (next.status !== "active") return next;
+  const position = repetitionToken(next);
+  const earlier = next.captured.length > previous.captured.length ? [] : readPositionHistory(previous.variantState?.repetitionHistory) ?? [repetitionToken(previous)];
+  const positions = [...earlier, position];
+  next.variantState = { ...next.variantState, repetitionHistory: positionHistoryBlocks(positions) };
+  if (positions.filter((entry) => entry === position).length < 3) return next;
+
+  // Turns alternate, so entries an even distance from the end were reached by the side that just moved.
+  const cycle = positions.slice(positions.indexOf(position) + 1);
+  const checkedThroughout = (parity: number) => cycle.every((entry, index) => (cycle.length - 1 - index) % 2 !== parity || entry.endsWith("+"));
+  const moverChecked = checkedThroughout(0);
+  const opponentChecked = checkedThroughout(1);
+  next.status = "completed";
+  if (moverChecked !== opponentChecked) {
+    next.result = moverChecked ? next.turn : previous.turn;
+    next.outcomeReason = "perpetual-check";
+    return next;
+  }
+  const scoring = next.variantKey === "janggi" ? readJanggiScoring(next) : undefined;
+  next.result = !scoring || scoring.redPoints === scoring.bluePoints ? "draw" : scoring.redPoints > scoring.bluePoints ? "red" : "blue";
+  next.outcomeReason = "repetition";
+  return next;
+}
+
+/** Pieces and side to move, marked "+" when that side is in check. */
+function repetitionToken(state: GameState) {
+  let board = "";
+  for (const row of state.board) {
+    for (const cell of row) board += cell.piece ? `${cell.piece.owner[0]}${cell.piece.code}` : ".";
+    board += "/";
+  }
+  return `${positionDigest(`${state.turn};${board}`)}${isInCheck(state, state.turn) ? "+" : ""}`;
+}
+
+/** Recorded positions are stored in blocks of this many, so saved timelines share every completed block. */
+const positionHistoryBlockSize = 32;
+
+function positionHistoryBlocks(positions: string[]) {
+  const blocks: string[] = [];
+  for (let start = 0; start < positions.length; start += positionHistoryBlockSize) blocks.push(positions.slice(start, start + positionHistoryBlockSize).join(" "));
+  return blocks;
+}
+
+/** Blocks of space-separated positions; saves made before blocks hold one string. */
+function readPositionHistory(recorded: unknown): string[] | null {
+  const text = Array.isArray(recorded) ? recorded.join(" ") : recorded;
+  return typeof text === "string" && text ? text.split(" ") : null;
 }
 
 /**
@@ -1907,9 +1983,9 @@ function withOutcome(state: GameState, mover: PlayerColor, destination?: Square)
     }
   }
 
-  if (!hasAnyLegalMove(state, defender)) {
+  if (!hasAnyLegalMove(state, defender) && !isLegalPassMove(state)) {
     state.status = "completed";
-    state.result = defenderInCheck || variant.key === "xiangqi" ? mover : "draw";
+    state.result = defenderInCheck || ["xiangqi", "shatranj", "shogi", "mini-shogi"].includes(variant.key) ? mover : "draw";
     state.outcomeReason = defenderInCheck ? "checkmate" : state.result === "draw" ? "stalemate" : "no-legal-moves";
     return state;
   }
