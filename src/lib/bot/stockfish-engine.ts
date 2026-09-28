@@ -71,7 +71,7 @@ export function warmStockfishRuntime() {
 
 export function buildStockfishCommands(state: GameState, difficultyKey: BotDifficultyKey, playedMoves: string[] = [], maxMoveTimeMs?: number) {
   const config = getStockfishDifficultyConfig(difficultyKey);
-  const moveTimeMs = Math.max(40, Math.min(config.moveTimeMs, maxMoveTimeMs ?? config.moveTimeMs));
+  const moveTimeMs = Math.max(1, Math.min(config.moveTimeMs, maxMoveTimeMs ?? config.moveTimeMs));
   const commands = [
     "uci",
     `setoption name UCI_LimitStrength value ${config.limitStrength ? "true" : "false"}`,
@@ -96,7 +96,7 @@ export async function requestStockfishMove(state: GameState, difficultyKey: BotD
   const startedAt = Date.now();
   const effectiveTimeoutMs = clampStockfishTimeout(timeoutMs);
   const deadline = startedAt + effectiveTimeoutMs;
-  const loadBudgetMs = Math.min(Math.max(effectiveTimeoutMs - 150, 250), 1200);
+  const loadBudgetMs = Math.min(effectiveTimeoutMs, 1200);
   const runtime = await withTimeout(getStockfishRuntime(), loadBudgetMs, null).catch(() => null);
   if (!runtime) return null;
   if (deadline - Date.now() < 80) return null;
@@ -188,6 +188,9 @@ function enPassantTarget(state: GameState) {
 }
 
 export function moveToUci(state: GameState, move: Move) {
+  // UCI writes a drop as "N@e4" and a pass as the null move "0000".
+  if (move.kind === "pass") return "0000";
+  if (move.kind === "drop" && move.drop) return `${move.drop.code.toUpperCase()}@${squareToUci(state, move.to)}`;
   const from = squareToUci(state, move.from);
   const to = squareToUci(state, move.to);
   const promotion = move.promoteTo ?? (move.promotion ? "q" : "");
@@ -247,7 +250,7 @@ function canUseStockfishRuntime() {
 }
 
 function clampStockfishTimeout(timeoutMs: number) {
-  return Math.max(80, Math.min(Math.trunc(timeoutMs), 2600));
+  return Math.max(1, Math.min(Math.trunc(timeoutMs), 2600));
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number, fallback: T) {
