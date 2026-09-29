@@ -499,35 +499,42 @@ function captureExposure(next: GameState, square: { row: number; col: number }, 
   return exposure;
 }
 
+function hasVerifiedSafeSuccessor(state: GameState, move: Move, perspective: PlayerColor, budget: SearchBudget) {
+  if (budget.mateReplyCache.get(move) !== false) return false;
+  const next = budget.appliedMoves.get(state)?.get(move);
+  return !!next && (next.status === "active" || next.status === "completed" && (next.result === perspective || next.result === "draw"));
+}
+
 function demoteMovesIntoMate(state: GameState, ranked: Array<{ move: Move; score: number }>, perspective: PlayerColor, budget: SearchBudget) {
   const losing = new Set<Move>();
-  let verified = false;
-  for (const { move } of ranked) {
+  let safe = ranked.find(({ move }) => hasVerifiedSafeSuccessor(state, move, perspective, budget));
+  for (const entry of ranked) {
+    const { move } = entry;
     const loses = budget.mateReplyCache.get(move) ?? allowsMateInOne(state, move, perspective, budget);
     if (loses === null) break;
     budget.mateReplyCache.set(move, loses);
-    if (!loses) {
-      verified = true;
+    if (!loses && hasVerifiedSafeSuccessor(state, move, perspective, budget)) {
+      safe = entry;
       break;
     }
-    losing.add(move);
+    if (loses) losing.add(move);
   }
-  if (!losing.size) return { ranked, verified };
   const matedScore = -100000 + state.ply + 2;
-  return { verified, ranked: [
+  const demoted = losing.size ? [
     ...ranked.filter(({ move }) => !losing.has(move)),
     ...ranked.filter(({ move }) => losing.has(move)).map(({ move, score }) => ({ move, score: Math.min(score, matedScore) }))
-  ] };
+  ] : ranked;
+  return { verified: !!safe, ranked: safe ? [safe, ...demoted.filter(({ move }) => move !== safe.move)] : demoted };
 }
 
-function allowsMateInOne(state: GameState, move: Move, perspective: PlayerColor, budget: SearchBudget) {
-  if (Date.now() >= budget.deadline) return null;
+function allowsMateInOne(state: GameState, move: Move, perspective: PlayerColor, budget: SearchBudget, deadline = budget.deadline) {
+  if (Date.now() >= deadline) return null;
   const next = tryMove(state, move, budget);
   if (!next || next.status !== "active") return false;
   // A mating reply gives check, so a reply drop only matters if it could give check.
   const replies = [...allLegalMovesCached(next, budget, true), ...possibleCheckingDrops(next)];
   for (const reply of replies) {
-    if (Date.now() >= budget.deadline) return null;
+    if (Date.now() >= deadline) return null;
     const after = tryMove(next, reply, budget);
     if (after?.status === "completed" && after.result !== perspective && after.result !== "draw") return true;
   }
@@ -705,9 +712,22 @@ function rankCandidateMoves(
     budget.completedDepth = 1;
     return ranked;
   }
+  let seededPromotionSafety = false;
   for (const { move } of ordered) {
     if (move === fallbackMove) continue;
     if (Date.now() >= quickDeadline || budget.nodes >= difficulty.nodeBudget) break;
+    if (!seededPromotionSafety && move.promoteTo && searchTimeMs > QUICK_SEARCH_MAX_MS && getVariant(state.variantKey).supportsCheck) {
+      seededPromotionSafety = true;
+      if (!ranked.some(({ move: candidate }) => hasVerifiedSafeSuccessor(state, candidate, perspective, budget))) {
+        const seed = ranked.filter(({ move: candidate }) => !candidate.promoteTo && budget.appliedMoves.get(state)?.get(candidate)?.status === "active")
+          .sort((a, b) => b.score - a.score)[0];
+        if (seed) {
+          const loses = allowsMateInOne(state, seed.move, perspective, budget, quickDeadline);
+          if (loses !== null) budget.mateReplyCache.set(seed.move, loses);
+        }
+      }
+      if (Date.now() >= quickDeadline || budget.nodes >= difficulty.nodeBudget) break;
+    }
     const entry = { move, score: quickMoveScore(state, move, difficulty, perspective, budget) };
     ranked.push(entry);
     const next = budget.appliedMoves.get(state)?.get(move);
