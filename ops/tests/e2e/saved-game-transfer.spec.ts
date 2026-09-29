@@ -12,8 +12,15 @@ async function records(page: Page) {
 }
 async function openSaves(page: Page) {
   const saved = page.locator(".saved-matches").first();
+  await expect(saved, "Saved games (with Import game) must be reachable on the play setup screen, even on a device with no saves yet").toBeVisible();
   if (!(await saved.evaluate(element => (element as HTMLDetailsElement).open))) await saved.locator("summary").click();
   return saved;
+}
+/** Redo, pause and export moved from the action bar into the "More game actions" menu. */
+async function gameMenu(page: Page, action: string) {
+  const controls = page.getByLabel("Board controls", { exact: true });
+  await controls.getByLabel("More game actions", { exact: true }).click();
+  await controls.locator(".play-more-menu").getByRole("button", { name: action, exact: true }).click();
 }
 
 test("download and import on a fresh device preserve Janggi formations and redo without replacing saves", async ({ page, browser, baseURL }, info) => {
@@ -28,8 +35,9 @@ test("download and import on a fresh device preserve Janggi formations and redo 
   await page.locator("[data-square='c10']").click(); await page.locator("[data-square='d8']").click();
   await expect(page.locator("[data-square='d8'] [data-code='h']")).toBeVisible();
   await page.getByRole("button", { name: "Undo", exact: true }).click();
-  await page.getByRole("button", { name: "Pause", exact: true }).click();
-  const downloading = page.waitForEvent("download"); await page.getByRole("button", { name: "Export game", exact: true }).click();
+  await gameMenu(page, "Pause game");
+  await expect(page.getByLabel("Local save status")).toContainText("Paused");
+  const downloading = page.waitForEvent("download"); await gameMenu(page, "Export game");
   const backup = await file(await downloading);
   expect(backup.name).toMatch(/^allchess-janggi-.*\.allchess\.json$/);
   const original = JSON.parse(backup.buffer.toString());
@@ -61,7 +69,7 @@ test("download and import on a fresh device preserve Janggi formations and redo 
     await expect(other.locator("[data-square='c10'] [data-code='h']")).toBeVisible();
     await expect(other.locator("[data-square='c1'] [data-code='h']")).toBeVisible();
     await other.getByRole("button", { name: "Resume game", exact: true }).click();
-    await other.getByRole("button", { name: "Redo", exact: true }).click();
+    await gameMenu(other, "Redo");
     await expect(other.locator("[data-square='d8'] [data-code='h']")).toBeVisible();
     await other.getByRole("button", { name: "Undo", exact: true }).click();
     await expect(other.locator("[data-square='c10'] [data-code='h']")).toBeVisible();
@@ -73,8 +81,8 @@ test("download and import on a fresh device preserve Janggi formations and redo 
 test("invalid imports and unavailable storage leave existing saves untouched", async ({ page }) => {
   await page.goto("/en/play/classic?mode=offline&time=freestyle");
   await page.getByRole("button", { name: "Start Game", exact: true }).click();
-  await page.getByRole("button", { name: "Pause", exact: true }).click();
-  const downloading = page.waitForEvent("download"); await page.getByRole("button", { name: "Export game", exact: true }).click(); const backup = await file(await downloading);
+  await gameMenu(page, "Pause game");
+  const downloading = page.waitForEvent("download"); await gameMenu(page, "Export game"); const backup = await file(await downloading);
   await expect.poll(async () => (await records(page)).length).toBe(1);
   await page.reload(); const saved = await openSaves(page), original = await records(page);
   await saved.getByLabel("AllChess game file").setInputFiles({ name: "broken.allchess.json", mimeType: "application/json", buffer: Buffer.from("{") });
@@ -94,7 +102,7 @@ test("the open board exports the current position even when autosave cannot writ
   await page.getByRole("button", { name: "Start Game", exact: true }).click();
   await page.locator("[data-square='e2']").click(); await page.locator("[data-square='e4']").click();
   await expect(page.getByRole("button", { name: "Retry save", exact: true })).toBeVisible();
-  const downloading = page.waitForEvent("download"); await page.getByRole("button", { name: "Export game", exact: true }).click(); const backup = await file(await downloading);
+  const downloading = page.waitForEvent("download"); await gameMenu(page, "Export game"); const backup = await file(await downloading);
   expect(await records(page)).toHaveLength(0);
   const context = await browser.newContext({ viewport: page.viewportSize() }); const other = await context.newPage();
   try {

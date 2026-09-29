@@ -1,5 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
 
+async function chooseTime(page: Page, label: string) {
+  await page.getByLabel("Time control", { exact: true }).click();
+  await page.getByRole("group", { name: "Time control options", exact: true }).getByRole("button", { name: label, exact: true }).click();
+  await expect(page.getByLabel("Time control", { exact: true })).toContainText(label);
+}
+
 test("Quick Match pairs protected seats and survives reload", async ({ browser, baseURL }, testInfo) => {
   test.setTimeout(60000);
   const errors: string[] = [];
@@ -17,7 +23,7 @@ test("Quick Match pairs protected seats and survives reload", async ({ browser, 
       });
       await page.goto(`${baseURL}/en/play/makruk?mode=online`);
       // Separate concurrent project runs into distinct clock queues.
-      await page.getByRole("button", { name: testInfo.project.name === "mobile" ? "Classical 30+20" : "Untimed", exact: true }).click();
+      await chooseTime(page, testInfo.project.name === "mobile" ? "Classical 30+20" : "Untimed");
     }
     await pages[0].getByRole("button", { name: "Find Match", exact: true }).click();
     await pages[0].getByRole("button", { name: "Cancel", exact: true }).click();

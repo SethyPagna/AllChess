@@ -11,6 +11,17 @@ async function square(page: Page, key: string, occupied = false) {
   await page.mouse.click(b.x + (point.x + 1) * b.width / 2, b.y + (1 - point.y) * b.height / 2);
 }
 
+async function chooseTime(page: Page, label: string) {
+  await page.getByLabel("Time control", { exact: true }).click();
+  await page.getByRole("group", { name: "Time control options", exact: true }).getByRole("button", { name: label, exact: true }).click();
+  await expect(page.getByLabel("Time control", { exact: true })).toContainText(label);
+}
+async function gameMenu(page: Page, action: string) {
+  const controls = page.getByLabel("Board controls", { exact: true });
+  await controls.getByLabel("More game actions", { exact: true }).click();
+  await controls.locator(".play-more-menu").getByRole("button", { name: action, exact: true }).click();
+}
+
 test("local formations persist through clocks, 3D play, undo and saved reload", async ({ page }, info) => {
   test.setTimeout(60000);
   const errors: string[] = []; page.on("pageerror", error => errors.push(error.message));
@@ -21,8 +32,8 @@ test("local formations persist through clocks, 3D play, undo and saved reload", 
   await page.getByRole("group", { name: "Formation side" }).getByRole("button", { name: "Cho", exact: true }).click();
   await page.getByRole("region", { name: "Blue Cho formation" }).getByRole("button", { name: "Left elephant", exact: true }).click();
   await expect(page.locator("[data-square='c10'] [data-code='h']")).toBeVisible();
-  await page.getByRole("button", { name: "Rapid 10+0", exact: true }).click();
-  await page.getByRole("button", { name: "Untimed", exact: true }).click();
+  await chooseTime(page, "Rapid 10+0");
+  await chooseTime(page, "Untimed");
   await expect(page.locator("[data-square='c10'] [data-code='h']")).toBeVisible();
   await page.locator(".janggi-local-setup").screenshot({ path: info.outputPath("formation-choices.png") });
   await page.getByRole("button", { name: "Start Game", exact: true }).click();
@@ -33,8 +44,9 @@ test("local formations persist through clocks, 3D play, undo and saved reload", 
   await expect(page.locator("[data-square='d8'] [data-code='h'][data-owner='blue']")).toBeVisible();
   await page.getByRole("button", { name: "Undo", exact: true }).click();
   await expect(page.locator("[data-square='c10'] [data-code='h']")).toBeVisible();
-  await page.getByRole("button", { name: "Redo", exact: true }).click();
-  await page.getByRole("button", { name: "Pause", exact: true }).click();
+  await gameMenu(page, "Redo");
+  await expect(page.locator("[data-square='d8'] [data-code='h'][data-owner='blue']")).toBeVisible();
+  await gameMenu(page, "Pause game");
   await page.reload();
   await page.locator(".saved-matches summary").click();
   await page.getByRole("button", { name: "Resume", exact: true }).first().click();
@@ -51,7 +63,7 @@ for (const mode of ["room", "online"]) test(`${mode} confirms Han then Cho and r
     for (const page of pages) {
       page.on("pageerror", error => errors.push(error.message));
       await page.goto(`${baseURL}/en/play/janggi?mode=${mode}`);
-      await page.getByRole("button", { name: info.project.name === "mobile" ? "Classical 30+20" : "Rapid 10+0", exact: true }).click();
+      await chooseTime(page, info.project.name === "mobile" ? "Classical 30+20" : "Rapid 10+0");
     }
     if (mode === "room") {
       await pages[0].getByRole("group", { name: "Side", exact: true }).getByRole("button", { name: "Red", exact: true }).click();
@@ -86,11 +98,11 @@ for (const mode of ["room", "online"]) test(`${mode} confirms Han then Cho and r
     await red.reload();
     await red.getByRole("button", { name: "Join game", exact: true }).click();
     await expect(red.locator("[data-square='d8'] [data-code='h']")).toBeVisible();
-    await red.getByRole("tab", { name: "Status", exact: true }).click();
-    await red.getByRole("button", { name: "First move", exact: true }).click();
+    await red.getByRole("region", { name: "Moves", exact: true }).getByRole("button", { name: "First move", exact: true }).click();
     await expect(red.locator("[data-square='c10'] [data-code='h']")).toBeVisible();
     await expect(red.locator("[data-square='c1'] [data-code='h']")).toBeVisible();
-    await red.getByRole("button", { name: "Back to current", exact: true }).click();
+    await red.getByRole("button", { name: "Last move", exact: true }).click();
+    await expect(red.locator("[data-square='d8'] [data-code='h']")).toBeVisible();
     // Finish via the server's normal action, then accept a rematch in the UI.
     const live = await read();
     await contexts[redIndex].request.post(`${baseURL}/api/friends/rooms/${id}`, { data: { action: "resign", token: tokens[redIndex], gameId: live.state.id } });

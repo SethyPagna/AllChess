@@ -7,6 +7,9 @@ import { board3DLayout } from "../../../src/components/board/board-3d-config";
 
 import { tabletopFrame } from "../../../src/components/board/tabletop-camera";
 
+// The default draughts collection is photographic ("king"/"man"); the drawn fallback set uses "checker-king"/"checker-man".
+const KING = ":is([data-piece='checker-king'], [data-piece='king'])", MAN = ":is([data-piece='checker-man'], [data-piece='man'])";
+
 async function tap(page: Page, key: string, size: number, height = .003, flipped = false) {
   const canvas = page.locator(".board-3d canvas"); await canvas.scrollIntoViewIfNeeded(); const box = (await canvas.boundingBox())!;
   const layout = board3DLayout("draughts", size, size), frame = tabletopFrame("draughts", size, size, box.width, await page.evaluate(() => innerHeight));
@@ -23,6 +26,17 @@ async function openPosition(page: Page, state: GameState) {
   await page.getByLabel("AllChess game file").setInputFiles({ name: file.filename, mimeType: "application/json", buffer: Buffer.from(file.contents) });
   await page.getByRole("link", { name: "Open imported game" }).click();
   await page.getByRole("button", { name: "Resume game", exact: true }).click();
+}
+async function customize(page: Page) {
+  await page.getByLabel("Customize board", { exact: true }).click();
+  const material = page.getByRole("group", { name: "Piece material", exact: true });
+  await expect(material).toBeVisible();
+  return material;
+}
+async function gameMenu(page: Page, action: string) {
+  const controls = page.getByLabel("Board controls", { exact: true });
+  await controls.getByLabel("More game actions", { exact: true }).click();
+  await controls.locator(".play-more-menu").getByRole("button", { name: action, exact: true }).click();
 }
 function empty(key: string) {
   const state = createInitialState(key); state.board.flat().forEach(cell => { cell.piece = null; });
@@ -45,9 +59,13 @@ for (const key of ["english-draughts", "international-draughts", "turkish-draugh
   await tap(page, `c${size-1}`, size, .013); await tap(page, whiteCrown, size);
   await tap(page, "f2", size, .013); await tap(page, blackCrown, size);
   await page.getByRole("button", { name: "2D board", exact: true }).click();
-  for (const square of [whiteCrown, blackCrown]) await expect(page.locator(`[data-square='${square}'] [data-piece='checker-king']`)).toBeVisible();
+  for (const square of [whiteCrown, blackCrown]) await expect(page.locator(`[data-square='${square}'] ${KING}`)).toBeVisible();
   await page.getByRole("button", { name: "3D counters", exact: true }).click(); await expect(page.locator(".board-3d-status")).toContainText("Tap to move", { timeout: 20000 });
-  for (const finish of ["Porcelain", "Slate", "Maple & wenge"]) await page.getByRole("button", { name: finish, exact: true }).click();
+  const material = await customize(page);
+  for (const finish of ["Porcelain", "Slate"]) { await material.getByRole("button", { name: finish, exact: true }).click(); await expect(material.getByRole("button", { name: finish, exact: true })).toHaveAttribute("aria-pressed", "true"); }
+  // The first material is the collection's own finish (its label follows the chosen piece set).
+  await material.getByRole("button").first().click(); await expect(material.getByRole("button").first()).toHaveAttribute("aria-pressed", "true");
+  await page.keyboard.press("Escape"); await expect(material).toBeHidden();
   await page.locator(".board-3d-stage").screenshot({ path: info.outputPath(`${key}-kings.png`) });
   // Camera movement must not count as a move or lose the selectable king.
   const canvas = page.locator(".board-3d canvas"); await canvas.scrollIntoViewIfNeeded(); const b = (await canvas.boundingBox())!;
@@ -57,14 +75,17 @@ for (const key of ["english-draughts", "international-draughts", "turkish-draugh
   const target = `c${size-(turkish ? 2 : 1)}`;
   await tap(page, whiteCrown, size, .024, true); await tap(page, target, size, .003, true);
   await page.getByRole("button", { name: "2D board", exact: true }).click();
-  await expect(page.locator(`[data-square='${target}'] [data-piece='checker-king'][data-owner='white']`)).toBeVisible();
+  await expect(page.locator(`[data-square='${target}'] ${KING}[data-owner='white']`)).toBeVisible();
   await page.getByRole("button", { name: "Undo", exact: true }).click();
-  await expect(page.locator(`[data-square='${whiteCrown}'] [data-piece='checker-king']`)).toBeVisible();
-  await page.getByRole("button", { name: "Redo", exact: true }).click();
-  await page.getByRole("button", { name: "3D counters", exact: true }).click(); await page.getByRole("button", { name: "Porcelain", exact: true }).click();
-  await page.getByRole("button", { name: "Pause", exact: true }).click(); await page.reload();
+  await expect(page.locator(`[data-square='${whiteCrown}'] ${KING}`)).toBeVisible();
+  await gameMenu(page, "Redo");
+  await expect(page.locator(`[data-square='${target}'] ${KING}[data-owner='white']`)).toBeVisible();
+  await page.getByRole("button", { name: "3D counters", exact: true }).click();
+  await (await customize(page)).getByRole("button", { name: "Porcelain", exact: true }).click(); await page.keyboard.press("Escape");
+  await gameMenu(page, "Pause game"); await page.reload();
   await expect(page.getByRole("button", { name: "Resume game", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Porcelain", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect((await customize(page)).getByRole("button", { name: "Porcelain", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.keyboard.press("Escape");
   await expect(page.locator(".board-3d-status")).toContainText("Tap to move", { timeout: 20000 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); expect(errors).toEqual([]);
 });
@@ -77,23 +98,32 @@ test("a restored capture chain keeps the same counter selected for its next 3D j
   await tap(page,"e3",8,.013); await tap(page,"f4",8);
   await tap(page,"c5",8,.013); await tap(page,"e7",8);
   await page.getByRole("button",{name:"2D board",exact:true}).click();
-  await expect(page.locator("[data-square='e7'] [data-piece='checker-man'][data-owner='white']")).toBeVisible();
-  await expect(page.locator("[data-square='e3'] [data-piece='checker-man'][data-owner='white']")).toBeVisible();
+  await expect(page.locator(`[data-square='e7'] ${MAN}[data-owner='white']`)).toBeVisible();
+  await expect(page.locator(`[data-square='e3'] ${MAN}[data-owner='white']`)).toBeVisible();
   await expect(page.locator("[data-square='d6'] [data-piece]")).toHaveCount(0);
 });
 
-test("a failed draughts model and WebGL loss retain a usable 2D position", async ({ page }) => {
-  await page.route("**/assets/draughts/collection.glb", route=>route.abort());
-  await page.goto("/en/play/international-draughts?mode=offline&time=freestyle");
-  await page.getByRole("group",{name:"Side",exact:true}).getByRole("button",{name:"White",exact:true}).click();
-  await page.getByRole("button",{name:"Start Game",exact:true}).click();
-  await page.getByRole("button",{name:"3D counters",exact:true}).click();
-  await page.getByRole("button",{name:"Use 2D board",exact:true}).click();
-  await page.locator("[data-square='b4']").click(); await page.locator("[data-square='c5']").click();
-  await expect(page.locator("[data-square='c5'] [data-piece='checker-man']")).toBeVisible();
-  await page.unroute("**/assets/draughts/collection.glb");
-  await page.getByRole("button",{name:"3D counters",exact:true}).click(); await expect(page.locator(".board-3d-status")).toContainText("Tap to move", { timeout: 20000 });
-  await page.locator(".board-3d canvas").evaluate(canvas => (canvas as HTMLCanvasElement).getContext("webgl2")!.getExtension("WEBGL_lose_context")!.loseContext());
-  await page.getByRole("button",{name:"Use 2D board",exact:true}).click();
-  await expect(page.locator("[data-square='c5'] [data-piece='checker-man']")).toBeVisible();
+test.describe("draughts model failure recovery", () => {
+  test.use({ serviceWorkers: "block" });
+
+  test("a failed draughts model and WebGL loss retain a usable 2D position", async ({ page }) => {
+    let abortedModels = 0;
+    await page.route("**/assets/draughts/*.glb", async route => {
+      await route.abort();
+      abortedModels++;
+    });
+    await page.goto("/en/play/international-draughts?mode=offline&time=freestyle");
+    await page.getByRole("group",{name:"Side",exact:true}).getByRole("button",{name:"White",exact:true}).click();
+    await page.getByRole("button",{name:"Start Game",exact:true}).click();
+    await page.getByRole("button",{name:"3D counters",exact:true}).click();
+    await page.getByRole("button",{name:"Use 2D board",exact:true}).click();
+    expect(abortedModels).toBeGreaterThan(0);
+    await page.locator("[data-square='b4']").click(); await page.locator("[data-square='c5']").click();
+    await expect(page.locator(`[data-square='c5'] ${MAN}`)).toBeVisible();
+    await page.unroute("**/assets/draughts/*.glb");
+    await page.getByRole("button",{name:"3D counters",exact:true}).click(); await expect(page.locator(".board-3d-status")).toContainText("Tap to move", { timeout: 20000 });
+    await page.locator(".board-3d canvas").evaluate(canvas => (canvas as HTMLCanvasElement).getContext("webgl2")!.getExtension("WEBGL_lose_context")!.loseContext());
+    await page.getByRole("button",{name:"Use 2D board",exact:true}).click();
+    await expect(page.locator(`[data-square='c5'] ${MAN}`)).toBeVisible();
+  });
 });

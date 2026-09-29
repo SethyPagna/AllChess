@@ -66,14 +66,16 @@ for (const size of [9, 5]) test(`${size}×${size} captured tiles drop directly f
   await page.getByRole("button", { name: "3D tiles", exact: true }).click();
   await expect(page.locator(".board-3d-status")).toContainText("Tap to move");
   await page.locator(".board-3d-stage").screenshot({ path: testInfo.outputPath("empty-stands.png") });
-  await page.getByRole("tab", { name: "Status", exact: true }).click();
-  await page.getByRole("button", { name: new RegExp(`^Review move ${size === 9 ? 8 : 6} `) }).click();
+  // Review moves straight from the move list (no Status tab any more).
+  const movesPanel = page.getByRole("region", { name: "Moves", exact: true });
+  await movesPanel.getByRole("button", { name: new RegExp(`^Move ${size === 9 ? 8 : 6}: `) }).click();
   for (const card of [sente, gote]) await expect(card.getByRole("button", { name: `Held ${label}, 1 in hand`, exact: true })).toBeDisabled();
   await tapPoint(page, size, flipped.x, .014, flipped.z);
   await expect(gote.locator(".hand-piece-button.is-selected")).toHaveCount(0);
-  await page.getByRole("button", { name: "First move", exact: true }).click();
+  await movesPanel.getByRole("button", { name: "First move", exact: true }).click();
   for (const card of [sente, gote]) await expect(card.locator(".hand-piece-button")).toHaveCount(0);
-  await page.getByRole("button", { name: "Back to current", exact: true }).click();
+  await movesPanel.getByRole("button", { name: "Last move", exact: true }).click();
+  await expect(movesPanel.getByRole("button", { name: "Last move", exact: true })).toBeDisabled();
   await page.locator(".board-3d-stage").scrollIntoViewIfNeeded();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   expect(errors).toEqual([]);

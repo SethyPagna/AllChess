@@ -12,6 +12,37 @@ async function expectNoHorizontalOverflow(page: Page) {
   expect(overflow).toBeLessThanOrEqual(1);
 }
 
+/** In-game action bar: Undo, Suggest, Draw, Resign, plus the "More game actions" menu. */
+function boardControls(page: Page) {
+  return page.getByLabel("Board controls", { exact: true });
+}
+
+async function openGameMenu(page: Page) {
+  const controls = boardControls(page);
+  await controls.getByLabel("More game actions", { exact: true }).click();
+  const menu = controls.locator(".play-more-menu");
+  await expect(menu).toBeVisible();
+  return menu;
+}
+
+async function gameMenuAction(page: Page, name: string) {
+  const menu = await openGameMenu(page);
+  await menu.getByRole("button", { name, exact: true }).click();
+  await expect(menu).toBeHidden();
+}
+
+function playModes(page: Page) {
+  return page.getByRole("group", { name: "Play modes", exact: true });
+}
+
+function timeControlPicker(page: Page) {
+  return page.getByLabel("Time control", { exact: true });
+}
+
+function movesPanel(page: Page) {
+  return page.getByRole("region", { name: "Moves", exact: true });
+}
+
 test("suggestion, bot reply, and board geometry remain stable", async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
@@ -26,30 +57,43 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   await expect(page.getByText("Match center")).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Game Tools" })).toHaveCount(0);
   await expect(page.getByText("Review hook")).toHaveCount(0);
-  const controls = page.getByLabel("Board controls");
-  await expect(controls.locator(".play-control-heading")).toContainText("Ready");
+  const controls = boardControls(page);
+  await expect(controls).toBeVisible();
   await expect(controls).not.toContainText("Live");
-  await expect(controls.getByLabel("Assist controls")).toContainText("Suggest");
+  // Four everyday actions sit in the bar; everything else lives in the "More game actions" menu.
+  await expect(controls.locator(":scope > button")).toHaveCount(4);
+  await expect(controls.getByRole("button", { name: "Undo", exact: true })).toBeDisabled();
+  await expect(controls.getByRole("button", { name: "Suggest a move", exact: true })).toBeEnabled();
   await expect(controls.getByRole("button", { name: "Apply move" })).toHaveCount(0);
-  await expect(controls.getByLabel("Assist controls").getByRole("button")).toHaveCount(7);
-  await expect(controls.getByLabel("Match controls")).toContainText("Auto");
-  await expect(controls.getByLabel("Match controls")).toContainText("Resign");
-  await expect(controls.getByLabel("Utility controls")).toHaveCount(0);
-  await expect(controls.getByRole("button", { name: "Bot Mode" })).toBeDisabled();
-  await expect(page.getByLabel("Local play status")).toContainText("Offline Local");
-  await expect(page.locator(".review-position-card")).toContainText("Current position");
-  await expect(page.getByLabel("Move review summary")).toBeVisible();
-  await expect(page.locator(".review-engine-row")).not.toContainText("Live");
-  await expect(page.locator(".review-move-list")).toHaveCSS("overflow-y", "auto");
-  await expect(page.locator(".review-move-list")).not.toContainText("Info");
-  await expect(page.locator(".review-move-side").first()).toBeVisible();
+  await expect(controls.getByRole("button", { name: "Draw", exact: true })).toBeEnabled();
+  await expect(controls.getByRole("button", { name: "Resign", exact: true })).toBeEnabled();
+  const localMenu = await openGameMenu(page);
+  for (const action of ["Redo", "Move for me", "Pause game", "Export game", "New game"]) await expect(localMenu.getByRole("button", { name: action, exact: true })).toBeVisible();
+  await expect(localMenu.getByRole("button", { name: "Redo", exact: true })).toBeDisabled();
+  // Offline Local is a two-player board: bot takeover is only offered in Bot Mode.
+  await expect(localMenu.getByRole("button", { name: "Bot opponent" })).toHaveCount(0);
+  await expect(localMenu.getByRole("button", { name: /^Auto/ })).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  await expect(localMenu).toBeHidden();
+  const matchDetails = page.getByLabel("Match details", { exact: true });
+  await expect(matchDetails).toContainText("Offline Local");
+  await expect(matchDetails).toContainText("Rapid 10+0");
+  const moves = movesPanel(page);
+  await expect(moves).toContainText("No moves yet");
+  await expect(moves).not.toContainText("Live");
+  const review = moves.getByLabel("Review playback controls");
+  await expect(review.getByRole("button", { name: "First move" })).toBeDisabled();
+  await expect(review.getByRole("button", { name: "Last move" })).toBeDisabled();
   const before = await board.boundingBox();
   expect(before).toBeTruthy();
 
   const firstPiece = board.locator(".piece-symbol").first();
   await expect(firstPiece).toBeVisible();
   await expect(firstPiece).toHaveCSS("opacity", "1");
-  await expect(firstPiece).toHaveCSS("filter", "none");
+  // Photographic pieces carry a soft drop shadow; anything that dims or blurs the piece is still a regression.
+  const pieceFilter = await firstPiece.evaluate((element) => getComputedStyle(element).filter);
+  expect(pieceFilter).toMatch(/^(none|drop-shadow\(.*\))$/);
+  expect(pieceFilter).not.toMatch(/grayscale|opacity|brightness|blur|saturate/);
   await expect(board.locator('[data-piece="king"]').first()).toBeVisible();
   await expect(board.locator('[data-piece="queen"]').first()).toBeVisible();
   const coordinate = board.locator(".board-coordinate").first();
@@ -65,25 +109,42 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   expect(firstFileDataLabel).toBe(firstFileLabel);
   await expect(page.getByLabel("Black player card")).not.toHaveCSS("background-color", "rgb(36, 35, 31)");
 
-  await controls.getByRole("button", { name: "Suggest", exact: true }).click();
+  await controls.getByRole("button", { name: "Suggest a move", exact: true }).click();
   await expect(board.locator('[data-suggested="from"]')).toBeVisible();
   await expect(board.locator('[data-suggested="to"]')).toBeVisible();
-  await controls.getByRole("button", { name: "Suggest", exact: true }).click();
-  const firstMoveRow = page.locator(".review-move-list li[data-review]").first();
-  await expect(firstMoveRow).toBeVisible();
-  await expect(firstMoveRow.locator(".review-move-side")).toHaveText("Wh");
-  await expect(firstMoveRow.locator(".review-move-piece .piece-icon")).toHaveAttribute("data-code", "p");
-  await expect(firstMoveRow.locator(".review-move-meta small")).toHaveText("e2-e4");
+  await expect(page.locator("p.play-note")).toContainText("Hint:");
+  await controls.getByRole("button", { name: "Play suggested move", exact: true }).click();
+  await expect(page.getByText("Suggestion applied.")).toBeVisible();
+  const firstMove = moves.getByRole("button", { name: /^Move 1: / });
+  await expect(firstMove).toBeVisible();
+  // White's opening pawn push; accept both route ("e2-e4") and SAN ("e4") notation.
+  await expect(firstMove).toHaveAccessibleName(/^Move 1: Pawn (e2-)?e4$/);
+  const movedPawn = board.locator('[data-coordinate="e4"] .piece-icon');
+  await expect(movedPawn).toHaveAttribute("data-code", "p");
+  await expect(movedPawn).toHaveAttribute("data-owner", "white");
+  await expect(firstMove).toHaveAttribute("data-latest", "true");
+  await expect(moves.locator(".move-no").first()).toHaveText("1");
+  await expect(moves.locator(".move-pairs")).toHaveCSS("overflow-y", "auto");
+  await expect(moves).not.toContainText("Info");
+  await expect(controls.getByRole("button", { name: "Undo", exact: true })).toBeEnabled();
 
   const afterSuggestion = await board.boundingBox();
   expect(afterSuggestion?.width).toBeCloseTo(before!.width, 1);
   expect(afterSuggestion?.height).toBeCloseTo(before!.height, 1);
 
-  await page.getByLabel("Board controls").getByRole("button", { name: "Reset" }).click();
+  await gameMenuAction(page, "New game");
   await page.getByRole("group", { name: "Side", exact: true }).getByRole("button", { name: "White", exact: true }).click();
-  await page.getByRole("button", { name: /Bot Mode/ }).last().click();
+  await playModes(page).getByRole("button", { name: "Bot Mode", exact: true }).click();
   await page.getByRole("button", { name: "Start Game" }).click();
   await expect(page.getByText(/1400-1500 Elo bot/i).first()).toBeVisible();
+  await expect(matchDetails).toContainText("Bot Mode");
+  await expect(matchDetails).toContainText("1400-1500 Elo");
+  const botMenu = await openGameMenu(page);
+  await expect(botMenu.getByRole("button", { name: /^Bot opponent/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(botMenu.getByRole("button", { name: /^Bot opponent/ })).toBeEnabled();
+  await expect(botMenu.getByRole("button", { name: "Auto · bots play both sides", exact: true })).toHaveAttribute("aria-pressed", "false");
+  await page.keyboard.press("Escape");
+  await expect(botMenu).toBeHidden();
   await page.getByRole("button", { name: /e2.*pawn/i }).click();
   await page.getByRole("button", { name: "e4" }).click();
   await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 12000 });
@@ -91,6 +152,39 @@ test("suggestion, bot reply, and board geometry remain stable", async ({ page })
   const afterBot = await board.boundingBox();
   expect(afterBot?.width).toBeCloseTo(before!.width, 1);
   expect(afterBot?.height).toBeCloseTo(before!.height, 1);
+  expect(runtimeErrors).toEqual([]);
+});
+
+test("Janggi pass records a move and respects pause and review", async ({ page }) => {
+  const runtimeErrors: string[] = [];
+  page.on("pageerror", (error) => runtimeErrors.push(error.message));
+  page.on("console", (message) => {
+    if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
+  });
+
+  await page.goto("/en/play/janggi?mode=offline&time=freestyle");
+  await page.getByRole("button", { name: "Start Game", exact: true }).click();
+  const pass = boardControls(page).getByRole("button", { name: "Pass turn", exact: true });
+  const board = page.getByLabel("Game board", { exact: true });
+  const position = await board.locator(".board-square").evaluateAll((squares) => squares.map((square) => square.getAttribute("aria-label")));
+  await expect(pass).toBeEnabled();
+  await pass.click();
+  await expect(movesPanel(page).getByRole("button", { name: /^Move 1:.*Pass$/ })).toBeVisible();
+  expect(await board.locator(".board-square").evaluateAll((squares) => squares.map((square) => square.getAttribute("aria-label")))).toEqual(position);
+  await expect(pass).toBeEnabled();
+
+  await gameMenuAction(page, "Pause game");
+  await expect(pass).toBeDisabled();
+  await page.getByRole("button", { name: "Resume game", exact: true }).click();
+  await expect(pass).toBeEnabled();
+  await movesPanel(page).getByRole("button", { name: "First move", exact: true }).click();
+  await expect(pass).toBeDisabled();
+  await movesPanel(page).getByRole("button", { name: "Last move", exact: true }).click();
+  await expect(pass).toBeEnabled();
+  await boardControls(page).getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(movesPanel(page)).toContainText("No moves yet");
+  await expect(pass).toBeEnabled();
+  await expectNoHorizontalOverflow(page);
   expect(runtimeErrors).toEqual([]);
 });
 
@@ -128,11 +222,11 @@ test("play setup carries selected clock into game links", async ({ page }) => {
   await page.goto("/en/play?mode=bot&time=blitz");
   await expect(page.getByRole("heading", { name: "Classic Chess" })).toBeVisible();
   await expect(page.getByLabel("Game board")).toBeVisible();
-  await expect(page.locator(".play-time-grid .is-selected")).toContainText("Blitz 5+0");
-  await expect(page.getByLabel("Play modes")).toContainText("Bot Mode");
-  await expect(page.getByLabel("Play modes")).not.toContainText("Matchmaking");
+  await expect(timeControlPicker(page)).toContainText("Blitz 5+0");
+  await expect(playModes(page).getByRole("button", { name: "Bot Mode", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(playModes(page)).not.toContainText("Matchmaking");
 
-  const chooseGame = page.getByRole("button", { name: "Choose game" });
+  const chooseGame = page.getByRole("button", { name: /^Classic Chess\s*, choose game$/ });
   await chooseGame.click();
   await expect(page.getByRole("dialog", { name: "Choose game" })).toBeVisible();
   await page.keyboard.press("Escape");
@@ -145,12 +239,12 @@ test("play setup carries selected clock into game links", async ({ page }) => {
   await classicLink.click();
 
   await expect(page).toHaveURL(/\/en\/play\/classic\?bot=normal&mode=bot&time=blitz$/);
-  await expect(page.getByLabel("Bot difficulty")).toHaveValue("elo-1400-1500");
-  await expect(page.locator(".play-time-grid .is-selected")).toContainText("Blitz 5+0");
+  await expect(page.getByLabel("Bot difficulty", { exact: true })).toContainText("1400-1500 Elo");
+  await expect(timeControlPicker(page)).toContainText("Blitz 5+0");
   expect(runtimeErrors).toEqual([]);
 });
 
-test("game picker exposes bot-capable preview variants without enabling live modes", async ({ page }) => {
+test("game picker carries bot mode into Shogi with supported live modes", async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
   page.on("console", (message) => {
@@ -158,7 +252,7 @@ test("game picker exposes bot-capable preview variants without enabling live mod
   });
 
   await page.goto("/en/play/classic?mode=bot&time=rapid");
-  await page.getByRole("button", { name: "Choose game" }).click();
+  await page.getByRole("button", { name: /^Classic Chess\s*, choose game$/ }).click();
   await expect(page.getByLabel("Game filters")).toBeVisible();
   await page.getByLabel("Mode filter").getByRole("button", { name: "Bot", exact: true }).click();
   await page.getByPlaceholder("Search games").fill("shogi");
@@ -168,9 +262,11 @@ test("game picker exposes bot-capable preview variants without enabling live mod
 
   await expect(page).toHaveURL(/\/en\/play\/shogi\?bot=normal&mode=bot&time=rapid$/);
   await expect(page.getByRole("heading", { name: "Shogi" })).toBeVisible();
-  await expect(page.getByLabel("Bot difficulty")).toBeEnabled();
-  await expect(page.getByRole("button", { name: "Quick Match" })).toBeEnabled();
-  await expect(page.getByRole("button", { name: "Quick Match" })).toHaveAttribute("title", /Available for live and room setup/i);
+  await expect(page.getByLabel("Bot difficulty", { exact: true })).toBeVisible();
+  await expect(playModes(page).getByRole("button", { name: "Bot Mode", exact: true })).toHaveAttribute("aria-pressed", "true");
+  // Enabled modes carry their own label as the tooltip; disabled ones would show the catalog lock reason instead.
+  await expect(playModes(page).getByRole("button", { name: "Quick Match", exact: true })).toBeEnabled();
+  await expect(playModes(page).getByRole("button", { name: "Quick Match", exact: true })).toHaveAttribute("title", "Quick Match");
   expect(runtimeErrors).toEqual([]);
 });
 
@@ -235,9 +331,12 @@ test("setup flow supports Bot Mode as black with an automatic first reply", asyn
   await page.getByRole("group", { name: "Bot difficulty options" }).getByRole("button", { name: "2800-2900 Elo", exact: true }).click();
   await page.getByRole("button", { name: "Start Game" }).click();
 
-  await expect(page.getByText("Black side").first()).toBeVisible();
+  await expect(page.getByLabel("Black player card", { exact: true })).toContainText("You");
+  await expect(page.getByLabel("White player card", { exact: true })).toContainText("2800-2900 Elo bot");
   await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 5000 });
-  await expect(page.getByText(/opening-book|internal-search|engine-search/)).toBeVisible();
+  // The engine source is no longer surfaced; the bot's white opening must land in the move list instead.
+  await expect(movesPanel(page).getByRole("button", { name: /^Move 1: / })).toBeVisible();
+  await expect(page.getByLabel("Match details", { exact: true })).toContainText("2800-2900 Elo");
 
   const after = await board.boundingBox();
   expect(after?.width).toBeCloseTo(before!.width, 1);
@@ -264,11 +363,13 @@ test("classic grandmaster replies quickly with engine or bounded fallback", asyn
   await page.getByRole("button", { name: "h3" }).click();
 
   await expect(page.getByText("Bot replied automatically.")).toBeVisible({ timeout: 7000 });
-  await expect(page.getByText(/engine-search|internal-search/i)).toBeVisible();
+  // Engine source labels are no longer displayed; the reply must be recorded as move 2.
+  await expect(movesPanel(page).getByRole("button", { name: /^Move 1: Pawn (h2-)?h3$/ })).toBeVisible();
+  await expect(movesPanel(page).getByRole("button", { name: /^Move 2: / })).toBeVisible();
   expect(runtimeErrors).toEqual([]);
 });
 
-test("online setup disables bot controls and shows automatic ranked queue", async ({ page }) => {
+test("online setup disables bot controls and shows automatic casual queue", async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on("pageerror", (error) => runtimeErrors.push(error.message));
   page.on("console", (message) => {
@@ -276,25 +377,36 @@ test("online setup disables bot controls and shows automatic ranked queue", asyn
   });
 
   await page.goto("/en/play/classic");
-  await page.getByRole("button", { name: "Quick Match" }).click();
-  await expect(page.getByLabel("Play modes").getByRole("button", { name: "Quick Match" })).toHaveClass(/is-selected/);
+  const quickMatch = playModes(page).getByRole("button", { name: "Quick Match", exact: true });
+  await quickMatch.click();
+  await expect(quickMatch).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByLabel("Bot difficulty")).toHaveCount(0);
+  await expect(page.getByRole("group", { name: "Side", exact: true })).toHaveCount(0);
+  await expect(page.getByText("Casual game · sides are assigned when paired")).toBeVisible();
   await expect(page.getByRole("button", { name: "Find Match" })).toBeVisible();
   await page.getByRole("button", { name: "Find Match" }).click();
 
-  await expect(page.getByText("Searching for opponent").first()).toBeVisible();
-  await expect(page.getByLabel("Online matchmaking status")).toContainText("Auto-matching opponent");
-  await expect(page.getByLabel("Online matchmaking status")).toContainText("Rapid 10+0");
-  await expect(page.getByLabel("Online matchmaking status")).toContainText("Ranked");
-  await expect(page.getByLabel("Online queue details")).toContainText("Ticket");
-  await expect(page.getByRole("button", { name: "Bot Mode" })).toBeDisabled();
+  await expect(page.locator("p.play-note")).toContainText("Finding an opponent for a casual game.");
+  const status = page.getByLabel("Online matchmaking status", { exact: true });
+  await expect(status).toContainText("Finding an opponent");
+  await expect(status).toContainText("Rapid 10+0");
+  await expect(status).toContainText("casual");
+  await expect(status).toContainText("Ticket");
+  await expect(page.getByLabel("Match details", { exact: true })).toContainText("Quick Match");
+  // Setup (and with it Bot Mode) is locked away while the queue runs.
+  await expect(playModes(page)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Bot Mode" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Apply move" })).toHaveCount(0);
-  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Suggest" })).toBeDisabled();
-  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
-  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();
-  await page.getByRole("button", { name: "Cancel" }).click();
-  await expect(page.getByLabel("Online queue details")).toHaveCount(0);
-  await expect(page.getByLabel("Play modes").getByRole("button", { name: "Quick Match" })).toHaveClass(/is-selected/);
+  await expect(boardControls(page).getByRole("button", { name: "Suggest a move" })).toBeDisabled();
+  await expect(boardControls(page).getByRole("button", { name: "Draw" })).toBeDisabled();
+  await expect(boardControls(page).getByRole("button", { name: "Resign" })).toBeDisabled();
+  const onlineMenu = await openGameMenu(page);
+  await expect(onlineMenu.getByRole("button", { name: "Bot opponent" })).toHaveCount(0);
+  await expect(onlineMenu.getByRole("button", { name: "Move for me", exact: true })).toBeDisabled();
+  await page.keyboard.press("Escape");
+  await status.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(status).toHaveCount(0);
+  await expect(quickMatch).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("button", { name: "Find Match" })).toBeVisible();
   expect(runtimeErrors).toEqual([]);
 });
@@ -307,23 +419,27 @@ test("friend room setup creates invite-ready status without matchmaking copy", a
   });
 
   await page.goto("/en/play/classic");
-  await page.getByLabel("Play modes").getByRole("button", { name: "Play a Friend" }).click();
-  await expect(page.getByLabel("Play modes").getByRole("button", { name: "Play a Friend" })).toHaveClass(/is-selected/);
+  const friendMode = playModes(page).getByRole("button", { name: "Play a Friend", exact: true });
+  await friendMode.click();
+  await expect(friendMode).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByLabel("Bot difficulty")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Create Room" })).toBeVisible();
   await page.getByRole("button", { name: "Create Room" }).click();
 
-  await expect(page.getByText("Invite room ready").first()).toBeVisible();
+  const status = page.getByLabel("Online matchmaking status", { exact: true });
+  await expect(status).toContainText("Room ready");
   await expect(page).toHaveURL(/room=[a-f0-9-]{36}/);
   const roomId = new URL(page.url()).searchParams.get("room")!;
-  await expect(page.getByText(`Invite room ${roomId} is ready. Share can copy the invite or spectator link.`)).toBeVisible();
-  await expect(page.getByLabel("Online matchmaking status")).toContainText(`Room ${roomId} is ready. Use Share for invite and spectator links.`);
-  await expect(page.getByText("Searching for opponent")).toHaveCount(0);
+  await expect(page.getByRole("status").filter({ hasText: "Waiting for your friend · share the invite link" })).toBeVisible();
+  await expect(status).toContainText("Use Share to send the invite link.");
+  await expect(page.getByLabel("Match details", { exact: true })).toContainText("Play a Friend");
+  await expect(page.getByText(/Finding an opponent|Searching for opponent/)).toHaveCount(0);
+  await expect(status.getByRole("button", { name: "Cancel" })).toHaveCount(0);
   await page.getByRole("button", { name: "Share game" }).click();
   await expect(page.getByRole("dialog", { name: "Share game options" }).getByText(roomId)).toBeVisible();
   await expect(page.getByRole("dialog", { name: "Share game options" }).getByRole("link", { name: /Invite link/ })).toHaveAttribute("href", new RegExp(`room=${roomId}`));
-  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Suggest" })).toBeDisabled();
-  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
+  await expect(boardControls(page).getByRole("button", { name: "Suggest a move" })).toBeDisabled();
+  await expect(boardControls(page).getByRole("button", { name: "Draw" })).toBeDisabled();
   expect(runtimeErrors).toEqual([]);
 });
 
@@ -334,20 +450,22 @@ test("spectate mode is read-only after start", async ({ page }) => {
     if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
   });
 
-  await page.goto("/en/play/classic");
-  await page.getByLabel("Play modes").getByRole("button", { name: "Spectate" }).click();
+  await page.goto("/en/play/classic?mode=spectate");
   await expect(page.getByRole("button", { name: "Start Watching" })).toBeVisible();
   await page.getByRole("button", { name: "Start Watching" }).click();
-  await expect(page.getByText("Watching rooms").first()).toBeVisible();
+  await expect(page.getByLabel("Match details", { exact: true })).toContainText("Spectate");
   await expect(page.getByText("Spectate mode is read-only. Watch rooms without moving pieces.")).toBeVisible();
 
   await page.getByRole("button", { name: /e2.*white.*pawn/i }).click();
-  await page.getByRole("button", { name: "e4" }).click();
+  await page.getByRole("button", { name: "e4", exact: true }).click();
   await expect(page.getByText("Spectate mode is read-only. Choose a playable mode to move pieces.")).toBeVisible();
-  await expect(page.locator(".review-move-list")).not.toContainText("e4");
-  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Move", exact: true })).toBeDisabled();
-  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
-  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();
+  await expect(movesPanel(page)).toContainText("No moves yet");
+  await expect(movesPanel(page).getByRole("button", { name: /^Move \d+:/ })).toHaveCount(0);
+  // Spectators get no move, draw or resign actions at all.
+  await expect(boardControls(page)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Move for me" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Draw", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Resign", exact: true })).toHaveCount(0);
   expect(runtimeErrors).toEqual([]);
 });
 
@@ -358,7 +476,12 @@ test("play chat keeps player and public rooms separate", async ({ page }) => {
     if (["error", "warning"].includes(message.type())) runtimeErrors.push(message.text());
   });
 
-  await page.goto("/en/play/classic");
+  // Chat only exists once a live game is running: queue for a Daily game (a quiet pool) to reach the players room.
+  await page.goto("/en/play/classic?mode=online&time=correspondence");
+  await expect(timeControlPicker(page)).toContainText("Daily");
+  await page.getByRole("button", { name: "Find Match" }).click();
+  const status = page.getByLabel("Online matchmaking status", { exact: true });
+  await expect(status).toContainText("Finding an opponent");
   const chat = page.getByLabel("Classic Chess chat room");
   await page.locator(".studio-chat-disclosure > summary").click();
   await expect(chat).toBeVisible();
@@ -375,7 +498,11 @@ test("play chat keeps player and public rooms separate", async ({ page }) => {
   await chat.getByRole("button", { name: "Send public chat message" }).click();
   await expect(chat.getByText("Watching here")).toBeVisible();
 
-  await page.getByLabel("Play modes").getByRole("button", { name: "Spectate" }).click();
+  await status.getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(status).toHaveCount(0);
+  await page.goto("/en/play/classic?mode=spectate");
+  await page.getByRole("button", { name: "Start Watching" }).click();
+  await page.locator(".studio-chat-disclosure > summary").click();
   const spectatorChat = page.getByLabel("Classic Chess chat room");
   await expect(spectatorChat.getByRole("tab", { name: /Players/ })).toBeDisabled();
   await expect(spectatorChat.getByText("Spectator room")).toBeVisible();
@@ -392,21 +519,24 @@ test("resign result can be dismissed and reset to setup cleanly", async ({ page 
 
   await page.goto("/en/play/classic");
   await page.getByRole("button", { name: "Start Game" }).click();
-  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeEnabled();
-  await page.getByLabel("Board controls").getByRole("button", { name: "Resign" }).click();
+  await expect(boardControls(page).getByRole("button", { name: "Resign" })).toBeEnabled();
+  await boardControls(page).getByRole("button", { name: "Resign" }).click();
 
   const dialog = page.getByRole("dialog", { name: "Match over" });
   await expect(dialog).toBeVisible();
   await expect(dialog).toContainText("resignation");
   await dialog.getByRole("button", { name: "Close match result" }).click();
   await expect(dialog).toHaveCount(0);
+  await expect(boardControls(page).getByRole("button", { name: "Draw" })).toBeDisabled();
+  await expect(boardControls(page).getByRole("button", { name: "Resign" })).toBeDisabled();
 
-  await page.getByLabel("Board controls").getByRole("button", { name: "Reset" }).click();
-  await expect(page.getByText("Choose setup first")).toBeVisible();
-  await expect(page.getByLabel("Play modes").getByRole("button", { name: "Offline Local" })).toHaveClass(/is-selected/);
-  await page.getByRole("tab", { name: "Status" }).click();
-  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Draw" })).toBeDisabled();
-  await expect(page.getByLabel("Board controls").getByRole("button", { name: "Resign" })).toBeDisabled();
+  await gameMenuAction(page, "New game");
+  await expect(playModes(page).getByRole("button", { name: "Offline Local", exact: true })).toHaveAttribute("aria-pressed", "true");
+  // Back in setup: the in-game action bar is gone until the next start.
+  await expect(boardControls(page)).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Draw", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Resign", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Start Game", exact: true })).toBeVisible();
   expect(runtimeErrors).toEqual([]);
 });
 
@@ -424,7 +554,7 @@ test("non-classic boards use clean coordinate labels too", async ({ page }) => {
   await expect(board.locator('[data-terrain="palace"]')).toHaveCount(18);
   await expect(board.locator('[data-coordinate="d10"]')).toHaveAttribute("data-terrain", "palace");
   await expect(board.locator('[data-coordinate="d10"]')).toHaveAttribute("aria-label", /Palace/);
-  await expect(page.getByLabel("Board terrain key")).toContainText("Palace");
+  await expect(board.locator('[data-coordinate="e9"]')).toHaveAttribute("aria-label", /Palace/);
   const coordinate = board.locator(".board-coordinate").first();
   await expect(coordinate).toBeVisible();
   await expect(coordinate).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
@@ -458,7 +588,9 @@ test("jungle board exposes river, den, and trap terrain", async ({ page }) => {
   await expect(board.locator(".board-square")).toHaveCount(63);
   await expect(board.locator('[data-terrain="river"]')).toHaveCount(12);
   await expect(board.locator('[data-terrain="den"]')).toHaveCount(2);
-  await expect(board.locator('[data-terrain="trap"]')).toHaveCount(10);
+  // Standard rules: three traps around each den (the old 10-trap layout only survives in legacy saves).
+  await expect(board.locator('[data-terrain="trap"]')).toHaveCount(6);
+  await expect(board.locator('[data-coordinate="d8"]')).toHaveAttribute("data-terrain", "trap");
   await expect(board.locator('[data-coordinate="b6"]')).toHaveAttribute("data-terrain", "river");
   await expect(board.locator('[data-coordinate="d9"]')).toHaveAttribute("aria-label", /Den/);
   await expect(board.locator('[data-coordinate="c9"]')).toHaveAttribute("aria-label", /Trap/);
@@ -483,28 +615,34 @@ test("drop-variant hand rails stay compact on Mini Shogi", async ({ page }) => {
   await expect(page.getByLabel("Game board")).toBeVisible();
 
   const playerCard = page.getByLabel("Sente player card");
-  await expect(playerCard.getByLabel("Sente hand: 0")).toBeVisible();
+  await expect(playerCard.getByRole("group", { name: "Sente hand empty", exact: true })).toBeAttached();
   await expect(playerCard.locator(".hand-tray")).toHaveAttribute("data-skin", "mini-wedge");
-  await expect(playerCard.locator(".hand-tray-status")).toContainText("Hand");
-  await expect(playerCard.locator(".hand-empty-pill")).toHaveText("0");
+  await expect(playerCard.locator(".hand-tray")).toHaveClass(/sr-only/);
+  await expect(playerCard.locator(".hand-tray").getByRole("button")).toHaveCount(0);
   const board = page.getByLabel("Game board");
   await expect(board.locator('[data-terrain="promotion-zone"]')).toHaveCount(10);
   await expect(board.locator('[data-coordinate="a5"]')).toHaveAttribute("data-terrain", "promotion-zone");
   await expect(board.locator('[data-coordinate="a5"]')).toHaveAttribute("aria-label", /Promotion zone/);
-  await expect(page.getByLabel("Board terrain key")).toContainText("Promo zone");
-  await page.getByRole("tab", { name: "Status" }).click();
-  await page.getByText("Look").click();
-  await page.getByRole("button", { name: "Use Tablets appearance set", exact: true }).click();
+  await expect(board.locator('[data-coordinate="a1"]')).toHaveAttribute("aria-label", /Promotion zone/);
+  // The old "Tablets" appearance set is now the "Letters" 2D piece style inside the Customize board popover.
+  await page.getByLabel("Customize board", { exact: true }).click();
+  const pieceStyle = page.getByRole("group", { name: "2D piece style", exact: true });
+  await pieceStyle.getByRole("button", { name: "Use Letters pieces", exact: true }).click();
+  await expect(pieceStyle.getByRole("button", { name: "Use Letters pieces", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByLabel("Game board").locator(".piece-icon").first()).toHaveAttribute("data-skin", "tile");
+  await page.keyboard.press("Escape");
+  await expect(pieceStyle).toBeHidden();
 
-  await page.getByRole("tab", { name: "Setup" }).click();
   await page.getByRole("button", { name: "Start Game" }).click();
   await board.locator('[data-coordinate="e1"]').click();
   await board.locator('[data-coordinate="e4"]').click();
-  await board.locator('[data-coordinate="a5"]').click();
-  await board.locator('[data-coordinate="a4"]').click();
+  await board.locator('[data-coordinate="d5"]').click();
+  await board.locator('[data-coordinate="e4"]').click();
+  await expect(movesPanel(page).getByRole("button", { name: /^Move 2: Gold General d5xe4$/ })).toBeVisible();
 
-  await expect(playerCard.getByLabel("Sente hand: 1")).toBeVisible();
+  await expect(playerCard.getByRole("group", { name: "Sente hand pieces", exact: true })).toBeVisible();
+  await expect(playerCard.locator(".hand-tray")).not.toHaveClass(/sr-only/);
+  await expect(playerCard.getByRole("button", { name: /Drop Pawn, 1 in hand/i })).toHaveAttribute("data-piece-count", "1");
   await playerCard.getByRole("button", { name: /Drop Pawn, 1 in hand/i }).click();
   const dropHint = page.getByLabel("Dropping Pawn");
   await expect(dropHint).toBeVisible();
@@ -514,7 +652,7 @@ test("drop-variant hand rails stay compact on Mini Shogi", async ({ page }) => {
   await dropHint.getByRole("button", { name: "Cancel Pawn drop" }).click();
   await expect(dropHint).toHaveCount(0);
 
-  await page.getByLabel("Board controls").getByRole("button", { name: "Reset" }).click();
+  await gameMenuAction(page, "New game");
   await page.getByRole("button", { name: "Start Game" }).click();
   await board.locator('[data-coordinate="d1"]').click();
   await board.locator('[data-coordinate="b3"]').click();
