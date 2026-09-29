@@ -28,11 +28,13 @@ describe("performance boundaries", () => {
     expect(d1CatalogSource).not.toContain(".flatMap");
   });
 
-  test("compact bot knowledge stays within Cloudflare asset limits", () => {
-    const generatedPath = join(repoRoot, "src", "data", "bot-knowledge.generated.json");
+  test("delivered bot knowledge fits the compact asset budget", () => {
+    const generatedPath = join(repoRoot, "src", "data", "bot-knowledge.packed.json");
     const size = statSync(generatedPath).size;
-
-    expect(size).toBeLessThan(16 * 1024 * 1024);
+    expect(size).toBeLessThan(5 * 1024 * 1024);
+    const training = readFileSync(join(repoRoot, "src", "lib", "bot", "training.ts"), "utf8");
+    expect(training).toContain('import packedKnowledge from "@/data/bot-knowledge.packed.json"');
+    expect(training).not.toMatch(/import .*from ["']@\/data\/bot-knowledge.generated.json["']/);
   });
 
   test("bot runtime avoids nested flatMap allocation in legal move generation", () => {

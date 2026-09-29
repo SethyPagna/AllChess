@@ -4,7 +4,8 @@ import { getBotStrengthBand, getVariantBotStrengthProfile, normalizeBotTierKey, 
 import { botDifficultyLevels, MAX_BOT_REPLY_MS } from "@/lib/bot/config";
 import { applyMove, createInitialState, getLegalMoves, getVariant, variantCatalog, type GameState, type Move, type VariantDefinition } from "@/lib/variants";
 import { getVariantRuleSummary, type VariantRuleCompletion } from "@/lib/variants/rules-atlas";
-import generatedKnowledge from "@/data/bot-knowledge.generated.json";
+import packedKnowledge from "@/data/bot-knowledge.packed.json";
+import { unpackBotKnowledge, type PackedBotKnowledge } from "./knowledge-codec";
 
 export type BotKnowledgeSource = "opening-book" | "tactic-cache" | "endgame-cache" | "ml-policy" | "engine-search" | "internal-search";
 
@@ -1105,7 +1106,7 @@ const curatedLineSeedEntries = createCuratedLineSeedEntries([
   }
 ]);
 
-const generated = generatedKnowledge as GeneratedBotKnowledgeFile;
+const generated = unpackBotKnowledge(packedKnowledge as PackedBotKnowledge) as unknown as GeneratedBotKnowledgeFile;
 const generatedKnowledgeEntries = generated.entries;
 const generatedEngineLabels = generated.engineLabels ?? [];
 const curatedRuntimeKnowledgeEntries = [...curatedKnowledgeEntries, ...curatedLineSeedEntries];
