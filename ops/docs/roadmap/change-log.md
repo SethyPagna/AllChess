@@ -4,12 +4,15 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ---
 
-## 2026-09-30 — Lossless bot knowledge delivery (verification in progress)
+## 2026-09-30 — Lossless bot knowledge delivery
 
 - Keep all 10,064 generated knowledge entries and metadata while replacing the runtime import with a reproducible dictionary-table artifact.
 - Prepare it for development/builds and refresh it after canonical training writes, including relative paths; use a content hash independent of checkout line endings.
 - Preserve independent mutable decoded values and existing bot interfaces. See [scope, checks and remaining work](bot-knowledge-delivery.md).
 - Exclude generated Wrangler preview folders at any nesting depth from lint, retaining the same checks for authored source.
+- Keep ignored historical Playwright diagnostics outside the app typecheck; check the current audit separately with the same strict options. Two Three test typing repairs preserve assertions and runtime behavior.
+- Reduce the built offline pack by 7.34 MiB to 79.64 MiB, retaining all 182 assets and leaving 8.36 MiB below the unchanged limit. Verify all 104 artwork/model/engine/icon files unchanged.
+- Full lint, strict typechecks, all 32 focused 3D tests and the complete production build pass. Online and cold-offline functional checks preserve saves, pack integrity, hints and actual Stockfish replies. Classic 3D startup misses the unchanged five-second target; the full suite reports 1,362 passed, 14 failed and 4 skipped. These failures remain open.
 
 ## 2026-09-27 — Club collection and factual review
 

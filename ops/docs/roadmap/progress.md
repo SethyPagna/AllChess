@@ -2,7 +2,7 @@
 
 **Current Phase:** Ongoing game studio, regional rules, 3D, offline and multiplayer improvements
 
-**Current Status:** The product goal continues on `codex/compact-game-studio`. Current increment: [lossless bot knowledge delivery](bot-knowledge-delivery.md), reducing runtime and offline-pack size while retaining every training entry and asset; verification is in progress. The previous [Shore collection checkpoint](shore-checkpoint.md) is committed and pushed, with production-browser and cold-offline checks complete. There are 17 distinct collections across 11 native families; sixteen more designs and further art, camera, physical-device and multiplayer work remain. The phase table below is a historical planning baseline. Individual delivery notes record current scope and evidence.
+**Current Status:** The product goal continues on `codex/compact-game-studio`. [Lossless bot knowledge delivery](bot-knowledge-delivery.md) reduces the built offline pack to 79.64 MiB, preserving every training entry and existing asset. Full lint, strict typechecks, 32 focused 3D tests and the complete production build pass. Online and cold-offline functional checks pass; Classic 3D startup misses the unchanged five-second target. The full suite reports 1,362 passed, 14 failed and 4 skipped, so verification is not fully green. There are 17 distinct collections across 11 native families; sixteen more designs and further art, camera, physical-device and multiplayer work remain. The earlier [Shore checkpoint](shore-checkpoint.md) and phase table below describe historical evidence and plans. Individual delivery notes record current scope and results.
 
 **Last Updated:** 2026-09-30
 
