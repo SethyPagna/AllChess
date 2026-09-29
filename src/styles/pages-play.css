@@ -482,6 +482,7 @@
   .game-studio .game-side-panel > .play-note { order: -1; }
   .move-panel { flex: none; max-height: 34dvh; min-height: 112px; }
   .play-more-menu { width: min(260px, calc(100vw - 32px)); }
+  .game-studio .setup-pickers .choice-picker-options { position: static; margin-top: 5px; }
 }
 
 @media (max-width: 420px) {
