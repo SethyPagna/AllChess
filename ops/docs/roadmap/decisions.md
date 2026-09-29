@@ -173,3 +173,7 @@ Keep collection identity separate from board colours and material recolours. Eac
 ## 2026-09-27: Evidence-based move events and native defaults
 
 Move order and notation cannot establish quality grades or a best line. Display factual timeline events from matching positions; leave unavailable capture counts unknown and reserve evaluations for a real analysis provider. A new default collection may apply to unset or invalid preferences, while an explicitly saved legacy choice must remain intact. Read per-game collection, view and finish preferences independently so one blocked key cannot suppress the others. See [delivery scope](club-collections.md).
+
+## 2026-09-30: Preserve knowledge while compacting runtime delivery
+
+Keep the authoritative generated training JSON intact and derive a versioned dictionary-table artifact for browser delivery. Preserve every entry and metadata field, verify a strict round trip before writing, and decode to independent mutable objects before existing runtime indexing. Hash parsed content rather than checkout bytes, and regenerate from both build preparation and canonical training writes. Measure the actual production pack and cold-offline behavior; source size alone does not establish network speed or startup performance. See [scope and validation](bot-knowledge-delivery.md).

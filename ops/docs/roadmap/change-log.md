@@ -4,6 +4,13 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ---
 
+## 2026-09-30 — Lossless bot knowledge delivery (verification in progress)
+
+- Keep all 10,064 generated knowledge entries and metadata while replacing the runtime import with a reproducible dictionary-table artifact.
+- Prepare it for development/builds and refresh it after canonical training writes, including relative paths; use a content hash independent of checkout line endings.
+- Preserve independent mutable decoded values and existing bot interfaces. See [scope, checks and remaining work](bot-knowledge-delivery.md).
+- Exclude generated Wrangler preview folders at any nesting depth from lint, retaining the same checks for authored source.
+
 ## 2026-09-27 — Club collection and factual review
 
 - Add an ivory/oxblood lacquer collection, four generated sprites and an original textured Blender/GLB with stacked kings for all three draughts games.
