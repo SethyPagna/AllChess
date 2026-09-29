@@ -1,6 +1,6 @@
 # Visual collection coverage
 
-Follow-up: the [Celadon checkpoint](celadon-checkpoint.md) adds a sixteenth wired model collection, fourteen more individually generated faces and a second coordinated generated board. Its assets and focused integration checks pass; production appearance and offline validation remain pending. The inventory below preserves the earlier pre-Celadon snapshot and its counting rules.
+Follow-up: the [Celadon checkpoint](celadon-checkpoint.md) adds a sixteenth wired model collection, fourteen more individually generated faces and a second coordinated generated board. Its asset checks and September 29 production-browser appearance, camera, gameplay and cold-offline checks pass. Physical-device validation remains pending. The current structural shortfall is 17 collections against the three-per-family target; the inventory below preserves the earlier pre-Celadon snapshot and its counting rules.
 
 Snapshot: 2026-09-27, current working tree after Carved Shogi and its grid correction, before the next Xiangqi collection is delivered. This is an asset and runtime-wiring inventory, not a visual-quality certification or deployment claim.
 
