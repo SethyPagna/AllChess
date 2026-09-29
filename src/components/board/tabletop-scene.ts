@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 import { shogiStands } from "./shogi-stands";
 
 /** Small, deterministic grain map. No external textures or continuous render loop. */
@@ -54,11 +54,13 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
     boardSurface.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
     woodTextures.push(boardSurface);
   }
-  const environment = new RoomEnvironment();
-  const generator = new THREE.PMREMGenerator(renderer);
-  const environmentMap = generator.fromScene(environment, .04);
-  scene.environment = environmentMap.texture; scene.environmentIntensity = .65;
-  environment.dispose(); generator.dispose();
+  const environmentMap = new HDRLoader().load("/assets/materials/studio-room.hdr", texture => {
+    if (disposed) { texture.dispose(); return; }
+    texture.mapping = THREE.CubeUVReflectionMapping;
+    scene.environment = texture;
+    onTextureReady();
+  }, undefined, () => {});
+  scene.environmentIntensity = .65;
   scene.background = new THREE.Color(0x171b1a);
   scene.fog = new THREE.Fog(0x171b1a, 1.8, 4);
   const group = new THREE.Group(); scene.add(group);

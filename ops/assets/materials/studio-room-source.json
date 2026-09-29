@@ -1,0 +1,250 @@
+{
+  "three": "0.186.0",
+  "source": "three/addons/environments/RoomEnvironment.js",
+  "method": "PMREMGenerator.fromScene",
+  "parameters": {
+    "sigma": 0.04,
+    "near": 0.1,
+    "far": 100,
+    "size": 256,
+    "position": [
+      0,
+      0,
+      0
+    ]
+  },
+  "width": 768,
+  "height": 1024,
+  "bytes": 1488081,
+  "sha256": "4444dec9fe6fc3df8be42585044c78a6be4071d6ecf6d5c18f0a010333a4b710",
+  "storage": "Radiance RGBE, FORMAT=32-bit_rle_rgbe, -Y +X",
+  "mapping": "CubeUVReflectionMapping",
+  "colorSpace": "LinearSRGBColorSpace",
+  "flipY": true,
+  "toneMappingBaked": false,
+  "exposureScale": 1,
+  "probeCoordinates": "top-down atlas pixels; RGB values are original half-float render-target radiance before RGBE encoding",
+  "tolerance": {
+    "float": "2^(floor(log2(max(originalRGB)))+1)/255 + abs(decodedFloat)*2^-23",
+    "half": "2^(floor(log2(max(originalRGB)))+1)/255 + abs(decodedFloat)/1024 + 2^-24",
+    "zeroPixel": "0 float; 2^-24 half"
+  },
+  "probes": [
+    {
+      "x": 128,
+      "y": 895,
+      "originalRGB": [
+        0.334716796875,
+        0.334716796875,
+        0.334716796875
+      ]
+    },
+    {
+      "x": 384,
+      "y": 895,
+      "originalRGB": [
+        33.3125,
+        33.3125,
+        33.3125
+      ]
+    },
+    {
+      "x": 640,
+      "y": 895,
+      "originalRGB": [
+        0.330810546875,
+        0.330810546875,
+        0.330810546875
+      ]
+    },
+    {
+      "x": 128,
+      "y": 639,
+      "originalRGB": [
+        0.405029296875,
+        0.405029296875,
+        0.405029296875
+      ]
+    },
+    {
+      "x": 384,
+      "y": 639,
+      "originalRGB": [
+        0.6982421875,
+        0.6982421875,
+        0.6982421875
+      ]
+    },
+    {
+      "x": 640,
+      "y": 639,
+      "originalRGB": [
+        0.372314453125,
+        0.372314453125,
+        0.372314453125
+      ]
+    },
+    {
+      "x": 64,
+      "y": 447,
+      "originalRGB": [
+        0.33837890625,
+        0.33837890625,
+        0.33837890625
+      ]
+    },
+    {
+      "x": 192,
+      "y": 447,
+      "originalRGB": [
+        32.65625,
+        32.65625,
+        32.65625
+      ]
+    },
+    {
+      "x": 320,
+      "y": 447,
+      "originalRGB": [
+        0.333984375,
+        0.333984375,
+        0.333984375
+      ]
+    },
+    {
+      "x": 64,
+      "y": 319,
+      "originalRGB": [
+        0.3935546875,
+        0.3935546875,
+        0.3935546875
+      ]
+    },
+    {
+      "x": 192,
+      "y": 319,
+      "originalRGB": [
+        0.69775390625,
+        0.69775390625,
+        0.69775390625
+      ]
+    },
+    {
+      "x": 320,
+      "y": 319,
+      "originalRGB": [
+        0.3759765625,
+        0.3759765625,
+        0.3759765625
+      ]
+    },
+    {
+      "x": 32,
+      "y": 223,
+      "originalRGB": [
+        0.345947265625,
+        0.345947265625,
+        0.345947265625
+      ]
+    },
+    {
+      "x": 96,
+      "y": 159,
+      "originalRGB": [
+        0.69775390625,
+        0.69775390625,
+        0.69775390625
+      ]
+    },
+    {
+      "x": 160,
+      "y": 159,
+      "originalRGB": [
+        0.3837890625,
+        0.3837890625,
+        0.3837890625
+      ]
+    },
+    {
+      "x": 16,
+      "y": 111,
+      "originalRGB": [
+        0.362060546875,
+        0.362060546875,
+        0.362060546875
+      ]
+    },
+    {
+      "x": 48,
+      "y": 79,
+      "originalRGB": [
+        0.69677734375,
+        0.69677734375,
+        0.69677734375
+      ]
+    },
+    {
+      "x": 80,
+      "y": 79,
+      "originalRGB": [
+        0.400634765625,
+        0.400634765625,
+        0.400634765625
+      ]
+    },
+    {
+      "x": 8,
+      "y": 55,
+      "originalRGB": [
+        0.4228515625,
+        0.4228515625,
+        0.4228515625
+      ]
+    },
+    {
+      "x": 24,
+      "y": 39,
+      "originalRGB": [
+        0.69482421875,
+        0.69482421875,
+        0.69482421875
+      ]
+    },
+    {
+      "x": 40,
+      "y": 39,
+      "originalRGB": [
+        0.4365234375,
+        0.4365234375,
+        0.4365234375
+      ]
+    },
+    {
+      "x": 56,
+      "y": 23,
+      "originalRGB": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "x": 104,
+      "y": 7,
+      "originalRGB": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "x": 767,
+      "y": 0,
+      "originalRGB": [
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

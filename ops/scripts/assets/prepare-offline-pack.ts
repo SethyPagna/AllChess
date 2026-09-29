@@ -12,6 +12,7 @@ const staticRoot = path.join(root, ".next/static");
 const files = (await walk(staticRoot)).filter(file => /\.(js|css|woff2?)$/.test(file)).sort();
 const publicFiles = ["assets/khmer/atelier.glb", "assets/khmer/courtyard.glb", "assets/classic/marble.glb", "assets/shogi/collection.glb", "assets/shogi/hori.glb", "assets/xiangqi/collection.glb", "assets/xiangqi/celadon.glb", "assets/janggi/collection.glb", "assets/makruk/collection.glb", "assets/draughts/collection.glb", "assets/draughts/rosette.glb", "assets/draughts/club.glb", "assets/konane/collection.glb", "assets/shatranj/collection.glb", "assets/chaturanga/collection.glb", "assets/jungle/collection.glb", "engines/stockfish/stockfish-18-lite-single.js", "engines/stockfish/stockfish-18-lite-single.wasm", "icons/app-192.png", "icons/app-512.png", "icons/maskable-512.png"];
 const sources = [
+  { url: "/assets/materials/studio-room.hdr", file: path.join(root, "public/assets/materials/studio-room.hdr") },
   { url: "/manifest.webmanifest", file: path.join(root, ".next/server/app/manifest.webmanifest.body") },
   { url: "/icon.svg", file: path.join(root, ".next/server/app/icon.svg.body") },
   { url: "/offline", file: path.join(root, ".next/server/app/offline.html") },

@@ -43,6 +43,12 @@ export default function Board3D(props: Props) {
     if (!element) return;
     let disposed = false, contextLost = false;
     let renderer: THREE.WebGLRenderer;
+    let rendererDisposed = false;
+    const disposeRenderer = () => {
+      if (rendererDisposed) return;
+      rendererDisposed = true;
+      renderer.dispose();
+    };
     const fail = (message: string) => { if (!disposed) { setStatus(message); setFailed(true); } };
     try { renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); }
     catch { queueMicrotask(() => fail("3D is unavailable on this device.")); return; }
@@ -188,8 +194,9 @@ export default function Board3D(props: Props) {
     const labelGeometry = new THREE.PlaneGeometry(1, 1);
     const handHitGeometry = new THREE.BoxGeometry(.047, .022, .048);
     let lastPosition = "";
+    let sceneRevision = 0;
     const render = () => {
-      if (disposed || contextLost) return;
+      if (disposed || contextLost || !modelReady) return;
       camera.updateMatrixWorld();
       for (const mesh of meshes.children) if (mesh.userData.coordinate) {
         const coordinate=tabletopCoordinateFrame(mesh.userData.coordinateAnchor,camera,element.clientWidth||640,mesh.userData.glyphHeight);
@@ -223,6 +230,7 @@ export default function Board3D(props: Props) {
       const position = JSON.stringify([Boolean(model), frame.compactHands, current.boardTheme, current.finish, current.selected, current.lastMove, current.hands, current.selectedHand, [...current.legalTargets], current.orientedRows.map(row => row.map(cell => [cell.square, cell.terrain, cell.piece?.owner, cell.piece?.code, cell.piece?.promoted]))]);
       if (position === lastPosition) return;
       lastPosition = position;
+      sceneRevision++;
       meshes.clear(); disposableMaterials.splice(0).forEach(material => material.dispose()); textures.splice(0).forEach(texture => texture.dispose());
       const finishMaterials = new Map<string, THREE.Material>();
       const palette = board3DPalettes[current.boardTheme];
@@ -403,7 +411,7 @@ export default function Board3D(props: Props) {
       } else if (hit) latest.current.onChoose(hit.object.userData.square as Square);
     }
     function cancel(event: PointerEvent) {gesture.cancel(event.pointerId);}
-    function lost(event: Event) { event.preventDefault(); contextLost = true; fail("The 3D display was interrupted. Continue on the 2D board."); }
+    function lost(event: Event) { event.preventDefault(); contextLost = true; disposeRenderer(); fail("The 3D display was interrupted. Continue on the 2D board."); }
     renderer.domElement.addEventListener("pointerdown", down); renderer.domElement.addEventListener("pointermove", move); renderer.domElement.addEventListener("pointerup", up); renderer.domElement.addEventListener("pointercancel", cancel);
     renderer.domElement.addEventListener("webglcontextlost", lost);
     renderer.domElement.setAttribute("aria-label", `${props.collection === "khmer" ? "Cambodian" : japanese ? props.variantKey === "mini-shogi" ? "Mini Shogi" : "Shogi" : intersection ? props.collection === "xiangqi" ? "Xiangqi" : "Janggi" : jungle ? "Jungle" : historical ? props.collection === "shatranj" ? "Shatranj" : "Chaturanga" : thai ? "Makruk" : papamu ? "Kōnane papamū" : draughts ? props.variantKey === "international-draughts" ? "International draughts" : props.variantKey === "turkish-draughts" ? "Turkish draughts" : "English draughts" : "Classic"} 3D board. Tap pieces and marked squares to move.${japanese ? " Tap captured tiles on the hand stands to drop them." : ""} Drag to orbit. Pinch or use the zoom buttons; move with two fingers or right-drag. Use 2D for keyboard play.`);
@@ -424,7 +432,7 @@ export default function Board3D(props: Props) {
       resources.forEach(resource => resource.dispose());
       bitmaps.forEach(bitmap => bitmap.close());
     }
-    new GLTFLoader().load(pieceSetModelPath(props.collection, props.pieceSet ?? "standard") ?? collectionModelPath(props.collection), gltf => {
+    new GLTFLoader().load(pieceSetModelPath(props.collection, props.pieceSet ?? "standard") ?? collectionModelPath(props.collection), async gltf => {
       if (disposed) { disposeModel(gltf.scene); return; }
       model = gltf.scene;
       const anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
@@ -436,8 +444,21 @@ export default function Board3D(props: Props) {
       });
       if (contextLost) return;
       if ((thai && [true, false].some(side => !model!.getObjectByName(pieceModelName("makruk", "m", side, true)))) || [true, false].some(side => Object.keys(collectionPieces[props.collection]).some(code => !model!.getObjectByName(pieceModelName(props.collection, code, side)) || (japanese && shogiPromotedCodes.has(code) && !model!.getObjectByName(pieceModelName(props.collection, code, side, true)))))) { fail("Some pieces could not load. Continue on the 2D board."); return; }
-      modelReady = true;
-      setStatus("Tap to move · drag to orbit · two fingers to zoom & move"); redraw();
+      try {
+        redraw();
+        let preparedRevision: number;
+        do {
+          preparedRevision = sceneRevision;
+          await renderer.compileAsync(scene, camera);
+          if (disposed || contextLost) return;
+        } while (preparedRevision !== sceneRevision);
+        modelReady = true;
+        render();
+        setStatus("Tap to move · drag to orbit · two fingers to zoom & move");
+      } catch {
+        modelReady = false;
+        fail("The 3D display could not finish loading. Continue on the 2D board.");
+      }
     }, undefined, () => fail("Pieces could not load. Continue on the 2D board."));
     redraw();
     return () => {
@@ -449,7 +470,7 @@ export default function Board3D(props: Props) {
       [hitMaterial, markerMaterial, waterMarkerMaterial, promotionMaterial].forEach(material => material.dispose());
       plainTiles?.flat().forEach(geometry => geometry.dispose());
       gridGeometries.forEach(geometry => geometry.dispose()); gridMaterial.dispose(); japaneseGridMaterial?.dispose();
-      if (model) disposeModel(model); jungleTerrain?.dispose(); tabletop.dispose(); renderer.dispose(); renderer.domElement.remove();
+      if (model) disposeModel(model); jungleTerrain?.dispose(); tabletop.dispose(); disposeRenderer(); renderer.domElement.remove();
     };
   }, [props.collection, props.variantKey, props.pieceSet]);
   return <div className="board-3d-stage">

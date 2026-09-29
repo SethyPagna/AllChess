@@ -45,6 +45,7 @@ function allowedAsset(path) {
     || /^\/assets\/classic\/marble\/(light|dark)_(king|queen|bishop|knight|rook|pawn)\.png$/.test(path)
     || /^\/assets\/khmer\/(atelier|courtyard)\/(light|dark)-(king|queen|bishop|horse|rook|pawn)\.webp$/.test(path)
     || /^\/assets\/materials\/wood-table\/(colour|normal|roughness)\.jpg$/.test(path)
+    || path === "/assets/materials/studio-room.hdr"
     || ["/assets/khmer/collection.glb", "/assets/classic/collection.glb", "/assets/shogi/collection.glb", "/assets/xiangqi/collection.glb", "/assets/janggi/collection.glb", "/assets/makruk/collection.glb", "/assets/draughts/collection.glb", "/assets/konane/collection.glb", "/assets/shatranj/collection.glb", "/assets/chaturanga/collection.glb", "/assets/jungle/collection.glb", "/engines/stockfish/stockfish-18-lite-single.js", "/engines/stockfish/stockfish-18-lite-single.wasm", "/icons/app-192.png", "/icons/app-512.png", "/icons/maskable-512.png", "/icon.svg"].includes(path);
 }
 

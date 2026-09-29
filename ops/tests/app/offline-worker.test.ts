@@ -93,6 +93,7 @@ describe("public offline play pack", () => {
       for (const set of ["rosette", "club"]) for (const name of ["man", "king"]) urls.push(`/assets/draughts/${set}/${side}-${name}.webp`);
     }
     for (const name of ["colour", "normal", "roughness"]) urls.push(`/assets/materials/wood-table/${name}.jpg`);
+    urls.push("/assets/materials/studio-room.hdr");
     const sw = harness();
     await sw.lifecycle("install");
     sw.manifest("photographic", "Public shell", urls.map(url => ({ url, value: `bytes:${url}` })));
@@ -198,6 +199,12 @@ describe("public offline play pack", () => {
 
   test.each(["/assets/xiangqi/celadon/light-general.webp", "/assets/xiangqi/celadon/black-rook.webp", "/assets/xiangqi/celadon/red-promoted-soldier.webp", "/assets/xiangqi/celadon/board-normal.webp", "/assets/janggi/celadon.glb"])("rejects assets outside the native Celadon contract: %s", async url => {
     const sw = harness(); sw.manifest("invalid-celadon", "shell", [{ url, value: "invalid asset" }]);
+    expect((await sw.message("DOWNLOAD_OFFLINE")).at(-1)).toMatchObject({ ready: false, error: expect.any(String) });
+    expect(sw.hits).toEqual(["/offline-pack.json"]);
+  });
+
+  test("rejects an unlisted studio environment before fetching assets", async () => {
+    const sw = harness(); sw.manifest("unlisted-environment", "shell", [{ url: "/assets/materials/private.hdr", value: "private" }]);
     expect((await sw.message("DOWNLOAD_OFFLINE")).at(-1)).toMatchObject({ ready: false, error: expect.any(String) });
     expect(sw.hits).toEqual(["/offline-pack.json"]);
   });
