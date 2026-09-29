@@ -1,7 +1,7 @@
 import type { PieceSkinPreference } from "./piece-icon";
 import type { PieceCollection } from "./board-3d-config";
 
-export type PieceSetId = "standard" | "rosette" | "club" | "courtyard" | "hori" | "celadon";
+export type PieceSetId = "standard" | "rosette" | "club" | "courtyard" | "hori" | "celadon" | "shore";
 export type Piece2DStyle = "collection" | "clear" | "letters";
 export type PieceSetOption = { key: PieceSetId; label: string; skin: PieceSkinPreference; finishLabel?: string };
 type PieceSetPreview = { code: string; promoted?: boolean };
@@ -52,6 +52,15 @@ const xiangqiSets: PieceSetFamily = {
   preview: [{ code: "g" }, { code: "h" }]
 };
 
+const konaneSets: PieceSetFamily = {
+  defaultSet: "standard",
+  options: [
+    { key: "standard", label: "Pebbles", skin: "stone", finishLabel: "Natural stone" },
+    { key: "shore", label: "Shore", skin: "shore", finishLabel: "Basalt & pale stone" }
+  ],
+  preview: [{ code: "p" }, { code: "p" }]
+};
+
 const readable2DStyles = [
   { key: "collection", label: "Artwork" }, { key: "clear", label: "Clear" }, { key: "letters", label: "Letters" }
 ] as const;
@@ -65,6 +74,7 @@ function pieceSetFamily(variantKey: string): PieceSetFamily | undefined {
   if (variantKey === "shogi") return shogiSets;
   if (variantKey === "mini-shogi") return miniShogiSets;
   if (variantKey === "xiangqi") return xiangqiSets;
+  if (variantKey === "konane") return konaneSets;
   if (["english-draughts", "international-draughts", "turkish-draughts"].includes(variantKey)) return draughtsSets;
 }
 
@@ -90,6 +100,7 @@ export function pieceSetModelPath(collection: PieceCollection, set: PieceSetId):
   if (collection === "khmer" && set === "courtyard") return "/assets/khmer/courtyard.glb";
   if (collection === "shogi" && set === "hori") return "/assets/shogi/hori.glb";
   if (collection === "xiangqi" && set === "celadon") return "/assets/xiangqi/celadon.glb";
+  if (collection === "konane" && set === "shore") return "/assets/konane/shore.glb";
   return collection === "draughts" && (set === "rosette" || set === "club") ? `/assets/draughts/${set}.glb` : undefined;
 }
 

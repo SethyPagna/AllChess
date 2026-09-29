@@ -1,12 +1,14 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, test } from "vitest";
-import { Box3, Mesh, MeshStandardMaterial, PerspectiveCamera, Texture, Vector3 } from "three";
+import { describe, expect, test, vi } from "vitest";
+import { Box3, DataTexture, Mesh, MeshPhysicalMaterial, MeshStandardMaterial, PerspectiveCamera, RepeatWrapping, Scene, Texture, TextureLoader, Vector2, Vector3, type WebGLRenderer } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 import { collectionModelPath, collectionPieces, get3DCollection, board3DLayout, pieceModelName, shogiPromotedCodes } from "@/components/board/board-3d-config";
 import { createKonaneCellGeometry } from "@/components/board/konane-board";
 import { tabletopFrame, tabletopPieceTop } from "@/components/board/tabletop-camera";
 import { shogiStandTop } from "@/components/board/shogi-stands";
 import { createJungleTerrainKit } from "@/components/board/jungle-board";
+import { createTabletopScene } from "@/components/board/tabletop-scene";
 import { createInitialState, variantCatalog } from "@/lib/variants";
 
 describe("playable 3D collections", () => {
@@ -155,4 +157,78 @@ test("Jungle river surfaces are recessed beneath the banks and terrain stays tie
     for(const mark of marks.children)expect(mark.userData.square).toEqual(cell.square);
   }
   kit.dispose();
+});
+
+test.each([false, true])("papamū surface loading keeps native fallback and safe cleanup (stone: %s)", stone => {
+  const pending = new Map<string, { texture: Texture; load: () => void }>();
+  vi.stubGlobal("document", { createElement: () => ({ getContext: () => ({ createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData: () => {} }) }) });
+  vi.spyOn(TextureLoader.prototype, "load").mockImplementation((url, onLoad) => {
+    const texture = new Texture(); pending.set(url, { texture, load: () => onLoad?.(texture) }); return texture;
+  });
+  const environment = new DataTexture();
+  vi.spyOn(HDRLoader.prototype, "load").mockImplementation(() => environment);
+  const scene = new Scene();
+  const ready = vi.fn();
+  const path = stone ? "/assets/konane/shore/board-colour.webp" : undefined;
+  const renderer = { capabilities: { getMaxAnisotropy: () => 8 } } as unknown as WebGLRenderer;
+  const tabletop = createTabletopScene(scene, renderer, .424, .424, false, "konane", ready, path, stone);
+  try {
+    const body = scene.children.flatMap(child => child.children).find(child => child instanceof Mesh && Math.abs(child.position.y + .029) < 1e-8) as Mesh;
+    const material = body.material as MeshPhysicalMaterial;
+    const bounds = new Box3().setFromObject(body);
+    expect(bounds.max.y).toBeCloseTo(-.009, 6);
+    expect(bounds.max.y).toBeLessThan(-.006);
+    expect(tabletop.boardSurface).toBeNull();
+    if (stone) {
+      expect([...pending.keys()]).toEqual([path]);
+      expect(material.map).toBeNull(); expect(material.normalMap).toBeNull();
+      expect(material.color.getHex()).toBe(0x82796d); expect(material.roughness).toBe(.88);
+      tabletop.setBoardSurface(true); expect(material.map).toBeNull();
+      const asset = pending.get(path!)!;
+      expect(asset.texture.wrapS).toBe(RepeatWrapping); expect(asset.texture.wrapT).toBe(RepeatWrapping);
+      const stoneBlocks = body.parent!.children.filter(child => child instanceof Mesh && child.material === material) as Mesh[];
+      expect(stoneBlocks).toHaveLength(5);
+      for (const block of stoneBlocks) {
+        const positions = block.geometry.getAttribute("position"), normals = block.geometry.getAttribute("normal"), uv = block.geometry.getAttribute("uv");
+        const indices = block.geometry.index;
+        const flatEdges = [0, 0, 0];
+        for (let triangle = 0; triangle < (indices?.count ?? positions.count); triangle += 3) {
+          const vertices = [0, 1, 2].map(offset => indices ? indices.getX(triangle + offset) : triangle + offset);
+          const axis = [0, 1, 2].find(axis => vertices.every(index => Math.abs(normals.getComponent(index, axis)) > .99999));
+          for (let edge = 0; edge < 3; edge++) {
+            const a = vertices[edge], b = vertices[(edge + 1) % 3];
+            const metres = new Vector3().fromBufferAttribute(positions, a).distanceTo(new Vector3().fromBufferAttribute(positions, b));
+            const repeats = new Vector2().fromBufferAttribute(uv, a).distanceTo(new Vector2().fromBufferAttribute(uv, b));
+            expect(repeats * .424, "bevel triangles must not interpolate across different UV projections").toBeLessThanOrEqual(metres + .000001);
+            if (axis !== undefined) {
+              expect(repeats * .424, "stone flecks keep the same scale across every flat case face").toBeCloseTo(metres, 6);
+              flatEdges[axis]++;
+            }
+          }
+        }
+        expect(flatEdges.every(count => count > 0)).toBe(true);
+        for (let index = 0; index < positions.count; index++) if (normals.getY(index) > .99999) {
+          expect(uv.getX(index) * .424 - .212, "top surfaces align with the continuous playing-field texture").toBeCloseTo(positions.getX(index) + block.position.x, 6);
+          expect(.212 - uv.getY(index) * .424).toBeCloseTo(positions.getZ(index) + block.position.z, 6);
+        }
+      }
+      asset.load(); tabletop.setBoardSurface(true);
+      expect(ready).toHaveBeenCalledOnce();
+      expect(material.map).toBe(asset.texture); expect(material.bumpMap).toBe(asset.texture);
+      expect(material.color.getHex()).toBe(0xffffff); expect(material.roughness).toBe(.88);
+      tabletop.setBoardSurface(false);
+      expect(material.map).toBeNull(); expect(material.color.getHex()).toBe(0x82796d);
+      const dispose = vi.spyOn(asset.texture, "dispose");
+      tabletop.dispose(); asset.load();
+      expect(dispose).toHaveBeenCalled(); expect(ready).toHaveBeenCalledOnce();
+      expect(scene.children).toHaveLength(0);
+    } else {
+      expect([...pending.keys()]).toEqual(["/assets/materials/wood-table/colour.jpg", "/assets/materials/wood-table/normal.jpg", "/assets/materials/wood-table/roughness.jpg"]);
+      expect(material.map).toBe(pending.get("/assets/materials/wood-table/colour.jpg")!.texture);
+      expect(material.normalMap).toBe(pending.get("/assets/materials/wood-table/normal.jpg")!.texture);
+      expect(material.roughness).toBe(.75);
+    }
+  } finally {
+    tabletop.dispose(); vi.restoreAllMocks(); vi.unstubAllGlobals();
+  }
 });

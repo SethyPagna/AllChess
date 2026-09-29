@@ -23,7 +23,7 @@ function woodGrain() {
   return texture;
 }
 
-export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRenderer, width = .424, depth = .424, japanese = false, collection = "classic", onTextureReady = () => {}, boardSurfacePath?: string) {
+export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRenderer, width = .424, depth = .424, japanese = false, collection = "classic", onTextureReady = () => {}, boardSurfacePath?: string, stonePapamu = false) {
   let disposed = false;
   const woodTextures: THREE.Texture[] = [];
   function woodTexture(name: string, colour = false) {
@@ -37,10 +37,10 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
     woodTextures.push(texture);
     return texture;
   }
-  const stainedTimber = ["classic", "khmer", "makruk", "chaturanga", "konane"].includes(collection);
+  const stainedTimber = !stonePapamu && ["classic", "khmer", "makruk", "chaturanga", "konane"].includes(collection);
   const caseColour = stainedTimber ? woodTexture("colour", true) : null;
-  const woodNormal = woodTexture("normal");
-  const woodRoughness = woodTexture("roughness");
+  const woodNormal = stonePapamu ? null : woodTexture("normal");
+  const woodRoughness = stonePapamu ? null : woodTexture("roughness");
   const grain = woodGrain();
   grain.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   let boardSurfaceReady = false, usingBoardSurface = false;
@@ -48,10 +48,11 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
     if (disposed) { loaded.dispose(); return; }
     boardSurfaceReady = true;
     onTextureReady();
-  }, undefined, () => { /* Retain the native grain if the optional artwork fails. */ }) : null;
+  }, undefined, () => { /* The native material remains playable without optional artwork. */ }) : null;
   if (boardSurface) {
     boardSurface.colorSpace = THREE.SRGBColorSpace;
     boardSurface.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    if (stonePapamu) boardSurface.wrapS = boardSurface.wrapT = THREE.RepeatWrapping;
     woodTextures.push(boardSurface);
   }
   const environmentMap = new HDRLoader().load("/assets/materials/studio-room.hdr", texture => {
@@ -66,10 +67,10 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
   const group = new THREE.Group(); scene.add(group);
   const geometries: THREE.BufferGeometry[] = [], materials: THREE.Material[] = [];
   const handStands:Array<{compact:boolean;meshes:THREE.Mesh[]}>=[];
-  const walnut = new THREE.MeshPhysicalMaterial({ color: japanese ? 0xc79b57 : collection === "jungle" ? 0x17473b : collection === "janggi" ? 0x21433a : collection === "xiangqi" ? 0x512d25 : collection === "makruk" ? 0x654028 : collection === "shatranj" ? 0x17434b : collection === "chaturanga" ? 0x63392b : 0x493022, map: grain, bumpMap: grain, bumpScale: .00015, roughness: japanese ? .48 : .32, clearcoat: japanese ? .2 : .6, clearcoatRoughness: .28 });
-  const edge = new THREE.MeshPhysicalMaterial({ color: 0x251b16, map: grain, roughness: .28, clearcoat: .7, clearcoatRoughness: .25 });
+  const walnut = new THREE.MeshPhysicalMaterial(stonePapamu ? { color: 0x82796d, roughness: .88 } : { color: japanese ? 0xc79b57 : collection === "jungle" ? 0x17473b : collection === "janggi" ? 0x21433a : collection === "xiangqi" ? 0x512d25 : collection === "makruk" ? 0x654028 : collection === "shatranj" ? 0x17434b : collection === "chaturanga" ? 0x63392b : 0x493022, map: grain, bumpMap: grain, bumpScale: .00015, roughness: japanese ? .48 : .32, clearcoat: japanese ? .2 : .6, clearcoatRoughness: .28 });
+  const edge = new THREE.MeshPhysicalMaterial(stonePapamu ? { color: 0x514c44, roughness: .92 } : { color: 0x251b16, map: grain, roughness: .28, clearcoat: .7, clearcoatRoughness: .25 });
   // Photographed UV/PBR timber on the case; regional colour tints remain distinct.
-  for (const material of [walnut, edge]) {
+  for (const material of stonePapamu ? [] : [walnut, edge]) {
     // Keep kaya, lacquer and painted cases in their native colour families.
     if (caseColour) {
       material.color.lerp(new THREE.Color(0xffffff), material === walnut ? .72 : .36);
@@ -86,6 +87,18 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
   materials.push(walnut, edge, brass, felt);
   function block(size: [number, number, number], position: [number, number, number], material: THREE.Material, radius: number) {
     const geometry = new RoundedBoxGeometry(...size, 3, radius); geometries.push(geometry);
+    if (stonePapamu && material === walnut) {
+      const vertices = geometry.getAttribute("position"), normals = geometry.getAttribute("normal"), uv = geometry.getAttribute("uv");
+      for (let face = 0; face < vertices.count; face += 3) {
+        const nx = Math.abs(normals.getX(face) + normals.getX(face + 1) + normals.getX(face + 2));
+        const ny = Math.abs(normals.getY(face) + normals.getY(face + 1) + normals.getY(face + 2));
+        const nz = Math.abs(normals.getZ(face) + normals.getZ(face + 1) + normals.getZ(face + 2));
+        for (let i = face; i < face + 3; i++) {
+          const x = vertices.getX(i) + position[0], y = vertices.getY(i) + position[1], z = vertices.getZ(i) + position[2];
+          uv.setXY(i, .5 + (nx > ny && nx > nz ? z : x) / width, .5 + (ny >= nx && ny >= nz ? -z : y) / width);
+        }
+      }
+    }
     const mesh = new THREE.Mesh(geometry, material); mesh.position.set(...position); mesh.castShadow = true; mesh.receiveShadow = true; group.add(mesh);
     return mesh;
   }
@@ -108,8 +121,7 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
     for (const x of [-width/2-.015,width/2+.015]) block([.031,.019,depth+.002], [x,-.0045,0], walnut, .002);
     for (const x of [-width*.436,width*.436]) for (const z of [-depth*.436,depth*.436]) block([.043,.012,.043], [x,-.055,z], edge, .004);
   } else if (collection === "konane") {
-    // A solid wooden papamū with actual recessed bowls. The supporting block
-    // ends below their bottoms; a full-height top plate would fill the holes.
+    // Keep the supporting slab below the bowl bottoms instead of filling them.
     block([width+.066,.04,depth+.066], [0,-.029,0], walnut, .005);
     for (const z of [-depth/2-.015,depth/2+.015]) block([width+.062,.018,.031], [0,-.004,z], walnut, .002);
     for (const x of [-width/2-.015,width/2+.015]) block([.031,.018,depth+.002], [x,-.004,0], walnut, .002);
@@ -142,6 +154,14 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
       const useSurface = active && boardSurfaceReady;
       if (useSurface === usingBoardSurface) return;
       usingBoardSurface = useSurface;
+      if (stonePapamu) {
+        walnut.map = useSurface ? boardSurface : null;
+        walnut.color.set(useSurface ? 0xffffff : 0x82796d);
+        walnut.bumpMap = useSurface ? boardSurface : null;
+        walnut.bumpScale = .000035;
+        walnut.needsUpdate = true;
+        return;
+      }
       walnut.map = useSurface ? boardSurface : grain;
       walnut.color.set(useSurface ? 0xffffff : 0xc79b57);
       walnut.normalMap = useSurface ? null : woodNormal;

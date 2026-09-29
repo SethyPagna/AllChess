@@ -38,6 +38,8 @@ function allowedAsset(path) {
     || path === "/assets/shogi/hori/board-colour.webp"
     || path === "/assets/xiangqi/celadon.glb"
     || path === "/assets/xiangqi/celadon/board-colour.webp"
+    || path === "/assets/konane/shore.glb"
+    || /^\/assets\/konane\/shore\/(light-stone|dark-stone|board-colour)\.webp$/.test(path)
     || /^\/assets\/xiangqi\/celadon\/(red|black)-(general|advisor|elephant|horse|chariot|cannon|soldier)\.webp$/.test(path)
     || /^\/assets\/shogi\/hori\/(king-jewel|king|rook|bishop|gold|silver|knight|lance|pawn|promoted-(rook|bishop|silver|knight|lance|pawn))\.webp$/.test(path)
     || /^\/assets\/draughts\/(rosette|club)\.glb$/.test(path)

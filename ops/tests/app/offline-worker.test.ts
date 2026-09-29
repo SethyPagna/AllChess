@@ -85,6 +85,7 @@ describe("public offline play pack", () => {
     const urls = ["/assets/classic/marble.glb", "/assets/khmer/atelier.glb", "/assets/khmer/courtyard.glb", "/assets/draughts/rosette.glb", "/assets/draughts/club.glb", "/assets/shogi/hori.glb"];
     urls.push("/assets/shogi/hori/board-colour.webp");
     urls.push("/assets/xiangqi/celadon.glb", "/assets/xiangqi/celadon/board-colour.webp");
+    urls.push("/assets/konane/shore.glb", "/assets/konane/shore/light-stone.webp", "/assets/konane/shore/dark-stone.webp", "/assets/konane/shore/board-colour.webp");
     for (const side of ["red", "black"]) for (const name of ["general", "advisor", "elephant", "horse", "chariot", "cannon", "soldier"]) urls.push(`/assets/xiangqi/celadon/${side}-${name}.webp`);
     for (const face of ["king-jewel", "king", "rook", "bishop", "gold", "silver", "knight", "lance", "pawn", "promoted-rook", "promoted-bishop", "promoted-silver", "promoted-knight", "promoted-lance", "promoted-pawn"]) urls.push(`/assets/shogi/hori/${face}.webp`);
     for (const side of ["light", "dark"]) {
@@ -207,6 +208,14 @@ describe("public offline play pack", () => {
     const sw = harness(); sw.manifest("unlisted-environment", "shell", [{ url: "/assets/materials/private.hdr", value: "private" }]);
     expect((await sw.message("DOWNLOAD_OFFLINE")).at(-1)).toMatchObject({ ready: false, error: expect.any(String) });
     expect(sw.hits).toEqual(["/offline-pack.json"]);
+  });
+
+  test.each(["/assets/konane/shore/source.json", "/assets/konane/shore/light-stone.png", "/assets/konane/shore/king.webp", "/assets/konane/shore/board-normal.webp", "/assets/shogi/shore.glb"])("rejects assets outside the Shore runtime contract: %s", async url => {
+    const sw = await updateHarness();
+    sw.manifest("invalid-shore", "shell", [{ url, value: "unlisted" }]);
+    expect((await sw.message("DOWNLOAD_OFFLINE")).at(-1)?.error).toContain("could not be verified");
+    expect(sw.hits).toEqual(["/offline-pack.json"]);
+    await expectPreviousPack(sw);
   });
 
   test("storage eviction reports unavailable and uses the small reconnect fallback", async () => {

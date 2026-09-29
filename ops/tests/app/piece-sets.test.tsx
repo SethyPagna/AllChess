@@ -4,8 +4,8 @@ import { Box3, Mesh, Texture, Vector3 } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { describe, expect, test } from "vitest";
 import { PieceIcon, resolvePieceSkin } from "@/components/board/piece-icon";
-import { piece2DSkin, pieceSetModelPath, pieceSetOptions, pieceSetPreviewPieces, pieceSetSkin, readPiece2DStylePreference, readPieceSetPreference, resolvePiece2DStyle, resolvePieceSet } from "@/components/board/piece-sets";
-import { applyMove, createInitialState, getLegalMoves } from "@/lib/variants";
+import { piece2DSkin, piece2DStyleOptions, pieceSetModelPath, pieceSetOptions, pieceSetPreviewPieces, pieceSetSkin, readPiece2DStylePreference, readPieceSetPreference, resolvePiece2DStyle, resolvePieceSet } from "@/components/board/piece-sets";
+import { applyMove, createInitialState, getLegalMoves, variantCatalog } from "@/lib/variants";
 import { collectionModelPath } from "@/components/board/board-3d-config";
 import { resolveAppearancePreset } from "@/components/board/appearance";
 import { BoardToolbar } from "@/components/board/board-toolbar";
@@ -215,6 +215,50 @@ describe("coordinated piece collections", () => {
       expect(resolvePieceSkin(key, "courtyard")).not.toBe("courtyard");
     }
     for (const family of ["classic", "makruk", "draughts", "shogi"] as const) expect(pieceSetModelPath(family, "courtyard")).toBeUndefined();
+  });
+
+  test("Shore is an independent Kōnane collection with Pebbles as the saved default", () => {
+    expect(pieceSetOptions("konane").map(set => [set.key, set.skin])).toEqual([["standard", "stone"], ["shore", "shore"]]);
+    for (const value of [null, "", "corrupt", "celadon"]) expect(resolvePieceSet("konane", value)).toBe("standard");
+    expect(pieceSetModelPath("konane", "shore")).toBe("/assets/konane/shore.glb");
+    expect(pieceSetModelPath("konane", "standard") ?? collectionModelPath("konane")).toBe("/assets/konane/collection.glb");
+    expect(readPieceSetPreference("konane", key => key === "allchess-piece-set:konane" ? "shore" : null)).toBe("shore");
+    expect(readPieceSetPreference("konane", () => { throw new Error("blocked"); })).toBe("standard");
+    for (const variant of variantCatalog.filter(variant => variant.key !== "konane")) {
+      expect(resolvePieceSet(variant.key, "shore")).not.toBe("shore");
+      expect(resolvePieceSkin(variant.key, "shore")).not.toBe("shore");
+    }
+    for (const family of ["classic", "khmer", "shogi", "xiangqi", "draughts"] as const) expect(pieceSetModelPath(family, "shore")).toBeUndefined();
+    for (const theme of ["default", "classic", "stone", "slate", "plum"] as const) {
+      expect(piece2DSkin("konane", "shore", resolveAppearancePreset("konane", theme).pieceSkin, "collection")).toBe("shore");
+    }
+    expect(piece2DStyleOptions("konane")).toEqual([]);
+    expect(pieceSetPreviewPieces("konane")).toEqual([{ code: "p" }, { code: "p" }]);
+  });
+
+  test("Shore previews both native owners and labels only its native surface Stone", () => {
+    for (const owner of ["white", "black"] as const) {
+      const html = renderToStaticMarkup(<PieceIcon code="p" owner={owner} variantKey="konane" pieceSkin="shore"/>);
+      expect(html).toContain(`/assets/konane/shore/${owner === "white" ? "light" : "dark"}-stone.webp`);
+      expect(html).toContain(`data-owner="${owner}"`);
+      expect(html).toContain('data-piece="stone"');
+      expect(html).toContain('data-code="p"');
+      expect(html).toContain('aria-label="Stone"');
+      expect(html).not.toContain('data-promoted="true"');
+    }
+    const toolbar = (set: "shore" | "standard", is3D = false) => renderToStaticMarkup(<BoardToolbar variantKey="konane" pieceSet={set} is3D={is3D} appearancePreset="default" onAppearanceChange={() => {}} onFlip={() => {}} focusMode={false} onFocusChange={() => {}} canFocus={false} onPieceSetChange={() => {}} onPiece2DStyleChange={() => {}}/>);
+    for (const is3D of [false, true]) {
+      const html = toolbar("shore", is3D);
+      expect(html).toContain('aria-label="Choose Shore pieces" aria-pressed="true"');
+      expect(html).toContain('aria-label="Choose Pebbles pieces" aria-pressed="false"');
+      expect(html).toContain('/assets/konane/shore/light-stone.webp');
+      expect(html).toContain('/assets/konane/shore/dark-stone.webp');
+      expect(html).toContain('aria-label="Choose Stone"');
+      expect(html).not.toContain('aria-label="Choose Warm wood"');
+      expect(html).not.toContain('aria-label="2D piece style"');
+    }
+    expect(toolbar("standard")).toContain('aria-label="Choose Warm wood"');
+    expect(toolbar("standard")).toContain('aria-label="Choose Pebbles pieces" aria-pressed="true"');
   });
 
   test("photographic draughts sprites are available locally", () => {

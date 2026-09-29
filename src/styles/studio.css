@@ -187,6 +187,10 @@ button:disabled { cursor: not-allowed; }
 .board-shell[data-piece-set="hori"][data-board-theme="wood"] .board-grid .board-square:not([data-square-state]) { background: transparent !important; }
 .board-shell[data-piece-set="celadon"][data-board-theme="wood"] .board-grid[data-board-geometry="intersections"] { background: #d9b77d url("/assets/xiangqi/celadon/board-colour.webp") center / 100% 100% no-repeat; }
 .board-look-preview[data-piece-set="celadon"][data-board-theme="wood"] { background: #d9b77d url("/assets/xiangqi/celadon/board-colour.webp") center / 100% 100% no-repeat !important; }
+.board-shell[data-piece-set="shore"][data-board-theme="wood"] { --board-light: #82796d; --board-dark: #82796d; }
+.board-shell[data-piece-set="shore"][data-board-theme="wood"] .board-grid[data-board-geometry="pits"],
+.board-look-preview[data-piece-set="shore"][data-board-theme="wood"] { background: #82796d url("/assets/konane/shore/board-colour.webp") center / 100% 100% no-repeat !important; }
+.board-shell[data-piece-set="shore"][data-board-theme="wood"] .board-square:not([data-square-state]) { background-color: transparent !important; }
 .board-square[data-legal-target="move"]::before { content: ""; position: absolute; width: 20%; height: 20%; border-radius: 50%; background: #20352d65; pointer-events: none; }
 .board-square[data-legal-target="move"][data-piece-label]::before { inset: 4%; width: 92%; height: 92%; border: 4px solid #20352d65; background: transparent; }
 .play-arena .game-studio[data-focus="true"] { grid-template-columns: minmax(0, var(--board-fixed-size)); max-width: 900px; }

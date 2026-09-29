@@ -94,10 +94,11 @@ export default function Board3D(props: Props) {
     };
     const carvedShogi = japanese && props.pieceSet === "hori";
     const celadonXiangqi = props.collection === "xiangqi" && props.pieceSet === "celadon";
-    const boardSurfacePath = carvedShogi ? "/assets/shogi/hori/board-colour.webp" : celadonXiangqi ? "/assets/xiangqi/celadon/board-colour.webp" : undefined;
+    const shoreKonane = papamu && props.pieceSet === "shore";
+    const boardSurfacePath = shoreKonane ? "/assets/konane/shore/board-colour.webp" : carvedShogi ? "/assets/shogi/hori/board-colour.webp" : celadonXiangqi ? "/assets/xiangqi/celadon/board-colour.webp" : undefined;
     const tabletop = createTabletopScene(scene, renderer, layout.width, layout.depth, japanese, props.collection, () => {
       lastPosition = ""; redraw();
-    }, boardSurfacePath);
+    }, boardSurfacePath, shoreKonane);
     tabletop.setCompactHands(frame.compactHands);
     const meshes = new THREE.Group(); scene.add(meshes);
     const grid = new THREE.Group(); scene.add(grid);
@@ -172,9 +173,17 @@ export default function Board3D(props: Props) {
     const surfaceGeometry = new THREE.BoxGeometry(layout.width, .004, layout.depth);
     const hitMaterial = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false });
     const tileGeometry = papamu ? createKonaneCellGeometry(layout.pitchX) : new THREE.BoxGeometry(layout.pitchX - .0005, .004, layout.pitchZ - .0005);
+    if (shoreKonane) {
+      const vertices = tileGeometry.getAttribute("position"), cavity = new Float32Array(vertices.count * 3);
+      for (let i = 0; i < vertices.count; i++) {
+        const shade = 1 - .28 * THREE.MathUtils.clamp((.002 - vertices.getY(i)) / .008, 0, 1);
+        cavity.fill(shade, i * 3, i * 3 + 3);
+      }
+      tileGeometry.setAttribute("color", new THREE.BufferAttribute(cavity, 3));
+    }
     const plainTiles = (plainGrid || papamu) ? Array.from({ length: rows }, (_, r) => Array.from({ length: cols }, (_, c) => {
       const geometry = tileGeometry.clone(), uv = geometry.getAttribute("uv"), positions = geometry.getAttribute("position");
-      // One continuous timber surface across the full plain board.
+      // Keep the surface continuous across separately selectable cells.
       for (let i = 0; i < uv.count; i++) uv.setXY(i, (positions.getX(i)+(c+.5)*layout.pitchX)/layout.width, 1-(positions.getZ(i)+(r+.5)*layout.pitchZ)/layout.depth);
       return geometry;
     })) : null;
@@ -217,8 +226,8 @@ export default function Board3D(props: Props) {
       const capHeight=reference.actualBoundingBoxAscent+reference.actualBoundingBoxDescent;
       canvas.width=Math.ceil(metrics.actualBoundingBoxLeft+metrics.actualBoundingBoxRight)+6;
       canvas.height=Math.ceil(metrics.actualBoundingBoxAscent+metrics.actualBoundingBoxDescent)+6;
-      ctx.font=font;ctx.fillStyle=japanese?"#302011":"#f2e0bb";
-      if(!japanese){ctx.strokeStyle="#2b2017";ctx.lineWidth=5;ctx.lineJoin="round";ctx.strokeText(text,3+metrics.actualBoundingBoxLeft,3+metrics.actualBoundingBoxAscent);}
+      ctx.font=font;ctx.fillStyle=shoreKonane?"#302c28":japanese?"#302011":"#f2e0bb";
+      if(!japanese&&!shoreKonane){ctx.strokeStyle="#2b2017";ctx.lineWidth=5;ctx.lineJoin="round";ctx.strokeText(text,3+metrics.actualBoundingBoxLeft,3+metrics.actualBoundingBoxAscent);}
       ctx.fillText(text,3+metrics.actualBoundingBoxLeft,3+metrics.actualBoundingBoxAscent);
       const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy()); textures.push(texture);
       const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, toneMapped: false }); disposableMaterials.push(material);
@@ -238,10 +247,10 @@ export default function Board3D(props: Props) {
       meshes.clear(); retiredResources.push(...disposableMaterials.splice(0), ...textures.splice(0));
       const finishMaterials = new Map<string, THREE.Material>();
       const palette = board3DPalettes[current.boardTheme];
-      const boardSurface = (carvedShogi || celadonXiangqi) && current.boardTheme === "wood" ? tabletop.boardSurface : null;
-      // Only the Japanese case and komadai share their board artwork. Keep
-      // Xiangqi's native rosewood case independent of the playing surface.
-      if (japanese) tabletop.setBoardSurface(Boolean(boardSurface));
+      const boardSurface = (carvedShogi || celadonXiangqi || shoreKonane) && current.boardTheme === "wood" ? tabletop.boardSurface : null;
+      const surfaceMap = boardSurface ?? (shoreKonane ? null : tabletop.grain);
+      // Xiangqi keeps its native rosewood case independent of the playing surface.
+      if (japanese || shoreKonane) tabletop.setBoardSurface(Boolean(boardSurface));
       function addPiece(piece: THREE.Object3D, light: boolean, target: Record<string, unknown>) {
         piece.traverse(child => {
           Object.assign(child.userData, target);
@@ -296,13 +305,13 @@ export default function Board3D(props: Props) {
         const isSelected = current.selected && sameSquare(current.selected, cell.square);
         const legal = current.legalTargets.has(serializeSquare(cell.square));
         const last = current.lastMove && (sameSquare(current.lastMove.from, cell.square) || sameSquare(current.lastMove.to, cell.square));
-        const color = new THREE.Color(boardSurface ? 0xffffff : (japanese || (draughts && plainGrid)) && current.boardTheme === "wood" ? 0xd9b77d : palette[checkered ? (cell.square.row + cell.square.col) % 2 : 0]);
+        const color = new THREE.Color(boardSurface ? 0xffffff : shoreKonane && current.boardTheme === "wood" ? 0x82796d : (japanese || (draughts && plainGrid)) && current.boardTheme === "wood" ? 0xd9b77d : palette[checkered ? (cell.square.row + cell.square.col) % 2 : 0]);
         if (water) color.set(0x236e78);
         const objective = current.variantKey === "king-of-the-hill" && [3,4].includes(cell.square.row) && [3,4].includes(cell.square.col) || current.variantKey === "racing-kings" && cell.square.row === 0;
         if (objective) color.lerp(new THREE.Color(0xd6a648), .4);
         if (last) color.lerp(new THREE.Color(0xd9bb45), .35);
         if (isSelected) color.set(0xd5b64b);
-        const material = intersection ? hitMaterial : new THREE.MeshPhysicalMaterial({ color, map: water ? null : boardSurface ?? tabletop.grain, bumpMap: water ? null : boardSurface ?? tabletop.grain, bumpScale: boardSurface ? .000012 : .000025, roughness: water ? .16 : boardSurface ? .58 : papamu ? .55 : .34, clearcoat: water ? .9 : boardSurface || papamu ? .12 : .4, clearcoatRoughness: .28 }); if (!intersection) disposableMaterials.push(material);
+        const material = intersection ? hitMaterial : new THREE.MeshPhysicalMaterial({ color, vertexColors: shoreKonane, map: water ? null : surfaceMap, bumpMap: water ? null : surfaceMap, bumpScale: shoreKonane ? .000035 : boardSurface ? .000012 : .000025, roughness: water ? .16 : shoreKonane ? .88 : boardSurface ? .58 : papamu ? .55 : .34, clearcoat: water ? .9 : shoreKonane ? 0 : boardSurface || papamu ? .12 : .4, clearcoatRoughness: .28 }); if (!intersection) disposableMaterials.push(material);
         const tile = new THREE.Mesh(jungleTerrain ? water ? jungleTerrain.water : jungleTerrain.land : plainTiles?.[r][c] ?? tileGeometry, material); tile.position.set((c-(cols-1)/2)*layout.pitchX, 0, (r-(rows-1)/2)*layout.pitchZ); tile.userData.square = cell.square; tile.receiveShadow = !intersection; meshes.add(tile);
         if (jungleTerrain) {const marks=jungleTerrain.decorate(cell);marks.position.copy(tile.position);meshes.add(marks);}
         if (intersection && (isSelected || last)) {
