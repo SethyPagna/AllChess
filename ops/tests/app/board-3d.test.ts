@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, test, vi } from "vitest";
-import { Box3, DataTexture, Mesh, MeshPhysicalMaterial, MeshStandardMaterial, PerspectiveCamera, RepeatWrapping, Scene, Texture, TextureLoader, Vector2, Vector3, type WebGLRenderer } from "three";
+import { Box3, CubeUVReflectionMapping, DataTexture, Mesh, MeshPhysicalMaterial, MeshStandardMaterial, PerspectiveCamera, RepeatWrapping, Scene, Texture, TextureLoader, Vector2, Vector3, type WebGLRenderer } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { HDRLoader } from "three/addons/loaders/HDRLoader.js";
 import { collectionModelPath, collectionPieces, get3DCollection, board3DLayout, pieceModelName, shogiPromotedCodes } from "@/components/board/board-3d-config";
@@ -157,6 +157,53 @@ test("Jungle river surfaces are recessed beneath the banks and terrain stays tie
     for(const mark of marks.children)expect(mark.userData.square).toEqual(cell.square);
   }
   kit.dispose();
+});
+
+test("tabletop readiness distinguishes texture content, lighting and replacement surfaces", () => {
+  const pending = new Map<string, { texture: Texture; load: () => void }>();
+  vi.stubGlobal("document", { createElement: () => ({ getContext: () => ({ createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData: () => {} }) }) });
+  vi.spyOn(TextureLoader.prototype, "load").mockImplementation((url, onLoad) => {
+    const texture = new Texture<HTMLImageElement>(); pending.set(url, { texture, load: () => onLoad?.(texture) }); return texture;
+  });
+  const environment = new DataTexture();
+  let loadEnvironment = () => {};
+  vi.spyOn(HDRLoader.prototype, "load").mockImplementation((_url, onLoad) => {
+    loadEnvironment = () => onLoad?.(environment, {}); return environment;
+  });
+  const scene = new Scene();
+  const ready = vi.fn();
+  const renderer = { capabilities: { getMaxAnisotropy: () => 8 } } as unknown as WebGLRenderer;
+  const surfacePath = "/assets/shogi/hori/board-colour.webp";
+  const tabletop = createTabletopScene(scene, renderer, .424, .424, false, "classic", ready, surfacePath);
+  try {
+    const colour = pending.get("/assets/materials/wood-table/colour.jpg")!;
+    const caseMeshes = scene.children.flatMap(child => child.children).filter(child => child instanceof Mesh && (child.material as MeshPhysicalMaterial).map === colour.texture) as Mesh[];
+    expect(caseMeshes.length).toBeGreaterThan(0);
+    const materials = caseMeshes.map(mesh => mesh.material);
+    expect(ready).not.toHaveBeenCalled();
+    for (const [url, asset] of pending) if (url !== surfacePath) asset.load();
+    expect(ready.mock.calls).toEqual([["texture"], ["texture"], ["texture"]]);
+    expect(caseMeshes.map(mesh => mesh.material)).toEqual(materials);
+    expect((caseMeshes[0].material as MeshPhysicalMaterial).map).toBe(colour.texture);
+    expect(scene.environment).toBeNull();
+    loadEnvironment();
+    expect(ready).toHaveBeenLastCalledWith("environment");
+    expect(scene.environment).toBe(environment);
+    expect(environment.mapping).toBe(CubeUVReflectionMapping);
+    expect(tabletop.boardSurface).toBeNull();
+    pending.get(surfacePath)!.load();
+    expect(ready).toHaveBeenLastCalledWith("surface");
+    expect(tabletop.boardSurface).toBe(pending.get(surfacePath)!.texture);
+    tabletop.dispose(); ready.mockClear();
+    const dispose = vi.spyOn(environment, "dispose");
+    loadEnvironment();
+    for (const asset of pending.values()) asset.load();
+    expect(ready).not.toHaveBeenCalled();
+    expect(dispose).toHaveBeenCalledOnce();
+    expect(scene.environment).toBeNull();
+  } finally {
+    tabletop.dispose(); vi.restoreAllMocks(); vi.unstubAllGlobals();
+  }
 });
 
 test.each([false, true])("papamū surface loading keeps native fallback and safe cleanup (stone: %s)", stone => {

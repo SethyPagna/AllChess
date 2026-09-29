@@ -23,13 +23,15 @@ function woodGrain() {
   return texture;
 }
 
-export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRenderer, width = .424, depth = .424, japanese = false, collection = "classic", onTextureReady = () => {}, boardSurfacePath?: string, stonePapamu = false) {
+export type TabletopUpdate = "texture" | "environment" | "surface";
+
+export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRenderer, width = .424, depth = .424, japanese = false, collection = "classic", onTextureReady: (change: TabletopUpdate) => void = () => {}, boardSurfacePath?: string, stonePapamu = false) {
   let disposed = false;
   const woodTextures: THREE.Texture[] = [];
   function woodTexture(name: string, colour = false) {
     const texture = new THREE.TextureLoader().load(`/assets/materials/wood-table/${name}.jpg`, loaded => {
       if (disposed) loaded.dispose();
-      else onTextureReady();
+      else onTextureReady("texture");
     }, undefined, () => { /* The solid material remains playable if a texture cannot load. */ });
     texture.colorSpace = colour ? THREE.SRGBColorSpace : THREE.NoColorSpace;
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
@@ -47,7 +49,7 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
   const boardSurface = boardSurfacePath ? new THREE.TextureLoader().load(boardSurfacePath, loaded => {
     if (disposed) { loaded.dispose(); return; }
     boardSurfaceReady = true;
-    onTextureReady();
+    onTextureReady("surface");
   }, undefined, () => { /* The native material remains playable without optional artwork. */ }) : null;
   if (boardSurface) {
     boardSurface.colorSpace = THREE.SRGBColorSpace;
@@ -59,7 +61,7 @@ export function createTabletopScene(scene: THREE.Scene, renderer: THREE.WebGLRen
     if (disposed) { texture.dispose(); return; }
     texture.mapping = THREE.CubeUVReflectionMapping;
     scene.environment = texture;
-    onTextureReady();
+    onTextureReady("environment");
   }, undefined, () => {});
   scene.environmentIntensity = .65;
   scene.background = new THREE.Color(0x171b1a);

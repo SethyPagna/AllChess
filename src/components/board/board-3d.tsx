@@ -96,8 +96,13 @@ export default function Board3D(props: Props) {
     const celadonXiangqi = props.collection === "xiangqi" && props.pieceSet === "celadon";
     const shoreKonane = papamu && props.pieceSet === "shore";
     const boardSurfacePath = shoreKonane ? "/assets/konane/shore/board-colour.webp" : carvedShogi ? "/assets/shogi/hori/board-colour.webp" : celadonXiangqi ? "/assets/xiangqi/celadon/board-colour.webp" : undefined;
-    const tabletop = createTabletopScene(scene, renderer, layout.width, layout.depth, japanese, props.collection, () => {
-      lastPosition = ""; redraw();
+    const tabletop = createTabletopScene(scene, renderer, layout.width, layout.depth, japanese, props.collection, change => {
+      if (change === "surface") {
+        lastPosition = ""; redraw();
+      } else {
+        if (change === "environment") sceneRevision++;
+        render();
+      }
     }, boardSurfacePath, shoreKonane);
     tabletop.setCompactHands(frame.compactHands);
     const meshes = new THREE.Group(); scene.add(meshes);

@@ -15,7 +15,7 @@ import { MatchArrivalPanel } from "./match-arrival-panel";
 import { useFriendRoom, saveFriendToken } from "./use-friend-room";
 import type { FriendRoomView } from "@/lib/realtime/friend-room";
 import dynamic from "next/dynamic";
-import { piece2DSkin, pieceSetOptions, readPiece2DStylePreference, readPieceSetPreference, resolvePiece2DStyle, resolvePieceSet, type Piece2DStyle, type PieceSetId } from "./piece-sets";
+import { piece2DSkin, pieceSetModelPath, pieceSetOptions, readPiece2DStylePreference, readPieceSetPreference, resolvePiece2DStyle, resolvePieceSet, type Piece2DStyle, type PieceSetId } from "./piece-sets";
 import { MakrukCountingPanel, MakrukEndgamePicker } from "./makruk-counting-panel";
 import { applyMakrukCountAction, readMakrukHonorCount, makrukCountVersion, replayMakrukCountActions, usesMakrukHonorCount, type MakrukCountAction } from "@/lib/variants/makruk-counting";
 import { createMakrukEndgame, makrukEndgames, type MakrukEndgameKey } from "@/lib/variants/makruk-endgames";
@@ -25,6 +25,7 @@ import { applyOukCountAction, readOukCount, type OukCountAction } from "@/lib/va
 import { prepareOukBotTurn } from "@/lib/bot/ouk-counting";
 import { createOukEndgame, oukEndgames, type OukEndgameKey } from "@/lib/variants/ouk-endgames";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { preload } from "react-dom";
 import { LogOut, X } from "lucide-react";
 
 import { getBotDifficultyLevel, MAX_BOT_REPLY_MS, type BotDifficultyKey } from "@/lib/bot/config";
@@ -61,7 +62,7 @@ import { playModeOptions, type PlayMode } from "@/components/board/game-board-op
 import { colorLabel, pickHumanColor, quickSuggestionMove, resignationResult, squareName, withTimeControl } from "@/components/board/game-board-utils";
 import { PlayMoveList } from "@/components/board/play-move-list";
 
-import { get3DCollection, isPieceFinish, type PieceFinish } from "./board-3d-config";
+import { collectionModelPath, get3DCollection, isPieceFinish, type PieceFinish } from "./board-3d-config";
 
 const Board3D = dynamic(() => import("./board-3d"), { ssr: false, loading: () => <div className="board-3d" role="status">Loading 3D board…</div> });
 
@@ -1456,6 +1457,10 @@ export function GameBoard({
   function toggleReviewPlayback() {
     if (!reviewPlaying && reviewPly === null) setReviewPly(0);
     setReviewPlaying((current) => !current);
+  }
+
+  if (boardView === "3d" && collection3D) {
+    preload(pieceSetModelPath(collection3D, pieceSet) ?? collectionModelPath(collection3D), { as: "fetch", crossOrigin: "anonymous" });
   }
 
   return (
