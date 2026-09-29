@@ -41,11 +41,12 @@ const publicFiles = [
   "assets/khmer/atelier.glb", "assets/khmer/courtyard.glb", "assets/classic/marble.glb", "assets/shogi/collection.glb", "assets/shogi/hori.glb",
   "assets/xiangqi/collection.glb", "assets/xiangqi/celadon.glb", "assets/janggi/collection.glb", "assets/makruk/collection.glb",
   "assets/draughts/collection.glb", "assets/draughts/rosette.glb", "assets/draughts/club.glb", "assets/konane/collection.glb",
-  "assets/shatranj/collection.glb", "assets/chaturanga/collection.glb", "assets/jungle/collection.glb"
+  "assets/shatranj/collection.glb", "assets/chaturanga/collection.glb", "assets/jungle/collection.glb",
+  "assets/konane/shore.glb", "assets/materials/studio-room.hdr"
 ];
 const publicDirectories = [
   "assets/classic/marble", "assets/khmer/atelier", "assets/khmer/courtyard", "assets/shogi/hori", "assets/xiangqi/celadon",
-  "assets/draughts/rosette", "assets/draughts/club", "assets/materials/wood-table"
+  "assets/draughts/rosette", "assets/draughts/club", "assets/konane/shore", "assets/materials/wood-table"
 ];
 const stockfishFiles = ["stockfish-18-lite-single.js", "stockfish-18-lite-single.wasm"];
 
@@ -154,7 +155,8 @@ function arcadeStaticAssets(): Plugin {
       const copies: Array<[string, string]> = [
         ...publicFiles.map((file): [string, string] => [path.join(repoRoot, "public", file), file]),
         ...stockfishFiles.map((file): [string, string] => [path.join(repoRoot, "node_modules", "stockfish", "bin", file), `engines/stockfish/${file}`]),
-        [path.join(srcRoot, "app", "icon.svg"), "icon.svg"]
+        [path.join(srcRoot, "app", "icon.svg"), "icon.svg"],
+        [path.join(repoRoot, "ops", "assets", "materials", "studio-room.md"), "assets/materials/studio-room-SOURCE.md"]
       ];
       for (const directory of publicDirectories) {
         for (const entry of await readdir(path.join(repoRoot, "public", directory), { recursive: true, withFileTypes: true })) {
