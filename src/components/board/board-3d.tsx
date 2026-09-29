@@ -191,6 +191,8 @@ export default function Board3D(props: Props) {
     let modelReady = false;
     const disposableMaterials: THREE.Material[] = [];
     const textures: THREE.Texture[] = [];
+    const retiredResources: (THREE.Material | THREE.Texture)[] = [];
+    const releaseRetiredResources = () => retiredResources.splice(0).forEach(resource => resource.dispose());
     const labelGeometry = new THREE.PlaneGeometry(1, 1);
     const handHitGeometry = new THREE.BoxGeometry(.047, .022, .048);
     let lastPosition = "";
@@ -205,6 +207,7 @@ export default function Board3D(props: Props) {
         mesh.scale.set(coordinate.height*mesh.userData.glyphWidth,coordinate.height*mesh.userData.glyphHeight,1);
       }
       renderer.render(scene, camera);
+      releaseRetiredResources();
     };
     function label(text: string, x: number, z: number, hand = false) {
       const canvas = document.createElement("canvas");
@@ -226,12 +229,13 @@ export default function Board3D(props: Props) {
       plane.scale.set(height*plane.userData.glyphWidth,height*plane.userData.glyphHeight,1);meshes.add(plane);
     }
     function redraw() {
+      if (disposed || contextLost) return;
       const current = latest.current;
       const position = JSON.stringify([Boolean(model), frame.compactHands, current.boardTheme, current.finish, current.selected, current.lastMove, current.hands, current.selectedHand, [...current.legalTargets], current.orientedRows.map(row => row.map(cell => [cell.square, cell.terrain, cell.piece?.owner, cell.piece?.code, cell.piece?.promoted]))]);
       if (position === lastPosition) return;
       lastPosition = position;
       sceneRevision++;
-      meshes.clear(); disposableMaterials.splice(0).forEach(material => material.dispose()); textures.splice(0).forEach(texture => texture.dispose());
+      meshes.clear(); retiredResources.push(...disposableMaterials.splice(0), ...textures.splice(0));
       const finishMaterials = new Map<string, THREE.Material>();
       const palette = board3DPalettes[current.boardTheme];
       const boardSurface = (carvedShogi || celadonXiangqi) && current.boardTheme === "wood" ? tabletop.boardSurface : null;
@@ -411,7 +415,7 @@ export default function Board3D(props: Props) {
       } else if (hit) latest.current.onChoose(hit.object.userData.square as Square);
     }
     function cancel(event: PointerEvent) {gesture.cancel(event.pointerId);}
-    function lost(event: Event) { event.preventDefault(); contextLost = true; disposeRenderer(); fail("The 3D display was interrupted. Continue on the 2D board."); }
+    function lost(event: Event) { event.preventDefault(); contextLost = true; disposeRenderer(); releaseRetiredResources(); fail("The 3D display was interrupted. Continue on the 2D board."); }
     renderer.domElement.addEventListener("pointerdown", down); renderer.domElement.addEventListener("pointermove", move); renderer.domElement.addEventListener("pointerup", up); renderer.domElement.addEventListener("pointercancel", cancel);
     renderer.domElement.addEventListener("webglcontextlost", lost);
     renderer.domElement.setAttribute("aria-label", `${props.collection === "khmer" ? "Cambodian" : japanese ? props.variantKey === "mini-shogi" ? "Mini Shogi" : "Shogi" : intersection ? props.collection === "xiangqi" ? "Xiangqi" : "Janggi" : jungle ? "Jungle" : historical ? props.collection === "shatranj" ? "Shatranj" : "Chaturanga" : thai ? "Makruk" : papamu ? "Kōnane papamū" : draughts ? props.variantKey === "international-draughts" ? "International draughts" : props.variantKey === "turkish-draughts" ? "Turkish draughts" : "English draughts" : "Classic"} 3D board. Tap pieces and marked squares to move.${japanese ? " Tap captured tiles on the hand stands to drop them." : ""} Drag to orbit. Pinch or use the zoom buttons; move with two fingers or right-drag. Use 2D for keyboard play.`);
@@ -466,6 +470,7 @@ export default function Board3D(props: Props) {
       renderer.domElement.removeEventListener("pointerdown", down); renderer.domElement.removeEventListener("pointermove", move); renderer.domElement.removeEventListener("pointerup", up); renderer.domElement.removeEventListener("pointercancel", cancel); renderer.domElement.removeEventListener("webglcontextlost", lost);
       renderer.domElement.removeEventListener("pointerdown",cameraIntent,true);renderer.domElement.removeEventListener("pointerup",endCameraPointer,true);renderer.domElement.removeEventListener("pointercancel",endCameraPointer,true);renderer.domElement.removeEventListener("wheel",manualZoom,true);
       disposableMaterials.forEach(material => material.dispose()); textures.forEach(texture => texture.dispose());
+      releaseRetiredResources();
       [surfaceGeometry, riverGeometry, tileGeometry, dotGeometry, ringGeometry, promotionGeometry, labelGeometry, handHitGeometry].forEach(geometry => geometry.dispose());
       [hitMaterial, markerMaterial, waterMarkerMaterial, promotionMaterial].forEach(material => material.dispose());
       plainTiles?.flat().forEach(geometry => geometry.dispose());
