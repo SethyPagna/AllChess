@@ -1,6 +1,8 @@
 # Visual collection coverage
 
-Follow-up: the [Celadon checkpoint](celadon-checkpoint.md) adds a sixteenth wired model collection, fourteen more individually generated faces and a second coordinated generated board. Its asset checks and September 29 production-browser appearance, camera, gameplay and cold-offline checks pass. Physical-device validation remains pending. The current structural shortfall is 17 collections against the three-per-family target; the inventory below preserves the earlier pre-Celadon snapshot and its counting rules.
+Current follow-up: the [Shore checkpoint](shore-checkpoint.md) adds Kōnane's second collection: two individually generated stone sprites, independent textured meshes, editable Blender source and a coordinated stone board. Its final asset, production-build, browser appearance/camera/gameplay/recovery and cold-offline checks pass. Together with Celadon, this brings the inventory to **17 wired model collections**, 63 individually generated piece masters and three coordinated generated boards. The structural shortfall is **16 collections** against the three-per-family target; physical-device validation and remaining artwork within existing designs are still unfinished.
+
+Earlier follow-up: the [Celadon checkpoint](celadon-checkpoint.md) added the sixteenth wired model collection, fourteen generated faces and the second coordinated generated board. The inventory below preserves the earlier pre-Celadon snapshot and its counting rules.
 
 Snapshot: 2026-09-27, current working tree after Carved Shogi and its grid correction, before the next Xiangqi collection is delivered. This is an asset and runtime-wiring inventory, not a visual-quality certification or deployment claim.
 
