@@ -163,7 +163,7 @@ test.each([false, true])("papamū surface loading keeps native fallback and safe
   const pending = new Map<string, { texture: Texture; load: () => void }>();
   vi.stubGlobal("document", { createElement: () => ({ getContext: () => ({ createImageData: (width: number, height: number) => ({ data: new Uint8ClampedArray(width * height * 4) }), putImageData: () => {} }) }) });
   vi.spyOn(TextureLoader.prototype, "load").mockImplementation((url, onLoad) => {
-    const texture = new Texture(); pending.set(url, { texture, load: () => onLoad?.(texture) }); return texture;
+    const texture = new Texture<HTMLImageElement>(); pending.set(url, { texture, load: () => onLoad?.(texture) }); return texture;
   });
   const environment = new DataTexture();
   vi.spyOn(HDRLoader.prototype, "load").mockImplementation(() => environment);
@@ -198,7 +198,7 @@ test.each([false, true])("papamū surface loading keeps native fallback and safe
           for (let edge = 0; edge < 3; edge++) {
             const a = vertices[edge], b = vertices[(edge + 1) % 3];
             const metres = new Vector3().fromBufferAttribute(positions, a).distanceTo(new Vector3().fromBufferAttribute(positions, b));
-            const repeats = new Vector2().fromBufferAttribute(uv, a).distanceTo(new Vector2().fromBufferAttribute(uv, b));
+            const repeats = new Vector2().set(uv.getX(a), uv.getY(a)).distanceTo(new Vector2().set(uv.getX(b), uv.getY(b)));
             expect(repeats * .424, "bevel triangles must not interpolate across different UV projections").toBeLessThanOrEqual(metres + .000001);
             if (axis !== undefined) {
               expect(repeats * .424, "stone flecks keep the same scale across every flat case face").toBeCloseTo(metres, 6);
