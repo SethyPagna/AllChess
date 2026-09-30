@@ -528,6 +528,7 @@ function demoteMovesIntoMate(state: GameState, ranked: Array<{ move: Move; score
 }
 
 function allowsMateInOne(state: GameState, move: Move, perspective: PlayerColor, budget: SearchBudget, deadline = budget.deadline) {
+  if ((budget.hillReplyCounts.get(move) ?? 0) > 0) return true;
   if (Date.now() >= deadline) return null;
   const next = tryMove(state, move, budget);
   if (!next || next.status !== "active") return false;
@@ -700,7 +701,8 @@ function rankCandidateMoves(
     const moving = state.board[move.from.row]?.[move.from.col]?.piece;
     return state.variantKey === "king-of-the-hill" && moving && isRoyal(moving, state.variantKey) && variantObjectiveScore(state, move, moving.owner) > 0;
   });
-  const fallbackMove = directWin ?? candidateMoves.find((move) => move.kind !== "drop" && !move.promotion && !move.promoteTo && !isCapture(state, move))
+  const fallbackCandidates = state.variantKey === "king-of-the-hill" ? ordered.map(({ move }) => move) : candidateMoves;
+  const fallbackMove = directWin ?? fallbackCandidates.find((move) => move.kind !== "drop" && !move.promotion && !move.promoteTo && !isCapture(state, move))
     ?? candidateMoves.find((move) => move.kind !== "drop")
     ?? ordered[0].move;
   const fallback = [{ move: fallbackMove, score: materialOnlyScore(state, perspective) }];
