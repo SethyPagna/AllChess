@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { cp, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -51,6 +52,45 @@ if (!patchedWorker.includes("const allchessRealtimeResponse = allchessRoomSocket
   );
 }
 
+const offlineBytes = await readFile(path.join(process.cwd(), ".next/server/app/offline.html"));
+const offlineHtml = offlineBytes.toString("utf8");
+const manifest = JSON.parse(await readFile(path.join(process.cwd(), "public/offline-pack.json"), "utf8")) as {
+  assets: Array<{ url: string; bytes: number; sha256: string }>;
+};
+const offlineAssets = manifest.assets.filter(asset => asset.url === "/offline");
+if (offlineAssets.length !== 1 || offlineAssets[0].bytes !== offlineBytes.length
+  || offlineAssets[0].sha256 !== createHash("sha256").update(offlineBytes).digest("hex")
+  || !Buffer.from(offlineHtml).equals(offlineBytes)) {
+  throw new Error("The built offline shell does not match the offline pack manifest.");
+}
+const offlineImport = 'import { allchessOfflineRequest } from "./offline-shell.js";';
+if (!patchedWorker.includes(offlineImport)) patchedWorker = `${offlineImport}\n${patchedWorker}`;
+if (!patchedWorker.includes("const allchessOfflineResponse = allchessOfflineRequest(request);")) {
+  if (!patchedWorker.includes(entryPointMarker)) {
+    throw new Error("Could not find OpenNext fetch entry point to patch the offline shell.");
+  }
+  patchedWorker = patchedWorker.replace(entryPointMarker, `${entryPointMarker}
+            const allchessOfflineResponse = allchessOfflineRequest(request);
+            if (allchessOfflineResponse) {
+                return allchessOfflineResponse;
+            }`);
+}
+const offlineModule = `const shell = ${JSON.stringify(offlineHtml)};
+export function allchessOfflineRequest(request) {
+  if (!['GET', 'HEAD'].includes(request.method)
+    || new URL(request.url).pathname !== '/offline'
+    || request.headers.get('RSC') === '1') return null;
+  return new Response(request.method === 'HEAD' ? null : shell, {
+    headers: {
+      'content-type': 'text/html; charset=utf-8',
+      'content-length': '${offlineBytes.length}',
+      'cache-control': 'no-store',
+      'vary': 'RSC'
+    }
+  });
+}
+`;
+
 await build({
   absWorkingDir: projectRoot,
   entryPoints: ["src/lib/realtime/durable-objects.ts"],
@@ -64,6 +104,7 @@ await build({
   tsconfig: path.join(projectRoot, "tsconfig.json"),
   define: { "process.env.NODE_ENV": '"production"' }
 });
+await writeFile(path.join(openNextDir, "offline-shell.js"), offlineModule);
 await writeFile(workerPath, patchedWorker);
 
 const defaultFunctionDir = path.join(openNextDir, "server-functions", "default");
@@ -72,4 +113,4 @@ await cp(path.join(defaultFunctionDir, ".next", "server"), path.join(defaultFunc
   force: true
 });
 
-console.log("Bundled realtime Durable Objects and patched OpenNext Worker exports and server chunk paths.");
+console.log("Bundled realtime Durable Objects, verified the exact offline shell, and patched OpenNext Worker routing and server chunk paths.");

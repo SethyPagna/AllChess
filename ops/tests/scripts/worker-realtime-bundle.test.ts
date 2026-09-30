@@ -1,4 +1,6 @@
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
+import { existsSync } from "node:fs";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -16,8 +18,41 @@ const guest = "22222222-2222-4222-8222-222222222222";
 const spectator = "33333333-3333-4333-8333-333333333333";
 const move = { from: { row: 6, col: 4 }, to: { row: 4, col: 4 } };
 const post = (body: unknown) => ({ method: "POST", body: JSON.stringify(body) });
+const sha256 = (bytes: string | Uint8Array) => createHash("sha256").update(bytes).digest("hex");
+const offlineShell = '<!doctype html><html lang="km"><head><title>Offline play</title></head><body><main>អុក · Kōnane · ♔</main>'
+  + `<script>self.__next_f.push([1,${JSON.stringify(String.raw`first\nquoted "value" and slash\\ and unicode\u1780`)}])</script>`
+  + `<script>self.__next_f.push([1,${JSON.stringify("second payload · ក្តារ") }])</script></body></html>`;
 let fixture: string;
 let worker: Miniflare;
+
+function offlineManifest(shell: string) {
+  const assets = [{ url: "/offline", bytes: Buffer.byteLength(shell), sha256: sha256(shell) }];
+  return { version: sha256(JSON.stringify(assets)), assets };
+}
+
+async function writeOfflineFixture(shell = offlineShell) {
+  await mkdir(path.join(fixture, ".next/server/app"), { recursive: true });
+  await mkdir(path.join(fixture, "public"), { recursive: true });
+  await writeFile(path.join(fixture, ".next/server/app/offline.html"), shell);
+  await writeFile(path.join(fixture, "public/offline-pack.json"), JSON.stringify(offlineManifest(shell)));
+}
+
+async function loadGeneratedWorker() {
+  const bundled = await build({ entryPoints: [path.join(fixture, ".open-next/worker.js")], bundle: true, format: "esm", platform: "neutral", external: ["cloudflare:workers"], write: false });
+  const generated = new Miniflare({
+    modules: true,
+    script: bundled.outputFiles[0].text,
+    compatibilityDate: "2026-05-13",
+    compatibilityFlags: ["nodejs_compat"],
+    durableObjects: {
+      GAME_ROOM_DO: { className: "GameRoomDO", useSQLite: true },
+      MATCHMAKING_DO: { className: "MatchmakingDO", useSQLite: true },
+      PRESENCE_DO: { className: "PresenceDO", useSQLite: true }
+    }
+  });
+  try { await generated.ready; return generated; }
+  catch (error) { await generated.dispose(); throw error; }
+}
 
 beforeAll(async () => {
   fixture = await mkdtemp(path.join(tmpdir(), "allchess-opennext-test-"));
@@ -42,20 +77,9 @@ beforeAll(async () => {
     await mkdir(path.dirname(output), { recursive: true });
     await writeFile(output, source);
   }
+  await writeOfflineFixture();
   await run(process.execPath, [patchScript], { cwd: fixture });
-  const bundled = await build({ entryPoints: [entry], bundle: true, format: "esm", platform: "neutral", external: ["cloudflare:workers"], write: false });
-  worker = new Miniflare({
-    modules: true,
-    script: bundled.outputFiles[0].text,
-    compatibilityDate: "2026-05-13",
-    compatibilityFlags: ["nodejs_compat"],
-    durableObjects: {
-      GAME_ROOM_DO: { className: "GameRoomDO", useSQLite: true },
-      MATCHMAKING_DO: { className: "MatchmakingDO", useSQLite: true },
-      PRESENCE_DO: { className: "PresenceDO", useSQLite: true }
-    }
-  });
-  await worker.ready;
+  worker = await loadGeneratedWorker();
 }, 30_000);
 
 afterAll(async () => {
@@ -142,7 +166,113 @@ test("the generated worker preserves Next handling, presence exports and repeata
   expect(await readFile(entry, "utf8")).toBe(first);
   expect(await readFile(path.join(fixture, ".open-next/server-functions/default/server/probe.js"), "utf8")).toContain("probe = true");
   const legacy = "export class GameRoomDO extends DurableObject {}";
-  await writeFile(entry, legacy);
-  await expect(run(process.execPath, [patchScript], { cwd: fixture })).rejects.toThrow("contains legacy realtime stubs");
-  expect(await readFile(entry, "utf8")).toBe(legacy);
+  try {
+    await writeFile(entry, legacy);
+    await expect(run(process.execPath, [patchScript], { cwd: fixture })).rejects.toThrow("contains legacy realtime stubs");
+    expect(await readFile(entry, "utf8")).toBe(legacy);
+  } finally { await writeFile(entry, first); }
+});
+
+test.each(["/offline", "/offline?game=classic", "/offline?game=konane&locale=km&resume=saved%20game"])("the generated worker serves the exact verified UTF-8 shell at %s", async (route) => {
+  const response = await worker.dispatchFetch(`https://allchess.test${route}`, { headers: { "accept-encoding": "identity" } });
+  expect(response.status).toBe(200);
+  expect(response.headers.get("content-type")).toMatch(/^text\/html\s*;\s*charset=utf-8$/i);
+  const body = Buffer.from(await response.arrayBuffer());
+  expect(body).toEqual(Buffer.from(offlineShell));
+  expect(sha256(body)).toBe(offlineManifest(offlineShell).assets[0].sha256);
+  expect(Number(response.headers.get("content-length"))).toBe(Buffer.byteLength(offlineShell));
+});
+
+test("the offline shell HEAD response retains its UTF-8 byte length without a body", async () => {
+  const response = await worker.dispatchFetch("https://allchess.test/offline?game=classic", { method: "HEAD" });
+  expect(response.status).toBe(200);
+  expect(response.headers.get("content-type")).toMatch(/^text\/html\s*;\s*charset=utf-8$/i);
+  expect(Number(response.headers.get("content-length"))).toBe(Buffer.byteLength(offlineShell));
+  expect((await response.arrayBuffer()).byteLength).toBe(0);
+});
+
+test("the offline shell keeps exact decoded bytes with the transport's default compression", async () => {
+  const response = await worker.dispatchFetch("https://allchess.test/offline");
+  expect(response.status).toBe(200);
+  const body = Buffer.from(await response.arrayBuffer());
+  expect(body).toEqual(Buffer.from(offlineShell));
+  expect(body.length).toBe(offlineManifest(offlineShell).assets[0].bytes);
+  expect(sha256(body)).toBe(offlineManifest(offlineShell).assets[0].sha256);
+});
+
+test.each([
+  { route: "/offline?_rsc=probe", method: "GET", headers: { RSC: "1" } },
+  { route: "/offline", method: "POST", headers: {} },
+  { route: "/en/play", method: "GET", headers: {} },
+  { route: "/offline.html", method: "GET", headers: {} }
+])("offline interception preserves Next handling for $method $route", async ({ route, method, headers }) => {
+  const response = await worker.dispatchFetch(`https://allchess.test${route}`, { method, headers });
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual({ next: new URL(route, "https://allchess.test").pathname });
+});
+
+test.each(["invalid-json", "missing-manifest", "missing-entry", "wrong-length", "wrong-sha", "missing-shell"])("offline generation rejects %s and preserves the prior Worker and module", async (fault) => {
+  const entry = path.join(fixture, ".open-next/worker.js");
+  const shellModulePath = path.join(fixture, ".open-next/offline-shell.js");
+  const manifestPath = path.join(fixture, "public/offline-pack.json");
+  const beforeEntry = await readFile(entry, "utf8");
+  const beforeModule = existsSync(shellModulePath) ? await readFile(shellModulePath, "utf8") : null;
+  try {
+    const manifest = offlineManifest(offlineShell);
+    if (fault === "invalid-json") await writeFile(manifestPath, "{");
+    else if (fault === "missing-manifest") await rm(manifestPath);
+    else if (fault === "missing-shell") await rm(path.join(fixture, ".next/server/app/offline.html"));
+    else {
+      if (fault === "missing-entry") manifest.assets = [];
+      if (fault === "wrong-length") manifest.assets[0].bytes += 1;
+      if (fault === "wrong-sha") manifest.assets[0].sha256 = sha256("different shell");
+      manifest.version = sha256(JSON.stringify(manifest.assets));
+      await writeFile(manifestPath, JSON.stringify(manifest));
+    }
+    await expect(run(process.execPath, [patchScript], { cwd: fixture })).rejects.toThrow();
+    expect(await readFile(entry, "utf8")).toBe(beforeEntry);
+    expect(beforeModule).not.toBeNull();
+    expect(await readFile(shellModulePath, "utf8")).toBe(beforeModule);
+  } finally {
+    await writeOfflineFixture();
+    await writeFile(entry, beforeEntry);
+    if (beforeModule !== null) await writeFile(shellModulePath, beforeModule);
+    else await rm(shellModulePath, { force: true });
+  }
+});
+
+test("offline generation is repeatable and a new verified build refreshes the served shell", async () => {
+  const entry = path.join(fixture, ".open-next/worker.js");
+  const shellModulePath = path.join(fixture, ".open-next/offline-shell.js");
+  const beforeEntry = await readFile(entry, "utf8");
+  const beforeModule = existsSync(shellModulePath) ? await readFile(shellModulePath, "utf8") : null;
+  let refreshed: Miniflare | undefined;
+  try {
+    await run(process.execPath, [patchScript], { cwd: fixture });
+    expect(await readFile(entry, "utf8")).toBe(beforeEntry);
+    expect(existsSync(shellModulePath)).toBe(true);
+    expect(await readFile(shellModulePath, "utf8")).toBe(beforeModule);
+    const changedShell = offlineShell.replace("អុក · Kōnane", "កំណែថ្មី · Shōgi");
+    await writeOfflineFixture(changedShell);
+    await run(process.execPath, [patchScript], { cwd: fixture });
+    expect(await readFile(entry, "utf8")).toBe(beforeEntry);
+    const changedModule = await readFile(shellModulePath, "utf8");
+    expect(changedModule).not.toBe(beforeModule);
+    refreshed = await loadGeneratedWorker();
+    const response = await refreshed.dispatchFetch("https://allchess.test/offline?game=shogi", { headers: { "accept-encoding": "identity" } });
+    expect(response.status).toBe(200);
+    const body = Buffer.from(await response.arrayBuffer());
+    expect(body).toEqual(Buffer.from(changedShell));
+    expect(sha256(body)).toBe(offlineManifest(changedShell).assets[0].sha256);
+    expect(Number(response.headers.get("content-length"))).toBe(Buffer.byteLength(changedShell));
+    await run(process.execPath, [patchScript], { cwd: fixture });
+    expect(await readFile(entry, "utf8")).toBe(beforeEntry);
+    expect(await readFile(shellModulePath, "utf8")).toBe(changedModule);
+  } finally {
+    await refreshed?.dispose();
+    await writeOfflineFixture();
+    await writeFile(entry, beforeEntry);
+    if (beforeModule !== null) await writeFile(shellModulePath, beforeModule);
+    else await rm(shellModulePath, { force: true });
+  }
 });

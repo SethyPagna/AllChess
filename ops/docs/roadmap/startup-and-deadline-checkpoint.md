@@ -39,3 +39,11 @@ The safety repair is cooperative: one synchronous engine operation can cross a c
 The subsequent complete serial suite passes **1,384 tests across 120 files**, with no failures or skips, in 234.79 seconds. Strict TypeScript and full lint also pass. Assertions, test timeouts and search budgets are unchanged. Earlier failing runs remain recorded; this pass does not establish that every earlier failure shared the repaired deadline paths or that the bot's playing strength is fully validated.
 
 Collection expansion, startup performance, broader bot-strength evaluation, physical-device checks and hosted Cloudflare verification remain open.
+
+## Exact offline shell delivery
+
+The subsequent local Cloudflare build exposed an offline-update failure: Next’s response serialization combined adjacent Flight script blocks, so the served `/offline` page was 43 bytes shorter than the built file. Its byte count and SHA-256 no longer matched the manifest. The downloader rejected the update and retained the previous working pack.
+
+The Worker packager now validates the built HTML against its manifest entry and embeds those exact UTF-8 bytes in a generated module. It serves only ordinary GET/HEAD requests to `/offline`; RSC requests, other methods, other pages and the separate `/offline.html` reconnect fallback retain their existing routes. The module refreshes on every packaging run. Download integrity checks remain unchanged.
+
+The new regressions fail before the repair. All 20 generated-Worker tests now pass, covering exact Unicode bytes under identity and default compression, HEAD, failed-build output preservation, regeneration, protected seats and the socket bridge. The other 52 affected download, client-lifecycle and routing tests also pass. Strict TypeScript and scoped lint are clean. Earlier setup/cleanup and regeneration timeouts are retained as failed runs; the final generated-Worker run completed in 12.08 seconds at the original limits.
