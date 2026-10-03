@@ -44,5 +44,10 @@ jobs:
       - name: Build Cloudflare worker
         run: npm run cf:build
 
+      - name: Populate the matching production page cache
+        run: |
+          npm run cf:cache:populate
+          sha256sum public/offline-pack.json
+
       - name: Deploy Cloudflare worker
         run: npx wrangler deploy .open-next/worker.js --config ops/infra/cloudflare/wrangler.jsonc --env=production

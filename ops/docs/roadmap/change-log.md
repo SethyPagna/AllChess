@@ -158,3 +158,7 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 - Confirmed the branch was clean before adding planning files.
 - Full phase verification commands have not yet been run because this commit only introduces planning and tracking documents.
+
+### Hosted catalog and cache verification
+
+The first hosted check found a stale D1 catalog: twenty playable entries and no Cambodian game on the home shelf. Preserve its reference tables in private evidence and refresh them from the current forty-six-entry source catalog (twenty-one playable games). Populate the exact release's R2 page cache as a guarded GitHub Actions step. This updates reference metadata; account, saved-game and rating tables are excluded.
