@@ -177,3 +177,7 @@ Move order and notation cannot establish quality grades or a best line. Display 
 ## 2026-09-30: Preserve knowledge while compacting runtime delivery
 
 Keep the authoritative generated training JSON intact and derive a versioned dictionary-table artifact for browser delivery. Preserve every entry and metadata field, verify a strict round trip before writing, and decode to independent mutable objects before existing runtime indexing. Hash parsed content rather than checkout bytes, and regenerate from both build preparation and canonical training writes. Measure the actual production pack and cold-offline behavior; source size alone does not establish network speed or startup performance. See [scope and validation](bot-knowledge-delivery.md).
+
+## 2026-10-03: Cloudflare-only AllChess hosting
+
+Use the existing allchess Worker in Apps account d105a82bc26b6913575355352c2d1bb1 (jamesung.kh@gmail.com). BusinessOS credentials are excluded. Retire Vercel deployment commands/configuration and dispatch the guarded GitHub workflow against the latest studio branch; merging or deleting development branches is unnecessary for this release.

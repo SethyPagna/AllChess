@@ -33,7 +33,7 @@ const ignoredFilePrefixes = ["public/engines/"];
 const allowedJavaScriptFiles = new Set(["next.config.mjs", "public/sw.js"]);
 const allowedRootFiles = new Set([
   ".gitignore",
-  ".vercelignore",
+  "META-HARNESS.md",
   "README.md",
   "next-env.d.ts",
   "next.config.mjs",
@@ -42,7 +42,6 @@ const allowedRootFiles = new Set([
   "package.json",
   "postcss.config.ts",
   "tsconfig.json",
-  "vercel.json",
   "wrangler.jsonc"
 ]);
 const allowedRootDirectories = new Set([".git", ".github", "config", "data", "node_modules", "ops", "src"]);
@@ -173,7 +172,7 @@ describe("project organization", () => {
     expect(packageJson.dependencies).not.toHaveProperty("xiangqiops");
   });
 
-  test("keeps Vercel CLI out of the local dependency graph", () => {
+  test("uses Cloudflare for deployment without a Vercel dependency", () => {
     const packageJson = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8")) as {
       dependencies?: Record<string, string>;
       devDependencies?: Record<string, string>;
@@ -182,8 +181,9 @@ describe("project organization", () => {
 
     expect(packageJson.dependencies).not.toHaveProperty("vercel");
     expect(packageJson.devDependencies).not.toHaveProperty("vercel");
-    expect(packageJson.scripts["deploy:preview"]).toContain("npx --yes vercel@latest");
-    expect(packageJson.scripts["deploy:prod"]).toContain("npx --yes vercel@latest");
+    expect(packageJson.scripts["deploy:preview"]).toBe("npm run cf:preview");
+    expect(packageJson.scripts["deploy:prod"]).toContain("npm run cf:deploy");
+    expect(existsSync(join(repoRoot, "vercel.json"))).toBe(false);
   });
 
   test("keeps infrastructure files grouped under ops/infra", () => {

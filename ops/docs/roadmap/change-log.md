@@ -4,6 +4,14 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ---
 
+## 2026-10-03 — Release latest studio on the authorized Cloudflare account
+
+- Retire Vercel configuration and route the standard production/preview commands through Cloudflare.
+- Pin GitHub Actions to the Apps account owned by jamesung.kh@gmail.com and reject BusinessOS credentials before publishing.
+- Select the latest studio branch, including bot deadline repairs and exact offline shell delivery, for release without deleting GitHub branches.
+- Full lint and strict TypeScript pass; 1,398 of 1,400 serial tests passed before the two obsolete deployment/root-layout expectations were updated. Focused verification and hosted release checks are recorded as they finish.
+- Preserve local historical work in private recovery evidence before removing redundant checkouts. The broader product roadmap remains open.
+
 ## 2026-09-30 — Lossless bot knowledge delivery
 
 - Keep all 10,064 generated knowledge entries and metadata while replacing the runtime import with a reproducible dictionary-table artifact.

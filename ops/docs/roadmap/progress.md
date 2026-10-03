@@ -99,3 +99,7 @@ Before each phase commit:
 - `ops/docs/roadmap/decisions.md` updated for architecture or product choices.
 - `ops/docs/roadmap/change-log.md` updated for user-visible, technical, workflow, or documentation changes.
 - `git status --short` reviewed so unrelated user changes are not staged.
+
+## 2026-10-03 hosted release
+
+Release work uses the latest studio branch with bot deadline and exact offline shell repairs. Hosting is now Cloudflare-only in the authorized jamesung.kh Apps account. Full lint and strict TypeScript pass. The serial suite passes 1,398 tests; two obsolete deployment/root-file expectations are being updated for Cloudflare-only hosting and the META-HARNESS pointer. Hosted deployment, integrity and browser verification are pending. This release does not close the broader collections, physical-device or account feature roadmap.

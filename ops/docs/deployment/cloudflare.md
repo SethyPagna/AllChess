@@ -31,7 +31,7 @@ Use the configured Worker named `allchess` in the account identified by the Wran
 
 ## Secrets
 
-Use Wrangler, Vercel, or GitHub secrets. Never commit tokens.
+Use Wrangler or GitHub secrets. Never commit tokens.
 Environment variables and secrets are allowed when they are actually needed for deploy, persistence, auth, OAuth, or AI. Keep values in secret stores and dashboards, not in source files or logs.
 
 ```bash
@@ -48,7 +48,7 @@ npx wrangler secret put GOOGLE_CLIENT_SECRET
 npx wrangler secret put GOOGLE_REDIRECT_URI
 ```
 
-Run `npm run audit:env -- cloudflare` before deploy and `npm run audit:env -- vercel` after setting Vercel project variables. The audit masks secret values and only reports whether required names are present.
+Run `npm run audit:env -- cloudflare` before deploy. The audit masks secret values and only reports whether required names are present.
 
 If a broad Cloudflare token was exposed in chat or logs, rotate it after creating least-privilege tokens for Workers, D1, R2, and DNS.
 
@@ -60,5 +60,4 @@ npm run audit:env -- cloudflare
 npm run cf:deploy
 ```
 
-For Vercel, link the project as `allchess` and set Cloudflare credentials in Vercel environment variables. Vercel should host the app only; data still belongs to Cloudflare D1/R2.
-Run `npm run audit:env -- vercel` before production deploy.
+Deploy only to the Apps account (`d105a82bc26b6913575355352c2d1bb1`) belonging to `jamesung.kh@gmail.com`. The BusinessOS account must not be used. GitHub Actions pins this account and checks the credential's access before deployment. `deploy:prod` now uses Cloudflare; `deploy:preview` runs the local Cloudflare preview. Vercel hosting is retired.
