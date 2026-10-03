@@ -4,6 +4,87 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 ---
 
+## 2026-10-03 — Release latest studio on the authorized Cloudflare account
+
+- Retire Vercel configuration and route the standard production/preview commands through Cloudflare.
+- Pin GitHub Actions to the Apps account owned by jamesung.kh@gmail.com and reject BusinessOS credentials before publishing.
+- Select the latest studio branch, including bot deadline repairs and exact offline shell delivery, for release without deleting GitHub branches.
+- Full lint and strict TypeScript pass; 1,398 of 1,400 serial tests passed before the two obsolete deployment/root-layout expectations were updated. Focused verification and hosted release checks are recorded as they finish.
+- Preserve local historical work in private recovery evidence before removing redundant checkouts. The broader product roadmap remains open.
+
+## 2026-09-30 — Lossless bot knowledge delivery
+
+- Keep all 10,064 generated knowledge entries and metadata while replacing the runtime import with a reproducible dictionary-table artifact.
+- Prepare it for development/builds and refresh it after canonical training writes, including relative paths; use a content hash independent of checkout line endings.
+- Preserve independent mutable decoded values and existing bot interfaces. See [scope, checks and remaining work](bot-knowledge-delivery.md).
+- Exclude generated Wrangler preview folders at any nesting depth from lint, retaining the same checks for authored source.
+- Keep ignored historical Playwright diagnostics outside the app typecheck; check the current audit separately with the same strict options. Two Three test typing repairs preserve assertions and runtime behavior.
+- Reduce the built offline pack by 7.34 MiB to 79.64 MiB, retaining all 182 assets and leaving 8.36 MiB below the unchanged limit. Verify all 104 artwork/model/engine/icon files unchanged.
+- Full lint, strict typechecks, all 32 focused 3D tests and the complete production build pass. Online and cold-offline functional checks preserve saves, pack integrity, hints and actual Stockfish replies. Classic 3D startup misses the unchanged five-second target; the full suite reports 1,362 passed, 14 failed and 4 skipped. These failures remain open.
+
+## 2026-09-27 — Club collection and factual review
+
+- Add an ivory/oxblood lacquer collection, four generated sprites and an original textured Blender/GLB with stacked kings for all three draughts games.
+- Use three compact collection cards, a per-game Rosette default and unclipped short mode labels.
+- Replace fabricated move grades and best-line claims with factual events and preserve playback.
+- Reduce repeated full-state cloning in royal-safety probes without changing search budgets or legality. See [scope and validation](club-collections.md).
+
+## 2026-09-27 — Rosette draughts collections and fitted orbit
+
+- Add four generated sprite masters and a textured, carved Blender/GLB collection for all three draughts games, with real stacked kings and shared mesh data.
+- Select piece collections independently of board colours and save the choice per game in both views.
+- Keep automatic orbit fully framed while preserving deliberate free zoom/pan. See [scope and validation](rosette-collections.md).
+
+## 2026-09-27 — Textured Cambodian models and balanced camera
+
+- Replace the Cambodian 3D study with a packed, textured Blender/GLB collection, original turned pieces and a licensed detailed horse sculpt.
+- Balance camera framing using perspective depth across all 21 games and include the taller Khmer king in the physical bounds.
+- Keep the setup action below the 3D camera hint so it cannot cover instructions or the board. Include the new GLB in cold-offline delivery. See [scope and validation](khmer-atelier-3d.md).
+
+## 2026-09-27 — Compact account, review and community pages
+
+- Use shared visual empty states, compact forms and explicit theme buttons across seven secondary pages.
+- Remove synthetic notification events, add menu dismissal and keep mobile popovers visible.
+- Preserve all saved review moves instead of truncating the timeline at ply 16. See [scope and validation](secondary-pages.md).
+
+## 2026-09-27 — Visual discovery and compact guides
+
+- Share native piece artwork across browsing surfaces; feature Cambodia in the lobby and reduce repeated card descriptions.
+- Replace catalog selects with button choices, preserve Khmer/Thai search and use native modal focus behavior for guides.
+- Collapse optional guide, training and statistics details. Record camera quality as part of the active goal. See [scope and validation](discovery-design.md).
+
+## 2026-09-27 — Textured piece assets and Cambodian atelier artwork
+
+- Replace the modern Western GLB with a licensed, UV/PBR marble set and matching Blender-rendered 2D images. Preserve editable sources and source checksums.
+- Generate all twelve Cambodian light/dark piece images individually, retaining transparent masters and lossless runtime derivatives. Keep native vector/letter alternatives.
+- Add photographed case materials, controlled lighting, texture filtering and resource cleanup; include the assets in offline delivery.
+- Keep the incomplete Cambodian and other regional 3D quality work explicit. See [scope and validation](asset-quality-revision.md).
+
+## 2026-09-25 — Mobile 3D framing and controls
+
+- Fit physical boards to narrow and short screens; retain an angled perspective and small, unboxed coordinates.
+- Add compact physical Shogi hand trays, larger zoom/reset buttons, two-finger pan and gesture protection. Preserve the customized camera through resizing.
+- Verify moves across all eleven collections, both Shogi sizes, real browser touch input and cold offline Cambodian/Shogi play. See [validation and remaining scope](mobile-tabletop.md).
+
+## 2026-09-25 — Jungle tabletop and rules
+
+- Add original Blender animal miniatures, recessed enamel rivers, physical wood banks, native traps/dens and compact rank/movement hints. All 21 playable games now have native 3D.
+- Version new Jungle games with correct trap placement/ownership, Dog/Wolf ranks and rat river-boundary captures; retain old saved behavior and correct room replay.
+- Verify native clicks, saves, fallback, bot legality, room rules and cold offline play. See [validation and remaining scope](jungle-tabletop.md).
+
+## 2026-09-25 — Historical tabletops
+
+- Add distinct original Shatranj ceramic and Chaturanga sculpted-army collections, editable Blender sources, plain wooden grids and coordinated physical frames.
+- Match the native identities in default/carved 2D silhouettes and show compact selected-piece movement hints below the board.
+- Preserve native promotion identities and deliver both collections in the public offline pack. See [validation and scope](historical-tabletops.md).
+
+## 2026-09-25 — Kōnane
+
+- Native 3D stones, recessed wooden papamū, small rim coordinates, orbit/zoom/reset, material choices and offline asset delivery. Include the public web-app manifest in the verified offline pack.
+- NPS rules profile for new games, including Black first and optional straight multi-jumps; existing saves retain their prior rules.
+- Compact opening/jump guidance, plain 2D pit board and correct starting-side review badges.
+- See [delivery and validation](konane-tabletop.md). The broader product goal remains active.
+
 ## 2026-05-28
 
 ### Repository Organization
@@ -77,3 +158,7 @@ This file tracks meaningful changes made during the improvement program. Keep ne
 
 - Confirmed the branch was clean before adding planning files.
 - Full phase verification commands have not yet been run because this commit only introduces planning and tracking documents.
+
+### Hosted catalog and cache verification
+
+The first hosted check found a stale D1 catalog: twenty playable entries and no Cambodian game on the home shelf. Preserve its reference tables in private evidence and refresh them from the current forty-six-entry source catalog (twenty-one playable games). Populate the exact release's R2 page cache as a guarded GitHub Actions step. This updates reference metadata; account, saved-game and rating tables are excluded.

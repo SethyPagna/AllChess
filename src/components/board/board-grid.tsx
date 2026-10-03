@@ -46,15 +46,19 @@ type BoardGridProps = {
   rows: number;
   selected: Square | null;
   suggestedMove: SuggestedBoardMove | null;
+  lastMove?: SuggestedBoardMove & { kind?: string };
   variantKey: string;
 };
 
 const handPieceDragType = "application/x-allchess-hand-piece";
 const maxPlanningArrows = 12;
 
-export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move", locale = "en", onChoose, onDragMove, onDropHandPiece, orientedRows, pieceSkin = "default", rows, selected, suggestedMove, variantKey }: BoardGridProps) {
+export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move", locale = "en", onChoose, onDragMove, onDropHandPiece, orientedRows, pieceSkin = "default", rows, selected, suggestedMove, lastMove, variantKey }: BoardGridProps) {
   const terrainLabels = getVocabulary(normalizeLocale(locale)).terrain;
+  const intersectionBoard = variantKey === "xiangqi" || variantKey === "janggi";
+  const plainBoard = variantKey === "jungle" || variantKey === "shatranj" || variantKey === "chaturanga" || variantKey === "ouk-chaktrang" || intersectionBoard || variantKey === "shogi" || variantKey === "mini-shogi" || variantKey === "makruk" || (variantKey === "turkish-draughts" || variantKey === "konane");
   const gridRef = useRef<HTMLDivElement>(null);
+  const [keyboardSquare, setKeyboardSquare] = useState<string | null>(null);
   const [pointerDragSquare, setPointerDragSquare] = useState<Square | null>(null);
   const pointerDragSquareRef = useRef<Square | null>(null);
   const pointerDragMovedRef = useRef(false);
@@ -189,6 +193,7 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
       className="board-grid relative overflow-hidden rounded-lg border border-[var(--border)] shadow-2xl"
       style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
       aria-label="Game board"
+      data-board-geometry={variantKey === "konane" ? "pits" : intersectionBoard ? "intersections" : plainBoard ? "plain-grid" : "checkered"}
       onPointerDownCapture={(event) => {
         const square = squareFromEventTarget(event.target);
         if (!square) return;
@@ -236,6 +241,14 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
       }}
       onContextMenu={(event) => event.preventDefault()}
     >
+      {intersectionBoard ? <svg className="board-native-lines" viewBox={`0 0 ${cols * 100} ${rows * 100}`} preserveAspectRatio="none" aria-hidden="true">
+        {Array.from({ length: rows }, (_, row) => <line key={`rank-${row}`} x1="50" y1={row * 100 + 50} x2={cols * 100 - 50} y2={row * 100 + 50} />)}
+        {Array.from({ length: cols }, (_, col) => <g key={`file-${col}`}>
+          {variantKey === "xiangqi" && col > 0 && col < cols - 1 ? <><line x1={col * 100 + 50} y1="50" x2={col * 100 + 50} y2="450" /><line x1={col * 100 + 50} y1="550" x2={col * 100 + 50} y2="950" /></> : <line x1={col * 100 + 50} y1="50" x2={col * 100 + 50} y2={rows * 100 - 50} />}
+        </g>)}
+        <path d="M350 50L550 250M550 50L350 250M350 750L550 950M550 750L350 950" />
+        {variantKey === "xiangqi" ? <text x="450" y="512" textAnchor="middle">楚 河　　漢 界</text> : null}
+      </svg> : null}
       <svg className="board-planning-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <marker id="board-planning-arrow" markerHeight="5" markerWidth="5" orient="auto-start-reverse" refX="4" refY="2.5">
@@ -264,6 +277,7 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
           const isLegal = legalTargets.has(serializeSquare(cell.square));
           const isSuggestedFrom = suggestedMove && sameSquare(suggestedMove.from, cell.square);
           const isSuggestedTo = suggestedMove && sameSquare(suggestedMove.to, cell.square);
+          const isLastMove = lastMove && lastMove.kind !== "pass" && (sameSquare(lastMove.to, cell.square) || (lastMove.kind !== "drop" && sameSquare(lastMove.from, cell.square)));
           const isInvalidDrop = invalidDrop && sameSquare(invalidDrop, cell.square);
           const dark = (cell.square.row + cell.square.col) % 2 === 1;
           const isDarkPiece = cell.piece?.owner === "black" || cell.piece?.owner === "blue" || cell.piece?.owner === "gote";
@@ -306,6 +320,15 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
             <button
               type="button"
               key={serializeSquare(cell.square)}
+              tabIndex={serializeSquare(cell.square) === (keyboardSquare ?? serializeSquare(orientedRows[0][0].square)) ? 0 : -1}
+              onFocus={() => setKeyboardSquare(serializeSquare(cell.square))}
+              onKeyDown={event => {
+                const delta = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] }[event.key];
+                if (!delta) return;
+                event.preventDefault();
+                const next = orientedRows[Math.max(0, Math.min(rows - 1, visualRow + delta[0]))]?.[Math.max(0, Math.min(cols - 1, visualCol + delta[1]))];
+                if (next) gridRef.current?.querySelector<HTMLButtonElement>(`[data-square="${squareName(next.square, files, rows)}"]`)?.focus();
+              }}
               onClick={() => {
                 if (!pointerDragMovedRef.current) onChoose(cell.square);
               }}
@@ -326,6 +349,7 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
               data-invalid-drop={isInvalidDrop ? "true" : undefined}
               data-tone={dark ? "dark" : "light"}
               data-suggested={isSuggestedFrom ? "from" : isSuggestedTo ? "to" : undefined}
+              data-last-move={isLastMove ? "true" : undefined}
               style={{
                 background: isInvalidDrop
                   ? "color-mix(in srgb, var(--danger) 72%, var(--surface))"
@@ -337,6 +361,10 @@ export function BoardGrid({ cols, files, legalTargets, legalTargetMode = "move",
                       ? legalTargetMode === "drop"
                         ? "color-mix(in srgb, var(--info) 30%, var(--accent-soft))"
                         : "color-mix(in srgb, var(--accent) 34%, var(--board-light))"
+                      : intersectionBoard
+                        ? "transparent"
+                      : plainBoard
+                        ? "var(--board-light)"
                       : dark
                         ? "var(--board-dark)"
                         : "var(--board-light)",

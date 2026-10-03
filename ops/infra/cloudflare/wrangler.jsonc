@@ -9,7 +9,8 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": {
     "directory": "../../../.open-next/assets",
-    "binding": "ASSETS"
+    "binding": "ASSETS",
+    "html_handling": "none"
   },
   "observability": {
     "enabled": true
@@ -58,7 +59,7 @@
       "binding": "ALLCHESS_D1",
       "database_name": "allchess",
       "database_id": "b1153fb9-cae6-4e11-a18e-428a394e4210",
-      "migrations_dir": "ops/infra/cloudflare/d1/migrations"
+      "migrations_dir": "d1/migrations"
     }
   ],
   "ai": {
@@ -112,7 +113,7 @@
           "binding": "ALLCHESS_D1",
           "database_name": "allchess",
           "database_id": "b1153fb9-cae6-4e11-a18e-428a394e4210",
-          "migrations_dir": "ops/infra/cloudflare/d1/migrations"
+          "migrations_dir": "d1/migrations"
         }
       ],
       "ai": {
@@ -121,8 +122,7 @@
       "vars": {
           "DEPLOYMENT_TARGET": "cloudflare",
           "OBJECT_STORAGE_DRIVER": "r2",
-          "DATABASE_DRIVER": "d1",
-          "R2_CACHE_BINDING_NAME": "R2_CACHE"
+          "DATABASE_DRIVER": "d1"
       }
     }
   }

@@ -127,3 +127,57 @@ Record decisions that affect architecture, workflow, product behavior, or releas
 - The catalog should not imply full support for research-stage variants.
 - Rules, bot, and analysis phases can advance independently while still exposing truthful UI states.
 - Launch readiness can be evaluated per variant instead of as one all-or-nothing milestone.
+
+
+## 2026-09-25: Version Kōnane rules and use a recessed papamū
+
+New games use the National Park Service Hōnaunau profile (`nps-v1`): Black first, any own-stone removal for each player, then optional consecutive jumps in one straight direction. Each legal landing prefix is one atomic move, so local play, bots, server validation, clocks and saved history share the same rules. Unversioned games retain their prior White-first, adjacent-second-removal, forced-continuation behavior. Room review restores the original opening profile before replaying.
+
+The presentation is a contemporary wooden papamū with modeled bowls and original portable Blender pebbles. It is not a museum replica or a universal/tournament rules claim. [NPS source](https://www.nps.gov/thingstodo/play-konane.htm).
+
+
+## 2026-09-25: Separate historical piece vocabularies
+
+Use original abstract ceramic forms for Shatranj and a distinct sculpted army for Chaturanga, on plain gridded physical boards. Match those identities in 2D and explain selected-piece movement in a compact line below the board. Retain the existing documented rule profiles, promotion codes and room/save contracts; visual research is not evidence of universal historical rules. Source context and originality boundaries are recorded in [the delivery notes](historical-tabletops.md).
+
+
+## 2026-09-25: Jungle physical terrain and rule compatibility
+
+Use original animal miniatures on a physical board whose rivers are recessed below its banks. Terrain markers follow the actual state's cells rather than a separate visual map. New `standard-v1` games correct trap layout/ownership, Dog/Wolf ranks and rat bank captures, and resolve immobilization as a draw. Preserve unversioned saved behavior and reconstruct old room openings for review. Sources and explicit app conventions are documented in [the delivery notes](jungle-tabletop.md); 3D coverage does not imply complete bot calibration, localization or tournament certification.
+
+## 2026-09-25: Fit physical 3D to the available screen
+
+Derive the camera from physical bounds and available space rather than one fixed landscape composition. On narrow Shogi boards, move hand tiles to physical end trays while retaining side komadai on desktop. Keep manual orbit/pan/relative zoom across resize, provide large reset/zoom targets and distinguish taps from complete gestures. Short viewports retain a scrollable margin outside the canvas. This is responsive presentation only; regional rules, hand ownership and saved positions are unchanged. See [validation](mobile-tabletop.md).
+
+## 2026-09-27: Separate playable coverage from art quality
+
+A portable GLB alone does not establish realism. Use licensed detailed meshes with UV/PBR textures and editable source files where appropriate, and generate native regional artwork individually. Keep image masters separate from actual 3D geometry. The Western set adapts Riley Queen's CC0 work; Cambodian 2D uses generated contemporary designs. Do not claim its mesh replacement is complete while only raster masters exist. Record provenance, native identities, runtime derivatives, offline impact and remaining quality gaps in [the revision notes](asset-quality-revision.md).
+
+
+## 2026-09-27: Visual browsing and camera acceptance
+
+Reuse native piece artwork across home, lobby, catalog and playable guides. Keep rules and mode support in accessible disclosures and native modal dialogs rather than repeated card copy. Preserve Unicode letters and marks in search, including Khmer and Thai. Treat camera composition, light, scale, gesture safety and responsive framing as explicit acceptance criteria for every game/theme in the active goal. See [delivery scope](discovery-design.md).
+
+## 2026-09-27: Compact secondary pages with honest state
+
+Use visual empty states and optional guidance while preserving submitted filters, auth errors, room status and complete review timelines. Settings should expose Light, Dark and System directly. Do not manufacture unread notifications or imply a casual queue is rated. Keep shell menus dismissible and within small-screen bounds. See [delivery scope](secondary-pages.md).
+
+## 2026-09-27: Physical Cambodian assets and balanced perspective
+
+Use actual UV/PBR geometry for the Cambodian atelier, with original turned forms and a documented CC0 horse adaptation. Preserve editable sources and treat differences from generated 2D artwork honestly. Recolours do not satisfy the goal's requirement for distinct collections. Fit opposite screen edges using physical perspective depth, including captured-piece trays and the tallest pieces, rather than fixing the camera target at the world origin. See [delivery scope](khmer-atelier-3d.md).
+
+## 2026-09-27: Independent collections and deliberate camera control
+
+Keep collection identity separate from board colours and material recolours. Each selectable collection must connect its native 2D presentation with the correct 3D asset without changing game state. Save preferences per game and reject foreign set IDs. Use automatic bounds fitting during ordinary orbit; deliberate zoom/pan enters free composition until reset. See [delivery scope](rosette-collections.md).
+
+## 2026-09-27: Evidence-based move events and native defaults
+
+Move order and notation cannot establish quality grades or a best line. Display factual timeline events from matching positions; leave unavailable capture counts unknown and reserve evaluations for a real analysis provider. A new default collection may apply to unset or invalid preferences, while an explicitly saved legacy choice must remain intact. Read per-game collection, view and finish preferences independently so one blocked key cannot suppress the others. See [delivery scope](club-collections.md).
+
+## 2026-09-30: Preserve knowledge while compacting runtime delivery
+
+Keep the authoritative generated training JSON intact and derive a versioned dictionary-table artifact for browser delivery. Preserve every entry and metadata field, verify a strict round trip before writing, and decode to independent mutable objects before existing runtime indexing. Hash parsed content rather than checkout bytes, and regenerate from both build preparation and canonical training writes. Measure the actual production pack and cold-offline behavior; source size alone does not establish network speed or startup performance. See [scope and validation](bot-knowledge-delivery.md).
+
+## 2026-10-03: Cloudflare-only AllChess hosting
+
+Use the existing allchess Worker in Apps account d105a82bc26b6913575355352c2d1bb1 (jamesung.kh@gmail.com). BusinessOS credentials are excluded. Retire Vercel deployment commands/configuration and dispatch the guarded GitHub workflow against the latest studio branch; merging or deleting development branches is unnecessary for this release.

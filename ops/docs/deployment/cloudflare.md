@@ -4,7 +4,7 @@ AllChess is Cloudflare-first. Supabase, Hyperdrive, Vercel databases, and Vercel
 
 ## Architecture
 
-- Runtime: Cloudflare Workers through the OpenNext Cloudflare adapter, deployed as Worker `chess`.
+- Runtime: Cloudflare Workers through the OpenNext Cloudflare adapter, configured as Worker `allchess`.
 - Database: D1 database `allchess`.
 - User objects: R2 bucket `allchess-objects`.
 - Preview objects: R2 bucket `allchess-objects-preview`.
@@ -12,6 +12,8 @@ AllChess is Cloudflare-first. Supabase, Hyperdrive, Vercel databases, and Vercel
 - Realtime: Durable Objects `GameRoomDO`, `MatchmakingDO`, and `PresenceDO`.
 - AI: Workers AI binding `AI`, with optional Groq, Mistral, Cerebras, Google AI, or OpenAI secrets for deeper review.
 - Other products: edsync must use separate Cloudflare resources.
+
+Both Wrangler configurations set `assets.html_handling` to `none`. Keep `/offline` routed to the Next app and `/offline.html` served as the separate reconnect fallback. Cloudflare's default clean-URL behavior otherwise serves the fallback at `/offline`, causing offline-pack integrity verification to reject the wrong shell. A Miniflare routing regression covers both configurations and the default-setting failure.
 
 ## One-Time Setup
 
@@ -25,11 +27,11 @@ npm run db:migrate:remote
 ```
 
 Copy the D1 database id into `ops/infra/cloudflare/wrangler.jsonc` and set the same value as `CLOUDFLARE_D1_DATABASE_ID` anywhere the app runs outside Workers.
-Use the existing Worker named `chess` when it exists; redeploy that target instead of creating a duplicate. Preferred short hostnames are `chess.<domain>` first, then `allchess.<domain>` if the shorter name is unavailable.
+Use the configured Worker named `allchess` in the account identified by the Wrangler configuration. Redeploy that target instead of creating a duplicate. A custom hostname is independent of the Worker name.
 
 ## Secrets
 
-Use Wrangler, Vercel, or GitHub secrets. Never commit tokens.
+Use Wrangler or GitHub secrets. Never commit tokens.
 Environment variables and secrets are allowed when they are actually needed for deploy, persistence, auth, OAuth, or AI. Keep values in secret stores and dashboards, not in source files or logs.
 
 ```bash
@@ -46,7 +48,7 @@ npx wrangler secret put GOOGLE_CLIENT_SECRET
 npx wrangler secret put GOOGLE_REDIRECT_URI
 ```
 
-Run `npm run audit:env -- cloudflare` before deploy and `npm run audit:env -- vercel` after setting Vercel project variables. The audit masks secret values and only reports whether required names are present.
+Run `npm run audit:env -- cloudflare` before deploy. The audit masks secret values and only reports whether required names are present.
 
 If a broad Cloudflare token was exposed in chat or logs, rotate it after creating least-privilege tokens for Workers, D1, R2, and DNS.
 
@@ -58,5 +60,6 @@ npm run audit:env -- cloudflare
 npm run cf:deploy
 ```
 
-For Vercel, link the project as `allchess` and set Cloudflare credentials in Vercel environment variables. Vercel should host the app only; data still belongs to Cloudflare D1/R2.
-Run `npm run audit:env -- vercel` before production deploy.
+Deploy only to the Apps account (`d105a82bc26b6913575355352c2d1bb1`) belonging to `jamesung.kh@gmail.com`. The BusinessOS account must not be used. GitHub Actions pins this account and checks the credential's access before deployment. `deploy:prod` now uses Cloudflare; `deploy:preview` runs the local Cloudflare preview. Vercel hosting is retired.
+
+The public address is `https://allchess.pagna.workers.dev`. `cf:deploy` builds, prepares the generated incremental-cache keys with the installed OpenNext adapter, uploads those files directly to R2, and deploys the matching Worker. Direct R2 bulk upload avoids OpenNext's temporary preview-worker proxy, which returned repeated 503 responses during the October release. GitHub Actions logs the offline manifest checksum so the deployed pack can be matched to its build.

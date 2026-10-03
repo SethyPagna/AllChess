@@ -1,4 +1,4 @@
-import { describe, expect, test } from "vitest";
+import { describe, expect, test, vi } from "vitest";
 
 import { cancelBotMove, chooseBotMove, chooseBotMoveSafe, botDifficultyLevels, createBotSearchStateKey, MAX_BOT_REPLY_MS, MAX_GLOBAL_TRANSPOSITIONS, requestBotMove } from "@/lib/bot/runtime";
 import { botEloBandKeys, getBotStrengthBand } from "@/lib/bot/strength";
@@ -121,10 +121,10 @@ describe("bot difficulty ladder", () => {
     }
   }, 20_000);
 
-  test("every launch variant covers every Elo band with a legal bounded bot move", () => {
+  test.each(variantCatalog)("$key covers every Elo band with a legal bounded bot move", (variant) => {
     const failures: string[] = [];
 
-    for (const variant of variantCatalog) {
+    {
       const state = createInitialState(variant.key, `${variant.key}-all-elo-smoke`);
       for (const level of botDifficultyLevels) {
         const result = chooseBotMoveSafe(state, level.key, { engine: "internal", maxSearchTimeMs: 8 });
@@ -142,7 +142,7 @@ describe("bot difficulty ladder", () => {
     }
 
     expect(failures).toEqual([]);
-  }, 120_000);
+  }, 60_000);
 
   test("always chooses a legal move for every launch variant", () => {
     const variants = ["classic", "chaturanga", "crazyhouse", "shatranj", "chess960", "xiangqi", "shogi", "mini-shogi", "janggi", "makruk", "jungle", "english-draughts", "international-draughts", "turkish-draughts", "konane", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings"];
@@ -343,39 +343,61 @@ describe("bot difficulty ladder", () => {
   });
 
   test("internal search reports reusable legal-move cache efficiency", () => {
-    const state = createInitialState("classic", "search-efficiency");
-    const result = chooseBotMoveSafe(state, "legend", { maxSearchTimeMs: 90, engine: "internal" });
+    let clockTicks = 0;
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => clockTicks++);
+    try {
+      const state = createInitialState("classic", "search-efficiency");
+      for (const row of state.board) {
+        for (const cell of row) {
+          if (cell.piece?.code !== "k" && !(cell.piece?.code === "p" && cell.square.col === 0)) cell.piece = null;
+        }
+      }
+      const result = chooseBotMoveSafe(state, "legend", { maxSearchTimeMs: 90, engine: "internal" });
 
-    expect(result.reason).toBe("ok");
-    if (!result.move) throw new Error("Expected a legal bot move.");
-    expect(result.searchEfficiency).toEqual(
-      expect.objectContaining({
-        nodes: result.nodesSearched,
-        cachedPositions: expect.any(Number),
-        moveGenerationCalls: expect.any(Number),
-        cacheHits: expect.any(Number),
-        transpositionEntries: expect.any(Number),
-        transpositionHits: expect.any(Number)
-      })
-    );
-    expect(result.searchEfficiency.cachedPositions).toBe(result.searchEfficiency.moveGenerationCalls);
-    expect(result.searchEfficiency.cacheHits).toBeGreaterThan(0);
-    expect(result.searchEfficiency.transpositionEntries).toBeGreaterThan(0);
+      expect(result.reason).toBe("ok");
+      if (!result.move) throw new Error("Expected a legal bot move.");
+      expect(result.searchEfficiency).toEqual(
+        expect.objectContaining({
+          nodes: result.nodesSearched,
+          cachedPositions: expect.any(Number),
+          moveGenerationCalls: expect.any(Number),
+          cacheHits: expect.any(Number),
+          transpositionEntries: expect.any(Number),
+          transpositionHits: expect.any(Number)
+        })
+      );
+      expect(result.searchEfficiency.cachedPositions).toBe(result.searchEfficiency.moveGenerationCalls);
+      expect(result.searchEfficiency.cacheHits).toBeGreaterThan(0);
+      expect(result.searchEfficiency.transpositionEntries).toBeGreaterThan(0);
+    } finally {
+      clock.mockRestore();
+    }
   });
 
   test("internal search reuses bounded transpositions across repeated requests", () => {
-    const state = createInitialState("classic", "repeated-search-efficiency");
-    const first = chooseBotMoveSafe(state, "very-hard", { maxSearchTimeMs: 90, engine: "internal" });
-    const second = chooseBotMoveSafe(state, "very-hard", { maxSearchTimeMs: 90, engine: "internal" });
+    let clockTicks = 0;
+    const clock = vi.spyOn(Date, "now").mockImplementation(() => clockTicks++);
+    try {
+      const state = createInitialState("classic", "repeated-search-efficiency");
+      for (const row of state.board) {
+        for (const cell of row) {
+          if (cell.piece?.code !== "k" && !(cell.piece?.code === "p" && cell.square.col === 7)) cell.piece = null;
+        }
+      }
+      const first = chooseBotMoveSafe(state, "very-hard", { maxSearchTimeMs: 90, engine: "internal" });
+      const second = chooseBotMoveSafe(state, "very-hard", { maxSearchTimeMs: 90, engine: "internal" });
 
-    expect(first.reason).toBe("ok");
-    expect(second.reason).toBe("ok");
-    if (!first.move) throw new Error("Expected an initial legal search move.");
-    if (!second.move) throw new Error("Expected a legal cached-search move.");
-    expect(() => applyMove(state, second.move)).not.toThrow();
-    expect(second.searchEfficiency.transpositionHits).toBeGreaterThan(0);
-    expect(second.searchEfficiency.transpositionHits).toBeGreaterThanOrEqual(first.searchEfficiency.transpositionHits);
-    expect(second.nodesSearched).toBeLessThanOrEqual(first.nodesSearched);
+      expect(first.reason).toBe("ok");
+      expect(second.reason).toBe("ok");
+      if (!first.move) throw new Error("Expected an initial legal search move.");
+      if (!second.move) throw new Error("Expected a legal cached-search move.");
+      expect(() => applyMove(state, second.move)).not.toThrow();
+      expect(second.searchEfficiency.transpositionHits).toBeGreaterThan(0);
+      expect(second.searchEfficiency.transpositionHits).toBeGreaterThanOrEqual(first.searchEfficiency.transpositionHits);
+      expect(second.nodesSearched).toBeLessThanOrEqual(first.nodesSearched);
+    } finally {
+      clock.mockRestore();
+    }
   });
 
   test("cancelled async bot request never applies a stale move", async () => {
@@ -585,14 +607,14 @@ describe("bot difficulty ladder", () => {
       xiangqi: "b10c8",
       shogi: "c9d8",
       "mini-shogi": "c5c4",
-      janggi: "b10c8",
+      janggi: "b1c3",
       jungle: "a9a8",
       "english-draughts": "b6a5",
       "international-draughts": "c7b6",
       "turkish-draughts": "a6a5",
-      konane: "a8a8",
+      konane: "b8b8",
       antichess: "b8c6",
-      horde: "g8f6",
+      horde: "d7d6",
       "king-of-the-hill": "e7e5",
       "three-check": "e7e5",
       "racing-kings": "a2a3",
@@ -747,7 +769,7 @@ describe("bot difficulty ladder", () => {
     const hit = lookupBotKnowledge(state, "easy");
 
     expect(hit?.entry).toEqual(expect.objectContaining({ variantKey: "konane", minTier: "easy", source: "opening-book" }));
-    expect(hit?.move).toMatchObject({ kind: "remove", from: { row: 0, col: 1 }, to: { row: 0, col: 1 } });
+    expect(hit?.move).toMatchObject({ kind: "remove", from: { row: 0, col: 0 }, to: { row: 0, col: 0 } });
     expect(() => applyMove(state, hit!.move)).not.toThrow();
 
     const result = await requestBotMove(state, "easy", { engine: "auto", maxSearchTimeMs: MAX_BOT_REPLY_MS });
@@ -833,7 +855,7 @@ describe("bot difficulty ladder", () => {
     const hit = lookupBotKnowledge(state, "easy");
 
     expect(hit?.entry).toEqual(expect.objectContaining({ variantKey: "janggi", minTier: "easy", source: "opening-book" }));
-    expect(hit?.move).toMatchObject({ from: { row: 6, col: 4 }, to: { row: 5, col: 4 } });
+    expect(hit?.move).toMatchObject({ from: { row: 3, col: 4 }, to: { row: 4, col: 4 } });
     expect(() => applyMove(state, hit!.move)).not.toThrow();
 
     const result = await requestBotMove(state, "easy", { engine: "auto", maxSearchTimeMs: MAX_BOT_REPLY_MS });

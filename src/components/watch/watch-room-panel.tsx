@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { ExternalLink, Radio, Search, Swords, Trophy, Users } from "lucide-react";
+import { ArrowUpRight, Eye, Radio, Search, Swords, X } from "lucide-react";
 
+import { EmptyNote } from "@/components/community/empty-note";
 import type { RuntimeRoomList } from "@/lib/realtime/runtime";
+import type { RoomStatus } from "@/lib/realtime/types";
 import { getGameCatalog, getGameCatalogEntry } from "@/lib/catalog";
 import { playSetupHref } from "@/lib/routing/play-links";
 import { watchHref } from "@/lib/routing/watch-links";
@@ -13,103 +15,112 @@ type WatchRoomPanelProps = {
   roomList: RuntimeRoomList;
 };
 
+const statusFilters = [
+  { key: "all", label: "All" },
+  { key: "active", label: "Live" },
+  { key: "waiting", label: "Waiting" }
+] as const;
+
+const statusLabels: Record<RoomStatus, string> = { active: "Live", waiting: "Waiting", completed: "Finished", abandoned: "Abandoned" };
+
+/** Words the room search matches on status or rating; they never name a single room. */
+const filterWords = new Set(["all", "rated", "casual", "live", "waiting", "active", "finished", "completed", "abandoned", "popular"]);
+
 export function WatchRoomPanel({ hasRooms, locale, requestedVariant, roomList }: WatchRoomPanelProps) {
   const { query: searchQuery, sort: roomSort, status: statusFilter } = roomList.filters;
-  const hasVisibleRooms = roomList.rooms.length > 0;
+  const showFilters = hasRooms || roomList.rooms.length > 0;
   const searchedRoom = createSearchedRoomShortcut(searchQuery, requestedVariant, roomList);
+  const linkFor = (values: { status?: string; sort?: string }) => watchHref(locale, { q: searchQuery, variant: requestedVariant, status: statusFilter, sort: roomSort, ...values }) as never;
+  const variantEntry = requestedVariant ? getGameCatalogEntry(requestedVariant) : undefined;
+  const variantName = variantEntry?.name.short ?? variantEntry?.name.english ?? requestedVariant;
 
   return (
-    <div className="panel watch-empty-state">
-      {searchedRoom ? (
-        <Link href={`/${locale}/play/${searchedRoom.variantKey}?mode=spectate&room=${encodeURIComponent(searchedRoom.roomId)}` as never} className="focus-ring watch-room-lookup" aria-label={`Open searched room ${searchedRoom.roomId}`}>
-          <span>
-            <strong>Open searched room</strong>
-            <small>{searchedRoom.variantLabel} / {searchedRoom.roomId}</small>
-          </span>
-          <ExternalLink size={16} />
-        </Link>
-      ) : null}
-      {hasVisibleRooms ? (
-        <>
-          <h2>Live room list</h2>
-          <p>Public rooms from Cloudflare D1. Search by room, game, status, or rated state.</p>
-          <div className="watch-room-list" aria-label="Public rooms">
-            {roomList.rooms.map((room) => (
-              <Link
-                key={room.roomId}
-                href={`/${locale}/play/${room.variantKey}?mode=spectate&room=${encodeURIComponent(room.roomId)}`}
-                className="focus-ring watch-room-card"
-                aria-label={`Spectate ${room.variantKey} room ${room.roomId}. ${room.status}, ${room.rated ? "rated" : "casual"}, ${room.moveVersion} plies, ${room.spectators} watching.`}
-              >
-                <span>
-                  <strong>{room.variantKey}</strong>
-                  <small>{room.status} / {room.rated ? "rated" : "casual"}</small>
-                </span>
-                <span>
-                  <strong>{room.moveVersion}</strong>
-                  <small>plies</small>
-                </span>
-                <span>
-                  <strong>{room.spectators}</strong>
-                  <small>watching</small>
-                </span>
+    <>
+      <form className="cm-toolbar" aria-label="Watch room controls" action={`/${locale}/watch`}>
+        <div className="cm-search">
+          <button type="submit" className="focus-ring" aria-label="Search" title="Search"><Search size={15} /></button>
+          <input type="search" name="q" defaultValue={searchQuery} placeholder={showFilters ? "Room, game, rated" : "Room ID"} aria-label="Search rooms" enterKeyHint="search" />
+        </div>
+        {requestedVariant ? <input type="hidden" name="variant" value={requestedVariant} /> : null}
+        {statusFilter !== "all" ? <input type="hidden" name="status" value={statusFilter} /> : null}
+        {roomSort !== "recent" ? <input type="hidden" name="sort" value={roomSort} /> : null}
+        {showFilters ? (
+          <div className="cm-chips" role="group" aria-label="Room filters">
+            {requestedVariant ? (
+              <Link href={watchHref(locale, { q: searchQuery, status: statusFilter, sort: roomSort }) as never} className="cm-chip cm-chip-clear focus-ring" title="Clear game filter">
+                {variantName}
+                <X size={14} aria-hidden="true" />
+                <span className="sr-only">, clear game filter</span>
+              </Link>
+            ) : null}
+            {statusFilters.map((filter) => (
+              <Link key={filter.key} href={linkFor({ status: filter.key })} className="cm-chip focus-ring" aria-current={statusFilter === filter.key ? true : undefined}>
+                {filter.label}
               </Link>
             ))}
+            <Link href={linkFor({ sort: roomSort === "spectators" ? "recent" : "spectators" })} className="cm-chip cm-chip-toggle focus-ring" aria-current={roomSort === "spectators" ? true : undefined} title="Most watched first">
+              Popular
+            </Link>
           </div>
-        </>
-      ) : (
-        <>
-          <h2>{hasRooms ? "No rooms match those filters" : "No public rooms right now"}</h2>
-          <p>{hasRooms ? "Clear the search or switch back to all rooms." : "Start a room or check back when a public game is live."}</p>
-        </>
-      )}
-      <form className="watch-room-tools" aria-label="Watch room controls" action={`/${locale}/watch`}>
-        <label className="watch-room-search">
-          <Search size={15} />
-          <input name="q" defaultValue={searchQuery} placeholder="Room, game, rated" aria-label="Search rooms" />
-        </label>
-        <button type="submit" className="focus-ring">
-          <Search size={15} />
-          Search
-        </button>
-        {requestedVariant ? <input type="hidden" name="variant" value={requestedVariant} /> : null}
-        <div className="watch-filter-list" role="group" aria-label="Room filters">
-          <Link href={watchHref(locale, { q: searchQuery, variant: requestedVariant, status: "all", sort: roomSort }) as never} className={`focus-ring watch-filter-chip${statusFilter === "all" ? " is-active" : ""}`} aria-current={statusFilter === "all" ? true : undefined}>
-            <Radio size={15} />
-            All
-          </Link>
-          <Link href={watchHref(locale, { q: searchQuery, variant: requestedVariant, status: "active", sort: roomSort }) as never} className={`focus-ring watch-filter-chip${statusFilter === "active" ? " is-active" : ""}`} aria-current={statusFilter === "active" ? true : undefined}>
-            <Radio size={15} />
-            Live
-          </Link>
-          <Link href={watchHref(locale, { q: searchQuery, variant: requestedVariant, status: "waiting", sort: roomSort }) as never} className={`focus-ring watch-filter-chip${statusFilter === "waiting" ? " is-active" : ""}`} aria-current={statusFilter === "waiting" ? true : undefined}>
-            <Radio size={15} />
-            Waiting
-          </Link>
-          <Link href={watchHref(locale, { q: searchQuery, variant: requestedVariant, status: statusFilter, sort: "spectators" }) as never} className={`focus-ring watch-filter-chip${roomSort === "spectators" ? " is-active" : ""}`} aria-current={roomSort === "spectators" ? true : undefined}>
-            <Users size={15} />
-            Spectators
+        ) : null}
+      </form>
+
+      {searchedRoom ? (
+        <div className="cm-list">
+          <Link href={spectateHref(locale, searchedRoom.variantKey, searchedRoom.roomId)} className="cm-row focus-ring">
+            <span className="cm-row-main">
+              <span className="cm-row-title">Open searched room</span>
+              <span className="cm-row-sub">{searchedRoom.variantLabel} / {searchedRoom.roomId}</span>
+            </span>
+            <ArrowUpRight size={16} aria-hidden="true" />
           </Link>
         </div>
-      </form>
-      <div className="watch-actions">
-        <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="action-primary focus-ring watch-action-button">
-          <Swords size={16} />
-          Start playing
-        </Link>
-        <Link href={`/${locale}/leaderboards`} className="action-secondary focus-ring watch-action-button">
-          <Trophy size={16} />
-          Leaderboards
-        </Link>
-      </div>
-    </div>
+      ) : null}
+
+      {roomList.rooms.length ? (
+        <div className="cm-list" aria-label="Public rooms">
+          {roomList.rooms.map((room) => (
+            <Link key={room.roomId} href={spectateHref(locale, room.variantKey, room.roomId)} className="cm-row focus-ring">
+              <span className="cm-row-main">
+                <span className="cm-row-title">{getGameCatalogEntry(room.variantKey)?.name.english ?? room.variantKey}</span>
+                <span className="cm-row-sub">
+                  <span className="watch-status" data-status={room.status}>{statusLabels[room.status] ?? room.status}</span> · {room.rated ? "Rated" : "Casual"} · {room.moveVersion} plies
+                </span>
+              </span>
+              <span className="cm-row-end">
+                <Eye size={14} aria-hidden="true" />
+                {room.spectators}
+                <span className="sr-only"> watching</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      ) : hasRooms ? (
+        <EmptyNote icon={Radio} title="No rooms match those filters" text="Try another search or show all rooms.">
+          <Link href={watchHref(locale) as never} className="action-secondary focus-ring">Show all rooms</Link>
+        </EmptyNote>
+      ) : (
+        <EmptyNote icon={Radio} title="No public rooms right now" text="Live public games show up here.">
+          <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="action-primary focus-ring">
+            <Swords size={16} />
+            Play online
+          </Link>
+        </EmptyNote>
+      )}
+    </>
   );
 }
 
+function spectateHref(locale: string, variantKey: string, roomId: string) {
+  return `/${locale}/play/${variantKey}?mode=spectate&room=${encodeURIComponent(roomId)}` as never;
+}
+
+/** Offers a direct spectate link only for id-like queries, not for game names or filter words. */
 function createSearchedRoomShortcut(searchQuery: string, requestedVariant: string | undefined, roomList: RuntimeRoomList) {
   const roomId = searchQuery.trim();
-  if (!roomId) return null;
+  if (!roomId || /\s/.test(roomId) || filterWords.has(roomId.toLowerCase())) return null;
   const exactRoom = roomList.rooms.find((room) => room.roomId === roomId || room.gameId === roomId);
+  if (!exactRoom && getGameCatalogEntry(roomId)) return null;
   const variantKey = exactRoom?.variantKey ?? resolveWatchVariant(requestedVariant) ?? inferVariantFromRoomId(roomId) ?? "classic";
   const variant = getGameCatalogEntry(variantKey);
   return {

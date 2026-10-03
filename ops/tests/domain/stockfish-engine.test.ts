@@ -85,5 +85,6 @@ describe("Stockfish engine adapter", () => {
     const commands = buildStockfishCommands(state, "grandmaster", ["h2h3"], 480);
 
     expect(commands.at(-1)).toBe("go movetime 480 depth 15");
+    expect(buildStockfishCommands(state, "grandmaster", [], 12).at(-1)).toBe("go movetime 12 depth 15");
   });
 });

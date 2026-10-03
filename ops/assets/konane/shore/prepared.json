@@ -1,0 +1,22 @@
+{
+  "files": [
+    {
+      "name": "light-stone",
+      "sourceSha256": "cfef186506b84f1c70c2a046ef935986432897a4263f1c9a4519ee5c1cc8b8e7",
+      "runtimeSha256": "2778bd0285b08fde1a02c2b31cda5ac5fb78603798cf7ee78f1e02facac477a2",
+      "bytes": 170380
+    },
+    {
+      "name": "dark-stone",
+      "sourceSha256": "f156291c15c6523ebcc5014616c23692b38acf11c7819ba6de65e900896c7f94",
+      "runtimeSha256": "c30e1c69a83c9e076a842f20f0e945865d327f9e8e4b272d64d17fba27cefaed",
+      "bytes": 208940
+    },
+    {
+      "name": "board-colour",
+      "sourceSha256": "f4a867c301d8c11df17be8bf7a0e447abec340559f0eea42c39300f172baa991",
+      "runtimeSha256": "1f5e652587b01ebf5b10d09f4540e73f3846c803e21b89b7858c13a8472d881c",
+      "bytes": 477532
+    }
+  ]
+}

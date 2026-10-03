@@ -1,31 +1,24 @@
 import Link from "next/link";
-import { BarChart3, History, Play } from "lucide-react";
+import { History, Swords } from "lucide-react";
 
-import { InfoHint } from "@/components/ui/info-hint";
+import { EmptyNote } from "@/components/community/empty-note";
 import { playSetupHref } from "@/lib/routing/play-links";
 
-type HistoryEmptyStateProps = {
-  hasSavedRows: boolean;
-  locale: string;
-};
+export function HistoryEmptyState({ hasSavedRows, locale }: { hasSavedRows: boolean; locale: string }) {
+  if (hasSavedRows) {
+    return (
+      <EmptyNote title="No matching games" text="Try another search or result.">
+        <Link className="action-secondary focus-ring" href={`/${locale}/history`}>Clear filters</Link>
+      </EmptyNote>
+    );
+  }
 
-export function HistoryEmptyState({ hasSavedRows, locale }: HistoryEmptyStateProps) {
   return (
-    <div className="panel account-empty-state">
-      <History size={24} />
-      <h2>{hasSavedRows ? "No matching games" : "No saved matches yet"}</h2>
-      <p>{hasSavedRows ? "Try a different search or result filter." : "Saved games, review links, and rating changes appear here after real matches."}</p>
-      <InfoHint text={hasSavedRows ? "Search filters only the saved Cloudflare D1 match rows already available." : "History uses stored match data only. It stays empty until Cloudflare D1 has a real finished game for this account."} />
-      <div className="watch-actions">
-        <Link className="action-primary focus-ring inline-flex items-center gap-2 px-4 py-2" href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never}>
-          <Play size={16} />
-          Play
-        </Link>
-        <Link className="action-secondary focus-ring inline-flex items-center gap-2 px-4 py-2" href={`/${locale}/leaderboards`}>
-          <BarChart3 size={16} />
-          Ratings
-        </Link>
-      </div>
-    </div>
+    <EmptyNote icon={History} title="No online games yet" text="Online games you finish appear here, with review links and rating changes.">
+      <Link className="action-primary focus-ring" href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never}>
+        <Swords size={16} />
+        Play online
+      </Link>
+    </EmptyNote>
   );
 }

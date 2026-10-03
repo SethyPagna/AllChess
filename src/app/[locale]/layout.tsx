@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Crown, Menu } from "lucide-react";
+import { Crown } from "lucide-react";
 
-import { AppMobileNavigation, AppSidebarNavigation } from "@/components/shell/app-navigation";
+import { AppRailNavigation, AppTabBar } from "@/components/shell/app-navigation";
 import { LocaleSwitcher } from "@/components/shell/locale-switcher";
 import { MobileAutoHideHeader } from "@/components/shell/mobile-auto-hide-header";
-import { createAppNavGroups } from "@/components/shell/navigation-config";
-import { NotificationCenter } from "@/components/shell/notification-center";
+import { createAppNavItems, createAppSecondaryItems } from "@/components/shell/navigation-config";
 import { ThemeProvider } from "@/components/shell/theme-provider";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
+import { OfflinePack } from "@/components/shell/offline-pack";
+import { InstallApp } from "@/components/shell/install-app";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { locales, normalizeLocale, rtlLocales, type LocaleCode } from "@/lib/i18n/locales";
 
@@ -41,7 +42,7 @@ export async function generateMetadata({
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
   return {
-    title: `${t("app.name")} - ${t("lobby.title")}`,
+    title: t("app.name"),
     description: t("app.description")
   };
 }
@@ -56,9 +57,23 @@ export default async function LocaleLayout({
   const { locale: rawLocale } = await params;
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
-  const navGroups = createAppNavGroups(t);
-  const profileHref = `/${locale}/profile/player`;
-  const loginHref = `/${locale}/login`;
+  const items = createAppNavItems(t);
+  const secondary = createAppSecondaryItems(t);
+  const themeLabels = { light: t("settings.light"), dark: t("settings.dark"), system: t("settings.system") };
+  const quickTools = (
+    <>
+      <ThemeToggle labels={themeLabels} />
+      <Suspense fallback={<span className="icon-btn shell-icon-control" aria-hidden="true" />}>
+        <LocaleSwitcher active={locale as LocaleCode} />
+      </Suspense>
+    </>
+  );
+  const brand = (
+    <>
+      <span className="brand-mark"><Crown size={16} strokeWidth={2.4} /></span>
+      <span className="brand-name">{t("app.name")}</span>
+    </>
+  );
 
   return (
     <html lang={locale} dir={rtlLocales.has(locale) ? "rtl" : "ltr"} suppressHydrationWarning>
@@ -67,62 +82,23 @@ export default async function LocaleLayout({
       </head>
       <body>
         <ThemeProvider>
-          <div className="app-shell">
-            <aside className="card app-sidebar" aria-label="Primary navigation">
-              <Link href={`/${locale}`} className="btn btn-ghost app-brand focus-ring">
-                <span className="app-brand-mark">
-                  <Crown size={22} strokeWidth={2.7} />
-                </span>
-                <span>
-                  <span className="app-brand-name">{t("app.name")}</span>
-                </span>
-              </Link>
-              <AppSidebarNavigation account={{ href: profileHref, icon: "user", label: t("nav.profileHistory") }} auth={{ href: loginHref, icon: "login", label: t("nav.login") }} groups={navGroups} locale={locale} />
-              <div className="app-responsive-tools" aria-label="Quick settings">
-                <ThemeToggle
-                  labels={{
-                    light: t("settings.light"),
-                    dark: t("settings.dark"),
-                    system: t("settings.system")
-                  }}
-                />
-                <Suspense fallback={<span className="action-secondary grid h-10 w-10 place-items-center text-sm">...</span>}>
-                  <LocaleSwitcher active={locale as LocaleCode} />
-                </Suspense>
-                <NotificationCenter />
+          <div className="shell">
+            <aside className="rail" aria-label="Primary navigation">
+              <Link href={`/${locale}`} className="rail-brand focus-ring">{brand}</Link>
+              <AppRailNavigation items={items} secondary={secondary} locale={locale} />
+              <div className="rail-tools" role="group" aria-label="Quick settings">
+                {quickTools}
+                <InstallApp />
+                <OfflinePack />
               </div>
             </aside>
-            <div className="app-main">
+            <div className="shell-main">
               <MobileAutoHideHeader>
-                <Link href={`/${locale}`} className="btn btn-ghost app-mobile-brand focus-ring">
-                  <span className="app-brand-mark">
-                    <Crown size={20} strokeWidth={2.7} />
-                  </span>
-                  <span>{t("app.name")}</span>
-                </Link>
-                <div className="app-mobile-tools" aria-label="Quick settings">
-                  <ThemeToggle
-                    labels={{
-                      light: t("settings.light"),
-                      dark: t("settings.dark"),
-                      system: t("settings.system")
-                    }}
-                  />
-                  <Suspense fallback={<span className="action-secondary grid h-10 w-10 place-items-center text-sm">...</span>}>
-                    <LocaleSwitcher active={locale as LocaleCode} />
-                  </Suspense>
-                  <NotificationCenter />
-                </div>
-                <details className="dropdown app-menu">
-                  <summary className="btn btn-square focus-ring action-secondary grid h-10 w-10 cursor-pointer list-none place-items-center" aria-label="Open navigation menu" title="Open navigation menu">
-                    <Menu aria-hidden="true" size={18} />
-                  </summary>
-                  <div className="dropdown-content app-menu-panel">
-                    <AppMobileNavigation account={{ href: profileHref, icon: "user", label: t("nav.profileHistory") }} auth={{ href: loginHref, icon: "login", label: t("nav.login") }} groups={navGroups} locale={locale} />
-                  </div>
-                </details>
+                <Link href={`/${locale}`} className="topbar-brand focus-ring">{brand}</Link>
+                <div className="topbar-tools" role="group" aria-label="Quick settings">{quickTools}</div>
               </MobileAutoHideHeader>
               <main className="app-content">{children}</main>
+              <AppTabBar items={items} secondary={secondary} locale={locale} moreLabel={t("nav.more")} tools={<><InstallApp /><OfflinePack /></>} />
             </div>
           </div>
         </ThemeProvider>

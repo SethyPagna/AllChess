@@ -1,0 +1,30 @@
+{
+  "provider": "built-in image_gen",
+  "date": "2026-09-27",
+  "purpose": "Individual transparent 2D masters and references for original Blender geometry",
+  "assets": [
+    {
+      "file": "light-man.png",
+      "generation": "exec-da331ba9-79f2-4055-bb21-1da9788c6e4d.png",
+      "prompt": "Create ONE production game sprite: a single LIGHT MAN draughts/checkers counter from a luxurious contemporary carved rosette set. Photorealistic studio product render with genuine transparent background alpha, no floor, no cast shadow outside object, no text, no frame. Square 1024x1024 canvas, object centered with 12% clear margin. Orthographic camera elevated 60 degrees above the tabletop, directly in front (no yaw): broad elliptical top and visible front edge. One flat circular turned counter, diameter 40 mm and height 9 mm. Pale warm boxwood with fine realistic wood grain, satin wax not glossy plastic. Top has a clearly carved recessed twelve-petal radial rosette around a small smooth circular central boss, surrounded by two thin concentric turned rings. Edge has 32 fine shallow vertical reeds and softly beveled rims. Geometry crisp and believable at small playing size, tasteful collectible wooden game piece, clean silhouette, soft broad key light from upper left and gentle fill. No crown, no chess shapes, no stacking, no metal, no decorations outside the counter. This will be the light ordinary piece of a matching board-game collection."
+    },
+    {
+      "file": "dark-man.png",
+      "generation": "exec-f2c0474c-d1dc-4b27-957b-77d871a5e41e.png",
+      "references": ["light-man.png"],
+      "prompt": "Create the DARK MAN counterpart of this exact draughts rosette game sprite. Keep the exact single-counter geometry, twelve carved petals, two concentric rings, reeded edge, camera elevation, scale, framing, and transparent alpha background. Change only the wood species to rich deep chocolate walnut with subtle reddish brown grain and satin wax. Use broad neutral studio lighting so the carved cavities remain readable and the edge stays sharply separated from transparency. Dark enough to distinguish unambiguously from pale boxwood at a 32px playing size, with controlled warm highlights, not black plastic, not bronze. No text, no crown, no additional objects. Output one square transparent production sprite."
+    },
+    {
+      "file": "light-king.png",
+      "generation": "exec-f1af257c-baa2-437f-856e-c5614f101c2d.png",
+      "references": ["light-man.png"],
+      "prompt": "Create ONE LIGHT KING draughts/checkers sprite matching this reference set exactly: TWO identical pale boxwood rosette counters stacked neatly on top of each other. Both counter rims must be separately visible, with a thin natural dark contact seam between them, total height exactly twice one counter. Top counter retains the same twelve-petal carved rosette, small central boss, two concentric rings and fine vertical reeding around edge. Lower counter same wood/diameter/reeded edge. No chess crown or metal. Camera is orthographic, elevated 60 degrees above tabletop, same front-facing orientation as reference. Square transparent alpha canvas, centered object with at least 10% clear margin on all sides, diameter framed to same relative size as reference; keep whole stack inside canvas. Satin boxwood grain and soft upper-left light. No floor, no text, no surrounding shadow. Crisp detailed realistic carved wooden game piece. Exactly two counters, not three."
+    },
+    {
+      "file": "dark-king.png",
+      "generation": "exec-46865bff-eb15-4ac7-88bd-c5ccb295507e.png",
+      "references": ["light-king.png", "dark-man.png"],
+      "prompt": "Generate ONE DARK KING draughts game sprite. Image 1 is the exact geometry, two stacked rosette counters, camera and framing to preserve. Image 2 is the exact chocolate walnut wood colour, grain and satin finish to use. Apply Image 2's dark walnut material to both counters of Image 1. Preserve the two clearly distinct reeded counter edges and contact seam, twelve-petal carved top, central boss and double rings. Keep genuine transparent alpha background, square canvas, same lighting, clean silhouette and clear margin. No text, no floor, no separate shadow, no crown, exactly two stacked counters. Dark warm walnut counterpart that is easy to distinguish from the pale boxwood king at small board size."
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+# Carved Shogi artwork
+
+Fifteen individually generated transparent piece masters and a separate opaque kaya-style board-colour master form the Carved (`hori`) collection for Shogi and Mini Shogi. They were generated with the built-in `image_gen` tool, one image per face. Exact prompts, reference roles and generation identifiers are preserved in `prompts.json` and `board-prompt.json`.
+
+The two kings use 玉 and 王. The remaining thirteen faces are shared by both owners: 飛, 角, 金, 銀, 桂, 香, 歩 and the six red promotion faces 竜, 馬, 全, 圭, 杏, と. Sharing a native face between owners is intentional: the pointed end shows ownership. Captures return to the unpromoted face. The renderer rotates each tile for its current owner and board orientation rather than generating a second, potentially inconsistent character image.
+
+Masters retain their original PNG pixels and alpha. `npx tsx ops/scripts/assets/prepare-hori.ts` fits each piece into a 512px transparent lossless WebP without cutting its silhouette; the opaque board colour becomes a 1024px WebP. Runtime files live in `public/assets/shogi/hori/`. Piece icons preserve the modest physical size hierarchy and keep the pawn/promoted pawn on the same footprint. Printed remains the existing default; the new set is an explicit visual choice.
+
+The board image has no baked grid, pieces, highlights or shadows. In the Wood board colour it spans one complete surface in both views, while lines, grid stars, move indicators and lighting remain live. It also supplies the physical board case and komadai colour in 3D. Other board colours remain independent. The image is a generated diffuse-colour reference, not a scanned or measured PBR material. Optional texture failure retains the existing playable wooden surface.
+
+Matching three-dimensional geometry is independently authored in Blender; see [model source and provenance](../hori-model.md). The 28-root GLB has real front/reverse recesses, inset lacquer, bevelled wedges and embedded longitudinal/endgrain PBR maps. Generated brush lettering and the verified, strengthened Noto Serif outlines in 3D are coordinated interpretations, not exact reconstructions. This is an original contemporary set, not a replica of a named artisan's work. The editable source and packed material maps are retained in `../hori.blend`.
+
+Clear and Letters remain independent 2D readability choices. Piece collection, readability style, board colour, view and material preferences are stored per game. All delivered assets are included in the public offline pack; private matches and room state are not part of that pack.

@@ -166,6 +166,20 @@ describe("room API", () => {
     });
   }, roomApiTestTimeoutMs);
 
+  test("answers malformed room moves with a 400 instead of throwing", async () => {
+    runtime.env = { ALLCHESS_D1: createRoomApiD1("room-1") };
+    const { POST } = await import("@/app/api/rooms/[id]/move/route");
+
+    for (const move of [{ kind: "drop", from: { row: -1, col: -1 }, to: { row: 4, col: 4 } }, { kind: "remove", from: { row: 6, col: 4 }, to: { row: 4, col: 4 } }, { from: { row: 6 } }]) {
+      const response = await POST(
+        new Request("http://allchess.test/api/rooms/room-1/move", { method: "POST", body: JSON.stringify({ expectedMoveVersion: 0, move }) }),
+        { params: Promise.resolve({ id: "room-1" }) }
+      );
+      expect(response.status).toBe(400);
+      await expect(response.json()).resolves.toMatchObject({ type: "move_rejected" });
+    }
+  }, roomApiTestTimeoutMs);
+
   test("rejects stale D1 room move transmissions", async () => {
     runtime.env = { ALLCHESS_D1: createRoomApiD1("room-1") };
     const { POST } = await import("@/app/api/rooms/[id]/move/route");

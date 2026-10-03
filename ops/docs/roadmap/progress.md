@@ -1,10 +1,10 @@
 # AllChess Progress Tracker
 
-**Current Phase:** Phase 02 - Development Workflow And Quality Gates
+**Current Phase:** Ongoing game studio, regional rules, 3D, offline and multiplayer improvements
 
-**Current Status:** Repository organization and verification workflow cleanup are complete; next work should continue phase-scoped product improvements.
+**Current Status:** The product goal continues on `codex/compact-game-studio`. [Lossless bot knowledge delivery](bot-knowledge-delivery.md) reduces the built offline pack to 79.64 MiB, preserving every training entry and existing asset. Full lint, strict typechecks, 32 focused 3D tests and the complete production build pass. Online and cold-offline functional checks pass; Classic 3D startup misses the unchanged five-second target. The full suite reports 1,362 passed, 14 failed and 4 skipped, so verification is not fully green. There are 17 distinct collections across 11 native families; sixteen more designs and further art, camera, physical-device and multiplayer work remain. The earlier [Shore checkpoint](shore-checkpoint.md) and phase table below describe historical evidence and plans. Individual delivery notes record current scope and results.
 
-**Last Updated:** 2026-05-28
+**Last Updated:** 2026-09-30
 
 ---
 
@@ -99,3 +99,7 @@ Before each phase commit:
 - `ops/docs/roadmap/decisions.md` updated for architecture or product choices.
 - `ops/docs/roadmap/change-log.md` updated for user-visible, technical, workflow, or documentation changes.
 - `git status --short` reviewed so unrelated user changes are not staged.
+
+## 2026-10-03 hosted release
+
+Release work uses the latest studio branch with bot deadline and exact offline shell repairs. Hosting is now Cloudflare-only in the authorized jamesung.kh Apps account. Full lint and strict TypeScript pass. The serial suite passed 1,398 tests; the two obsolete deployment/root-file expectations were repaired, and the affected deployment, organization and documentation checks pass (25 tests). GitHub Actions run 37095802096 deployed source f30b8b6 successfully to `https://allchess.pagna.workers.dev`, Worker version `513d94a5-776d-4fe7-ae2a-c9c74423458b`. All 63 matching incremental-cache entries uploaded; all 180 public offline-pack assets passed byte and SHA256 verification. Production catalog metadata now exposes all 21 playable games. Browser verification covers a Stockfish reply to e4 and the rendered native 3D chess board. Vercel is disconnected and paused. The public portfolio at `https://sethy-pagna.pages.dev/#project/allchess` now has current screenshots, October 3 release status, released source and app links. Its local/bot arcade uses the same engine and artwork; both embedded Full app links were corrected and verified on portfolio source `62f0ca1`. Twelve obsolete local source checkouts were removed after preserving source history and unsaved changes in private recovery evidence. This release does not close the broader collections, physical-device or account feature roadmap.

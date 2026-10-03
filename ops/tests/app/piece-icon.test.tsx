@@ -9,6 +9,35 @@ import { PieceIcon, getPieceSkinOptions } from "@/components/board/piece-icon";
 const repoRoot = process.cwd();
 
 describe("PieceIcon", () => {
+  test("uses the red horse character on Xiangqi discs", () => {
+    const horse = renderToStaticMarkup(<PieceIcon code="h" owner="red" variantKey="xiangqi" />);
+    expect(horse).toContain("傌");
+    expect(horse).not.toContain("傜");
+  });
+  test.each([["crazyhouse", "king", "rook"], ["chaturanga", "raja", "chariot"], ["shatranj", "shah", "rukh"]])("renders recognizable regional silhouettes for %s", (variantKey, kingName, rookName) => {
+    const king = renderToStaticMarkup(<PieceIcon code="k" owner="white" variantKey={variantKey} />);
+    const rook = renderToStaticMarkup(<PieceIcon code="r" owner="black" variantKey={variantKey} />);
+    expect(king).toContain(`data-piece="${kingName}"`);
+    expect(rook).toContain(`data-piece="${rookName}"`);
+    expect(king).toContain("<svg");
+    expect(rook).not.toContain('data-piece="native"');
+  });
+
+  test.each([["chaturanga", "e"], ["shatranj", "a"]])("keeps ancient elephant pieces distinct from pawns in %s", (variantKey, code) => {
+    const piece = renderToStaticMarkup(<PieceIcon code={code} owner="white" variantKey={variantKey} />);
+    expect(piece).toContain(`data-piece="${variantKey === "chaturanga" ? "elephant" : "alfil"}"`);
+    expect(piece).not.toContain('data-piece="bishop"');
+    expect(piece).not.toContain('data-piece="pawn"');
+  });
+  test.each([["chaturanga", "chariot"], ["shatranj", "rukh"]])("applies the selected carved finish without losing %s identity", (variantKey, pieceName) => {
+    const piece = renderToStaticMarkup(<PieceIcon code="r" owner="black" variantKey={variantKey} pieceSkin="silhouette" />);
+    expect(piece).toContain('data-skin="silhouette"');
+    expect(piece).toContain(`data-piece="${pieceName}"`);
+    expect(piece).toContain('data-owner="black"');
+    expect(piece).toContain('data-piece-label=');
+    expect(piece).toContain('aria-label=');
+  });
+
   test("renders visually distinct full-size western king and queen icons", () => {
     const king = renderToStaticMarkup(<PieceIcon code="k" owner="white" variantKey="classic" />);
     const queen = renderToStaticMarkup(<PieceIcon code="q" owner="white" variantKey="classic" />);
@@ -19,18 +48,23 @@ describe("PieceIcon", () => {
     expect(king).toContain("viewBox");
     expect(queen).toContain("viewBox");
     expect(king).toContain('data-piece-label="King"');
-    expect(king).toContain('data-skin="western"');
-    expect(king).toContain('data-detail="king-cross"');
-    expect(queen).toContain('data-detail="queen-jewel"');
+    expect(king).toContain('data-skin="marble"');
+    expect(king).toContain('/assets/classic/marble/light_king.png');
+    expect(queen).toContain('/assets/classic/marble/light_queen.png');
   });
 
-  test("renders Makruk met as the queen-style piece", () => {
+  test("renders native Makruk Met and the distinct reverse face of a promoted Bia", () => {
     const met = renderToStaticMarkup(<PieceIcon code="m" owner="white" variantKey="makruk" />);
 
-    expect(met).toContain('data-piece="queen"');
+    expect(met).toContain('data-piece="met"');
     expect(met).toContain('data-skin="makruk"');
-    expect(met).toContain('data-detail="queen-jewel"');
+    expect(met).not.toContain('data-detail="queen-jewel"');
     expect(met).toContain("<title>Met</title>");
+    const promoted = renderToStaticMarkup(<PieceIcon code="m" owner="black" variantKey="makruk" promoted />);
+    expect(promoted).toContain('data-piece="promoted-bia"');
+    expect(promoted).toContain('data-detail="bia-reverse-face"');
+    const alternate = renderToStaticMarkup(<PieceIcon code="m" owner="white" variantKey="makruk" pieceSkin="western" />);
+    expect(alternate).toContain('data-piece="queen"');
   });
 
   test("localizes piece titles for language-specific board labels", () => {
@@ -118,11 +152,11 @@ describe("PieceIcon", () => {
     expect(traditionalTokin).toContain('data-piece-label="\u3068\u91d1"');
   });
 
-  test("renders draughts men and kings as checker discs", () => {
-    const man = renderToStaticMarkup(<PieceIcon code="p" owner="white" variantKey="english-draughts" />);
-    const king = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="english-draughts" promoted />);
-    const internationalKing = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="international-draughts" promoted />);
-    const turkishKing = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="turkish-draughts" promoted />);
+  test("keeps the Turned draughts option available as checker discs", () => {
+    const man = renderToStaticMarkup(<PieceIcon code="p" owner="white" variantKey="english-draughts" pieceSkin="checker" />);
+    const king = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="english-draughts" pieceSkin="checker" promoted />);
+    const internationalKing = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="international-draughts" pieceSkin="checker" promoted />);
+    const turkishKing = renderToStaticMarkup(<PieceIcon code="x" owner="white" variantKey="turkish-draughts" pieceSkin="checker" promoted />);
 
     expect(man).toContain('data-piece="checker-man"');
     expect(king).toContain('data-piece="checker-king"');
@@ -191,7 +225,6 @@ describe("PieceIcon", () => {
         humanColor="white"
         isActive
         placement="bottom"
-        playerAvatarLabel="G1"
         playerLabel="Guest E129"
         thinking={false}
         timeControl="rapid"
@@ -217,9 +250,9 @@ describe("PieceIcon", () => {
     );
 
     expect(customGuestCard).toContain("<strong>Guest E129</strong>");
-    expect(customGuestCard).toContain('class="player-avatar" aria-hidden="true">G1</div>');
+    expect(customGuestCard).toContain('class="player-dot" data-color="white" aria-hidden="true"');
     expect(customGuestCard).not.toContain("Your profile");
-    expect(fallbackGuestCard).toContain("<strong>Guest White</strong>");
+    expect(fallbackGuestCard).toContain("<strong>You</strong>");
     expect(fallbackGuestCard).not.toContain("Your profile");
   });
 
@@ -290,7 +323,7 @@ describe("PieceIcon", () => {
 
     expect(card).toContain('aria-label="Sente hand pieces"');
     expect(card).toContain('class="hand-tray"');
-    expect(card).toContain('aria-label="Sente hand: Drop \u6b69"');
+    expect(card).toContain('aria-pressed="true"');
     expect(card).toContain('aria-label="Drop \u6b69, 2 in hand"');
     expect(card).toContain('title="Tap or drag \u6b69 to a legal empty square. Nifu, dead-rank, check, and pawn-drop mate rules are checked."');
     expect(card).toContain('class="hand-piece-button focus-ring is-selected"');
@@ -343,12 +376,9 @@ describe("PieceIcon", () => {
     );
 
     expect(shogiCard).toContain('aria-label="Sente hand empty"');
-    expect(shogiCard).toContain('aria-label="Sente hand: 0"');
-    expect(shogiCard).toContain('class="hand-empty-pill"');
-    expect(shogiCard).toContain('aria-hidden="true"');
-    expect(shogiCard).toContain(">0</span>");
+    expect(shogiCard).toContain('class="hand-tray sr-only"');
+    expect(shogiCard).not.toContain('class="hand-empty-pill"');
     expect(crazyhouseCard).toContain('aria-label="White pocket empty"');
-    expect(crazyhouseCard).toContain('aria-label="White pocket: 0"');
   });
 
   test("keeps non-western pieces as strong native symbols", () => {
@@ -363,4 +393,12 @@ describe("PieceIcon", () => {
     expect(shogiPawn).toContain("歩");
     expect(jungleRat).toContain("鼠");
   });
+});
+
+
+test.each([["chaturanga","m","minister"],["shatranj","f","ferz"]])("%s promotion retains its own piece identity and accessible label", (variantKey,code,name) => {
+  const promoted=renderToStaticMarkup(<PieceIcon code={code} owner="black" variantKey={variantKey} promoted/>);
+  expect(promoted).toContain(`data-piece="${name}"`);expect(promoted).toContain('data-promoted="true"');
+  expect(promoted).toContain('data-owner="black"');expect(promoted).toContain(`aria-label="Promoted ${name[0].toUpperCase()+name.slice(1)}"`);
+  expect(promoted).not.toContain('data-piece="queen"');
 });

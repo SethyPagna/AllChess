@@ -1,8 +1,4 @@
 import { CatalogBrowser } from "@/components/catalog/catalog-browser";
-import { CatalogTrainingMetrics } from "@/components/catalog/catalog-training-metrics";
-import { getBotTrainingGateSummary, listBotKnowledgeSummary } from "@/lib/bot/training";
-import { listBotStrengthBands } from "@/lib/bot/strength";
-import { getCatalogStats } from "@/lib/catalog";
 import { getRuntimeCatalogEntries } from "@/lib/catalog/runtime";
 import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
@@ -30,25 +26,17 @@ export default async function VariantsPage({
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
   const entries = await getRuntimeCatalogEntries();
-  const stats = getCatalogStats(entries);
-  const knowledge = listBotKnowledgeSummary();
-  const trainingGate = getBotTrainingGateSummary();
-  const strengthBands = listBotStrengthBands();
-  const legendBand = strengthBands[strengthBands.length - 1];
-  const initialFamily = parseCatalogFamily(query.family ?? null) ?? "all";
-  const initialStatus = parsePlayabilityStatus(query.playability ?? null) ?? "all";
-  const initialMode = parseCatalogMode(query.mode ?? null) ?? "all";
 
   return (
-    <section className="grid gap-6">
-      <div className="games-rules-heading panel">
-        <h1>{t("variants.title")}</h1>
-        <span>{stats.playableGames} ready</span>
-        <span>{stats.learnGames} guides</span>
-        <span>{stats.comingSoonGames} building</span>
-      </div>
-      <CatalogTrainingMetrics knowledge={knowledge} legendBand={legendBand} trainingGate={trainingGate} />
-      <CatalogBrowser entries={entries} initialFamily={initialFamily} initialMode={initialMode} initialStatus={initialStatus} locale={locale} />
-    </section>
+    <div className="catalog-page">
+      <CatalogBrowser
+        title={t("nav.variants")}
+        entries={entries}
+        initialFamily={parseCatalogFamily(query.family ?? null) ?? "all"}
+        initialMode={parseCatalogMode(query.mode ?? null) ?? "all"}
+        initialStatus={parsePlayabilityStatus(query.playability ?? null) ?? "all"}
+        locale={locale}
+      />
+    </div>
   );
 }

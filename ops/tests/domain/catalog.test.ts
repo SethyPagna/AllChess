@@ -24,6 +24,9 @@ import {
 import { parseCatalogMode } from "@/lib/routing/params";
 
 describe("universal game catalog", () => {
+  test("catalog ids remain unique when a guide becomes a board", () => {
+    expect(new Set(gameCatalog.map(entry => entry.id)).size).toBe(gameCatalog.length);
+  });
   test("keeps every current playable variant in the broader catalog", () => {
     const playableIds = gameCatalog.filter((entry) => entry.playability === "playable").map((entry) => entry.id).sort();
 
@@ -180,10 +183,13 @@ describe("universal game catalog", () => {
     expect(getGameCatalogEntry("nine-mens-morris")).toMatchObject({ family: "mill", piecePresentation: "mill-stones" });
     expect(getGameCatalogEntry("ouk-chaktrang")).toMatchObject({
       aliases: expect.arrayContaining(["khmer-chess"]),
-      board: { description: "Khmer chess family board." },
+      variantKey: "ouk-chaktrang",
+      piecePresentation: "khmer-carved",
+      playability: "learn",
+      board: { rows: 8, cols: 8 },
       region: expect.arrayContaining(["Khmer"])
     });
-    expect(getGameCatalogEntry("ouk-chaktrang")?.shortRules[0]).toContain("Khmer Ouk Chaktrang");
+    expect(getGameCatalogEntry("ouk-chaktrang")?.shortRules[0]).toContain("Khon");
   });
 
   test("searches by English, native, romanized, and alias names", () => {

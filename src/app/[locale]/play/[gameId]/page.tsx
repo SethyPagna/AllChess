@@ -60,6 +60,7 @@ export default async function PlayPage({
           initialPlayMode={initialPlayMode}
           initialTimeControl={initialTimeControl}
           initialRoomId={initialRoomId}
+          initialSavedMatchId={singleQueryValue(query.resume)}
           locale={locale}
           title={t(variant.nameKey)}
         />

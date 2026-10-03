@@ -18,4 +18,13 @@ describe("auth error codes", () => {
     expect(messageForLoginError("auth-error")).toContain("We could not complete sign-in.");
     expect(messageForLoginError("bad()")).toBeNull();
   });
+
+  test("rejects inherited object keys so crafted links cannot crash login", () => {
+    for (const key of ["__proto__", "toString", "constructor", "hasOwnProperty"]) {
+      expect(isLoginErrorCode(key)).toBe(false);
+      expect(messageForLoginError(key)).toBeNull();
+    }
+    expect(isLoginErrorCode(null)).toBe(false);
+    expect(isLoginErrorCode("")).toBe(false);
+  });
 });

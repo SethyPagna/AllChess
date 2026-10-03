@@ -3,7 +3,6 @@ import { createElement } from "react";
 import { describe, expect, test, vi } from "vitest";
 
 import { LocaleSwitcher } from "@/components/shell/locale-switcher";
-import { NotificationCenter } from "@/components/shell/notification-center";
 import { InfoHint } from "@/components/ui/info-hint";
 
 vi.mock("next/navigation", () => ({
@@ -24,16 +23,11 @@ describe("shell controls", () => {
     expect(markup).not.toContain(">EN<");
   });
 
-  test("notification center exposes a compact menu with actionable states", () => {
-    const markup = renderToStaticMarkup(createElement(NotificationCenter));
+  test("language options keep the current route and query", () => {
+    const markup = renderToStaticMarkup(createElement(LocaleSwitcher, { active: "en" }));
 
-    expect(markup).toContain('aria-label="Notifications, 3 unread"');
-    expect(markup).toContain('data-shell-menu="notifications"');
-    expect(markup).toContain("shell-icon-control");
-    expect(markup).toContain("Match ready");
-    expect(markup).toContain("Review complete");
-    expect(markup).toContain("Real alerts only");
-    expect(markup).toContain("Mark read");
+    expect(markup).toContain('href="/fr/play/classic?mode=bot"');
+    expect(markup).toMatch(/class="language-option focus-ring is-active" href="\/en\/play\/classic\?mode=bot"|href="\/en\/play\/classic\?mode=bot"[^>]*class="language-option focus-ring is-active"/);
   });
 
   test("information hints are native expandable controls", () => {

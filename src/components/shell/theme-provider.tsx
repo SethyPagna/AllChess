@@ -17,10 +17,10 @@ const storageKey = "allchess-theme";
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<ThemeChoice>(() => {
     if (typeof window === "undefined") return "system";
-    const stored = window.localStorage.getItem(storageKey);
-    if (stored === "light" || stored === "dark" || stored === "system") {
-      return stored;
-    }
+    try {
+      const stored = window.localStorage.getItem(storageKey);
+      if (stored === "light" || stored === "dark" || stored === "system") return stored;
+    } catch { /* System appearance still works when storage is unavailable. */ }
     return "system";
   });
   const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(() => {
@@ -43,7 +43,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [resolvedTheme]);
 
   const setTheme = useCallback((nextTheme: ThemeChoice) => {
-    window.localStorage.setItem(storageKey, nextTheme);
+    try { window.localStorage.setItem(storageKey, nextTheme); } catch { /* Apply the theme for this session. */ }
     setThemeState(nextTheme);
   }, []);
 

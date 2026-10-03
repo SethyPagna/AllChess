@@ -6,9 +6,10 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 import { localeNames, locales, type LocaleCode } from "@/lib/i18n/locales";
 import { localizePath } from "@/lib/i18n/navigation";
-import { closeOtherShellMenus } from "./menu-utils";
+import { closeOtherShellMenus, useShellMenuDismissal } from "./menu-utils";
 
 export function LocaleSwitcher({ active }: { active: LocaleCode }) {
+  const menuRef = useShellMenuDismissal();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const query = searchParams.toString();
@@ -16,7 +17,8 @@ export function LocaleSwitcher({ active }: { active: LocaleCode }) {
 
   return (
     <details
-      className="dropdown language-menu relative inline-block"
+      ref={menuRef}
+      className="language-menu"
       data-shell-menu="language"
       onToggle={(event) => {
         if (event.currentTarget.open) {
@@ -24,15 +26,15 @@ export function LocaleSwitcher({ active }: { active: LocaleCode }) {
         }
       }}
     >
-      <summary aria-label="Languages" title="Languages" className="btn btn-square focus-ring action-secondary shell-icon-control cursor-pointer text-[var(--muted)]">
-        <Languages aria-hidden="true" size={17} />
+      <summary aria-label="Languages" title="Languages" className="icon-btn shell-icon-control focus-ring">
+        <Languages aria-hidden="true" size={16} />
       </summary>
-      <div className="dropdown-content language-menu-panel panel grid gap-1 overflow-auto p-2 shadow-xl">
+      <div className="language-menu-panel popover">
         {locales.map((locale) => (
           <Link
             key={locale}
             href={localizePath(currentPath, locale) as never}
-            className={`language-option focus-ring btn btn-ghost ${locale === active ? "is-active" : ""}`}
+            className={`language-option focus-ring ${locale === active ? "is-active" : ""}`}
           >
             <span>{localeNames[locale]}</span>
             {locale === active ? <Check aria-hidden="true" size={15} /> : null}

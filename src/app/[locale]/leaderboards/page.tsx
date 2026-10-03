@@ -1,8 +1,13 @@
-import { EmptyLeaderboardScopes, LeaderboardActions, LeaderboardFamilyList, LeaderboardFilterBar, PopulatedLeaderboards } from "@/components/leaderboards/leaderboard-cards";
-import { InfoHint } from "@/components/ui/info-hint";
+import Link from "next/link";
+import { Swords, Trophy } from "lucide-react";
+
+import { EmptyNote } from "@/components/community/empty-note";
+import { PopulatedLeaderboards } from "@/components/leaderboards/leaderboard-cards";
+import { LeaderboardScopeMenu } from "@/components/leaderboards/leaderboard-scope-menu";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { getRuntimeLeaderboards } from "@/lib/leaderboards/runtime";
 import { createPageMetadata } from "@/lib/metadata/page-metadata";
+import { playSetupHref } from "@/lib/routing/play-links";
 
 export const dynamic = "force-dynamic";
 
@@ -22,24 +27,30 @@ export default async function LeaderboardsPage({
   const { locale: rawLocale } = await params;
   const query = await searchParams;
   const locale = normalizeLocale(rawLocale);
-  const { leaderboards, scopes, source, filters, totalLeaderboards } = await getRuntimeLeaderboards({ scope: query?.scope });
-  const populatedLeaderboards = leaderboards.filter((leaderboard) => leaderboard.entries.length > 0);
-  const hasComputedBoards = totalLeaderboards > 0;
-  const hasRatedResults = populatedLeaderboards.length > 0;
-  const selectedScope = filters.scope === "all" ? null : scopes.find((scope) => scope.id === filters.scope);
-  const emptyScopes = selectedScope ? [selectedScope] : scopes.slice(0, 4);
-  const familyScopes = selectedScope ? [] : scopes.slice(4);
+  const { leaderboards, scopes, filters, totalLeaderboards } = await getRuntimeLeaderboards({ scope: query?.scope });
+  const populated = leaderboards.filter((leaderboard) => leaderboard.entries.length > 0);
+  const showScopes = totalLeaderboards > 0 || filters.scope !== "all";
 
   return (
-    <section className="leaderboards-page grid gap-5">
-      <div className="compact-page-heading">
-        <h1 className="text-4xl font-black sm:text-5xl">Leaderboards</h1>
-        <InfoHint text={source === "d1" ? "Leaderboards read Cloudflare D1 rows. Empty boards mean no rated entries have been computed yet." : "Rated tables stay empty until real match results are recorded. No seeded players or guessed rankings."} />
-      </div>
-      <LeaderboardFilterBar filters={filters} hasComputedBoards={hasComputedBoards} hasRatedResults={hasRatedResults} populatedCount={populatedLeaderboards.length} scopes={scopes} />
-      {hasRatedResults ? <PopulatedLeaderboards leaderboards={populatedLeaderboards} /> : <EmptyLeaderboardScopes scopes={emptyScopes} />}
-      {familyScopes.length > 0 ? <LeaderboardFamilyList scopes={familyScopes} /> : null}
-      <LeaderboardActions locale={locale} />
+    <section className="cm-page">
+      <header className="cm-head">
+        <h1>Leaderboards</h1>
+        {showScopes ? (
+          <div className="cm-head-actions">
+            <LeaderboardScopeMenu current={filters.scope} locale={locale} scopes={scopes.map(({ id, label }) => ({ id, label }))} />
+          </div>
+        ) : null}
+      </header>
+      {populated.length ? (
+        <PopulatedLeaderboards leaderboards={populated} scopes={scopes} />
+      ) : (
+        <EmptyNote icon={Trophy} title="No rated results yet" text="Rankings appear after rated games are recorded.">
+          <Link href={playSetupHref(locale, { mode: "online", time: "rapid" }) as never} className="action-primary focus-ring">
+            <Swords size={16} />
+            Play online
+          </Link>
+        </EmptyNote>
+      )}
     </section>
   );
 }

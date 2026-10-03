@@ -1,0 +1,105 @@
+{
+  "provider": "built-in image_gen",
+  "date": "2026-09-27",
+  "purpose": "Individual transparent 2D masters and references for modeled Courtyard geometry",
+  "assets": [
+    {
+      "file": "light-king.png",
+      "generation": "exec-4e14d6c4-105f-49c9-9141-bdaea8f664b3.png",
+      "prompt": "Use case: product-mockup. Create ONE production game sprite for an original contemporary Cambodian Ouk Chaktrang collection called Courtyard: the LIGHT KHON KING. Genuine transparent alpha background, no floor, no outside cast shadow, no lettering or watermark. Crisp photorealistic hand-finished pale warm sandstone, fine believable microscopic grain, subtle tonal variation, small clean edge bevels, matte honed surfaces rather than weathered ruins. Orthographic product camera 18 degrees above horizontal, slight three-quarter view, whole piece centered in square canvas with12%clear margin. Design distinctly architectural and faceted: broad OCTAGONAL stepped foot34mm across, three low beveled octagonal terraces; tall gently tapering eight-sided column with shallow vertical inset panels; three separated progressively smaller octagonal collar shelves; elongated closed LOTUS-BUD finial with eight crisp incised petal channels. Height74mm. No European cross, no Western crenellated crown, no jewels, no faces, no temple replica, no wood or metal. Luxurious restrained miniature stone carving, sharp silhouette and fine workmanship readable at playing size. Warm soft key from upper left, gentle cool fill, controlled edge light, detailed dark recesses. This original native-inspired design will guide real modeled geometry, not a flat billboard."
+    },
+    {
+      "file": "light-queen.png",
+      "generation": "exec-203f43fc-37a3-44e3-96af-cd3514df9475.png",
+      "references": [
+        "light-king.png"
+      ],
+      "prompt": "Use case: product-mockup. Reference image establishes the original Courtyard Cambodian Ouk Chaktrang family: pale honed sandstone, clean octagonal terraced foot, inset-panel workmanship, crisp lotus petals, camera and light. Create ONE matching LIGHT NEANG QUEEN sprite, clearly shorter and wider in proportion than the tall king, height54mm across34mmfoot. Three low beveled octagonal foot terraces; SHORT gently concave eight-sided body with shallow vertical recessed panels; ONE broad octagonal collar shelf; a small closed lotus-bud finial with six incised petal channels. Queen's bud should be broad and squat, not the king's long spear. Photorealistic fine sandstone grain, matte hand-honed faces and subtly rounded crisp edges, no ruins damage. Same slightly elevated orthographic product camera18degrees above horizontal and soft upper-left key. Entire piece centered on square canvas with10%clear margin, genuine transparent alpha, no floor, no external shadow, no text or watermark. No European crown/cross, no metal/wood, no temple replica. Preserve the common steppedfoot and material design while making this native queen shape independently recognizable."
+    },
+    {
+      "file": "light-bishop.png",
+      "generation": "exec-ea5653a4-d7bf-4165-8150-354fb9dbd4c3.png",
+      "references": [
+        "light-queen.png"
+      ],
+      "prompt": "Use case: product-mockup. Reference image is the Courtyard LIGHT NEANG QUEEN and establishes pale sandstone craftsmanship, terraced octagonal foot, studio lighting and camera. Create ONE matching LIGHT KOUL BISHOP for Cambodian Ouk Chaktrang, with its own clearly distinct native silhouette. Height46mm, foot32mmwide. Three low beveled octagonal terraces; very short faceted neck; a broad rounded bell/pear-shaped upper body with SIX strong carved petal ribs swelling outwards, then converging to a single short pointed tip. The main petal-bell is one continuous sculpture, no separate round ball, no cut/slit, no tall paneled shaft and no queen's shelf under a separate bud. Keep the common octagonal stone foot and subtle honed sandstonegrain. Photorealistic small collectible sculpture, matte faces and crisp softly eased carving edges. Same orthographic product view18degrees abovehorizontal, soft key upperleft and readable recesses. Entire piece centered on genuine transparent alpha squarecanvas with10%margin. No floor/outside shadow/text/metal/wood/cross/European miter or religiousfigure."
+    },
+    {
+      "file": "light-horse.png",
+      "generation": "exec-a5ef487d-c034-4a8e-9dd6-0f4b6e669b22.png",
+      "references": [
+        "light-king.png"
+      ],
+      "prompt": "Use case: product-mockup. Reference image is the LIGHT KHON KING of the original Courtyard Cambodian Ouk stone collection, establishing pale honed sandstone and octagonalterracedfoot. Create ONE matching LIGHT SES HORSE piece. Anatomically convincing HORSE HEAD AND NECK bust facingLEFT in three-quarter profile, carved in gently faceted stone planes: clearly formed ears, brow, recessed eye, nostril, muzzle, jaw, muscular arched neck and a short ridged mane. Restrained sculpture with fine tool-cut mane channels, not a cartoon and not a European armored knight. Thick neck shoulders blend into an OCTAGONAL neck socle on THREE low bevelled octagonal base terraces34mm across. Totalheight62mm. No tall paneled column under the horse, no full body, no riders, no cross/jewels/metal/wood. Fine subtle matte sandstonegrain, crisply honed edges without rough damage. Match reference camera18degreesabovehorizontal, soft upperleftkey andgentlefill; wholepiece centered genuine transparent squarecanvas10%margin, no floor/externalcastshadow/text/watermark. Strong sculptural depth and clean silhouette readable in a small game square."
+    },
+    {
+      "file": "light-rook.png",
+      "generation": "exec-a3ba56ba-746a-4b8c-b322-b6b84d710208.png",
+      "references": [
+        "light-queen.png"
+      ],
+      "prompt": "Use case: product-mockup. Reference image establishes the Courtyard Cambodian stone set's pale honed sandstone, octagonal steppedfoot, lighting andcamera. Create ONE LIGHT TOUK ROOK sprite, native Ouk Chaktrang bowl form, not a European castle. Height34mm across36mm at widest rim. Three low broad beveled octagonal foot terraces; a short narrow eight-sided stem; a generously OPEN OCTAGONAL BOWL flaring outward with eight slightly concave outer panels. The thick beveled lip and real recessed interior floor must be clearly visible, with the bowl walls and cavity reading as solid carved stone, not a solid capped disc. No teeth/crenellations, no lotus bud, no tower, no handles. Fine matte sandstonegrain with crisp hand-finished beveled edges, subtle realistic pores. Same orthographic camera18degreesabovehorizontal, slightlythreequarter so front octagonalpanels and interiorlip readable; entirepiece centered square with10%margin, genuine transparentalpha, nofloor, nooutsidecastshadow, noletters/metal/wood/watermark. Crisp physical depth, luxury miniature craftsmanship, clearly distinct from the taller queen."
+    },
+    {
+      "file": "light-pawn.png",
+      "generation": "exec-b6d4d12a-93f0-470c-9ad2-cd0dfb893954.png",
+      "references": [
+        "light-queen.png"
+      ],
+      "prompt": "Use case: product-mockup. Referenceimage establishes the Courtyard Cambodian sandstonecollection craftsmanship, octagonal geometry andlighting. Create ONE matching LIGHT TREY PAWN for Ouk Chaktrang: a LOW OCTAGONAL STONE COUNTER, diameter/acrosscorners30mm and height10mm. Wideflat beveled octagonalfoot, one shallow insetband on the eight sidefaces, stepped chamfered shoulder, broad gently domed octagonal top with a small shallow central circular depression and one fine concentric octagonal cutline. Keep its squat counter silhouette; no pedestalshaft, no tallbud, no chesspawn ball, no fishfigurine, no crown. Fine matte honed pale warm sandstonegrain and microbeveled crispedges, tinyrealistic pores. Camera slightlyelevated productorthographic so top andfront readable, matchreference softupperleftkey andgentlefill. Entirecounter centered squarecanvaswith12%clear margin, genuine transparentalpha, nofloor/outsidecastshadow/text/watermark, no metal orwood. Luxury modern native-inspired game counter."
+    },
+    {
+      "file": "dark-king.png",
+      "generation": "exec-72704fac-c033-4b30-9d79-7cabb0d5305b.png",
+      "references": [
+        "light-king.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Image is the Courtyard LIGHT KHON KING master for Cambodian Ouk Chaktrang. Create its DARK KHON KING counterpart by changing only the material to fine honed deep charcoal volcanic stone. Preserve identical geometry, all three octagonal shaft collars, pointed inset panels on tapering shaft, three terraced octagonal foot steps, long pointed closed lotus bud with carved petal channels, proportions, camera, framing and lighting. This is very dark warm charcoal stone with subtle lighter mineral speckles and soft grey highlights on edges; clear carved recesses, matte satin microtexture, no glossy black plastic, no wood, no metal, no white patches. Keep enough reflected studio fill to read every facet without making it pale grey. Entire piece isolated on genuine transparent alpha with no floor or outside cast shadow, centered square composition, no text, no watermark. Sharp physically convincing premium stone carving, no geometry changes."
+    },
+    {
+      "file": "dark-queen.png",
+      "generation": "exec-4751beb0-db76-4e12-957c-b7da6cedcdbf.png",
+      "references": [
+        "light-queen.png",
+        "dark-king.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Image1 is the Courtyard LIGHT NEANG QUEEN geometry target; image2 is the DARK KHON KING charcoal material reference. Create exactly one DARK NEANG QUEEN. Preserve image1 geometry, short panelled tapered shaft, ONE octagonal collar under broad short closed lotus bud, terraced octagonal foot, proportions, framing, camera and lighting. Change only to the deep charcoal honed volcanic stone of image2: dark warm stone, small mineral flecks, soft gray edge highlights, readable carved petal channels and inset panels, matte satin fine grain. No additional collars, no tall king shaft, no metal, no wood, no glossy plastic. Genuine transparent alpha background, no floor or outside cast shadow, no text, no watermark. Sharp premium stone carving, clear shorter queen silhouette."
+    },
+    {
+      "file": "dark-bishop.png",
+      "generation": "exec-f52d266f-a838-4594-8aa6-082d98d18a60.png",
+      "references": [
+        "light-bishop.png",
+        "dark-king.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Image1 is the Courtyard LIGHT KOUL BISHOP target; image2 is the DARK KHON KING charcoal material reference. Create one matching DARK KOUL. Preserve exactly image1 geometry: broad short pointed pear-shaped closed lotus with six overlapping carved petals directly on a very short neck above a low terraced octagonal foot; NO long queen shaft, NO large collar shelf. Change only material to deep charcoal honed volcanic stone of image2, fine mineral flecks, subtle satin grain, soft gray edge highlights and dark recessed channels. Preserve camera, proportions, centered framing, crisp focus and soft studio light of image1. Genuine transparent alpha, no floor, no outside cast shadow, no text or watermark, no metal or wood. Clear squat bishop silhouette distinct from tall king and queen."
+    },
+    {
+      "file": "dark-horse.png",
+      "generation": "exec-2fbf069b-824b-478f-8cc5-1ce06ccbf0dc.png",
+      "references": [
+        "light-horse.png",
+        "dark-king.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Image1 is Courtyard LIGHT SES HORSE geometry target; image2 is DARK KHON KING material reference. Create exactly one DARK SES HORSE. Preserve image1 horse head and neck sculpture, left-facing three-quarter view, crisp faceted anatomical planes, clear eye socket, open nostril, pointed ears, jaw and ridged short mane; preserve short terraced octagonal base and NO extra tall pedestal. Change only material to deep charcoal honed volcanic stone of image2: dark warm gray, fine mineral flecks, subtle matte satin finish, soft gray highlights emphasizing sculpted planes. Keep camera, proportions, lighting and centered square framing. Genuine transparent alpha, no floor or outside cast shadow, no text, no watermark, no metal, no wood, no plastic, no extra limbs. Sharp luxury carved game piece with readable face."
+    },
+    {
+      "file": "dark-rook.png",
+      "generation": "exec-5026a85f-0ce9-4038-82a2-eae13f76022b.png",
+      "references": [
+        "light-rook.png",
+        "dark-king.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Image1 is the Courtyard LIGHT TOUK ROOK target, image2 is the DARK KHON KING charcoal material reference. Create exactly one DARK TOUK by changing only image1 material to the same deep charcoal honed volcanic stone as image2. Preserve its wide OPEN octagonal bowl and visibly recessed interior floor, thick beveled lip, eight fluted exterior panels, short panelled stem and terraced octagonal foot. Maintain identical shape, proportions, camera angle, framing, studio lighting. Sharp fine stone pores and mineral flecks, soft gray edge highlights, no bright white, no black plastic, no wood or metal. Interior must remain visibly hollow, not filled with a flat disc; no European rook crenellations. Genuine transparent alpha, no floor or external cast shadow, no text or watermark. Premium modern native-inspired Cambodian game piece."
+    },
+    {
+      "file": "dark-pawn.png",
+      "generation": "exec-d9d5b312-3026-49ad-9fe4-c1da0715d63b.png",
+      "references": [
+        "light-pawn.png",
+        "dark-king.png"
+      ],
+      "prompt": "Use case: precise-object-edit. Image1 is Courtyard LIGHT TREY PAWN target; image2 is DARK KHON KING material reference. Create exactly one matching DARK TREY PAWN. Preserve the exact LOW squat octagonal counter geometry of image1: broad beveled octagonal foot, shallow rectangular recessed side panels, stepped chamfered shoulder, broad slightly domed octagonal top, central circular thumb depression, fine octagonal cutline around top. No tall shaft, no ball, no lotus, no crown. Change only material to deep charcoal honed volcanic stone of image2, fine small mineral flecks and subtle matte satin grain with soft gray readable edge highlights. Match image1 camera, proportions, lighting and square centered framing. Genuine transparent alpha, no floor or outside cast shadow, no text or watermark, no wood or metal. Sharp premium native-inspired Cambodian low game counter."
+    }
+  ]
+}

@@ -9,7 +9,7 @@ The active app is a Next.js 16 application deployed as the Cloudflare Worker `al
 - Next.js: `^16.2.7`
 - React: `^19.2.7`
 - TypeScript: `^6.0.3`
-- ESLint: `^10.4.1`
+- ESLint: `^9.0.0`
 - Lucide React: `^1.17.0`
 - Vitest: `^4.1.8`
 - Playwright: `^1.60.0`
@@ -18,9 +18,9 @@ The active app is a Next.js 16 application deployed as the Cloudflare Worker `al
 - Wrangler: `^4.98.0`
 - OpenNext Cloudflare: `^1.19.11`
 
-The package ranges are current for the verified latest-version lane. ESLint 10 uses `@eslint/compat` so the Next.js lint presets can continue running while their bundled plugins finish their ESLint 10 peer updates. Vercel deploy scripts call `vercel@latest` through `npx` instead of keeping the CLI dependency tree in local installs.
+Package ranges above match `package.json`. The lint configuration uses `@eslint/compat` with the Next.js presets. Hosting and deployment use Cloudflare exclusively.
 
-Project configuration is grouped under `config/` for linting, TypeScript, tests, environment examples, and optional Python bot-training probes. Root-discovered framework files stay at the top level so Next.js, Vercel, PostCSS, and package managers can find them without loaders or indirection.
+Project configuration is grouped under `config/` for linting, TypeScript, tests, environment examples, and optional Python bot-training probes. Root-discovered framework files stay at the top level so Next.js, PostCSS, and package managers can find them without loaders or indirection.
 
 Bot and local-AI dataset preparation use Python helper scripts for compressed data, Parquet readiness, and optional package checks. The Next.js runtime stays TypeScript-first and consumes compact generated knowledge instead of importing heavy training dependencies.
 
@@ -33,7 +33,7 @@ Bot and local-AI dataset preparation use Python helper scripts for compressed da
 - R2 object storage with `allchess/` key prefixing.
 - Launch variants declare rules adapter identifiers such as `chessops`, `xiangqiops`, `shogiops`, `makruk-js`, or owned AllChess modules; active rules execution is first-party unless an adapter package is imported by source.
 - Bot difficulty ladder: Easy, Normal, Hard, Very Hard, Grandmaster, Legend, with consistent Elo-style bands and calibration status per variant.
-- Deployment paths for GitHub, local development, Vercel hosting, Cloudflare Workers, and Docker self-deploy.
+- Deployment paths for GitHub Actions, local development, Cloudflare Workers, and Docker self-deploy.
 
 ## Run Locally
 
@@ -54,7 +54,7 @@ npm run typecheck
 npm run test
 npm run build
 npm run audit:live
-npm run audit:env -- vercel
+npm run audit:env -- cloudflare
 npm run bots:local-ai:check
 ```
 
@@ -92,7 +92,7 @@ npm run db:migrate:remote
 npm run cf:deploy
 ```
 
-The current workers.dev deployment URL for this Cloudflare account is `https://allchess.learn-app.workers.dev`. Public shortcut paths such as `/chess`, `/learn`, `/games`, `/play`, and `/watch` redirect into localized app pages so shared links do not land on a 404.
+The current workers.dev deployment URL for this Cloudflare account is `https://allchess.pagna.workers.dev`. Public shortcut paths such as `/chess`, `/learn`, `/games`, `/play`, and `/watch` redirect into localized app pages so shared links do not land on a 404.
 
 For same-network device testing during development, bind Next.js to all interfaces:
 
@@ -100,15 +100,7 @@ For same-network device testing during development, bind Next.js to all interfac
 npm run dev:lan
 ```
 
-Vercel:
-
-```bash
-npx --yes vercel@latest link --yes --project allchess
-npm run deploy:prod
-```
-
-Vercel should host the app only. Database and object storage stay on Cloudflare.
-
+The authorized hosting account is `jamesung.kh@gmail.com` (Apps, account `d105a82bc26b6913575355352c2d1bb1`). The `ungsethypagna@gmail.com` account is reserved for BusinessOS. The GitHub deployment workflow checks account access before building or publishing. To release the latest branch without merging it, dispatch `Deploy Cloudflare` against that branch. Vercel is retired for AllChess.
 Docker self-deploy:
 
 ```bash
@@ -117,7 +109,7 @@ docker compose -f ops/infra/docker/docker-compose.selfhost.yml up --build
 
 ## Secrets
 
-Never commit real API keys or tokens. Store Cloudflare, Vercel, Google OAuth, and AI provider credentials in local ignored `.env` files or hosted secret stores. The AI analysis adapter supports the Business OS style providers Groq, Mistral, Cerebras, Google AI, and OpenAI. Rotate any broad token that was pasted into chat or logs.
+Never commit real API keys or tokens. Store Cloudflare, Google OAuth, and AI provider credentials in local ignored `.env` files or hosted secret stores. The AI analysis adapter supports the Business OS style providers Groq, Mistral, Cerebras, Google AI, and OpenAI. Rotate any broad token that was pasted into chat or logs.
 
 ## Documentation Map
 

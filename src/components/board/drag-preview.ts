@@ -22,7 +22,10 @@ export function setPieceDragImage(event: DragEvent<HTMLElement>) {
   dragImage.style.width = `${width}px`;
   dragImage.style.height = `${height}px`;
   dragImage.style.fontSize = pieceStyle.fontSize;
-  dragImage.appendChild(piece.cloneNode(true));
+  const icon = piece.cloneNode(true) as HTMLElement;
+  // The clone leaves its board/hand CSS context, so preserve its visible direction.
+  icon.style.transform = pieceStyle.transform;
+  dragImage.appendChild(icon);
   document.body.appendChild(dragImage);
 
   const offset = getDragImageOffset({ clientX: event.clientX, clientY: event.clientY, height, pieceRect, width });

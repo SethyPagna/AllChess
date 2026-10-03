@@ -1,123 +1,57 @@
-import type { Move } from "@/lib/variants";
+import type { GameState, Move } from "@/lib/variants";
 
-export type ReviewClassification = "best" | "excellent" | "good" | "inaccuracy" | "mistake" | "blunder";
-
-export type ReviewedMove = {
+export type MoveTimelineEntry = {
   ply: number;
   notation: string;
-  classification: ReviewClassification;
-  label: string;
-  score: number;
-  detail: string;
-  bestLine: string;
+  kind: NonNullable<Move["kind"]>;
+  captureCount: number | null;
+  promotion: boolean;
+  label: string | null;
 };
 
-const labels: Record<ReviewClassification, string> = {
-  best: "Best",
-  excellent: "Excellent",
-  good: "Good",
-  inaccuracy: "Inaccuracy",
-  mistake: "Mistake",
-  blunder: "Blunder"
-};
+type RecordedMove = Move & { notation: string };
 
-export function analyzeMoveList(moves: Array<Move & { notation: string }>, options: { variantKey?: string } = {}): ReviewedMove[] {
+/** Replay metadata only. Move quality requires a separate position evaluation. */
+export function buildMoveTimeline(moves: readonly RecordedMove[], timeline: readonly GameState[] = []): MoveTimelineEntry[] {
+  const positions = new Map(timeline.map(state => [state.moves.length, state]));
   return moves.map((move, index) => {
-    const classification = classifyMove(move.notation, index, moves.length);
-    const score = scoreFor(classification);
-    return {
-      ply: index + 1,
-      notation: move.notation,
-      classification,
-      label: labels[classification],
-      score,
-      detail: detailFor(classification, move.notation, index, options.variantKey),
-      bestLine: bestLineFor(classification, move.notation, options.variantKey)
-    };
+    const kind = move.kind ?? (move.drop ? "drop" : "move");
+    const before = positions.get(index);
+    const after = positions.get(index + 1);
+    const recorded = after?.moves[index];
+    const hasPositionPair = Boolean(before && after && before.id === after.id && before.variantKey === after.variantKey && recorded && sameMove(recorded, move));
+    // Captures can happen away from the destination (jumps and en passant), and
+    // notation may omit captures. Only consecutive positions establish a count.
+    const captureCount = hasPositionPair ? Math.max(0, after!.captured.length - before!.captured.length) : null;
+    const fromPiece = hasPositionPair ? before!.board[move.from.row]?.[move.from.col]?.piece : null;
+    const toPiece = hasPositionPair ? after!.board[move.to.row]?.[move.to.col]?.piece : null;
+    const promotion = kind === "move" && (move.promotion === true || Boolean(fromPiece && toPiece && toPiece.id === fromPiece.id && toPiece.promoted && !fromPiece.promoted));
+    const labels: string[] = [];
+    if (kind === "pass") labels.push("Pass");
+    else if (kind === "remove") labels.push("Remove");
+    else if (kind === "drop") labels.push("Drop");
+    if (captureCount) labels.push(captureCount === 1 ? "Capture" : `${captureCount} captures`);
+    if (promotion) labels.push("Promotion");
+    return { ply: index + 1, notation: move.notation, kind, captureCount, promotion, label: labels.join(" · ") || null };
   });
 }
 
-export function summarizeReview(moves: ReviewedMove[]) {
-  return moves.reduce<Record<ReviewClassification, number>>(
-    (summary, move) => {
-      summary[move.classification] += 1;
-      return summary;
-    },
-    { best: 0, excellent: 0, good: 0, inaccuracy: 0, mistake: 0, blunder: 0 }
-  );
-}
-
-function classifyMove(notation: string, index: number, total: number): ReviewClassification {
-  if (index === 0) return "best";
-  if (notation.includes("x")) return index % 5 === 0 ? "best" : "excellent";
-  if (total > 8 && index === total - 1) return "best";
-  if (index % 11 === 6) return "blunder";
-  if (index % 7 === 4) return "mistake";
-  if (index % 5 === 3) return "inaccuracy";
-  return index % 2 === 0 ? "excellent" : "good";
-}
-
-function scoreFor(classification: ReviewClassification) {
-  const scores: Record<ReviewClassification, number> = {
-    best: 96,
-    excellent: 88,
-    good: 76,
-    inaccuracy: 62,
-    mistake: 44,
-    blunder: 18
+export function summarizeMoves(moves: readonly MoveTimelineEntry[]) {
+  return {
+    moves: moves.length,
+    captures: moves.some(move => move.captureCount === null) ? null : moves.reduce((count, move) => count + move.captureCount!, 0),
+    promotions: moves.filter(move => move.promotion).length,
+    drops: moves.filter(move => move.kind === "drop").length,
+    passes: moves.filter(move => move.kind === "pass").length,
+    removals: moves.filter(move => move.kind === "remove").length
   };
-  return scores[classification];
 }
 
-function detailFor(classification: ReviewClassification, notation: string, index: number, variantKey?: string) {
-  const moveLabel = `Move ${index + 1} (${notation})`;
-  const nativeContext = nativeReviewContext(variantKey);
-  const details: Record<ReviewClassification, string> = {
-    best: `${moveLabel} keeps the strongest plan available and preserves tactical control.${nativeContext}`,
-    excellent: `${moveLabel} improves the position while keeping the opponent's counterplay limited.${nativeContext}`,
-    good: `${moveLabel} is playable and keeps the game stable, though there may be a more forcing plan.${nativeContext}`,
-    inaccuracy: `${moveLabel} gives up a little coordination or tempo. Check candidate moves before committing.${nativeContext}`,
-    mistake: `${moveLabel} likely allows a stronger reply. Look for loose pieces and objective threats.${nativeContext}`,
-    blunder: `${moveLabel} appears tactically unsafe. Rewind here and inspect captures, threats, and objective races.${nativeContext}`
-  };
-  return details[classification];
-}
-
-function bestLineFor(classification: ReviewClassification, notation: string, variantKey?: string) {
-  const nativePrompt = nativeBestLinePrompt(variantKey);
-  if (classification === "best") return `Stay with this plan and compare the opponent's most forcing reply.${nativePrompt}`;
-  if (classification === "excellent") return `Good practical choice. Also scan captures, threats, and the main objective.${nativePrompt}`;
-  if (classification === "blunder") return `Try a safer move that protects loose material or addresses the immediate objective threat.${nativePrompt}`;
-  return `Candidate review: compare ${notation} with a developing move, a capture, and a forcing check.`;
-}
-
-function nativeReviewContext(variantKey?: string) {
-  if (variantKey === "jungle") {
-    return " In Jungle, also check animal rank, trap weakening, river access, and whether either den is under pressure.";
-  }
-  if (variantKey === "antichess") {
-    return " In Antichess, compulsory captures and the goal of losing material change the usual safety priorities.";
-  }
-  if (variantKey === "horde") {
-    return " In Horde, weigh black king safety against the pawn-army elimination objective.";
-  }
-  if (variantKey === "xiangqi" || variantKey === "janggi") {
-    return " Also inspect palace pressure, cannon screens, horse blocks, and facing-general tactics.";
-  }
-  if (variantKey === "shogi") {
-    return " Also inspect drops, promotion zones, king exposure, and pieces in hand.";
-  }
-  if (variantKey === "makruk") {
-    return " Also inspect slow-piece coordination, promotion timing, and counting-draw pressure.";
-  }
-  return "";
-}
-
-function nativeBestLinePrompt(variantKey?: string) {
-  if (!variantKey) return "";
-  if (variantKey === "jungle") return " Compare den-race, trap-control, and animal-rank replies.";
-  if (variantKey === "antichess") return " Compare every legal capture first.";
-  if (variantKey === "shogi") return " Include candidate drops and promotion choices.";
-  if (variantKey === "makruk") return " Include counting-rule and promotion alternatives.";
-  return " Include variant-specific tactical replies, not only western chess checks.";
+// Stored moves from older saves can differ from the engine's canonical record in optional
+// fields (an explicit kind "move", a promotion flag on an automatic promotion), so those
+// count as equal when either side leaves them out.
+function sameMove(a: RecordedMove, b: RecordedMove) {
+  const kind = (move: RecordedMove) => move.kind ?? (move.drop ? "drop" : "move");
+  const optionalEqual = <T>(left: T | undefined, right: T | undefined) => left === undefined || right === undefined || left === right;
+  return kind(a) === kind(b) && a.from.row === b.from.row && a.from.col === b.from.col && a.to.row === b.to.row && a.to.col === b.to.col && optionalEqual(a.promotion, b.promotion) && optionalEqual(a.promoteTo, b.promoteTo) && a.drop?.code === b.drop?.code && a.drop?.owner === b.drop?.owner;
 }

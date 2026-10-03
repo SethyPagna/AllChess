@@ -1,5 +1,6 @@
 "use client";
 
+import { ChoicePicker } from "./choice-buttons";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { BookOpen, ChevronDown, Copy, Eye, LinkIcon, Search, Share2, Users } from "lucide-react";
@@ -18,6 +19,7 @@ import { playGameHref } from "@/lib/routing/play-links";
 import type { PlayMode } from "@/components/board/game-board-options";
 
 type PlayMatchHeaderProps = {
+  localOnly?: boolean;
   currentVariantKey: string;
   locale: string;
   onOpenGuide: () => void;
@@ -31,6 +33,7 @@ type PlayMatchHeaderProps = {
 };
 
 export function PlayMatchHeader({
+  localOnly = false,
   currentVariantKey,
   locale,
   onOpenGuide,
@@ -51,7 +54,9 @@ export function PlayMatchHeader({
   const gamePickerRef = useRef<HTMLDivElement>(null);
   const gamePickerButtonRef = useRef<HTMLButtonElement>(null);
   const shareRef = useRef<HTMLDivElement>(null);
+  const shareButtonRef = useRef<HTMLButtonElement>(null);
   const roomHref = playGameHref(locale, currentVariantKey, { mode: "room", time: timeControl, room: roomId });
+  const hasInvite = /^[a-f0-9-]{36}$/.test(roomId);
   const spectateHref = playGameHref(locale, currentVariantKey, { mode: "spectate", time: timeControl, room: roomId });
   const targetMode = modeFilter === "current" ? playMode : modeFilter;
   const playableGames = useMemo(() => gameCatalog.filter((entry) => entry.variantKey), []);
@@ -66,13 +71,13 @@ export function PlayMatchHeader({
         .some((value) => normalize(value ?? "").includes(normalized));
     });
 
-    return matches.slice(0, 10);
+    return matches;
   }, [familyFilter, playableGames, query, targetMode]);
   const modeFilters: Array<{ key: "current" | CatalogPlayMode; label: string }> = [
     { key: "current", label: "Current" },
     { key: "bot", label: "Bot" },
     { key: "offline", label: "Local" },
-    { key: "online", label: "Online" }
+    ...(!localOnly ? [{ key: "online" as const, label: "Online" }] : [])
   ];
 
   useEffect(() => {
@@ -98,8 +103,11 @@ export function PlayMatchHeader({
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         event.preventDefault();
-        closePicker({ restoreFocus: true });
-        setShareOpen(false);
+        if (gamePickerOpen) closePicker({ restoreFocus: true });
+        if (shareOpen) {
+          setShareOpen(false);
+          shareButtonRef.current?.focus();
+        }
       }
     }
 
@@ -131,12 +139,15 @@ export function PlayMatchHeader({
       <div className="play-title-block">
         <div className="play-title-row">
           <div ref={gamePickerRef} className="play-title-picker">
-            <button ref={gamePickerButtonRef} type="button" className="focus-ring play-title-button" aria-label="Choose game" aria-expanded={gamePickerOpen} aria-controls="play-game-title-picker" onClick={() => setGamePickerOpen((current) => !current)} title="Change game or search other playable games.">
-              <h1>{title}</h1>
-              <ChevronDown size={18} />
-            </button>
+            <h1 className="play-title">
+              <button ref={gamePickerButtonRef} type="button" className="focus-ring play-title-button" aria-expanded={gamePickerOpen} aria-controls="play-game-title-picker" onClick={() => setGamePickerOpen((current) => !current)} title="Change game or search other playable games.">
+                <span className="play-title-text">{title}</span>
+                <ChevronDown size={18} />
+                <span className="sr-only">, choose game</span>
+              </button>
+            </h1>
             {gamePickerOpen ? (
-              <div id="play-game-title-picker" className="play-title-picker-menu" role="dialog" aria-modal="false" aria-label="Choose game">
+              <div id="play-game-title-picker" className="play-title-picker-menu popover" role="dialog" aria-modal="false" aria-label="Choose game">
                 <label className="play-title-picker-search">
                   <Search size={15} />
                   <span className="sr-only">Search games</span>
@@ -156,21 +167,12 @@ export function PlayMatchHeader({
                       </button>
                     ))}
                   </div>
-                  <label className="play-title-picker-family">
-                    <span className="sr-only">Game family</span>
-                    <select value={familyFilter} onChange={(event) => setFamilyFilter(event.target.value as "all" | GameFamilyKey)}>
-                      <option value="all">All families</option>
-                      {gameFamilies.map((family) => (
-                        <option key={family.key} value={family.key}>
-                          {family.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <ChoicePicker label="Game family" value={familyFilter} onChange={setFamilyFilter} options={[{ key: "all", label: "All families" }, ...gameFamilies.map(family => ({ key: family.key, label: family.label }))]} />
                 </div>
                 <div className="play-title-picker-list">
                   {filteredGames.map((entry) => {
                     const support = getCatalogModeSupport(entry, targetMode);
+                    if (localOnly) return <a key={entry.id} href={`/offline?game=${encodeURIComponent(entry.variantKey!)}&locale=${encodeURIComponent(locale)}&mode=${targetMode}&time=${timeControl}`} className={`focus-ring play-title-picker-row ${entry.variantKey === currentVariantKey ? "is-current" : ""}`}><span>{displayGameName(entry)}</span><small>{displayModeReadiness(entry, targetMode)}</small></a>;
                     return (
                       <Link
                         key={entry.id}
@@ -191,25 +193,23 @@ export function PlayMatchHeader({
           </div>
           <div className="play-title-actions" aria-label="Match actions">
             {showGuide ? (
-              <button type="button" title="Open guide, win conditions, and draw notes." onClick={onOpenGuide} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" aria-label="Game guide">
-                <BookOpen size={16} />
-                <span className="button-label">Guide</span>
+              <button type="button" title="Rules and guide" onClick={onOpenGuide} className="focus-ring icon-btn" aria-label="Game guide">
+                <BookOpen size={17} />
               </button>
             ) : null}
-            <div ref={shareRef} className="play-share-menu">
-              <button type="button" onClick={() => setShareOpen((current) => !current)} className="focus-ring action-secondary inline-flex items-center gap-2 px-3 py-2 text-sm" title="Create a room code, invite link, or spectator link." aria-label="Share game" aria-expanded={shareOpen} aria-controls="play-share-menu">
-                <Share2 size={16} />
-                <span className="button-label">Share</span>
+            {!localOnly ? <div ref={shareRef} className="play-share-menu">
+              <button ref={shareButtonRef} type="button" onClick={() => setShareOpen((current) => !current)} className="focus-ring icon-btn" title="Invite or share" aria-label="Share game" aria-expanded={shareOpen} aria-controls="play-share-menu">
+                <Share2 size={17} />
               </button>
               {shareOpen ? (
-                <div id="play-share-menu" className="play-share-menu-panel" role="dialog" aria-label="Share game options">
-                  <div className="play-share-code">
+                <div id="play-share-menu" className="play-share-menu-panel popover" role="dialog" aria-label="Share game options">
+                  {hasInvite ? <div className="play-share-code">
                     <span>Room code</span>
                     <code>{roomId}</code>
                     <button type="button" className="focus-ring" onClick={() => void copyShare(roomId, "Room code")} aria-label="Copy room code">
                       <Copy size={14} />
                     </button>
-                  </div>
+                  </div> : <p>Create a friend room to get an invite.</p>}
                   <button
                     type="button"
                     className="focus-ring play-share-option"
@@ -222,7 +222,7 @@ export function PlayMatchHeader({
                     <span>Room setup</span>
                     <small>Create invite</small>
                   </button>
-                  <ShareOptionRow
+                  {hasInvite ? <><ShareOptionRow
                     href={roomHref}
                     icon={<LinkIcon size={15} />}
                     label="Invite link"
@@ -240,10 +240,11 @@ export function PlayMatchHeader({
                       setShareOpen(false);
                     }}
                   />
+                  </> : null}
                   {shareNotice ? <p role="status">{shareNotice}</p> : null}
                 </div>
               ) : null}
-            </div>
+            </div> : null}
           </div>
         </div>
       </div>
@@ -280,5 +281,5 @@ function normalize(value: string) {
     .normalize("NFKD")
     .toLowerCase()
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]+/g, "");
+    .replace(/[^\p{L}\p{M}\p{N}]+/gu, "");
 }

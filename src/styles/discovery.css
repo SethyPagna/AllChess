@@ -1,0 +1,44 @@
+/* Shared discovery surfaces: artwork first, details on demand. */
+.studio-home { gap: 22px; }
+.studio-hero { min-height: 220px; padding: 24px 36px; }
+.studio-hero h1 { max-width: 330px; font-size: clamp(34px, 3.8vw, 52px); }
+.studio-hero .intro-board-orbit { height: 200px; width: 225px; }
+.studio-hero .intro-board { width: 190px; height: 190px; }
+.library-heading h2 { margin: 0; font-size: 22px; }
+.library-card-copy { min-height: 54px; }
+.library-card-copy h3 { line-height: 1.35; }
+.library-card { box-shadow: none; }
+.lobby-art-grid > .library-card { border-radius: 12px; }
+.game-preview-label { color: var(--muted); font-size: 10px; font-weight: 500; }
+.game-artwork { position: relative; overflow: hidden; isolation: isolate; height: 150px; }
+.game-artwork[data-tone="sand"] { --art-light: #f1e4ca; --art-dark: #c3a27a; }
+.game-artwork[data-tone="clay"] { --art-light: #ecded3; --art-dark: #bf9782; }
+.game-artwork[data-tone="slate"] { --art-light: #dce5ec; --art-dark: #8b9faf; }
+.game-artwork[data-tone="plum"] { --art-light: #e7deea; --art-dark: #a78dac; }
+.game-artwork[data-tone="khmer"] { --art-light: #f1e3c9; --art-dark: #b39a6c; }
+.game-artwork-board { position: absolute; z-index: -1; width: 190px; height: 190px; left: calc(50% - 95px); top: 33px; transform: perspective(300px) rotateX(53deg) rotateZ(-14deg); border: 4px solid var(--art-dark); border-radius: 3px; box-shadow: 5px 7px 0 color-mix(in srgb, var(--art-dark), #000 20%); opacity: .65; }
+.game-artwork .library-piece-group { padding-bottom: 24px; }
+.game-artwork-guide { display: grid; place-items: center; background: var(--surface-soft); color: var(--muted); }
+.game-artwork-guide::before, .game-artwork-guide::after { content: ""; position: absolute; width: 110px; height: 110px; border: 1px solid var(--border); border-radius: 50%; z-index: -1; }
+.game-artwork-guide::after { width: 160px; height: 160px; }
+/* Artwork sits on a light board in both themes, so tile pieces keep light faces. */
+.game-artwork .native-piece-symbol:is([data-variant="jungle"], [data-skin="tile"]) { --surface: #fff; }
+.lobby-dashboard { grid-template-columns: minmax(0, 1fr); }
+.lobby-content-grid { grid-template-columns: minmax(0, 1fr); }
+.lobby-art-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.lobby-stat-rail > .compact-section-heading { display: none; }
+.lobby-dashboard .compact-page-heading h1 { font-size: 28px; font-weight: 650; letter-spacing: -.035em; }
+.catalog-rules-dialog { width: 100%; max-width: none; height: 100%; max-height: none; margin: 0; border: 0; padding: 16px; background: transparent; color: var(--foreground); }
+.catalog-rules-dialog[open] { display: grid; place-items: center; }
+.catalog-rules-dialog::backdrop { background: #111a16a6; backdrop-filter: blur(3px); }
+@media (max-width: 600px) {
+  .studio-hero { grid-template-columns: minmax(0, 1fr); min-height: 0; padding: 24px; }
+  .studio-hero .intro-board-orbit { display: none; }
+  .studio-hero .intro-actions { flex-wrap: wrap; }
+  .studio-hero h1 { max-width: none; font-size: 34px; }
+  .studio-hero .intro-actions a { min-height: 42px; }
+  .lobby-art-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .game-artwork { height: 120px; }
+  .game-artwork-board { width: 150px; height: 150px; left: calc(50% - 75px); }
+  .library-card-copy { min-height: 52px; }
+}

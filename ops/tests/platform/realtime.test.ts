@@ -105,15 +105,15 @@ describe("realtime multiplayer foundations", () => {
     });
   });
 
-  test("room, queue, stats, and bot move APIs return typed demo payloads", async () => {
+  test("room, queue, stats, and bot move APIs return typed payloads", async () => {
     const createdRoom = await roomPost(new Request("http://allchess.test/api/rooms", { method: "POST", body: JSON.stringify({ variantKey: "classic", rated: true }) }));
     await expect(createdRoom.json()).resolves.toMatchObject({ mode: "demo", snapshot: { variantKey: "classic", rated: true } });
 
     const fetchedRoom = await roomGet(new Request("http://allchess.test/api/rooms/room-1"), { params: Promise.resolve({ id: "room-1" }) });
     await expect(fetchedRoom.json()).resolves.toMatchObject({ snapshot: { roomId: "room-1" } });
 
-    const ticket = await queueJoinPost(new Request("http://allchess.test/api/matchmaking/join", { method: "POST", body: JSON.stringify({ profileId: "p1" }) }));
-    await expect(ticket.json()).resolves.toMatchObject({ mode: "demo", ticket: { profileId: "p1" } });
+    const ticket = await queueJoinPost(new Request("http://allchess.test/api/matchmaking/join", { method: "POST", body: JSON.stringify({ token: crypto.randomUUID(), variantKey: "classic", timeControlKey: "rapid" }) }));
+    await expect(ticket.json()).resolves.toMatchObject({ ticket: { ticketId: expect.any(String) } });
 
     const stats = await liveStatsGet();
     await expect(stats.json()).resolves.toMatchObject({ source: "demo", playersOnline: 0, catalog: { playableGames: 20 } });

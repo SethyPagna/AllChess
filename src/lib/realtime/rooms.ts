@@ -1,6 +1,7 @@
-import { applyMove, createInitialState, getLegalMoves, sameSquare, type GameState, type Move } from "@/lib/variants";
+import { applyMove, createInitialState, findLegalMove, getLegalMoves, sameSquare, type GameState, type Move } from "@/lib/variants";
 import { getCatalogStats } from "@/lib/catalog";
 import type { LiveStats, MatchmakingMatch, MatchmakingTicket, RoomSnapshot } from "@/lib/realtime/types";
+import { moveKindAllowed } from "./move-request";
 
 export function createRoomSnapshot(input: {
   roomId?: string;
@@ -34,7 +35,7 @@ export function createRoomSnapshot(input: {
 }
 
 export function applyAuthoritativeRoomMove(snapshot: RoomSnapshot, move: Move) {
-  const legal = isAuthoritativeMoveLegal(snapshot.state, move);
+  const legal = moveKindAllowed(snapshot.state.variantKey, move.kind) && isAuthoritativeMoveLegal(snapshot.state, move);
   if (!legal) {
     return { ok: false as const, reason: "Illegal move for current room state.", snapshot };
   }
@@ -61,7 +62,13 @@ function isAuthoritativeMoveLegal(state: GameState, move: Move) {
     }
   }
 
-  return getLegalMoves(state, move.kind === "drop" && move.drop ? { drop: move.drop } : move.from).some((candidate) => movesMatch(candidate, move));
+  if (move.kind === "drop" && move.drop) return getLegalMoves(state, { drop: move.drop }).some((candidate) => movesMatch(candidate, move));
+  // The engine resolves promotion choices (`promoteTo`, default queen) and the
+  // king-takes-own-rook castling form exactly as applyMove will.
+  const candidate = findLegalMove(state, move);
+  if (!candidate || (candidate.kind ?? "move") !== (move.kind ?? "move")) return false;
+  if (candidate.promoteTo !== undefined) return true;
+  return movesMatch({ ...candidate, to: move.to }, move);
 }
 
 function movesMatch(candidate: Move, requested: Move) {

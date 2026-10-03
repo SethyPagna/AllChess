@@ -1,4 +1,5 @@
 export const ruleSources = {
+  "ouk-chaktrang": [{ name: "PyChess Cambodian rules and championship reference", url: "https://www.pychess.org/variants/cambodian", scope: ["Native setup", "Opening leaps", "Promotion", "Counting rules"] }],
   classic: [
     {
       name: "FIDE Laws of Chess",
@@ -42,7 +43,7 @@ export const ruleSources = {
   jungle: [
     {
       name: "Yellow Mountain Imports Dou Shou Qi rules",
-      url: "https://ymimports.onsitesupport.io/yellowmountainimports/knowledge-base/article/how-to-play-jungle-dou-shou-qi-%E9%AC%A5%E7%8D%B8%E6%A3%8B",
+      url: "https://www.ymimports.com/pages/how-to-play-jungle",
       scope: ["animal ranking", "river", "trap", "den"]
     }
   ]

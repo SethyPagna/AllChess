@@ -1,0 +1,55 @@
+# 3D startup and bot deadlines
+
+Checkpoint: 30 September 2026. The broader redesign remains in progress.
+
+## Changes
+
+- Request the selected GLB when the player switches to 3D, overlapping model delivery with viewer JavaScript. Players staying in 2D do not download a GLB.
+- Reuse the board and its materials when existing textures finish loading. Replacement board artwork still rebuilds the surface, and lighting changes still invalidate shader preparation. Readiness still follows an actual render.
+- Before exploring a Western promotion, use a bounded part of the existing quick-search allocation to check one already-scored alternative. If the promotion's safety check cannot finish, retain a previously verified safe move. Unknown safety is not treated as a completed proof, and no deadline is extended.
+- In King of the Hill, score the best statically ranked quiet fallback first and reuse completed counts of immediate winning hill replies. A positive count proves an opposing win is available; zero does not prove safety from ordinary mate. An immediate win for the bot still takes priority.
+
+The rendering change is commit `2762783`. Artwork, geometry, texture resolution, camera settings and shadows are unchanged.
+
+## Rendering verification
+
+The complete Cloudflare production build passes, including strict TypeScript, 209 generated pages, offline packaging and the realtime Worker. All 33 focused scene tests and scoped lint pass. The 182-file offline pack totals 83,510,451 bytes; all 104 artwork, model, engine and icon descriptors are unchanged from the preceding pack.
+
+Fresh Chrome 153 contexts at 390 × 844 verified the selected model, no GLB requests while in 2D, and actual rendered boards. Shogi Hori and Kōnane Shore also passed native surface/lighting delivery, a single model body transfer, zoom/reset, and unchanged positions after returning to 2D.
+
+| Case | Local production server | Readiness | Five-second target |
+| --- | --- | ---: | --- |
+| Classic before this change | Wrangler | 7,422 ms | Fail |
+| Classic after this change | Next standalone | 16,666 ms | Fail |
+| Shogi Hori after this change | Next standalone | 4,940 ms | Pass |
+| Kōnane Shore after this change | Next standalone | 10,590 ms | Fail |
+
+These are not paired speed comparisons: the backend changed after a post-build Wrangler navigation timeout and substantial host memory pressure. In the standalone Classic run, the selected GLB began 18 ms after the click, transferred once, and finished about 11.2 seconds after the click. The remaining startup delay is unresolved. Diagnostic waits beyond five seconds preserve the failed timing result even when functional checks subsequently pass. Those rendering runs did not certify cold-offline behavior; the later exact-shell checkpoint below records a separate successful update and cold launch.
+
+## Bot verification
+
+A new deterministic regression keeps the real rules engine and the original 200 ms request. It advances the clock to the deadline immediately after applying the root queen promotion. The fixture independently proves a safe pawn move exists and that the promotion permits an actual opposing rook mate.
+
+The regression fails before the repair and passes afterward. It requires the promotion and deadline trigger to occur, then independently verifies legality and absence of an immediate winning reply. The initial three-file run reported 101 passes and one King of the Hill objective-defense failure.
+
+Two additional real-engine tests reproduced separate King of the Hill paths at the unchanged 80 ms budget: the first fallback could consume the quick window without reducing the threat, and a partially effective defense could be demoted behind a move with more known winning replies after time expired. Adding a knight to the second fixture keeps these paths independent. Reusing cached positive hill counts fixes only the second test; improving the initial fallback then fixes the first. All 105 tests across the five affected bot files pass, including the original objective-defense test, positive promotion, drops, clocks and expired-search checks.
+
+The safety repair is cooperative: one synchronous engine operation can cross a clock checkpoint. If no safe move was proved before expiry, a legal but unverified fallback remains possible. This is not a guarantee of strict wall-clock completion or universal mate avoidance.
+
+The subsequent complete serial suite passes **1,384 tests across 120 files**, with no failures or skips, in 234.79 seconds. Strict TypeScript and full lint also pass. Assertions, test timeouts and search budgets are unchanged. Earlier failing runs remain recorded; this pass does not establish that every earlier failure shared the repaired deadline paths or that the bot's playing strength is fully validated.
+
+Collection expansion, startup performance, broader bot-strength evaluation, physical-device checks and hosted Cloudflare verification remain open.
+
+## Exact offline shell delivery
+
+The subsequent local Cloudflare build exposed an offline-update failure: Next’s response serialization combined adjacent Flight script blocks, so the served `/offline` page was 43 bytes shorter than the built file. Its byte count and SHA-256 no longer matched the manifest. The downloader rejected the update and retained the previous working pack.
+
+The Worker packager now validates the built HTML against its manifest entry and embeds those exact UTF-8 bytes in a generated module. It serves only ordinary GET/HEAD requests to `/offline`; RSC requests, other methods, other pages and the separate `/offline.html` reconnect fallback retain their existing routes. The module refreshes on every packaging run. Download integrity checks remain unchanged.
+
+The new regressions fail before the repair. All 20 generated-Worker tests now pass, covering exact Unicode bytes under identity and default compression, HEAD, failed-build output preservation, regeneration, protected seats and the socket bridge. The other 52 affected download, client-lifecycle and routing tests also pass. Strict TypeScript and scoped lint are clean. Earlier setup/cleanup and regeneration timeouts are retained as failed runs; the final generated-Worker run completed in 12.08 seconds at the original limits.
+
+The complete Cloudflare production build also passes after this repair, including strict types, all 209 pages and the actual realtime Worker. The rebuilt manifest is `dfd92721d77f1e14b8efe231c87b5df176e0284ff8f6f2cbbd0818a490a22c34`: 182 files totaling 83,511,172 bytes. All 104 artwork/model/engine/icon descriptors are unchanged. HTTP verification against the local production Worker matches every file’s byte count and SHA-256.
+
+A separate copy of the earlier Shore browser profile successfully updates from its 91,202,855-byte pack. All old and new cached files are hashed, and both earlier saves and every preference survive. A newly created Classic save becomes ready in 3D in 2,303 ms after the download. A separate browser process, offline before its first navigation, restores that save’s exact position, orientation and 3D choice in 3,439 ms. Hints after undo, an actual Stockfish UCI bestmove with its matching UI move, Xiangqi hints/replies, and final cache integrity all pass. The cold run has no page errors, console errors, failed requests or cleanup errors.
+
+These timings meet the unchanged five-second target in these cached-pack runs on desktop Chrome at a mobile viewport. They do not erase the earlier uncached-startup failures, establish paired speed gains, or certify physical devices. The original donor profile and failed-update profile are preserved. Hosted Cloudflare verification and the broader collection/product roadmap remain open.

@@ -1,16 +1,16 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 
-import { CatalogModeGrid } from "@/components/catalog/catalog-mode-support";
 import { GameDetailGate } from "@/components/games/game-detail-gate";
 import { GameDetailHero } from "@/components/games/game-detail-hero";
 import { GameDetailRuleSections } from "@/components/games/game-detail-rule-sections";
 import { GameDetailSources } from "@/components/games/game-detail-sources";
-import { safeDecodeRouteSegment } from "@/lib/routing/params";
-import { gameFamilies } from "@/lib/catalog";
+import { parseCatalogMode, safeDecodeRouteSegment } from "@/lib/routing/params";
+import { gameFamilies, getCatalogModeSupport } from "@/lib/catalog";
 import { getRuntimeCatalogEntry } from "@/lib/catalog/runtime";
 import { listBotTrainingReadiness } from "@/lib/bot/training";
+import { createTranslator } from "@/lib/i18n/dictionary";
 import { normalizeLocale } from "@/lib/i18n/locales";
 import { createPageMetadata } from "@/lib/metadata/page-metadata";
 import { findVariantRuleCompletion } from "@/lib/variants/rules-atlas";
@@ -22,12 +22,20 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const locale = normalizeLocale(rawLocale);
   const decodedGameId = safeDecodeRouteSegment(gameId);
   const entry = decodedGameId ? await getRuntimeCatalogEntry(decodedGameId) : undefined;
-  return createPageMetadata(locale, entry ? entry.name.english : "Games & rules", entry?.shortRules[0]);
+  return createPageMetadata(locale, entry ? entry.name.english : createTranslator(locale)("nav.variants"), entry?.shortRules[0]);
 }
 
-export default async function GameDetailPage({ params }: { params: Promise<{ locale: string; gameId: string }> }) {
+export default async function GameDetailPage({
+  params,
+  searchParams
+}: {
+  params: Promise<{ locale: string; gameId: string }>;
+  searchParams?: Promise<{ mode?: string }>;
+}) {
   const { locale: rawLocale, gameId } = await params;
+  const query = (await searchParams) ?? {};
   const locale = normalizeLocale(rawLocale);
+  const t = createTranslator(locale);
   const decodedGameId = safeDecodeRouteSegment(gameId);
   const entry = decodedGameId ? await getRuntimeCatalogEntry(decodedGameId) : undefined;
   if (!entry) notFound();
@@ -37,23 +45,17 @@ export default async function GameDetailPage({ params }: { params: Promise<{ loc
   const isGated = completion?.status !== "verified-playable" || readiness?.coverageStatus === "rules-gated";
 
   return (
-    <section className="game-detail">
-      <Link href={`/${locale}/variants`} className="action-secondary focus-ring inline-flex items-center gap-2 px-3 py-2 text-sm">
-        <ArrowLeft size={16} />
-        Games & rules
+    <section className="cm-page game-page">
+      <Link href={`/${locale}/variants`} className="cm-link cm-crumb focus-ring">
+        <ChevronLeft size={15} aria-hidden="true" />
+        {t("nav.variants")}
       </Link>
-      <GameDetailHero entry={entry} family={family} locale={locale} />
-      {isGated ? (
-        <GameDetailGate primaryGap={readiness?.primaryGap ?? completion?.remainingGates[0]} />
-      ) : null}
-      <div className="game-detail-grid">
-        <article className="panel game-detail-section game-detail-mode-panel">
-          <h2>Modes</h2>
-          <CatalogModeGrid entry={entry} />
-        </article>
-        <GameDetailRuleSections completion={completion} entry={entry} />
-        <GameDetailSources sources={entry.ruleSourceLinks} />
+      <GameDetailHero entry={entry} family={family} locale={locale} mode={parseCatalogMode(query.mode ?? null)} />
+      {isGated ? <GameDetailGate previewAvailable={getCatalogModeSupport(entry, "offline").enabled} /> : null}
+      <div className="game-sections">
+        <GameDetailRuleSections entry={entry} />
       </div>
+      <GameDetailSources sources={entry.ruleSourceLinks} />
     </section>
   );
 }

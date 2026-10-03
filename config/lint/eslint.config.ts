@@ -9,13 +9,15 @@ const eslintConfig = [
     ignores: [
       ".next/**",
       ".open-next/**",
-      ".wrangler/**",
+      "**/.wrangler/**",
       "coverage/**",
       "legacy/**",
       "node_modules/**",
       "playwright-report/**",
       "public/engines/stockfish/**",
-      "test-results/**"
+      "test-results/**",
+      ".playwright-cli/**",
+      "output/playwright/**"
     ]
   }
 ];

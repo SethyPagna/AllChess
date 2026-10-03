@@ -1,3 +1,7 @@
+import { HistoricalPiece } from "./historical-piece";
+import { KhmerPiece } from "./khmer-piece";
+import { PhotographicPiece } from "./photographic-piece";
+import { MakrukPiece } from "./makruk-piece";
 import { normalizeLocale, type LocaleCode } from "@/lib/i18n/locales";
 import { getVocabulary } from "@/lib/i18n/vocabulary";
 import type { PlayerColor } from "@/lib/variants";
@@ -11,7 +15,7 @@ type PieceIconProps = {
   promoted?: boolean;
 };
 
-export type PieceSkin = "western" | "silhouette" | "glyph" | "monogram" | "castle" | "pirate" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
+export type PieceSkin = "shore" | "celadon" | "hori" | "courtyard" | "club" | "rosette" | "atelier" | "marble" | "khmer" | "western" | "silhouette" | "glyph" | "monogram" | "castle" | "pirate" | "makruk" | "disc" | "wedge" | "mini-wedge" | "tile" | "checker" | "stone";
 export type PieceSkinPreference = "default" | PieceSkin;
 
 export type PieceSkinOption = {
@@ -36,12 +40,20 @@ export function PieceIcon({ code, owner, pieceSkin = "default", variantKey, loca
   const normalized = code.toLowerCase();
   const label = getPieceDisplayName(normalized, variantKey, locale, promoted);
   const skin = resolvePieceSkin(variantKey, pieceSkin);
+  if (skin === "shore") return <PhotographicPiece code={normalized} owner={owner} label={label} variantKey={variantKey} konaneSet="shore"/>;
+  if (skin === "celadon") return <PhotographicPiece code={normalized} owner={owner} label={label} variantKey={variantKey} xiangqiSet="celadon"/>;
+  if (skin === "hori") return <PhotographicPiece code={normalized} owner={owner} label={label} variantKey={variantKey} promoted={promoted} shogiSet="hori"/>;
+  if (skin === "rosette" || skin === "club") return <PhotographicPiece code={normalized} owner={owner} label={label} variantKey={variantKey} promoted={promoted} draughtsSet={skin}/>;
+  if (skin === "marble" || skin === "atelier" || skin === "courtyard") return <PhotographicPiece code={normalized} owner={owner} label={label} variantKey={variantKey} promoted={promoted} khmerSet={skin === "marble" ? undefined : skin}/>;
+  if (variantKey === "ouk-chaktrang" && skin === "khmer") return <KhmerPiece code={normalized} owner={owner} label={label} promoted={promoted} />;
+  if (variantKey === "makruk" && skin === "makruk") return <MakrukPiece code={normalized} owner={owner} label={label} promoted={promoted} />;
   if (isDraughtsPresentation(variantKey)) {
     return <DraughtsPieceIcon code={normalized} owner={owner} promoted={promoted} variantKey={variantKey} label={label} skin={skin} />;
   }
   if (isStonePresentation(variantKey)) {
     return <StonePieceIcon owner={owner} variantKey={variantKey} label={label} skin={skin} />;
   }
+  if ((variantKey === "shatranj" || variantKey === "chaturanga") && (skin === "western" || skin === "silhouette")) return <HistoricalPiece code={normalized} owner={owner} label={label} variantKey={variantKey} promoted={promoted} skin={skin} />;
   if (usesWesternPresentation(variantKey)) {
     if (skin === "silhouette") return <WesternSilhouetteIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} />;
     if (skin === "glyph") return <WesternGlyphIcon code={normalized} owner={owner} variantKey={variantKey} promoted={promoted} label={label} />;
@@ -127,7 +139,7 @@ function StonePieceIcon({ owner, variantKey, label, skin }: { owner: PlayerColor
 }
 
 function usesWesternPresentation(variantKey: string) {
-  return ["classic", "chess960", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings", "makruk"].includes(variantKey);
+  return ["classic", "crazyhouse", "chaturanga", "shatranj", "chess960", "antichess", "horde", "king-of-the-hill", "three-check", "racing-kings", "makruk"].includes(variantKey);
 }
 
 function WesternPieceIcon({ code, owner, variantKey, promoted, label, skin }: { code: string; owner: PlayerColor; variantKey: string; promoted: boolean; label: string; skin: PieceSkin }) {
@@ -543,14 +555,15 @@ function PawnPaths() {
 }
 
 function getNativeGlyph({ code, owner, variantKey, promoted }: { code: string; owner: PlayerColor; variantKey: string; promoted: boolean }) {
+  if (variantKey === "ouk-chaktrang") return ({ k: "ខ", m: "ន", s: "គ", n: "ស", r: "ទ", p: "ត" } as Record<string, string>)[code] ?? code;
   if (variantKey === "xiangqi") {
-    const red: Record<string, string> = { g: "\u5e25", a: "\u4ed5", e: "\u76f8", h: "\u509c", r: "\u4fe5", c: "\u70ae", p: "\u5175" };
+    const red: Record<string, string> = { g: "\u5e25", a: "\u4ed5", e: "\u76f8", h: "\u508c", r: "\u4fe5", c: "\u70ae", p: "\u5175" };
     const black: Record<string, string> = { g: "\u5c07", a: "\u58eb", e: "\u8c61", h: "\u99ac", r: "\u8eca", c: "\u7832", p: "\u5352" };
     return (owner === "red" ? red : black)[code] ?? nativeGlyphs[code] ?? code.toUpperCase();
   }
   if (variantKey === "janggi") {
-    const red: Record<string, string> = { g: "\u695a", a: "\u58eb", e: "\u8c61", h: "\u99ac", r: "\u8eca", c: "\u5305", p: "\u5352" };
-    const blue: Record<string, string> = { g: "\u6f22", a: "\u58eb", e: "\u8c61", h: "\u99ac", r: "\u8eca", c: "\u5305", p: "\u5175" };
+    const blue: Record<string, string> = { g: "\u695a", a: "\u58eb", e: "\u8c61", h: "\u99ac", r: "\u8eca", c: "\u5305", p: "\u5352" };
+    const red: Record<string, string> = { g: "\u6f22", a: "\u58eb", e: "\u8c61", h: "\u99ac", r: "\u8eca", c: "\u5305", p: "\u5175" };
     return (owner === "blue" ? blue : red)[code] ?? nativeGlyphs[code] ?? code.toUpperCase();
   }
   if (isShogiPresentation(variantKey)) {
@@ -566,38 +579,42 @@ function getNativeGlyph({ code, owner, variantKey, promoted }: { code: string; o
 }
 
 export function getPieceSkin(variantKey: string): PieceSkin {
+  if (variantKey === "ouk-chaktrang") return "atelier";
   if (variantKey === "makruk") return "makruk";
-  if (isDraughtsPresentation(variantKey)) return "checker";
+  if (isDraughtsPresentation(variantKey)) return "rosette";
   if (isStonePresentation(variantKey)) return "stone";
   if (variantKey === "xiangqi" || variantKey === "janggi") return "disc";
   if (variantKey === "mini-shogi") return "mini-wedge";
   if (variantKey === "shogi") return "wedge";
   if (variantKey === "jungle") return "tile";
+  if (!["chaturanga","shatranj"].includes(variantKey)) return "marble";
   return "western";
 }
 
 export function getPieceSkinOptions(variantKey: string): PieceSkinOption[] {
+  if (variantKey === "ouk-chaktrang") return [{ key: "default", label: "Khmer atelier" }, { key: "atelier", label: "Khmer atelier" }, option("courtyard"), { key: "khmer", label: "Clear Khmer" }, { key: "tile", label: "Khmer letters" }];
   const defaultSkin = getPieceSkin(variantKey);
   const defaults: PieceSkinOption[] = [{ key: "default", label: `Auto (${pieceSkinLabel(defaultSkin)})` }];
   if (variantKey === "shogi" || variantKey === "mini-shogi") {
-    return [...defaults, option("wedge"), option("mini-wedge"), option("tile")];
+    return [...defaults, option("wedge"), option("mini-wedge"), option("hori"), option("tile")];
   }
-  if (variantKey === "xiangqi" || variantKey === "janggi") {
+  if (variantKey === "xiangqi") return [...defaults, option("disc"), option("celadon"), option("tile")];
+  if (variantKey === "janggi") {
     return [...defaults, option("disc"), option("tile")];
   }
   if (variantKey === "jungle") {
     return [...defaults, option("tile"), option("disc")];
   }
   if (isDraughtsPresentation(variantKey)) {
-    return [...defaults, option("checker"), option("stone")];
+    return [...defaults, option("checker"), option("rosette"), option("club"), option("stone")];
   }
   if (isStonePresentation(variantKey)) {
-    return [...defaults, option("stone"), option("checker")];
+    return [...defaults, option("stone"), option("shore"), option("checker")];
   }
   if (variantKey === "makruk") {
     return [...defaults, option("makruk"), option("silhouette"), option("western"), option("castle"), option("pirate"), option("glyph"), option("monogram")];
   }
-  return [...defaults, option("western"), option("castle"), option("pirate"), option("silhouette"), option("glyph"), option("monogram"), option("makruk")];
+  return [...defaults, ...(!["chaturanga","shatranj"].includes(variantKey)?[option("marble")]:[]), option("western"), option("castle"), option("pirate"), option("silhouette"), option("glyph"), option("monogram"), option("makruk")];
 }
 
 export function resolvePieceSkin(variantKey: string, preference: PieceSkinPreference = "default"): PieceSkin {
@@ -607,6 +624,12 @@ export function resolvePieceSkin(variantKey: string, preference: PieceSkinPrefer
 }
 
 export function getPieceDisplayName(code: string, variantKey: string, locale = "en", promoted = false) {
+  if (variantKey === "makruk" && promoted && code === "m") return locale === "th" ? "เบี้ยหงาย" : "Bia ngai · Promoted pawn";
+  if (variantKey === "makruk" && locale === "th") return ({ k: "ขุน", m: "เม็ด", s: "โคน", n: "ม้า", r: "เรือ", p: "เบี้ย" } as Record<string, string>)[code] ?? code;
+  if (variantKey === "ouk-chaktrang") {
+    const names: Record<string, string> = locale === "km" ? { k: "ខុន", m: "នាង", s: "គោល", n: "សេះ", r: "ទូក", p: "ត្រី" } : { k: "Khon · King", m: "Neang · Queen", s: "Koul · General", n: "Ses · Horse", r: "Touk · Boat", p: "Trey · Fish" };
+    return (promoted ? (locale === "km" ? "ត្រីបក · " : "Promoted fish · ") : "") + (names[code] ?? code);
+  }
   const normalizedLocale = normalizeLocale(locale);
   const vocabulary = getVocabulary(normalizedLocale);
   const promotedKey = promoted ? promotedPieceVocabularyKey(code, variantKey) : null;
@@ -696,14 +719,24 @@ function option(key: PieceSkin): PieceSkinOption {
 }
 
 function pieceSkinLabel(key: PieceSkin) {
+  if (key === "khmer") return "Khmer carved";
   const labels: Record<PieceSkin, string> = {
+    shore: "Shore",
+    celadon: "Celadon",
+    hori: "Carved",
+    courtyard: "Courtyard",
+    club: "Club",
+    rosette: "Rosette",
+    atelier: "Khmer atelier",
+    marble: "Marble",
+    khmer: "Khmer carved",
     western: "Classic",
     silhouette: "Carved",
     glyph: "Glyph",
     monogram: "Monogram",
     castle: "Castle",
     pirate: "Pirate",
-    makruk: "Warm",
+    makruk: "Thai carved",
     disc: "Disc",
     wedge: "Wedge",
     "mini-wedge": "Compact",
@@ -715,6 +748,10 @@ function pieceSkinLabel(key: PieceSkin) {
 }
 
 function westernPieceName(code: string, variantKey: string) {
+  if (variantKey === "chaturanga" || variantKey === "shatranj") {
+    if (code === "e" || code === "a") return "bishop";
+    if (code === "m" || code === "f") return "queen";
+  }
   if (variantKey === "makruk") {
     const makrukNames: Record<string, string> = {
       k: "king",

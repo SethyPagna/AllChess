@@ -1,14 +1,13 @@
-import { applyMove, getLegalMoves, sameSquare, type GameState, type Move, type PlayerColor } from "@/lib/variants";
+import { applyMove, getLegalMoves, getVariant, isRoyal, sameSquare, type GameState, type Move, type PlayerColor } from "@/lib/variants";
 import { lookupBotKnowledge, type BotKnowledgeSource, type BotMoveExplanation } from "@/lib/bot/training";
 import { isStockfishRuntimeReady, moveToUci, requestStockfishMove, shouldUseStockfish, warmStockfishRuntime, type BotEngineMode } from "@/lib/bot/stockfish-engine";
 import { botDifficultyLevels, getBotDifficultyLevel, isBeginnerBotDifficulty, isCeilingBotDifficulty, isMasterBotDifficulty, MAX_BOT_REPLY_MS, type BotDifficulty, type BotDifficultyKey, type BotPlayStyle } from "@/lib/bot/config";
 import type { BotStrengthBand, BotTierKey } from "@/lib/bot/strength";
+import { findLegalMove, type Piece } from "@/lib/variants";
 
-const MIN_BOT_SEARCH_MS = 8;
 export const MAX_GLOBAL_TRANSPOSITIONS = 96000;
 const BOT_REPLY_SAFETY_MS = 120;
 const QUICK_SEARCH_MAX_MS = 16;
-const MAX_TERMINAL_THREAT_CANDIDATES = 32;
 const MAX_TERMINAL_THREAT_REPLIES = 40;
 const TERMINAL_THREAT_FILTER_VARIANTS = new Set(["classic", "chess960", "king-of-the-hill", "three-check"]);
 
@@ -98,9 +97,13 @@ const pieceValues: Record<string, number> = {
 };
 
 type SearchBudget = {
+  appliedMoves: WeakMap<GameState, Map<Move, GameState | null>>;
   cacheHits: number;
+  completedDepth: number;
   deadline: number;
   legalMovesCache: Map<string, Move[]>;
+  hillReplyCounts: Map<Move, number>;
+  mateReplyCache: Map<Move, boolean>;
   moveGenerationCalls: number;
   nodes: number;
   transpositionCache: Map<string, { depth: number; score: number }>;
@@ -129,11 +132,13 @@ export function chooseBotMoveSafe(
       elapsedMs: number;
       validatedLegal: true;
       searchEfficiency: BotSearchEfficiency;
+      opponentWinInOne?: boolean;
+      immediateHillWins?: number;
     }
   | { move: null; reason: "no-legal-moves" } {
   const startedAt = Date.now();
   const difficulty = difficultyFor(difficultyKey);
-  const searchTimeMs = boundedSearchTime(options.maxSearchTimeMs ?? difficulty.moveTimeMs, difficulty.moveTimeMs);
+  const searchTimeMs = getBotSearchTimeMs(state, difficultyKey, options.maxSearchTimeMs);
   const budget = createSearchBudget(startedAt, searchTimeMs);
   const legalMoves = allLegalMovesCached(state, budget);
   if (!legalMoves.length) {
@@ -141,46 +146,10 @@ export function chooseBotMoveSafe(
   }
 
   const perspective = state.turn;
-  const terminalWin = legalMoves
-    .map((move) => ({ move, next: tryMove(state, move) }))
-    .find(({ next }) => next?.status === "completed" && next.result === perspective);
-  if (terminalWin) {
-    return {
-      move: terminalWin.move,
-      reason: "ok",
-      score: 100000 - state.ply,
-      depthReached: 1,
-      nodesSearched: legalMoves.length,
-      elapsedMs: Date.now() - startedAt,
-      validatedLegal: true,
-      searchEfficiency: searchEfficiencyFromBudget(budget)
-    };
-  }
-
-  if (difficulty.skill >= 18) {
-    const decisivePromotion = legalMoves.find((move) => {
-      const piece = state.board[move.from.row]?.[move.from.col]?.piece;
-      return move.promotion === true || (piece?.code === "p" && (move.to.row === 0 || move.to.row === state.board.length - 1));
-    });
-    if (decisivePromotion) {
-      return {
-        move: decisivePromotion,
-        reason: "ok",
-        score: 18000,
-        depthReached: 1,
-        nodesSearched: legalMoves.length,
-        elapsedMs: Date.now() - startedAt,
-        validatedLegal: true,
-        searchEfficiency: searchEfficiencyFromBudget(budget)
-      };
-    }
-  }
-
-  const candidateMoves = movesThatAvoidImmediateTerminalReply(state, legalMoves, perspective, difficulty, budget);
-  const ranked = rankCandidateMoves(state, candidateMoves, difficulty, perspective, budget, searchTimeMs);
+  const ranked = rankCandidateMoves(state, legalMoves, difficulty, perspective, budget, searchTimeMs);
 
   const selected = selectRankedMove(ranked, difficulty);
-  const depthReached = Math.max(1, Math.min(difficulty.depth, difficulty.depth - (Date.now() >= budget.deadline ? 1 : 0)));
+  const depthReached = budget.completedDepth;
 
   if (isBeginnerBotDifficulty(difficulty)) {
     return {
@@ -191,7 +160,9 @@ export function chooseBotMoveSafe(
       nodesSearched: budget.nodes,
       elapsedMs: Date.now() - startedAt,
       validatedLegal: true,
-      searchEfficiency: searchEfficiencyFromBudget(budget)
+      searchEfficiency: searchEfficiencyFromBudget(budget),
+      opponentWinInOne: budget.mateReplyCache.get(selected.move),
+      immediateHillWins: budget.hillReplyCounts.get(selected.move)
     };
   }
 
@@ -203,7 +174,9 @@ export function chooseBotMoveSafe(
     nodesSearched: budget.nodes,
     elapsedMs: Date.now() - startedAt,
     validatedLegal: true,
-    searchEfficiency: searchEfficiencyFromBudget(budget)
+    searchEfficiency: searchEfficiencyFromBudget(budget),
+    opponentWinInOne: budget.mateReplyCache.get(selected.move),
+    immediateHillWins: budget.hillReplyCounts.get(selected.move)
   };
 }
 
@@ -213,14 +186,16 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
   pendingRequests.set(requestId, requestState);
   const startedAt = Date.now();
   const tierConfig = difficultyFor(difficultyKey);
-  const searchTimeMs = boundedSearchTime(options.maxSearchTimeMs ?? tierConfig.moveTimeMs, tierConfig.moveTimeMs);
-  const hardDeadline = startedAt + Math.max(MIN_BOT_SEARCH_MS, Math.min(searchTimeMs, MAX_BOT_REPLY_MS - BOT_REPLY_SAFETY_MS));
-  const remainingSearchMs = () => Math.max(MIN_BOT_SEARCH_MS, hardDeadline - Date.now());
+  const searchTimeMs = getBotSearchTimeMs(state, difficultyKey, options.maxSearchTimeMs);
+  const hardDeadline = startedAt + searchTimeMs;
+  const remainingSearchMs = () => Math.max(1, hardDeadline - Date.now());
+  const ownClock = state.clocks.find((clock) => clock.color === state.turn);
+  const delayMs = ownClock && ownClock.remainingMs > 0 && ownClock.remainingMs < 5000 ? 0 : Math.min(options.delayMs ?? 0, searchTimeMs / 4);
 
   return new Promise((resolve) => {
     const finish = (result: BotMoveResult) => {
       pendingRequests.delete(requestId);
-      resolve(result);
+      resolve({ ...result, elapsedMs: Date.now() - startedAt });
     };
 
     windowSafeSetTimeout(async () => {
@@ -316,7 +291,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
                 validatedLegal: true,
                 searchEfficiency: emptySearchEfficiency(stockfish.nodesSearched),
                 knowledgeSource: "engine-search",
-                explanation: explanationForMove("engine-search", state, stockfish.move, stockfish.evaluation, difficultyKey)
+                explanation: explanationForMove("engine-search", state, stockfish.move, stockfish.evaluation, difficultyKey, hardDeadline)
               });
               return;
             }
@@ -325,7 +300,8 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
           }
         }
 
-        const result = chooseBotMoveSafe(state, difficultyKey, { ...options, maxSearchTimeMs: remainingSearchMs() });
+        const remainingMs = remainingSearchMs();
+        const result = chooseBotMoveSafe(state, difficultyKey, { ...options, maxSearchTimeMs: Math.max(1, remainingMs - Math.min(120, remainingMs / 5)) });
         if (!result.move) {
           finish({
             requestId,
@@ -379,7 +355,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
           validatedLegal,
           searchEfficiency: result.searchEfficiency,
           knowledgeSource: "internal-search",
-          explanation: validatedLegal ? explanationForMove("internal-search", state, result.move, result.score, difficultyKey) : undefined,
+          explanation: validatedLegal ? explanationForMove("internal-search", state, result.move, result.score, difficultyKey, hardDeadline, result.opponentWinInOne, result.immediateHillWins) : undefined,
           error: validatedLegal ? undefined : "Bot selected an illegal move."
         });
       } catch (error) {
@@ -408,7 +384,7 @@ export function requestBotMove(state: GameState, difficultyKey: BotDifficultyKey
           error: error instanceof Error ? error.message : "Bot move failed."
         });
       }
-    }, options.delayMs ?? 0);
+    }, delayMs);
   });
 }
 
@@ -418,6 +394,10 @@ export function cancelBotMove(requestId: string) {
 }
 
 export function allLegalMoves(state: GameState): Move[] {
+  return [...boardMoves(state), ...offBoardMoves(state)];
+}
+
+function boardMoves(state: GameState): Move[] {
   const moves: Move[] = [];
 
   for (const row of state.board) {
@@ -429,11 +409,164 @@ export function allLegalMoves(state: GameState): Move[] {
   return moves;
 }
 
+function offBoardMoves(state: GameState): Move[] {
+  const moves: Move[] = [];
+  const hand = getVariant(state.variantKey).supportsDrops ? state.hands?.[state.turn] ?? {} : {};
+  for (const code of Object.keys(hand).sort()) {
+    if ((hand[code] ?? 0) > 0) moves.push(...getLegalMoves(state, { drop: handDropPiece(state.turn, code) }));
+  }
+  const pass = findLegalMove(state, { kind: "pass", from: { row: -1, col: -1 }, to: { row: -1, col: -1 } });
+  if (pass) moves.push(pass);
+  return moves;
+}
+
+function handDropPiece(owner: PlayerColor, code: string): Piece {
+  return { id: `${owner}-${code}-hand`, code, owner, labelKey: `piece.${code}` };
+}
+
+function hasOffBoardMoveKinds(state: GameState) {
+  return getVariant(state.variantKey).supportsDrops || state.variantKey === "janggi";
+}
+
+const UNBOUNDED_DROP_LIST_MAX = 48;
+
+/**
+ * Every board move and pass, but only the best-ordered drops, for scans that apply each
+ * move: a full hand offers hundreds of drops and the engine validates each one it applies.
+ */
+function withBoundedDrops(state: GameState, legalMoves: Move[], difficulty: BotDifficulty) {
+  const drops = legalMoves.filter((move) => move.kind === "drop");
+  const dropLimit = Math.max(4, Math.floor(difficulty.beamWidth / 2));
+  if (drops.length <= dropLimit || legalMoves.length <= UNBOUNDED_DROP_LIST_MAX) return legalMoves;
+  const keptDrops = new Set(
+    drops
+      .map((move) => ({ move, score: staticMoveScore(state, move) }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, dropLimit)
+      .map(({ move }) => move)
+  );
+  return legalMoves.filter((move) => move.kind !== "drop" || keptDrops.has(move));
+}
+
+function dropAimScore(state: GameState, move: Move) {
+  if (move.kind !== "drop" || !move.drop) return 0;
+  return dropCouldGiveCheck(state, move) ? 40 : 0;
+}
+
+function dropCouldGiveCheck(state: GameState, move: Move) {
+  const code = move.drop?.code ?? "";
+  const opponents = opponentColors(state, move.drop?.owner ?? state.turn);
+  return state.board.some((row) =>
+    row.some(({ piece, square }) => {
+      if (!piece || !opponents.includes(piece.owner) || piece.code !== "k") return false;
+      const rows = Math.abs(square.row - move.to.row);
+      const cols = Math.abs(square.col - move.to.col);
+      if (Math.max(rows, cols) <= 1) return true;
+      if (code === "n") return rows * cols === 2;
+      const onLine = rows === 0 || cols === 0 ? ["r", "q", "l"].includes(code) : rows === cols && ["b", "q"].includes(code);
+      return onLine && isClearLine(state, move.to, square);
+    })
+  );
+}
+
+function isClearLine(state: GameState, from: { row: number; col: number }, to: { row: number; col: number }) {
+  const rowStep = Math.sign(to.row - from.row);
+  const colStep = Math.sign(to.col - from.col);
+  for (let row = from.row + rowStep, col = from.col + colStep; row !== to.row || col !== to.col; row += rowStep, col += colStep) {
+    if (state.board[row]?.[col]?.piece) return false;
+  }
+  return true;
+}
+
+function captureExposure(next: GameState, square: { row: number; col: number }, piece: { code: string; owner: PlayerColor }, budget: SearchBudget) {
+  const captures = opponentColors(next, piece.owner).flatMap((color) =>
+    allLegalMovesFor(next, color, budget)
+      .filter((reply) => sameSquare(reply.to, square))
+  );
+  if (!captures.length) return 0;
+  const captureMultiplier = getVariant(next.variantKey).supportsDrops ? 2 : 1;
+  const value = (pieceValues[piece.code] ?? 100) * captureMultiplier;
+  let exposure = 0;
+  for (const capture of captures) {
+    if (Date.now() >= budget.deadline) return value;
+    const afterCapture = tryMove(next, capture, budget);
+    if (!afterCapture) continue;
+    const recapture = allLegalMovesFor(afterCapture, piece.owner, budget).some((reply) => sameSquare(reply.to, square));
+    if (!recapture) return value;
+    const attackerValue = (pieceValues[next.board[capture.from.row]?.[capture.from.col]?.piece?.code ?? ""] ?? 100) * captureMultiplier;
+    exposure = Math.max(exposure, value - attackerValue);
+  }
+  return exposure;
+}
+
+function hasVerifiedSafeSuccessor(state: GameState, move: Move, perspective: PlayerColor, budget: SearchBudget) {
+  if (budget.mateReplyCache.get(move) !== false) return false;
+  const next = budget.appliedMoves.get(state)?.get(move);
+  return !!next && (next.status === "active" || next.status === "completed" && (next.result === perspective || next.result === "draw"));
+}
+
+function demoteMovesIntoMate(state: GameState, ranked: Array<{ move: Move; score: number }>, perspective: PlayerColor, budget: SearchBudget) {
+  const losing = new Set<Move>();
+  let safe = ranked.find(({ move }) => hasVerifiedSafeSuccessor(state, move, perspective, budget));
+  for (const entry of ranked) {
+    const { move } = entry;
+    const loses = budget.mateReplyCache.get(move) ?? allowsMateInOne(state, move, perspective, budget);
+    if (loses === null) break;
+    budget.mateReplyCache.set(move, loses);
+    if (!loses && hasVerifiedSafeSuccessor(state, move, perspective, budget)) {
+      safe = entry;
+      break;
+    }
+    if (loses) losing.add(move);
+  }
+  const matedScore = -100000 + state.ply + 2;
+  const demoted = losing.size ? [
+    ...ranked.filter(({ move }) => !losing.has(move)),
+    ...ranked.filter(({ move }) => losing.has(move)).map(({ move, score }) => ({ move, score: Math.min(score, matedScore) }))
+  ] : ranked;
+  return { verified: !!safe, ranked: safe ? [safe, ...demoted.filter(({ move }) => move !== safe.move)] : demoted };
+}
+
+function allowsMateInOne(state: GameState, move: Move, perspective: PlayerColor, budget: SearchBudget, deadline = budget.deadline) {
+  if ((budget.hillReplyCounts.get(move) ?? 0) > 0) return true;
+  if (Date.now() >= deadline) return null;
+  const next = tryMove(state, move, budget);
+  if (!next || next.status !== "active") return false;
+  // A mating reply gives check, so a reply drop only matters if it could give check.
+  const replies = [...allLegalMovesCached(next, budget, true), ...possibleCheckingDrops(next)];
+  for (const reply of replies) {
+    if (Date.now() >= deadline) return null;
+    const after = tryMove(next, reply, budget);
+    if (after?.status === "completed" && after.result !== perspective && after.result !== "draw") return true;
+  }
+  return false;
+}
+
+/** Unvalidated drops for the side to move that could give check; applying one validates it. */
+function possibleCheckingDrops(state: GameState): Move[] {
+  const hand = getVariant(state.variantKey).supportsDrops ? state.hands?.[state.turn] ?? {} : {};
+  const drops: Move[] = [];
+  for (const code of Object.keys(hand).sort()) {
+    if ((hand[code] ?? 0) <= 0) continue;
+    for (const row of state.board) {
+      for (const cell of row) {
+        const drop: Move = { kind: "drop", from: { row: -1, col: -1 }, to: cell.square, drop: handDropPiece(state.turn, code) };
+        if (!cell.piece && dropCouldGiveCheck(state, drop)) drops.push(drop);
+      }
+    }
+  }
+  return drops;
+}
+
 function createSearchBudget(startedAt: number, searchTimeMs: number): SearchBudget {
   return {
+    appliedMoves: new WeakMap(),
     cacheHits: 0,
+    completedDepth: 0,
     deadline: startedAt + searchTimeMs,
     legalMovesCache: new Map(),
+    hillReplyCounts: new Map(),
+    mateReplyCache: new Map(),
     moveGenerationCalls: 0,
     nodes: 0,
     transpositionCache: new Map(),
@@ -463,15 +596,17 @@ function searchEfficiencyFromBudget(budget: SearchBudget): BotSearchEfficiency {
   };
 }
 
-function allLegalMovesCached(state: GameState, budget: SearchBudget) {
-  const key = createBotSearchStateKey(state);
+function allLegalMovesCached(state: GameState, budget: SearchBudget, boardOnly = false): Move[] {
+  // Drops and passes never capture or attack a square, so attack and mobility heuristics read board moves only.
+  const splitsOffBoardMoves = hasOffBoardMoveKinds(state);
+  const key = boardOnly && splitsOffBoardMoves ? `board|${createBotSearchStateKey(state)}` : createBotSearchStateKey(state);
   const cached = budget.legalMovesCache.get(key);
   if (cached) {
     budget.cacheHits += 1;
     return cached;
   }
 
-  const moves = allLegalMoves(state);
+  const moves = !splitsOffBoardMoves ? allLegalMoves(state) : boardOnly ? boardMoves(state) : [...allLegalMovesCached(state, budget, true), ...offBoardMoves(state)];
   budget.moveGenerationCalls += 1;
   budget.legalMovesCache.set(key, moves);
   return moves;
@@ -488,8 +623,22 @@ export function createBotSearchStateKey(state: GameState) {
     }
   }
 
+  const last = state.moves.at(-1);
+  const previousMove = last ? `${last.kind ?? "move"}:${last.from.row},${last.from.col}:${last.to.row},${last.to.col}` : "";
+  // Identical piece placement can have different castling/opening-leap rights.
+  let movedHomeSquares = 0;
+  if (getVariant(state.variantKey).supportsCastling || state.variantKey === "ouk-chaktrang") {
+    for (const move of state.moves) {
+      if (move.from.row === 0 || move.from.row === state.board.length - 1) movedHomeSquares |= 1 << ((move.from.row === 0 ? 0 : 8) + move.from.col);
+      // Landing on a home square (capturing an unmoved rook) also removes a castling right.
+      if (move.to.row === 0 || move.to.row === state.board.length - 1) movedHomeSquares |= 1 << ((move.to.row === 0 ? 0 : 8) + move.to.col);
+    }
+  }
+
   return [
     state.variantKey,
+    previousMove,
+    movedHomeSquares,
     state.turn,
     state.status,
     state.result ?? "",
@@ -512,20 +661,22 @@ function evaluateMove(
   move: Move,
   difficulty: BotDifficulty,
   perspective: PlayerColor,
-  budget: SearchBudget
+  budget: SearchBudget,
+  depth = difficulty.depth
 ) {
   if (isBeginnerBotDifficulty(difficulty)) {
     return beginnerMoveScore(state, move, perspective, difficulty, budget);
   }
 
-  const next = tryMove(state, move);
+  const next = tryMove(state, move, budget);
   if (!next) return Number.NEGATIVE_INFINITY;
   if (next.status === "completed") {
     return evaluateState(next, perspective, budget);
   }
 
-  const searchDepth = Math.max(0, difficulty.depth - 1);
+  const searchDepth = Math.max(0, depth - 1);
   const searchScore = minimax(next, searchDepth, perspective, Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY, difficulty, budget);
+  if (Date.now() >= budget.deadline || budget.nodes >= difficulty.nodeBudget) return searchScore;
   const movedPiece = next.board[move.to.row]?.[move.to.col]?.piece;
   const riskPenalty = movedPiece && difficulty.skill >= 6 ? hangingPenalty(next, move.to, movedPiece) * (1 - difficulty.riskTolerance) : 0;
   const tradePenalty = movedPiece && difficulty.skill < 18 ? badTradePenalty(state, next, move, movedPiece, budget) * (1 - difficulty.riskTolerance) : 0;
@@ -544,23 +695,73 @@ function rankCandidateMoves(
   budget: SearchBudget,
   searchTimeMs: number
 ) {
-  if (searchTimeMs <= QUICK_SEARCH_MAX_MS) {
-    return candidateMoves
-      .map((move) => ({ move, score: quickMoveScore(state, move, difficulty, perspective, budget) }))
-      .sort((a, b) => b.score - a.score);
+  const ordered = candidateMoves.map((move) => ({ move, score: staticMoveScore(state, move) })).sort((a, b) => b.score - a.score);
+  const directWin = candidateMoves.find((move) => {
+    if (state.variantKey === "jungle") return move.to.col === 3 && move.to.row === (state.turn === "white" ? 0 : state.board.length - 1);
+    const moving = state.board[move.from.row]?.[move.from.col]?.piece;
+    return state.variantKey === "king-of-the-hill" && moving && isRoyal(moving, state.variantKey) && variantObjectiveScore(state, move, moving.owner) > 0;
+  });
+  const fallbackCandidates = state.variantKey === "king-of-the-hill" ? ordered.map(({ move }) => move) : candidateMoves;
+  const fallbackMove = directWin ?? fallbackCandidates.find((move) => move.kind !== "drop" && !move.promotion && !move.promoteTo && !isCapture(state, move))
+    ?? candidateMoves.find((move) => move.kind !== "drop")
+    ?? ordered[0].move;
+  const fallback = [{ move: fallbackMove, score: materialOnlyScore(state, perspective) }];
+  if (Date.now() >= budget.deadline) return fallback;
+  const quickDeadline = Math.min(budget.deadline, Date.now() + Math.max(1, searchTimeMs * 0.35));
+  let ranked = [{ move: fallbackMove, score: quickMoveScore(state, fallbackMove, difficulty, perspective, budget) }];
+  const firstNext = budget.appliedMoves.get(state)?.get(fallbackMove);
+  if (firstNext?.status === "completed" && firstNext.result === perspective) {
+    budget.completedDepth = 1;
+    return ranked;
   }
-
-  const ranked: Array<{ move: Move; score: number }> = [];
-  for (const move of candidateMoves) {
-    const score = Date.now() >= budget.deadline || budget.nodes >= difficulty.nodeBudget ? quickMoveScore(state, move, difficulty, perspective, budget) : evaluateMove(state, move, difficulty, perspective, budget);
-    ranked.push({ move, score });
+  let seededPromotionSafety = false;
+  for (const { move } of ordered) {
+    if (move === fallbackMove) continue;
+    if (Date.now() >= quickDeadline || budget.nodes >= difficulty.nodeBudget) break;
+    if (!seededPromotionSafety && move.promoteTo && searchTimeMs > QUICK_SEARCH_MAX_MS && getVariant(state.variantKey).supportsCheck) {
+      seededPromotionSafety = true;
+      if (!ranked.some(({ move: candidate }) => hasVerifiedSafeSuccessor(state, candidate, perspective, budget))) {
+        const seed = ranked.filter(({ move: candidate }) => !candidate.promoteTo && budget.appliedMoves.get(state)?.get(candidate)?.status === "active")
+          .sort((a, b) => b.score - a.score)[0];
+        if (seed) {
+          const loses = allowsMateInOne(state, seed.move, perspective, budget, quickDeadline);
+          if (loses !== null) budget.mateReplyCache.set(seed.move, loses);
+        }
+      }
+      if (Date.now() >= quickDeadline || budget.nodes >= difficulty.nodeBudget) break;
+    }
+    const entry = { move, score: quickMoveScore(state, move, difficulty, perspective, budget) };
+    ranked.push(entry);
+    const next = budget.appliedMoves.get(state)?.get(move);
+    if (next?.status === "completed" && next.result === perspective) {
+      budget.completedDepth = 1;
+      return [entry];
+    }
   }
-  return ranked.sort((a, b) => b.score - a.score);
+  if (!ranked.length) return fallback;
+  budget.completedDepth = 1;
+  ranked.sort((a, b) => b.score - a.score);
+  ranked = demoteMovesIntoMate(state, ranked, perspective, budget).ranked;
+  if (searchTimeMs <= QUICK_SEARCH_MAX_MS || ranked.length !== candidateMoves.length) return ranked;
+  for (let depth = 1; depth <= difficulty.depth; depth += 1) {
+    const iteration: Array<{ move: Move; score: number }> = [];
+    for (const { move } of ranked) {
+      if (Date.now() >= budget.deadline || budget.nodes >= difficulty.nodeBudget) return ranked;
+      const score = evaluateMove(state, move, difficulty, perspective, budget, depth);
+      if (Date.now() >= budget.deadline || budget.nodes >= difficulty.nodeBudget) return ranked;
+      iteration.push({ move, score });
+    }
+    const checked = demoteMovesIntoMate(state, iteration.sort((a, b) => b.score - a.score), perspective, budget);
+    if (!checked.verified) return ranked;
+    ranked = checked.ranked;
+    budget.completedDepth = depth;
+  }
+  return ranked;
 }
 
 function quickMoveScore(state: GameState, move: Move, difficulty: BotDifficulty, perspective: PlayerColor, budget: SearchBudget) {
   budget.nodes += 1;
-  const next = tryMove(state, move);
+  const next = tryMove(state, move, budget);
   if (!next) return Number.NEGATIVE_INFINITY;
   if (next.status === "completed") return evaluateState(next, perspective, budget);
   const movingPiece = state.board[move.from.row]?.[move.from.col]?.piece;
@@ -574,7 +775,15 @@ function quickMoveScore(state: GameState, move: Move, difficulty: BotDifficulty,
       : 0;
   const objective = movedPiece ? variantObjectiveScore(next, move, movedPiece.owner) * 0.5 : 0;
   const noise = difficulty.skill >= 20 ? 0 : deterministicNoise(move) * Math.max(1, 18 - difficulty.skill);
-  return staticMoveScore(state, move) + objective + noise - defendedLowValueTargetPenalty;
+  const exposure = movedPiece ? captureExposure(next, move.to, movedPiece, budget) : 0;
+  const hillThreats = next.variantKey === "king-of-the-hill"
+    ? allLegalMovesFor(next, next.turn, budget).filter((reply) => {
+        const piece = next.board[reply.from.row]?.[reply.from.col]?.piece;
+        return piece && isRoyal(piece, next.variantKey) && variantObjectiveScore(next, reply, piece.owner) > 0;
+      }).length
+    : 0;
+  if (next.variantKey === "king-of-the-hill") budget.hillReplyCounts.set(move, hillThreats);
+  return materialOnlyScore(next, perspective) + staticMoveScore(state, move) / 10 + objective + noise - defendedLowValueTargetPenalty - exposure - hillThreats * 100000;
 }
 
 function selectRankedMove(ranked: Array<{ move: Move; score: number }>, difficulty: BotDifficulty) {
@@ -584,35 +793,9 @@ function selectRankedMove(ranked: Array<{ move: Move; score: number }>, difficul
   return safeMoves[0] ?? ranked[0];
 }
 
-function movesThatAvoidImmediateTerminalReply(
-  state: GameState,
-  legalMoves: Move[],
-  perspective: PlayerColor,
-  difficulty: BotDifficulty,
-  budget: SearchBudget
-) {
-  if (!TERMINAL_THREAT_FILTER_VARIANTS.has(state.variantKey) || difficulty.skill < 8 || difficulty.skill > 14 || legalMoves.length > MAX_TERMINAL_THREAT_CANDIDATES) return legalMoves;
-
-  let lowestThreatCount = Number.POSITIVE_INFINITY;
-  const lowestThreatMoves: Move[] = [];
-  const saferMoves = legalMoves.filter((move) => {
-    const next = tryMove(state, move);
-    if (!next) return false;
-    if (next.status === "completed") return next.result === perspective || next.result === "draw";
-    const terminalReplyCount = countImmediateTerminalReplies(next, perspective, difficulty, budget);
-    if (terminalReplyCount < lowestThreatCount) {
-      lowestThreatCount = terminalReplyCount;
-      lowestThreatMoves.length = 0;
-    }
-    if (terminalReplyCount === lowestThreatCount) lowestThreatMoves.push(move);
-    return terminalReplyCount === 0;
-  });
-
-  return saferMoves.length ? saferMoves : lowestThreatMoves.length ? lowestThreatMoves : legalMoves;
-}
-
 function countImmediateTerminalReplies(state: GameState, perspective: PlayerColor, difficulty: BotDifficulty, budget: SearchBudget) {
   if (state.status === "completed") return state.result !== "draw" && state.result !== perspective ? 1 : 0;
+  if (Date.now() >= budget.deadline) return null;
 
   const legalReplies = allLegalMovesCached(state, budget);
   const repliesToScan =
@@ -624,14 +807,17 @@ function countImmediateTerminalReplies(state: GameState, perspective: PlayerColo
           .slice(0, difficulty.replyCheckWidth)
           .map(({ move }) => move);
 
-  return repliesToScan.reduce((total, reply) => {
-    const next = tryMove(state, reply);
-    return total + (next?.status === "completed" && next.result !== "draw" && next.result !== perspective ? 1 : 0);
-  }, 0);
+  let total = 0;
+  for (const reply of repliesToScan) {
+    if (Date.now() >= budget.deadline) return null;
+    const next = tryMove(state, reply, budget);
+    total += next?.status === "completed" && next.result !== "draw" && next.result !== perspective ? 1 : 0;
+  }
+  return total;
 }
 
 function beginnerMoveScore(state: GameState, move: Move, perspective: PlayerColor, difficulty: BotDifficulty, budget: SearchBudget) {
-  const next = tryMove(state, move);
+  const next = tryMove(state, move, budget);
   if (!next) return Number.NEGATIVE_INFINITY;
   if (next.status === "completed") return evaluateState(next, perspective, budget);
 
@@ -675,7 +861,7 @@ function minimax(
   budget.nodes += 1;
   if (state.status === "completed" || depth <= 0 || budget.nodes >= difficulty.nodeBudget || Date.now() >= budget.deadline) {
     const score = quiescence(state, difficulty.quiescenceDepth, perspective, alpha, beta, difficulty, budget);
-    rememberTransposition(budget, cacheKey, depth, score);
+    if (Date.now() < budget.deadline && budget.nodes < difficulty.nodeBudget) rememberTransposition(budget, cacheKey, depth, score);
     return score;
   }
 
@@ -691,7 +877,8 @@ function minimax(
   let pruned = false;
 
   for (const { move } of moves) {
-    const next = tryMove(state, move);
+    if (Date.now() >= budget.deadline || budget.nodes >= difficulty.nodeBudget) return Number.isFinite(best) ? best : evaluateState(state, perspective, budget);
+    const next = tryMove(state, move, budget);
     if (!next) continue;
     const score = minimax(next, depth - 1, perspective, alpha, beta, difficulty, budget);
     if (maximizing) {
@@ -707,7 +894,7 @@ function minimax(
     }
   }
 
-  if (!pruned) rememberTransposition(budget, cacheKey, depth, best);
+  if (!pruned && Date.now() < budget.deadline && budget.nodes < difficulty.nodeBudget) rememberTransposition(budget, cacheKey, depth, best);
   return best;
 }
 
@@ -788,7 +975,8 @@ function quiescence(
     .slice(0, Math.max(4, Math.floor(difficulty.beamWidth / 2)));
 
   for (const { move } of tacticalMoves) {
-    const next = tryMove(state, move);
+    if (Date.now() >= budget.deadline || budget.nodes >= difficulty.nodeBudget) break;
+    const next = tryMove(state, move, budget);
     if (!next) continue;
     budget.nodes += 1;
     const score = quiescence(next, depth - 1, perspective, alpha, beta, difficulty, budget);
@@ -811,7 +999,7 @@ function evaluateState(state: GameState, perspective: PlayerColor, budget?: Sear
     return state.result === perspective ? 100000 - state.ply : -100000 + state.ply;
   }
 
-  let material = 0;
+  let material = handMaterialScore(state, perspective);
   for (const row of state.board) {
     for (const cell of row) {
       if (!cell.piece) continue;
@@ -820,7 +1008,9 @@ function evaluateState(state: GameState, perspective: PlayerColor, budget?: Sear
     }
   }
 
-  const activeMobility = (budget ? allLegalMovesCached(state, budget) : allLegalMoves(state)).length * (state.turn === perspective ? 5 : -5);
+  if (budget && Date.now() >= budget.deadline) return material + positionalScore(state, perspective);
+
+  const activeMobility = (budget ? allLegalMovesCached(state, budget, true) : boardMoves(state)).length * (state.turn === perspective ? 5 : -5);
   const position = positionalScore(state, perspective);
   const royalSafety = royalSafetyScore(state, perspective);
   const tacticalPressure = tacticalStateScore(state, perspective, budget);
@@ -834,13 +1024,19 @@ function staticMoveScore(state: GameState, move: Move) {
   const centerRow = (state.board.length - 1) / 2;
   const centerCol = ((state.board[0]?.length ?? 1) - 1) / 2;
   const centerDistance = Math.abs(move.to.row - centerRow) + Math.abs(move.to.col - centerCol);
-  const captureScore = target?.piece ? (pieceValues[target.piece.code] ?? 100) * 10 - (moving ? (pieceValues[moving.code] ?? 100) : 0) / 8 : 0;
+  // Chess960 castling can target the king's own rook; that is never a capture.
+  const capturedPiece = target?.piece && target.piece.owner !== moving?.owner ? target.piece : null;
+  const captureScore = capturedPiece ? (pieceValues[capturedPiece.code] ?? 100) * 10 - (moving ? (pieceValues[moving.code] ?? 100) : 0) / 8 : 0;
   const developmentScore = moving && ["n", "b", "h", "e", "a", "g"].includes(moving.code) ? 20 : 0;
   const centerScore = Math.max(0, 12 - centerDistance * 2);
-  const promotionScore = move.promotion ? 860 : moving?.code === "p" && (move.to.row === 0 || move.to.row === state.board.length - 1) ? 760 : 0;
-  const castlingScore = moving?.code === "k" && Math.abs(move.to.col - move.from.col) === 2 ? 90 : 0;
+  // Western promotion choices score by the chosen piece, so a queen still leads and
+  // knight/rook/bishop underpromotions stay searchable without crowding it out.
+  const promotionScore = move.promoteTo
+    ? Math.min(pieceValues[move.promoteTo] ?? 900, 900) - 40
+    : move.promotion ? 860 : moving?.code === "p" && (move.to.row === 0 || move.to.row === state.board.length - 1) ? 760 : 0;
+  const castlingScore = isCastlingMove(state, move, moving) ? 90 : 0;
 
-  return captureScore + promotionScore + castlingScore + developmentScore + centerScore;
+  return captureScore + promotionScore + castlingScore + developmentScore + centerScore + dropAimScore(state, move);
 }
 
 function moveOrderingScore(state: GameState, move: Move, difficulty: BotDifficulty, budget: SearchBudget) {
@@ -851,7 +1047,7 @@ function moveOrderingScore(state: GameState, move: Move, difficulty: BotDifficul
   const targetPiece = state.board[move.to.row]?.[move.to.col]?.piece;
   if (!movingPiece || !targetPiece || targetPiece.owner === movingPiece.owner || Date.now() >= budget.deadline) return staticScore;
 
-  const next = tryMove(state, move);
+  const next = tryMove(state, move, budget);
   if (!next) return Number.NEGATIVE_INFINITY;
 
   const tradeAwareness = difficulty.skill >= 14 ? 1.1 : 0.75;
@@ -859,6 +1055,7 @@ function moveOrderingScore(state: GameState, move: Move, difficulty: BotDifficul
 }
 
 function strategicMoveScore(state: GameState, next: GameState, move: Move, perspective: PlayerColor, difficulty: BotDifficulty, budget: SearchBudget) {
+  if (Date.now() >= budget.deadline) return 0;
   const movedPiece = next.board[move.to.row]?.[move.to.col]?.piece;
   if (!movedPiece) return 0;
   const opponents = opponentColors(next, perspective);
@@ -890,6 +1087,7 @@ function escapeOrCounterScore(
   difficulty: BotDifficulty,
   budget: SearchBudget
 ) {
+  if (Date.now() >= budget.deadline) return 0;
   const attackers = opponentColors(state, movedPiece.owner);
   const wasAttacked = isSquareAttackedBy(state, move.from, attackers, budget);
   if (!wasAttacked) return 0;
@@ -914,6 +1112,7 @@ function opponentReplyPenalty(state: GameState, perspective: PlayerColor, diffic
   let worst = 0;
 
   for (const { move } of replies) {
+    if (Date.now() >= budget.deadline || budget.nodes >= difficulty.nodeBudget) break;
     const target = state.board[move.to.row]?.[move.to.col]?.piece;
     const attacker = state.board[move.from.row]?.[move.from.col]?.piece;
     if (target?.owner === perspective) {
@@ -922,7 +1121,7 @@ function opponentReplyPenalty(state: GameState, perspective: PlayerColor, diffic
       worst = Math.max(worst, targetValue - attackerValue * 0.18);
     }
 
-    const next = tryMove(state, move);
+    const next = tryMove(state, move, budget);
     budget.nodes += 1;
     if (next?.status === "completed" && next.result !== perspective && next.result !== "draw") {
       worst = Math.max(worst, 50000);
@@ -1076,14 +1275,14 @@ function drawSavingResourceScore(state: GameState, next: GameState, perspective:
 
 function bestCounterplayScore(state: GameState, perspective: PlayerColor, difficulty: BotDifficulty, budget: SearchBudget) {
   if (state.turn !== perspective || Date.now() >= budget.deadline || budget.nodes >= difficulty.nodeBudget) return 0;
-  return allLegalMovesCached(state, budget)
+  return withBoundedDrops(state, allLegalMovesCached(state, budget), difficulty)
     .map((move) => staticMoveScore(state, move) + tacticalMovePressure(state, move, perspective, budget))
     .sort((a, b) => b - a)
     .at(0) ?? 0;
 }
 
 function tacticalMovePressure(state: GameState, move: Move, perspective: PlayerColor, budget: SearchBudget) {
-  const next = tryMove(state, move);
+  const next = tryMove(state, move, budget);
   if (!next) return 0;
   return Math.max(0, tacticalStateScore(next, perspective, budget) - tacticalStateScore(state, perspective, budget));
 }
@@ -1153,12 +1352,24 @@ function advancementScore(state: GameState, move: Move, owner: PlayerColor, code
 }
 
 function materialOnlyScore(state: GameState, perspective: PlayerColor) {
-  let score = 0;
+  let score = handMaterialScore(state, perspective);
   for (const row of state.board) {
     for (const cell of row) {
       if (!cell.piece) continue;
       const value = pieceValues[cell.piece.code] ?? 100;
       score += cell.piece.owner === perspective ? value : -value;
+    }
+  }
+  return score;
+}
+
+/** Pieces in hand keep their value, so a drop only moves material from the hand to the board. */
+function handMaterialScore(state: GameState, perspective: PlayerColor) {
+  let score = 0;
+  for (const [owner, hand] of Object.entries(state.hands ?? {})) {
+    for (const [code, count] of Object.entries(hand ?? {})) {
+      const value = (pieceValues[code] ?? 100) * count;
+      score += owner === perspective ? value : -value;
     }
   }
   return score;
@@ -1280,7 +1491,7 @@ function badTradePenalty(
 
 function allLegalMovesFor(state: GameState, color: PlayerColor, budget?: SearchBudget) {
   const colorState = state.turn === color ? state : { ...state, turn: color };
-  return budget ? allLegalMovesCached(colorState, budget) : allLegalMoves(colorState);
+  return budget ? allLegalMovesCached(colorState, budget, true) : boardMoves(colorState);
 }
 
 function opponentColors(state: GameState, perspective: PlayerColor) {
@@ -1290,26 +1501,44 @@ function opponentColors(state: GameState, perspective: PlayerColor) {
 function findRoyalSquare(state: GameState, color: PlayerColor) {
   for (const row of state.board) {
     for (const cell of row) {
-      if (cell.piece?.owner === color && ["k", "g"].includes(cell.piece.code)) return cell.square;
+      if (cell.piece?.owner === color && isRoyal(cell.piece, state.variantKey)) return cell.square;
     }
   }
   return null;
 }
 
 function isCapture(state: GameState, move: Move) {
-  return Boolean(state.board[move.to.row]?.[move.to.col]?.piece);
+  const target = state.board[move.to.row]?.[move.to.col]?.piece;
+  const moving = state.board[move.from.row]?.[move.from.col]?.piece;
+  return Boolean(target && target.owner !== moving?.owner);
 }
 
-function tryMove(state: GameState, move: Move) {
+function isCastlingMove(state: GameState, move: Move, moving: GameState["board"][number][number]["piece"] | undefined) {
+  if (moving?.code !== "k" || move.kind === "drop" || move.from.row !== move.to.row || !getVariant(state.variantKey).supportsCastling) return false;
+  const target = state.board[move.to.row]?.[move.to.col]?.piece;
+  // Classic e1-g1 style, longer Chess960 king travel, or the king-onto-own-rook form.
+  return Math.abs(move.to.col - move.from.col) >= 2 || (target?.owner === moving.owner && target.code === "r");
+}
+
+function tryMove(state: GameState, move: Move, budget?: SearchBudget) {
+  const cached = budget?.appliedMoves.get(state);
+  if (cached?.has(move)) return cached.get(move) ?? null;
+  let next: GameState | null;
   try {
-    return applyMove(state, move);
+    next = applyMove(state, move);
   } catch {
-    return null;
+    next = null;
   }
+  if (budget) {
+    const moves = cached ?? new Map<Move, GameState | null>();
+    moves.set(move, next);
+    budget.appliedMoves.set(state, moves);
+  }
+  return next;
 }
 
 function isLegalMove(state: GameState, move: Move) {
-  return getLegalMoves(state, move.from).some((candidate) => sameSquare(candidate.to, move.to));
+  return findLegalMove(state, move) !== null;
 }
 
 function windowSafeSetTimeout(callback: () => void, delayMs: number) {
@@ -1337,16 +1566,32 @@ function confidenceFor(score: number | null, depth: number, tier: BotTierKey) {
   return Number(Math.min(0.99, tierFloor + scoreSignal + depthSignal).toFixed(2));
 }
 
-function explanationForMove(source: BotKnowledgeSource, state: GameState, move: Move, score: number | null, tier: BotTierKey): BotMoveExplanation {
+function explanationForMove(source: BotKnowledgeSource, state: GameState, move: Move, score: number | null, tier: BotTierKey, deadline: number, opponentWinInOne?: boolean, immediateHillWins?: number): BotMoveExplanation {
   const moving = state.board[move.from.row]?.[move.from.col]?.piece;
   const target = state.board[move.to.row]?.[move.to.col]?.piece;
   const captureValue = target ? pieceValues[target.code] ?? 100 : 0;
   const tierPrefix = isMasterBotDifficulty(difficultyFor(tier)) ? "Deep tier" : "Search";
+  const movingLabel = moving?.code ? pieceLabel(moving.code) : "piece";
+  const verifiedHillRisk = immediateHillWins === undefined ? undefined : immediateHillWins === 0
+    ? "Threat defense: the move denies an immediate win on the hill."
+    : `Threat defense remains incomplete: ${immediateHillWins} legal replies can still win on the hill.`;
+  const verifiedThreatRisk = verifiedHillRisk ?? (opponentWinInOne === false
+    ? "Threat defense: the checked replies contain no immediate win for the opponent."
+    : opponentWinInOne === true ? "Threat defense remains incomplete: an immediate winning reply is still available." : undefined);
+  const limitedExplanation = {
+    plan: `${tierPrefix} moves the ${movingLabel} with limited time for verification.`,
+    threat: `${source}: opponent replies may require a change of plan.`,
+    risk: verifiedThreatRisk ?? "The time limit prevented full verification of the opponent's replies.",
+    fallbackGoal: "Reassess the position after the opponent replies."
+  };
+  if (Date.now() >= deadline) return limitedExplanation;
   const attackers = moving ? opponentColors(state, moving.owner) : [];
   const wasAttacked = moving ? isSquareAttackedBy(state, move.from, attackers) : false;
+  if (Date.now() >= deadline) return limitedExplanation;
   const next = tryMove(state, move);
+  if (Date.now() >= deadline) return limitedExplanation;
   const remainsAttacked = moving && next ? isSquareAttackedBy(next, move.to, opponentColors(next, moving.owner)) : false;
-  const movingLabel = moving?.code ? pieceLabel(moving.code) : "piece";
+  if (Date.now() >= deadline) return limitedExplanation;
   const plan = planForMove({ captureValue, movingLabel, targetCode: target?.code, tierPrefix, wasAttacked });
   const threat = target
     ? `It removes an opposing ${pieceLabel(target.code)} and looks for follow-up pressure.`
@@ -1355,8 +1600,8 @@ function explanationForMove(source: BotKnowledgeSource, state: GameState, move: 
     movingLabel,
     remainsAttacked,
     score,
-    terminalThreatDefense: terminalThreatDefenseText(state, next, moving?.owner, tier),
-    tradeSafety: tradeSafetyText({ moving: moving ?? undefined, next, target: target ?? undefined, move }),
+    terminalThreatDefense: verifiedThreatRisk ?? terminalThreatDefenseText(state, next, moving?.owner, tier, deadline),
+    tradeSafety: Date.now() < deadline ? tradeSafetyText({ moving: moving ?? undefined, next, target: target ?? undefined, move }) : undefined,
     wasAttacked
   });
   const fallbackGoal = score !== null && score < -600 ? "If the advantage cannot be recovered, steer toward draw or stalemate-saving resources." : "If the opponent parries the main idea, keep development and defended pieces intact.";
@@ -1404,22 +1649,22 @@ function riskForMove({
   wasAttacked: boolean;
 }) {
   if (tradeSafety) return tradeSafety;
-  if (terminalThreatDefense) return terminalThreatDefense;
   if (wasAttacked && !remainsAttacked) return `Risk reduced: the ${movingLabel} leaves immediate danger instead of staying loose.`;
   if (wasAttacked && remainsAttacked) return `Risk accepted: the ${movingLabel} is still tactically exposed, so the bot expects compensation.`;
+  if (terminalThreatDefense) return terminalThreatDefense;
   if (score !== null && score < -250) return "The position is worse, so the bot favors damage control and avoids forcing a losing race.";
-  return "The move was filtered for immediate hanging-piece and terminal-state blunders.";
+  return "Tactical risks remain beyond the replies examined in this search.";
 }
 
-function terminalThreatDefenseText(state: GameState, next: GameState | null, perspective: PlayerColor | undefined, tier: BotTierKey) {
+function terminalThreatDefenseText(state: GameState, next: GameState | null, perspective: PlayerColor | undefined, tier: BotTierKey, deadline: number) {
   const difficulty = difficultyFor(tier);
-  if (!next || !perspective || !TERMINAL_THREAT_FILTER_VARIANTS.has(state.variantKey) || difficulty.skill < 8 || difficulty.skill > 14) return undefined;
+  if (Date.now() >= deadline || !next || !perspective || !TERMINAL_THREAT_FILTER_VARIANTS.has(state.variantKey) || difficulty.skill < 8 || difficulty.skill > 14) return undefined;
 
-  const explanationBudgetMs = Math.min(MAX_BOT_REPLY_MS, Math.max(160, Math.min(240, difficulty.moveTimeMs)));
+  const budget = createSearchBudget(Date.now(), Math.max(0, deadline - Date.now()));
   const beforeThreatState = { ...state, turn: next.turn };
-  const beforeThreats = countImmediateTerminalReplies(beforeThreatState, perspective, difficulty, createSearchBudget(Date.now(), explanationBudgetMs));
-  const afterThreats = countImmediateTerminalReplies(next, perspective, difficulty, createSearchBudget(Date.now(), explanationBudgetMs));
-  if (afterThreats >= beforeThreats) return undefined;
+  const beforeThreats = countImmediateTerminalReplies(beforeThreatState, perspective, difficulty, budget);
+  const afterThreats = countImmediateTerminalReplies(next, perspective, difficulty, budget);
+  if (beforeThreats === null || afterThreats === null || afterThreats >= beforeThreats) return undefined;
 
   return `Threat defense: reduced opponent one-move winning replies from ${beforeThreats} to ${afterThreats}.`;
 }
@@ -1480,6 +1725,13 @@ function safeUci(state: GameState, move: Move) {
   }
 }
 
-function boundedSearchTime(requestedMs: number, tierMs: number) {
-  return Math.max(MIN_BOT_SEARCH_MS, Math.min(requestedMs, tierMs, MAX_BOT_REPLY_MS));
+export function getBotSearchTimeMs(state: GameState, difficultyKey: BotDifficultyKey, requestedMs?: number) {
+  const tierMs = difficultyFor(difficultyKey).moveTimeMs;
+  const requested = Number.isFinite(requestedMs) ? requestedMs! : tierMs;
+  const clock = state.clocks.find((entry) => entry.color === state.turn);
+  const timed = state.clocks.some((entry) => entry.remainingMs > 0 || entry.incrementMs > 0);
+  const clockBudget = timed && clock
+    ? Math.max(1, Math.min(clock.remainingMs - BOT_REPLY_SAFETY_MS, clock.remainingMs / 30 + clock.incrementMs * 0.8))
+    : Number.POSITIVE_INFINITY;
+  return Math.max(1, Math.min(requested, tierMs, MAX_BOT_REPLY_MS - BOT_REPLY_SAFETY_MS, clockBudget));
 }

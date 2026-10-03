@@ -63,7 +63,7 @@ export const variantCatalog: VariantDefinition[] = [
     supportsCastling: false,
     supportsCheck: true,
     objective: "Checkmate or bare the opposing king using ferz and alfil movement.",
-    setup: ["rnakfanr", "pppppppp", "........", "........", "........", "........", "PPPPPPPP", "RNAFKANR"],
+    setup: ["rnafkanr", "pppppppp", "........", "........", "........", "........", "PPPPPPPP", "RNAFKANR"],
     aliases: ["persian-chess"]
   },
   {
@@ -79,6 +79,8 @@ export const variantCatalog: VariantDefinition[] = [
     supportsCastling: true,
     supportsCheck: true,
     objective: "Checkmate with randomized back ranks.",
+    // Legacy fixed setup (games without `chess960Profile`). New games replace both back
+    // ranks with a "random-v1" position derived from the game id; see ./chess960.ts.
     setup: ["nrkbqrbn", "pppppppp", "........", "........", "........", "........", "PPPPPPPP", "NRKBQRBN"],
     aliases: ["fischer-random"]
   },
@@ -143,7 +145,7 @@ export const variantCatalog: VariantDefinition[] = [
     supportsCastling: false,
     supportsCheck: true,
     objective: "Checkmate the opposing general on a palace board.",
-    setup: ["rheagaehr", ".........", ".c.....c.", "p.p.p.p.p", ".........", ".........", "P.P.P.P.P", ".C.....C.", ".........", "RHEAGAEHR"],
+    setup: ["rhea.aehr", "....g....", ".c.....c.", "p.p.p.p.p", ".........", ".........", "P.P.P.P.P", ".C.....C.", "....G....", "RHEA.AEHR"],
     aliases: ["korean-chess"]
   },
   {
@@ -159,8 +161,24 @@ export const variantCatalog: VariantDefinition[] = [
     supportsCastling: false,
     supportsCheck: true,
     objective: "Checkmate with Thai Makruk movement and promotion rules.",
-    setup: ["rnsmksnr", "........", "pppppppp", "........", "........", "PPPPPPPP", "........", "RNSMKSNR"],
+    setup: ["rnsmksnr", "........", "pppppppp", "........", "........", "PPPPPPPP", "........", "RNSKMSNR"],
     aliases: ["thai-chess"]
+  },
+  {
+    key: "ouk-chaktrang",
+    nameKey: "variant.ouk-chaktrang",
+    rulesAdapter: "allchess-ouk",
+    engineProtocol: "internal",
+    family: "southeast-asian",
+    board: { rows: 8, cols: 8, coordinates: "orthodox" },
+    players: ["white", "black"],
+    supportsDrops: false,
+    supportsPromotion: true,
+    supportsCastling: false,
+    supportsCheck: true,
+    objective: "Checkmate in Cambodian Ouk Chaktrang with native opening leaps.",
+    setup: ["rnsmksnr", "........", "pppppppp", "........", "........", "PPPPPPPP", "........", "RNSKMSNR"],
+    aliases: ["khmer-chess", "cambodian-chess", "cambodian", "ouk"]
   },
   {
     key: "jungle",
@@ -271,7 +289,7 @@ export const variantCatalog: VariantDefinition[] = [
     supportsCastling: true,
     supportsCheck: true,
     objective: "The horde tries to overwhelm the standard army.",
-    setup: ["rnbqkbnr", "pppppppp", "........", "PPPPPPPP", "PPPPPPPP", "PPPPPPPP", "PPPPPPPP", "........"],
+    setup: ["rnbqkbnr", "pppppppp", "........", ".PP..PP.", "PPPPPPPP", "PPPPPPPP", "PPPPPPPP", "PPPPPPPP"],
     aliases: []
   },
   {

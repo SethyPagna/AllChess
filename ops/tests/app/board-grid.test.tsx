@@ -12,6 +12,7 @@ type RenderGridOptions = {
   selected?: Square | null;
   suggestedMove?: { from: Square; to: Square } | null;
   variantKey?: string;
+  lastMove?: { from: Square; to: Square; kind?: string };
 };
 
 function renderGrid(orientedRows: BoardCell[][], options: RenderGridOptions = {}) {
@@ -28,11 +29,19 @@ function renderGrid(orientedRows: BoardCell[][], options: RenderGridOptions = {}
       selected={options.selected ?? null}
       suggestedMove={options.suggestedMove ?? null}
       variantKey={options.variantKey ?? "classic"}
+      lastMove={options.lastMove}
     />
   );
 }
 
 describe("BoardGrid", () => {
+  test("last-move markers follow board coordinates and ignore pass origins", () => {
+    const cells = [[{ square: { row: 0, col: 0 }, piece: null }, { square: { row: 0, col: 1 }, piece: null }]];
+    const move = { from: { row: 0, col: 0 }, to: { row: 0, col: 1 } };
+    expect(renderGrid(cells, { lastMove: move }).match(/data-last-move="true"/g)).toHaveLength(2);
+    expect(renderGrid(cells, { lastMove: { ...move, kind: "drop" } }).match(/data-last-move="true"/g)).toHaveLength(1);
+    expect(renderGrid(cells, { lastMove: { ...move, kind: "pass" } })).not.toContain('data-last-move="true"');
+  });
   test("labels square buttons with coordinates and piece names", () => {
     const markup = renderGrid([
       [
@@ -71,8 +80,8 @@ describe("BoardGrid", () => {
     );
 
     expect(markup).toContain('data-coordinate="A1"');
-    expect(markup).toContain('class="board-coordinate board-file">a</span>');
-    expect(markup).toContain('class="board-coordinate board-file">b</span>');
+    expect(markup).toMatch(/class="board-coordinate board-file"[^>]*>a<\/span>/);
+    expect(markup).toMatch(/class="board-coordinate board-file"[^>]*>b<\/span>/);
     expect(markup).not.toContain('class="board-coordinate board-file">A</span>');
   });
 

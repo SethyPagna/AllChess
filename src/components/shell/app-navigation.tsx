@@ -2,51 +2,29 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, ChevronDown, Crown, Eye, History, Home, Library, LogIn, Settings, Swords, Trophy, UserRound, Users } from "lucide-react";
-import type { ComponentType } from "react";
+import { useEffect, type ComponentType, type ReactNode } from "react";
+import { BookOpen, Eye, History, Home, Library, LogIn, MoreHorizontal, Settings, Swords, Trophy, UserRound } from "lucide-react";
 
-type AppIconKey =
-  | "book"
-  | "crown"
-  | "eye"
-  | "history"
-  | "home"
-  | "library"
-  | "login"
-  | "settings"
-  | "swords"
-  | "trophy"
-  | "user"
-  | "users";
+import { closeOtherShellMenus, useShellMenuDismissal } from "./menu-utils";
 
-export type AppNavLink = {
+type AppIconKey = "book" | "eye" | "history" | "home" | "library" | "login" | "settings" | "swords" | "trophy" | "user";
+
+export type AppNavItem = {
   href: string;
   icon: AppIconKey;
   label: string;
-};
-
-export type AppNavGroup = {
-  icon: AppIconKey;
-  label: string;
-  links: AppNavLink[];
-};
-
-type AccountShortcut = {
-  href: string;
-  icon: "login" | "user";
-  label: string;
+  /** Other route sections that belong to this item, such as game guides under Games. */
+  alsoActiveOn?: string[];
 };
 
 type AppNavigationProps = {
-  account?: AccountShortcut;
-  auth?: AccountShortcut;
-  groups: AppNavGroup[];
+  items: AppNavItem[];
+  secondary: AppNavItem[];
   locale: string;
 };
 
 const iconMap = {
   book: BookOpen,
-  crown: Crown,
   eye: Eye,
   history: History,
   home: Home,
@@ -55,134 +33,93 @@ const iconMap = {
   settings: Settings,
   swords: Swords,
   trophy: Trophy,
-  user: UserRound,
-  users: Users
+  user: UserRound
 } satisfies Record<AppIconKey, ComponentType<{ size?: number; strokeWidth?: number }>>;
 
 function normalizePath(path: string) {
   return path.split("?")[0]?.replace(/\/+$/, "") || "/";
 }
 
-function localizedHref(locale: string, href: string) {
+export function localizedHref(locale: string, href: string) {
   return `/${locale}/${href}`.replace(/\/+$/, "");
 }
 
-function hrefToRoute(locale: string, href: string) {
-  return href.startsWith(`/${locale}/`) ? href.slice(locale.length + 2) : href;
-}
-
-function useActiveHref(locale: string) {
+function useActiveItem(locale: string) {
   const pathname = normalizePath(usePathname() || `/${locale}`);
-
-  return (href: string) => {
+  const matches = (href: string) => {
     const target = normalizePath(localizedHref(locale, href));
     return pathname === target || (target !== `/${locale}` && pathname.startsWith(`${target}/`));
   };
+
+  return (item: AppNavItem) => matches(item.href) || Boolean(item.alsoActiveOn?.some(matches));
 }
 
-function NavLink({ active, href, icon, label, nested = true }: AppNavLink & { active: boolean; nested?: boolean }) {
-  const Icon = iconMap[icon];
-
+function NavItem({ item, locale, active, className, onClick }: { item: AppNavItem; locale: string; active: boolean; className: string; onClick?: () => void }) {
+  const Icon = iconMap[item.icon];
   return (
-    <Link
-      href={href as never}
-      aria-current={active ? "page" : undefined}
-      className={`btn btn-ghost app-nav-link${nested ? " app-nav-sub-link" : ""} focus-ring${active ? " is-active" : ""}`}
-    >
-      <Icon size={18} strokeWidth={2.5} />
-      <span>{label}</span>
+    <Link href={localizedHref(locale, item.href) as never} aria-current={active ? "page" : undefined} className={`${className} focus-ring${active ? " is-active" : ""}`} onClick={onClick}>
+      <Icon size={18} strokeWidth={2} />
+      <span>{item.label}</span>
     </Link>
   );
 }
 
-function AccountLink({ account, active, iconSize }: { account: AccountShortcut; active: boolean; iconSize: number }) {
-  const Icon = iconMap[account.icon];
-
+export function AppRailNavigation({ items, secondary, locale }: AppNavigationProps) {
+  const isActive = useActiveItem(locale);
   return (
-    <Link href={account.href as never} aria-current={active ? "page" : undefined} className={`btn btn-ghost app-nav-link focus-ring${active ? " is-active" : ""}`}>
-      <Icon size={iconSize} strokeWidth={2.5} />
-      <span>{account.label}</span>
-    </Link>
-  );
-}
-
-export function AppSidebarNavigation({ account, auth, groups, locale }: AppNavigationProps) {
-  const isActiveHref = useActiveHref(locale);
-  const accountRoute = account ? hrefToRoute(locale, account.href) : "";
-  const authRoute = auth ? hrefToRoute(locale, auth.href) : "";
-
-  return (
-    <div className="app-sidebar-nav-stack">
-      <nav className="menu app-nav">
-        {groups.map((group, index) => {
-          const GroupIcon = iconMap[group.icon];
-          const groupActive = group.links.some((link) => isActiveHref(link.href));
-          const directLink = group.links.length === 1 && group.links[0]?.label === group.label ? group.links[0] : null;
-
-          if (directLink) {
-            return <NavLink key={directLink.href} {...directLink} href={localizedHref(locale, directLink.href)} active={isActiveHref(directLink.href)} nested={false} />;
-          }
-
-          return (
-            <details key={group.label} className={`app-nav-group collapse${groupActive ? " is-active" : ""}`} open={index < 3 || groupActive}>
-              <summary className={`app-nav-group-summary collapse-title focus-ring${groupActive ? " is-active" : ""}`}>
-                <GroupIcon size={18} strokeWidth={2.5} />
-                <span>{group.label}</span>
-                <ChevronDown size={15} />
-              </summary>
-              <div>
-                {group.links.map((link) => (
-                  <NavLink key={link.href} {...link} href={localizedHref(locale, link.href)} active={isActiveHref(link.href)} />
-                ))}
-              </div>
-            </details>
-          );
-        })}
+    <>
+      <nav className="rail-nav" aria-label="Main">
+        {items.map((item) => <NavItem key={item.href} item={item} locale={locale} active={isActive(item)} className="rail-link" />)}
       </nav>
-      {account || auth ? (
-        <div className="app-sidebar-bottom" aria-label="Profile and sign in">
-          {account ? <AccountLink account={account} active={isActiveHref(accountRoute)} iconSize={20} /> : null}
-          {auth ? (
-            <Link href={auth.href as never} aria-current={isActiveHref(authRoute) ? "page" : undefined} className={`btn btn-square app-nav-icon-link focus-ring${isActiveHref(authRoute) ? " is-active" : ""}`} title={auth.label} aria-label={auth.label}>
-              <LogIn size={18} strokeWidth={2.5} />
-            </Link>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
+      <nav className="rail-nav rail-nav-secondary" aria-label="Account">
+        {secondary.map((item) => <NavItem key={item.href} item={item} locale={locale} active={isActive(item)} className="rail-link" />)}
+      </nav>
+    </>
   );
 }
 
-export function AppMobileNavigation({ account, auth, groups, locale }: AppNavigationProps) {
-  const isActiveHref = useActiveHref(locale);
-  const accountRoute = account ? hrefToRoute(locale, account.href) : "";
-  const authRoute = auth ? hrefToRoute(locale, auth.href) : "";
+export function AppTabBar({ items, secondary, locale, moreLabel, tools }: AppNavigationProps & { moreLabel: string; tools?: ReactNode }) {
+  const isActive = useActiveItem(locale);
+  const pathname = usePathname();
+  const moreRef = useShellMenuDismissal(".offline-pack-panel");
+  const tabs = items.slice(0, 4);
+  const overflow = [...items.slice(4), ...secondary];
+  const moreActive = overflow.some(isActive);
+
+  useEffect(() => {
+    if (moreRef.current) moreRef.current.open = false;
+  }, [moreRef, pathname]);
+
+  function closeSheet(returnFocus: boolean) {
+    const menu = moreRef.current;
+    if (!menu) return;
+    menu.open = false;
+    if (returnFocus) menu.querySelector("summary")?.focus();
+  }
 
   return (
-    <div className="app-menu-sections">
-      {groups.map((group) => {
-        const directLink = group.links.length === 1 && group.links[0]?.label === group.label ? group.links[0] : null;
-
-        if (directLink) {
-          return <NavLink key={directLink.href} {...directLink} href={localizedHref(locale, directLink.href)} active={isActiveHref(directLink.href)} nested={false} />;
-        }
-
-        return (
-          <section key={group.label} className="app-menu-section" aria-label={group.label}>
-            <p className="app-menu-section-label">{group.label}</p>
-            {group.links.map((link) => (
-              <NavLink key={link.href} {...link} href={localizedHref(locale, link.href)} active={isActiveHref(link.href)} nested={false} />
-            ))}
-          </section>
-        );
-      })}
-      {account || auth ? (
-        <section className="app-menu-section" aria-label="Profile and sign in">
-          <p className="app-menu-section-label">Profile</p>
-          {account ? <AccountLink account={account} active={isActiveHref(accountRoute)} iconSize={18} /> : null}
-          {auth ? <AccountLink account={auth} active={isActiveHref(authRoute)} iconSize={18} /> : null}
-        </section>
-      ) : null}
-    </div>
+    <nav className="tab-bar" aria-label="Main">
+      {tabs.map((item) => <NavItem key={item.href} item={item} locale={locale} active={isActive(item)} className="tab-link" />)}
+      <details
+        ref={moreRef}
+        className="tab-more"
+        data-shell-menu="more"
+        onToggle={(event) => {
+          if (event.currentTarget.open) closeOtherShellMenus(event.currentTarget);
+        }}
+      >
+        <summary className={`tab-link focus-ring${moreActive ? " is-active" : ""}`} aria-label={moreLabel}>
+          <MoreHorizontal size={18} strokeWidth={2} />
+          <span>{moreLabel}</span>
+        </summary>
+        <div className="tab-sheet">
+          {overflow.map((item) => {
+            const active = isActive(item);
+            return <NavItem key={item.href} item={item} locale={locale} active={active} className="sheet-link" onClick={() => closeSheet(active)} />;
+          })}
+          {tools ? <div className="sheet-tools">{tools}</div> : null}
+        </div>
+      </details>
+    </nav>
   );
 }

@@ -24,6 +24,12 @@ export type Move = {
   from: Square;
   to: Square;
   promotion?: boolean;
+  /**
+   * Western chess promotion choice: the lowercase piece code the pawn becomes
+   * (q, r, b or n; antichess also allows k). Legal-move candidates always carry it
+   * for promotion moves; a request that omits it promotes to a queen.
+   */
+  promoteTo?: string;
   drop?: Piece;
 };
 
@@ -89,7 +95,7 @@ export type RulesAdapter = {
 export type VariantDefinition = {
   key: string;
   nameKey: string;
-  rulesAdapter: "chessops" | "xiangqiops" | "shogiops" | "makruk-js" | "allchess-janggi" | "allchess-jungle" | "draughts-engine" | "konane-engine";
+  rulesAdapter: "chessops" | "xiangqiops" | "shogiops" | "makruk-js" | "allchess-ouk" | "allchess-janggi" | "allchess-jungle" | "draughts-engine" | "konane-engine";
   engineProtocol: "uci" | "usi" | "internal";
   family: "western" | "east-asian" | "southeast-asian" | "abstract" | "draughts" | "regional";
   board: {

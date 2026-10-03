@@ -4,6 +4,7 @@ import { closeSync, existsSync, openSync, readFileSync, readSync, readdirSync, s
 import { dirname, extname, isAbsolute, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Chess } from "chess.js";
+import { refreshBotKnowledge } from "../assets/prepare-bot-knowledge.ts";
 
 type ScriptOptions = Record<string, string>;
 
@@ -187,6 +188,7 @@ const output = {
 
 guardAgainstKnowledgeRegression(outputPath, output, options);
 writeFileSync(outputPath, `${JSON.stringify(output, null, 2)}\n`);
+refreshBotKnowledge(outputPath);
 console.log(`Wrote ${entries.length} knowledge entries to ${relative(repoRoot, outputPath)}`);
 console.log(`Scanned ${manifests.length} files from ${relative(repoRoot, dataRoot)}`);
 

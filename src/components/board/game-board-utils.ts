@@ -1,5 +1,5 @@
 import { getTimeControl, type TimeControlKey } from "@/lib/game/time-controls";
-import { getLegalMoves, sameSquare, type GameState, type Move, type Square } from "@/lib/variants";
+import { getLegalMoves, sameSquare, type GameState, type Square } from "@/lib/variants";
 
 type SeatChoice = "random" | "first" | "second";
 
@@ -23,6 +23,12 @@ export function pickHumanColor(state: GameState, choice: SeatChoice) {
   return Math.random() > 0.5 ? first : second;
 }
 
+/** The person at the board resigns: against a bot that is always the human, even while the bot is on move. */
+export function resignationResult(state: Pick<GameState, "clocks" | "turn">, humanColor: string, botOpponent: boolean): NonNullable<GameState["result"]> {
+  const loser = botOpponent ? humanColor : state.turn;
+  return state.clocks.find((clock) => clock.color !== loser)?.color ?? "draw";
+}
+
 export function colorLabel(color: string) {
   const labels: Record<string, string> = {
     black: "Black",
@@ -33,10 +39,6 @@ export function colorLabel(color: string) {
     white: "White"
   };
   return labels[color] ?? color;
-}
-
-export function formatMove(move: Pick<Move, "from" | "to" | "promotion">, files: string[], rows: number) {
-  return `${squareName(move.from, files, rows)} to ${squareName(move.to, files, rows)}${move.promotion ? " +" : ""}`;
 }
 
 export function squareName(square: Square, files: string[], rows: number) {

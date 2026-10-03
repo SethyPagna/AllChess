@@ -38,6 +38,7 @@ export type PiecePresentationPack =
   | "xiangqi-disk"
   | "jungle-animals"
   | "makruk-carved"
+  | "khmer-carved"
   | "draughts-stacks"
   | "mancala-seeds"
   | "go-stones"

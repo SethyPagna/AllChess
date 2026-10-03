@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { History } from "lucide-react";
 
-import { InfoHint } from "@/components/ui/info-hint";
+import { ProfileEmptyState } from "@/components/profile/profile-empty-state";
+import { getGameCatalogEntry } from "@/lib/catalog";
+import { outcomeReasonLabel } from "@/lib/game/outcome";
 import type { RuntimeProfileHistory } from "@/lib/profile/runtime";
 
 type ProfileResultsProps = {
@@ -9,27 +10,56 @@ type ProfileResultsProps = {
   locale: string;
 };
 
+type ProfileResult = RuntimeProfileHistory["results"][number];
+
 export function ProfileResults({ history, locale }: ProfileResultsProps) {
+  const formatDate = dateFormatter(locale);
+
   return (
-    <div className="panel profile-history-list">
-      <div className="compact-section-heading">
-        <h2 className="section-title">Recent matches</h2>
-        <InfoHint text="These rows come from saved Cloudflare D1 match results for this profile." />
-        <Link href={`/${locale}/history`} className="action-secondary focus-ring inline-flex items-center gap-2 px-3 py-2 text-sm">
-          <History size={15} />
-          Full history
-        </Link>
+    <section className="profile-list" aria-labelledby="profile-recent">
+      <div className="profile-list-head">
+        <h2 id="profile-recent">Recent matches</h2>
       </div>
-      <div>
-        {history.results.map((result) => (
-          <Link key={result.id} href={`/${locale}/analysis/${result.gameId}`} className="focus-ring profile-history-row">
-            <span>{result.variantKey}</span>
-            <strong>{result.result}</strong>
-            <span>{result.outcomeReason ?? "recorded result"}</span>
-            <span>{result.ratingDelta == null ? "unrated" : `${result.ratingDelta > 0 ? "+" : ""}${result.ratingDelta}`}</span>
-          </Link>
-        ))}
-      </div>
-    </div>
+      {history.results.length ? (
+        <ul>
+          {history.results.map((result) => (
+            <li key={result.id}>
+              <Link href={`/${locale}/analysis/${result.gameId}`} className="profile-row focus-ring">
+                <span className="profile-row-game">
+                  <strong>{getGameCatalogEntry(result.variantKey)?.name.english ?? result.variantKey}</strong>
+                  <small>{[result.outcomeReason ? outcomeReasonLabel(result.outcomeReason) : "Recorded result", formatDate(result.completedAt ?? result.createdAt)].filter(Boolean).join(" · ")}</small>
+                </span>
+                <span className="profile-row-result" data-result={result.result}>{capitalize(result.result)}</span>
+                <span className="profile-row-delta">{ratingDelta(result)}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ProfileEmptyState locale={locale} />
+      )}
+    </section>
   );
+}
+
+function ratingDelta({ ratingDelta: delta }: ProfileResult) {
+  if (delta == null) return "Unrated";
+  return `${delta > 0 ? "+" : ""}${delta}`;
+}
+
+function capitalize(value: string) {
+  return value ? value[0].toUpperCase() + value.slice(1) : value;
+}
+
+function dateFormatter(locale: string) {
+  let format: Intl.DateTimeFormat;
+  try {
+    format = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" });
+  } catch {
+    format = new Intl.DateTimeFormat("en", { month: "short", day: "numeric" });
+  }
+  return (value: string) => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? "" : format.format(date);
+  };
 }

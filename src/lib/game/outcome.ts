@@ -71,6 +71,8 @@ export function describeGameOutcome(state: GameState, viewer: PlayerColor = stat
 function outcomeContext(state: GameState, reason: NonNullable<GameState["outcomeReason"]>, result: GameOutcome["result"], winner: PlayerColor | null) {
   const sideToMove = capitalize(String(state.turn));
   const winnerText = winner ? capitalize(String(winner)) : null;
+  const shogiRepetition = state.variantKey === "shogi" || state.variantKey === "mini-shogi";
+  const noMoveResult = result === "draw" ? "The game is drawn under this ruleset." : `${winnerText} wins under this ruleset.`;
   const base =
     result === "draw"
       ? "No player receives the win for this finished position."
@@ -78,25 +80,50 @@ function outcomeContext(state: GameState, reason: NonNullable<GameState["outcome
 
   const reasonText: Record<NonNullable<GameState["outcomeReason"]>, string> = {
     checkmate: "The royal piece is in check, and every escape, capture, or block is illegal.",
-    stalemate: "The side to move has no legal move, but is not currently in check, so standard chess rules score it as a draw.",
+    stalemate: `The side to move has no legal move, but is not currently in check. ${noMoveResult}`,
     timeout: "The clock reached zero before the side to move completed a legal move.",
     "three-check": "A player delivered the third check before any other ending overrode it.",
     objective: "A variant-specific objective was reached before normal checkmate or draw rules decided the game.",
     "royal-captured": "This ruleset allows the royal piece to be captured, so capture immediately decides the result.",
     "lost-all-pieces": "In Antichess, successfully losing every piece wins the game.",
-    "no-legal-moves": "The side to move has no legal move; this variant-specific ending is applied instead of standard stalemate.",
-    "insufficient-material": "Neither side has enough material left to force checkmate. With only the two kings, the game is immediately drawn.",
+    "no-legal-moves": state.variantKey === "shatranj"
+      ? `${sideToMove} is stalemated and has no legal move. ${noMoveResult}`
+      : `${sideToMove} has no legal move. ${noMoveResult}`,
+    "insufficient-material": state.variantKey === "three-check"
+      ? "With only the two kings remaining, neither side can deliver a check, so Three-check ends in a draw."
+      : "Neither side has enough material left to checkmate. With only the two kings, a lone bishop or knight, or only bishops on one square colour, the game is immediately drawn.",
     "fifty-move": "Fifty full moves passed without a pawn move or capture, so standard chess rules allow the game to be drawn.",
     "counting-rule": "The variant-specific endgame count expired before checkmate was delivered.",
-    repetition: "The same position occurred four times with the same side to move, so the Shogi repetition rule ended the game.",
-    "perpetual-check": "The repeated position was sustained by continuous checking, so the checking side loses under Shogi rules.",
+    repetition: shogiRepetition
+      ? "The same position occurred four times with the same side to move, so the Shogi repetition rule ended the game."
+      : state.variantKey === "janggi"
+        ? "The same position occurred three times with the same side to move, so the material points decided the result."
+        : "The same position occurred three times with the same side to move.",
+    "perpetual-check": shogiRepetition
+      ? "The repeated position was sustained by continuous checking, so the checking side loses under Shogi rules."
+      : "The same position occurred three times while one side gave check with every move, so the checking side loses.",
     impasse: "Both Shogi kings entered the promotion zones, and the material-point profile adjudicated the position.",
     scoring: "Both players passed in a scoring ruleset, so the remaining material points decided the result.",
     resignation: "A player resigned, so the opponent receives the win without more moves being played.",
     draw: "The selected ruleset reached a drawn result with no winner."
   };
 
-  return [reasonText[reason], `${sideToMove} was the side to move when the game ended.`, base];
+  const oukCountDetail = state.variantKey === "ouk-chaktrang" && reason === "counting-rule"
+    ? state.variantState?.oukCountOutcome === "countermate" ? "The player claiming the board count delivered mate without stopping their count, so the result is a draw."
+      : state.variantState?.oukCountOutcome === "accepted" ? "The chasing player accepted the draw available during their opponent’s board count."
+        : "The escaping player reached the counting limit. Only that player’s moves advance the count."
+    : null;
+  const makrukCountDetail = state.variantKey === "makruk" && reason === "counting-rule" && state.variantState?.makrukProfile === "honor-v1"
+    ? state.variantState?.makrukCountOutcome === "countermate" ? "The player claiming board honor gave mate without stopping their count, so the result is a draw."
+      : state.variantState?.makrukCountOutcome === "accepted" ? "The chasing player accepted the draw available during their opponent's board count."
+        : "The escaping player's count exceeded the fixed honor limit. Only that player's moves advance it."
+    : null;
+  const drawnTimeoutDetail = reason === "timeout" && result === "draw"
+    ? state.variantKey === "three-check"
+      ? "The clock reached zero, but the opponent cannot deliver a check with the material left, so the game is drawn."
+      : "The clock reached zero, but the opponent cannot checkmate with the material left, so the game is drawn."
+    : null;
+  return [makrukCountDetail ?? oukCountDetail ?? drawnTimeoutDetail ?? reasonText[reason], `${sideToMove} was the side to move when the game ended.`, base];
 }
 
 function inferOutcomeReason(state: GameState): NonNullable<GameState["outcomeReason"]> {
@@ -108,4 +135,10 @@ function inferOutcomeReason(state: GameState): NonNullable<GameState["outcomeRea
 
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+export function outcomeReasonLabel(reason: string) {
+  if (reason === "timeout") return "Timeout";
+  const label = Object.hasOwn(reasonLabels, reason) ? reasonLabels[reason as keyof typeof reasonLabels] : reason.replace(/-/g, " ");
+  return capitalize(label);
 }

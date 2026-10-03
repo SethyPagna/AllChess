@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
 import { getRuntimeRecentHistory, type HistoryResultFilter } from "@/lib/history/runtime";
+import { legacyWriteRetired, legacyWritesEnabled } from "@/lib/realtime/legacy-writes";
 import { createInitialState } from "@/lib/variants";
 
 const createGameSchema = z.object({
@@ -20,6 +21,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (!legacyWritesEnabled()) return legacyWriteRetired();
   const body = createGameSchema.parse(await request.json().catch(() => ({})));
   const state = createInitialState(body.variantKey);
   const env = await getCloudflareRuntimeEnv();

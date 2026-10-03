@@ -1,0 +1,77 @@
+{
+  "collection": "shore",
+  "family": "konane",
+  "mode": "built-in-imagegen",
+  "created": "2026-09-29",
+  "provenance": "Original contemporary material studies, not museum scans or historical replicas.",
+  "references": [
+    {
+      "asset": "light-stone-first",
+      "file": "references/light-stone-first.png",
+      "generationId": "exec-8b3229b0-5edd-4ad0-8600-4efd84709879",
+      "prompt": "Use case: product-mockup\nAsset type: one final transparent game-piece sprite, light stone for a contemporary Kōnane collection named Shore.\nPrimary request: Exactly ONE small, beautifully waterworn pale coral-limestone playing pebble. It is a complete solid rounded pebble, not branching coral, shell, jewelry, a carved token or a sphere. A gently asymmetric rounded-triangular oval outline with one softly flattened shoulder; about 37 mm wide, 35 mm deep and 15 mm thick. Low broad domed upper surface and smoothly eased edges. Natural shallow clustered pores of varied sizes and a few fine mineral cavities, with rounded weathered rims; quiet warm ivory/off-white calcium stone, subtle cream flecks. Convincing physical microstructure, sharp photographic detail, no artificial black speckle pattern. The form and broad tonal contrast must remain readable when reduced to a 32-pixel playing piece.\nComposition: strict vertical top-down orthographic product photograph, no camera tilt. One whole centered pebble occupies about 78 percent of the square image width, at least 10 percent empty transparent margin on every side. Real transparent alpha background, clean antialiased silhouette. The complete object only: no floor, cast ground shadow, board, table, label, text, symbols, border or additional object. Do not show a side-by-side view.\nLighting: neutral soft upper-left studio key with gentle fill. Very fine natural self-shadowing inside surface pores, subtle rounded volume, satin-matte dry mineral surface. No harsh bloom, clipping to pure white, glossy plastic, grime or scenic lighting. Museum-quality close product photography for a premium tabletop game. This is original contemporary game art, not a replica of a historical artifact.\nOutput: one isolated high-resolution square PNG with genuine transparent background. Prioritize coherent natural pebble anatomy, surface depth and clean silhouette.",
+      "transparentBackground": true,
+      "accepted": false,
+      "reason": "Superseded by an image-generation refinement requesting a cleaner alpha boundary; transparent RGB is ignored in runtime composition."
+    }
+  ],
+  "assets": [
+    {
+      "name": "light-stone",
+      "file": "light-stone.png",
+      "generationId": "exec-ed3342bc-789a-47b4-ba38-5d4936041830",
+      "parent": "references/light-stone-first.png",
+      "prompt": "Edit the supplied single pale porous playing pebble image. Preserve the exact pebble silhouette, shape, scale, placement, warm ivory material, fine pores and neutral overhead lighting. Clean only the alpha boundary: remove every disconnected floating speck outside the solid pebble, eliminate the tiny red/yellow/cyan color fringe, and give the complete pebble a clean naturally antialiased outline. Do not erase genuine pores or change the interior. No cast shadow, floor or background. Keep a genuinely transparent background and the existing square composition. Exactly one complete pebble.",
+      "transparentBackground": true
+    },
+    {
+      "name": "dark-stone",
+      "file": "dark-stone.png",
+      "generationId": "exec-5069d466-ea33-4e68-ac0b-7ba0d044ca4e",
+      "prompt": "Use case: product-mockup\nAsset type: one final transparent game-piece sprite, dark stone for a contemporary Kōnane collection named Shore.\nPrimary request: Exactly ONE small waterworn charcoal basalt playing pebble. Complete solid pebble, not branching coral, jewelry, carved token, disk or sphere. A naturally asymmetric rounded oval, about 37 mm wide, 34 mm deep and 15 mm thick, one slightly broad flattened shoulder, smoothly worn edges. The upper dome is shallow and broad. The outline must be its own distinct natural shape, not a triangular pale stone recolored. Dry charcoal-gray basalt with subtle warm ash-gray mineral variations; not pitch black. Realistic fine pits and a few small rounded weathered vesicles; much finer and sparser holes than a coral pebble. Sharp coherent fine mineral grain, no artificial speckle overlay. Strong readable edge and volume at 32-pixel game-piece size.\nComposition: strict vertical top-down orthographic product photograph, no camera tilt. One whole centered pebble occupies about 78 percent of a square image width, with at least 10 percent empty transparent margin on every side. Real transparent alpha background, clean antialiased silhouette. Complete object only: no floor, cast ground shadow, board, table, label, text, symbols, border or other objects. No disconnected dust, fringe or floating particles outside the pebble.\nLighting: neutral soft upper-left studio key with gentle fill. Natural self-shadowing inside pores; dry satin-matte mineral. Dark stone detail remains visible with lifted charcoal midtones and restrained natural broad soft highlight, no gloss, bloom or dramatic black clipping. Museum-quality macro product photography for a premium tabletop game. Original contemporary game art, not a replica of a historical artifact.\nOutput: one isolated high-resolution square PNG with genuine transparent background. Prioritize natural pebble anatomy, subtly worn relief and clean edges.",
+      "transparentBackground": true
+    },
+    {
+      "name": "board-colour",
+      "file": "board-colour.png",
+      "generationId": "exec-ddafb0cf-fa6a-4c41-98be-bfab99bc4cac",
+      "prompt": "Use case: texture-study\nAsset type: one opaque full-square board-surface colour texture for the contemporary Shore Kōnane collection.\nPrimary request: An uninterrupted top-down close material study of a broad naturally weathered, gently dressed volcanic stone playing surface. Medium warm-gray stone, brighter than a charcoal basalt playing pebble and darker than ivory coral-tone pieces. Quiet subtle taupe-gray mineral mottling, fine varied pores and softened ancient-looking wear in the material itself, with no specific artifact copied. Sharp believable dry mineral detail, softly weathered fine grain. Restrained luxury through real material character and calm low contrast. A coherent surface across the entire square, no obvious repetitive pattern, no dramatic veins or large dark blotches.\nComposition: strict overhead orthographic flat colour-map view. The surface fills the square edge to edge. No perspective, rim, slab edge, bevel, vignette, gradient, directional light, cast shadows, highlights or depth lighting. Diffuse even neutral light throughout. No holes, bowls, pits arranged in a game grid, pieces, stone tokens, lines, coordinates, border, letters, decorations, cultural symbols, logos, text or objects. Actual board pits will be modeled separately, so this image must only contain subtle natural material grain, not a picture of a finished game board.\nOutput: one high-resolution opaque square PNG. Original generated surface art suitable as a continuous colour map over a real recessed 3D board. Keep it spacious and visually quiet at playing scale.",
+      "transparentBackground": false
+    }
+  ],
+  "runtime": {
+    "pieces": {
+      "size": 512,
+      "format": "WebP",
+      "encoding": "lossless",
+      "operations": [
+        "resize with contain and transparent margin",
+        "encode"
+      ]
+    },
+    "board": {
+      "size": 1024,
+      "format": "WebP",
+      "quality": 92,
+      "operations": [
+        "resize",
+        "remove redundant alpha",
+        "encode"
+      ]
+    }
+  },
+  "sources": [
+    {
+      "title": "National Park Service: Kōnane rules",
+      "url": "https://www.nps.gov/puho/learn/historyculture/upload/Konane-Rules-508.pdf"
+    },
+    {
+      "title": "Bishop Museum: Pōhaku of Hawaiʻi",
+      "url": "https://blog.bishopmuseum.org/culture/pohaku-of-hawaii/"
+    },
+    {
+      "title": "Bishop Museum: Kōnane 2026",
+      "url": "https://www.bishopmuseum.org/konane2026/"
+    }
+  ]
+}

@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = fileURLToPath(new URL("../..", import.meta.url));
+const externalBaseUrl = process.env.PLAYWRIGHT_BASE_URL;
 
 export default defineConfig({
   testDir: "../../ops/tests/e2e",
@@ -9,10 +10,10 @@ export default defineConfig({
   workers: process.env.CI ? 4 : 2,
   reporter: "list",
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3210",
+    baseURL: externalBaseUrl ?? "http://127.0.0.1:3210",
     trace: "on-first-retry"
   },
-  webServer: {
+  webServer: externalBaseUrl ? undefined : {
     command: "node ops/scripts/ops/audit/playwright-dev-server.ts",
     cwd: repoRoot,
     url: "http://127.0.0.1:3210/en/play",

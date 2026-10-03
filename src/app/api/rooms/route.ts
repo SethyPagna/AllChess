@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { createD1GameRepository } from "@/lib/cloudflare/d1";
 import { getCloudflareRuntimeEnv } from "@/lib/cloudflare/runtime";
+import { legacyWriteRetired, legacyWritesEnabled } from "@/lib/realtime/legacy-writes";
 import { createRoomSnapshot } from "@/lib/realtime/rooms";
 import { getRuntimeRoomList } from "@/lib/realtime/runtime";
 
@@ -21,12 +22,14 @@ export async function GET(request: Request) {
       limit: Number.isFinite(limit) ? limit : 20,
       query: searchParams.get("q") ?? undefined,
       sort: searchParams.get("sort") === "spectators" ? "spectators" : "recent",
-      status: status === "active" || status === "waiting" ? status : "all"
+      status: status === "active" || status === "waiting" ? status : "all",
+      variant: searchParams.get("variant") ?? undefined
     })
   );
 }
 
 export async function POST(request: Request) {
+  if (!legacyWritesEnabled()) return legacyWriteRetired();
   const body = createRoomSchema.parse(await request.json().catch(() => ({})));
   const snapshot = createRoomSnapshot({ variantKey: body.variantKey, rated: body.rated });
   const env = await getCloudflareRuntimeEnv();

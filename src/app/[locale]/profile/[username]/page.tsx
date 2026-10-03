@@ -1,4 +1,3 @@
-import { ProfileEmptyState } from "@/components/profile/profile-empty-state";
 import { ProfileHero } from "@/components/profile/profile-hero";
 import { ProfileResults } from "@/components/profile/profile-results";
 import { ProfileStats } from "@/components/profile/profile-stats";
@@ -10,10 +9,12 @@ import { summarizeProfileHistory } from "@/lib/profile/summary";
 
 export const dynamic = "force-dynamic";
 
+const guestUsername = "player";
+
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; username: string }> }) {
   const { locale: rawLocale, username } = await params;
   const locale = normalizeLocale(rawLocale);
-  const displayName = username === "player" ? "Guest player" : username;
+  const displayName = username === guestUsername ? "Guest player" : username;
   return createPageMetadata(locale, `${displayName} profile`, "Profile, match records, and rating summary.");
 }
 
@@ -25,15 +26,22 @@ export default async function ProfilePage({
   const { locale: rawLocale, username } = await params;
   const locale = normalizeLocale(rawLocale);
   const t = createTranslator(locale);
-  const displayName = username === "player" ? "Guest player" : username;
+  const isGuest = username === guestUsername;
   const history = await getRuntimeProfileHistory(username, 5);
   const summary = summarizeProfileHistory(history);
+  const hasRecords = summary.gamesPlayed > 0 || history.results.length > 0;
 
   return (
-    <section className="account-page mx-auto grid max-w-5xl gap-5">
-      <ProfileHero displayName={displayName} history={history} locale={locale} summary={summary} />
-      <ProfileStats ratingLabel={t("chess.rating")} summary={summary} />
-      {history.results.length > 0 ? <ProfileResults history={history} locale={locale} /> : <ProfileEmptyState locale={locale} />}
+    <section className="profile-page">
+      <ProfileHero
+        displayName={isGuest ? "Guest player" : username}
+        isGuest={isGuest}
+        locale={locale}
+        settingsLabel={t("nav.settings")}
+        signInLabel={isGuest ? t("nav.login") : null}
+      />
+      {hasRecords ? <ProfileStats ratingLabel={t("chess.rating")} summary={summary} /> : null}
+      <ProfileResults history={history} locale={locale} />
     </section>
   );
 }

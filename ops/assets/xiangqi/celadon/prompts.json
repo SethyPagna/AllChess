@@ -1,0 +1,190 @@
+{
+  "mode": "built-in image_gen",
+  "collection": "Xiangqi Celadon",
+  "references": [
+    {
+      "file": "references/red-general-first.png",
+      "generationId": "exec-555bbc4f-a126-4678-a038-c390569c4988",
+      "prompt": "Use case: product-mockup\nAsset type: one high-resolution transparent 2D Xiangqi game-piece sprite, first reference for an original contemporary Celadon collection.\nPrimary request: Exactly ONE Chinese chess red general disc. Its only character is precisely the traditional Chinese character \"帥\", upright, centered, large, bold and beautifully balanced with correct stroke anatomy. NOT the simplified 帅. Deep dark vermilion enamel fills genuinely recessed character strokes. Native printed character clarity matters more than ornament.\nPhysical design: an expertly made pale celadon glazed stoneware disc, about 44 mm diameter and 12.8 mm thick. Perfectly round top view. A quiet narrow rolled outer lip, a small stepped shoulder, and a single fine incised circular border in the same vermilion surround a broad flat readable face. The glyph fills about 62 percent of the disc diameter. Each recess has a crisp minute ceramic edge and enamel below the face. No raised decal. No metal rim, gold, dragon, landscape, maker's seal or extra character. This is a new contemporary game set, not a claimed historical artifact.\nMaterial: very pale jade-grey celadon glaze with soft milky depth, barely visible restrained glaze pooling near the incised ring, subtle microscopic fired surface variation. Gentle satin-gloss highlights, not glassy transparency, plastic or heavy crackle. The body is the same pale colour across both players; the ink identifies the red side.\nComposition: strict top-down orthographic product view, no camera tilt, no rotation. One whole centered circular piece fills about 82 percent of a square image, with generous clean transparent margin on every side. True transparent alpha background. No board, table, pedestal, cast floor shadow, checkerboard, labels or second view.\nLighting: neutral soft upper-left studio key with gentle fill, clear natural material detail and crisp silhouette, no harsh bloom or dramatic shadow hiding the character. Photographic realism suitable for a luxury tabletop game.\nOutput: one isolated finished piece, square high-resolution transparent PNG. Only \"帥\" and one plain circular face border.",
+      "references": []
+    },
+    {
+      "file": "references/red-general-refinement.png",
+      "generationId": "exec-9768aa55-dad9-46de-b873-91bd81a7f12f",
+      "prompt": "Edit the supplied Celadon Xiangqi red-general sprite only to finish the cutout cleanly. Preserve exactly its centered upright traditional character 帥, recessed vermilion lettering and ring, pale celadon glaze, lighting and disc design. Remove all stray white/grey flecks, chips of background, fringe and isolated pixels outside the true round ceramic silhouette. The outer edge must be a smooth, intact circular contour with natural antialiased alpha, no ragged halo and no detached artifacts. Everything outside that circle must be genuinely transparent, with no shadow, background, checkerboard or added material. Keep the whole disc visible with clean transparent margin, square high resolution. Do not alter the glyph or replace the ceramic with a flat graphic.",
+      "references": [
+        "references/red-general-first.png"
+      ]
+    }
+  ],
+  "records": [
+    {
+      "name": "red-general",
+      "owner": "red",
+      "role": "general",
+      "glyph": "帥",
+      "prompt": "Use the supplied piece as a MATERIAL AND LETTERING STYLE REFERENCE, not as pixels to preserve. Generate a NEW final-quality single Celadon Xiangqi red-general sprite. Exactly the traditional character 帥, deep dark vermilion inside real crisp recessed strokes, plus one fine matching recessed circular ring. Same pale milky jade-grey ceramic glaze and quiet satin-gloss highlights. Native character anatomy must stay exactly 帥.\nIMPORTANT SHAPE QUALITY: the entire outer rim is pristine, unchipped, continuously smooth, circular and professionally polished. Absolutely no jagged edge, flakes, detached specks, white fringe, rough chips or background remnants anywhere. The object is newly crafted luxury ceramic, not aged or damaged. Any tiny fired variation is only inside the glaze surface, never on its silhouette.\nStrict top-down orthographic view, perfectly upright. Disc diameter 44mm, rolled outer lip and broad flat face; no extra decoration. Make the whole disc occupy ONLY 76% of the square image width and height, with at least 12% EMPTY TRANSPARENT MARGIN on each of the four sides. Real transparent alpha background, no floor or cast shadow. Single complete round piece, no tilt, no crop, no labels or extra objects. Crisp readable engraving, neutral balanced studio light, no bloom.",
+      "references": [
+        "references/red-general-refinement.png"
+      ],
+      "file": "red-general.png",
+      "generationId": "exec-595cdd8d-bd5a-4474-9487-03883da02545"
+    },
+    {
+      "name": "black-general",
+      "owner": "black",
+      "role": "general",
+      "glyph": "將",
+      "prompt": "Use case: product-mockup\nAsset type: ONE transparent 2D Xiangqi game-piece sprite matching the Celadon collection.\nInput image 1 is the collection's MATERIAL, SHAPE, CAMERA and LETTERING STYLE reference only. Create a new matching piece, not a second object or an arrangement.\nPiece: black general. The only character must be exactly \"將\", in correct traditional Chinese stroke anatomy, large, upright, bold and centered. Completely replace the reference 帥 with \"將\". Glyph diameter about 62% of the disc. Both the engraved character and the circular face ring must be deep charcoal-black enamel. No red remains anywhere. Keep the pale celadon ceramic body identical to the red reference.\nSame physical design as the reference: 44mm round pale milky jade-grey glazed ceramic disc, broad flat readable face, finely rolled lip, stepped shoulder, one recessed circular face ring. Real carved stroke recesses and ring with pigment below the ceramic face. Pristine continuously smooth circular silhouette, no chips, flakes, fringe, detached specks or rough edges. Subtle interior glaze variation only, no heavy crackle. No metal, gold, seal or decoration.\nMatch the reference material brightness and quiet satin-gloss studio lighting. Strong readable dark pigment, no glare covering the character, crisp natural ceramic edge detail.\nStrict top-down orthographic view, no tilt or rotation. A single complete disc centered in a square frame, occupying about 76% of image width/height, with at least12% genuinely transparent margin on every side. Real alpha background, no board, floor, cast shadow, checkerboard, labels, cropped edge or extra objects.\nOutput one finished high-resolution transparent image. Only the exact character \"將\" and one plain pigment-filled circular face ring.",
+      "references": [
+        "red-general.png"
+      ],
+      "file": "black-general.png",
+      "generationId": "exec-7f5a34b0-7c86-44eb-9469-64574282daed"
+    },
+    {
+      "name": "red-advisor",
+      "owner": "red",
+      "role": "advisor",
+      "glyph": "仕",
+      "file": "red-advisor.png",
+      "references": [
+        "red-general.png"
+      ],
+      "prompt": "Use case: product-mockup\nAsset type: ONE transparent 2D Xiangqi game-piece sprite matching the Celadon collection.\nInput image 1 is the collection's MATERIAL, SHAPE, CAMERA and LETTERING STYLE reference only. Create a new matching piece, not a second object or an arrangement.\nPiece: red advisor. The only character must be exactly \"仕\", in correct traditional Chinese stroke anatomy, large, upright, bold and centered. Completely replace the reference 帥 with \"仕\". Glyph diameter about 62% of the disc. The engraved character and circular face ring use the reference's deep dark vermilion enamel. Keep the same pale celadon ceramic body.\nSame physical design as the reference: 44mm round pale milky jade-grey glazed ceramic disc, broad flat readable face, finely rolled lip, stepped shoulder, one recessed circular face ring. Real carved stroke recesses and ring with pigment below the ceramic face. Pristine continuously smooth circular silhouette, no chips, flakes, fringe, detached specks or rough edges. Subtle interior glaze variation only, no heavy crackle. No metal, gold, seal or decoration.\nMatch the reference material brightness and quiet satin-gloss studio lighting. Strong readable dark pigment, no glare covering the character, crisp natural ceramic edge detail.\nStrict top-down orthographic view, no tilt or rotation. A single complete disc centered in a square frame, occupying about 76% of image width/height, with at least12% genuinely transparent margin on every side. Real alpha background, no board, floor, cast shadow, checkerboard, labels, cropped edge or extra objects.\nOutput one finished high-resolution transparent image. Only the exact character \"仕\" and one plain pigment-filled circular face ring.",
+      "generationId": "exec-858087b0-8281-45c7-a4ad-05ff3ea19703"
+    },
+    {
+      "name": "black-advisor",
+      "owner": "black",
+      "role": "advisor",
+      "glyph": "士",
+      "file": "black-advisor.png",
+      "references": [
+        "red-general.png"
+      ],
+      "prompt": "Use case: product-mockup\nAsset type: ONE transparent 2D Xiangqi game-piece sprite matching the Celadon collection.\nInput image 1 is the collection's MATERIAL, SHAPE, CAMERA and LETTERING STYLE reference only. Create a new matching piece, not a second object or an arrangement.\nPiece: black advisor. The only character must be exactly \"士\", in correct traditional Chinese stroke anatomy, large, upright, bold and centered. Completely replace the reference 帥 with \"士\". Glyph diameter about 62% of the disc. Both engraved character and circular face ring must be deep charcoal-black enamel. No red remains. Keep the pale ceramic body identical to the red reference. The character is 士: its upper horizontal stroke is longer than its lower one, NOT 土.\nSame physical design as the reference: 44mm round pale milky jade-grey glazed ceramic disc, broad flat readable face, finely rolled lip, stepped shoulder, one recessed circular face ring. Real carved stroke recesses and ring with pigment below the ceramic face. Pristine continuously smooth circular silhouette, no chips, flakes, fringe, detached specks or rough edges. Subtle interior glaze variation only, no heavy crackle. No metal, gold, seal or decoration.\nMatch the reference material brightness and quiet satin-gloss studio lighting. Strong readable dark pigment, no glare covering the character, crisp natural ceramic edge detail.\nStrict top-down orthographic view, no tilt or rotation. A single complete disc centered in a square frame, occupying about 76% of image width/height, with at least12% genuinely transparent margin on every side. Real alpha background, no board, floor, cast shadow, checkerboard, labels, cropped edge or extra objects.\nOutput one finished high-resolution transparent image. Only the exact character \"士\" and one plain pigment-filled circular face ring.",
+      "generationId": "exec-0ed7c7cc-fc88-4ebc-a9a4-af18342fad1b"
+    },
+    {
+      "name": "red-elephant",
+      "owner": "red",
+      "role": "elephant",
+      "glyph": "相",
+      "file": "red-elephant.png",
+      "references": [
+        "red-general.png"
+      ],
+      "prompt": "Use case: product-mockup\nAsset type: ONE transparent 2D Xiangqi game-piece sprite matching the Celadon collection.\nInput image 1 is the collection's MATERIAL, SHAPE, CAMERA and LETTERING STYLE reference only. Create a new matching piece, not a second object or an arrangement.\nPiece: red elephant. The only character must be exactly \"相\", in correct traditional Chinese stroke anatomy, large, upright, bold and centered. Completely replace the reference 帥 with \"相\". Glyph diameter about 62% of the disc. Both engraved character and circular face ring use deep dark vermilion enamel, like the reference. The exact red elephant character is 相 (木 at left, 目 at right), not 象. Keep its counters clear and the pale ceramic unchanged.\nSame physical design as the reference: 44mm round pale milky jade-grey glazed ceramic disc, broad flat readable face, finely rolled lip, stepped shoulder, one recessed circular face ring. Real carved stroke recesses and ring with pigment below the ceramic face. Pristine continuously smooth circular silhouette, no chips, flakes, fringe, detached specks or rough edges. Subtle interior glaze variation only, no heavy crackle. No metal, gold, seal or decoration.\nMatch the reference material brightness and quiet satin-gloss studio lighting. Strong readable dark pigment, no glare covering the character, crisp natural ceramic edge detail.\nStrict top-down orthographic view, no tilt or rotation. A single complete disc centered in a square frame, occupying about 76% of image width/height, with at least12% genuinely transparent margin on every side. Real alpha background, no board, floor, cast shadow, checkerboard, labels, cropped edge or extra objects.\nOutput one finished high-resolution transparent image. Only the exact character \"相\" and one plain pigment-filled circular face ring.",
+      "generationId": "exec-3def9199-df37-403c-9f80-9818859017b6"
+    },
+    {
+      "name": "black-elephant",
+      "owner": "black",
+      "role": "elephant",
+      "glyph": "象",
+      "file": "black-elephant.png",
+      "references": [
+        "red-general.png"
+      ],
+      "prompt": "Use case: product-mockup\nAsset type: ONE transparent 2D Xiangqi game-piece sprite matching the Celadon collection.\nInput image 1 is the collection's MATERIAL, SHAPE, CAMERA and LETTERING STYLE reference only. Create a new matching piece, not a second object or an arrangement.\nPiece: black elephant. The only character must be exactly \"象\", in correct traditional Chinese stroke anatomy, large, upright, bold and centered. Completely replace the reference 帥 with \"象\". Glyph diameter about 62% of the disc. Both engraved character and circular face ring must be deep charcoal-black enamel. No red remains. Keep the pale ceramic identical to the reference. The exact black elephant character is 象, not 相; preserve its correct complete traditional strokes and clear internal spaces.\nSame physical design as the reference: 44mm round pale milky jade-grey glazed ceramic disc, broad flat readable face, finely rolled lip, stepped shoulder, one recessed circular face ring. Real carved stroke recesses and ring with pigment below the ceramic face. Pristine continuously smooth circular silhouette, no chips, flakes, fringe, detached specks or rough edges. Subtle interior glaze variation only, no heavy crackle. No metal, gold, seal or decoration.\nMatch the reference material brightness and quiet satin-gloss studio lighting. Strong readable dark pigment, no glare covering the character, crisp natural ceramic edge detail.\nStrict top-down orthographic view, no tilt or rotation. A single complete disc centered in a square frame, occupying about 76% of image width/height, with at least12% genuinely transparent margin on every side. Real alpha background, no board, floor, cast shadow, checkerboard, labels, cropped edge or extra objects.\nOutput one finished high-resolution transparent image. Only the exact character \"象\" and one plain pigment-filled circular face ring.",
+      "generationId": "exec-a134868c-161d-4c44-835d-fa33d683d000"
+    },
+    {
+      "name": "red-horse",
+      "owner": "red",
+      "role": "horse",
+      "glyph": "傌",
+      "file": "red-horse.png",
+      "references": [
+        "red-general.png"
+      ],
+      "prompt": "Use case: product-mockup\nAsset type: ONE transparent 2D Xiangqi game-piece sprite matching the Celadon collection.\nInput image 1 is the collection's MATERIAL, SHAPE, CAMERA and LETTERING STYLE reference only. Create a new matching piece, not a second object or an arrangement.\nPiece: red horse. The only character must be exactly \"傌\", in correct traditional Chinese stroke anatomy, large, upright, bold and centered. Completely replace the reference 帥 with \"傌\". Glyph diameter about 62% of the disc. Both engraved character and circular face ring use deep dark vermilion enamel. The exact red horse glyph is 傌: the person radical 亻 on the left combined with traditional 馬 on the right as ONE character. Not 馬 alone, not simplified 马. Preserve all strokes and the four lower dots clearly.\nSame physical design as the reference: 44mm round pale milky jade-grey glazed ceramic disc, broad flat readable face, finely rolled lip, stepped shoulder, one recessed circular face ring. Real carved stroke recesses and ring with pigment below the ceramic face. Pristine continuously smooth circular silhouette, no chips, flakes, fringe, detached specks or rough edges. Subtle interior glaze variation only, no heavy crackle. No metal, gold, seal or decoration.\nMatch the reference material brightness and quiet satin-gloss studio lighting. Strong readable dark pigment, no glare covering the character, crisp natural ceramic edge detail.\nStrict top-down orthographic view, no tilt or rotation. A single complete disc centered in a square frame, occupying about 76% of image width/height, with at least12% genuinely transparent margin on every side. Real alpha background, no board, floor, cast shadow, checkerboard, labels, cropped edge or extra objects.\nOutput one finished high-resolution transparent image. Only the exact character \"傌\" and one plain pigment-filled circular face ring.",
+      "generationId": "exec-e2e5410d-a335-4102-b3d3-8c327379b358"
+    },
+    {
+      "name": "black-horse",
+      "owner": "black",
+      "role": "horse",
+      "glyph": "馬",
+      "file": "black-horse.png",
+      "references": [
+        "red-general.png"
+      ],
+      "prompt": "Use case: product-mockup\nAsset type: ONE transparent 2D Xiangqi game-piece sprite matching the Celadon collection.\nInput image 1 is the collection's MATERIAL, SHAPE, CAMERA and LETTERING STYLE reference only. Create a new matching piece, not a second object or an arrangement.\nPiece: black horse. The only character must be exactly \"馬\", in correct traditional Chinese stroke anatomy, large, upright, bold and centered. Completely replace the reference 帥 with \"馬\". Glyph diameter about 62% of the disc. Both the character and circular ring are deep charcoal-black, visibly darker than the pale ceramic. No red pigment. Correct traditional 馬, with its four lower dots.\nSame physical design as the reference: 44mm round pale milky jade-grey glazed ceramic disc, broad flat readable face, finely rolled lip, stepped shoulder, one recessed circular face ring. Real carved stroke recesses and ring with pigment below the ceramic face. Pristine continuously smooth circular silhouette, no chips, flakes, fringe, detached specks or rough edges. Subtle interior glaze variation only, no heavy crackle. No metal, gold, seal or decoration.\nMatch the reference material brightness and quiet satin-gloss studio lighting. Strong readable dark pigment, no glare covering the character, crisp natural ceramic edge detail.\nStrict top-down orthographic view, no tilt or rotation. A single complete disc centered in a square frame, occupying about 76% of image width/height, with at least12% genuinely transparent margin on every side. Real alpha background, no board, floor, cast shadow, checkerboard, labels, cropped edge or extra objects.\nOutput one finished high-resolution transparent image. Only the exact character \"馬\" and one plain pigment-filled circular face ring.",
+      "generationId": "exec-cc88f8c8-067d-4536-9017-31e1aef750e3"
+    },
+    {
+      "name": "red-chariot",
+      "owner": "red",
+      "role": "chariot",
+      "glyph": "俥",
+      "file": "red-chariot.png",
+      "references": [
+        "red-general.png"
+      ],
+      "prompt": "Use case: product-mockup\nAsset type: ONE transparent 2D Xiangqi game-piece sprite matching the Celadon collection.\nInput image 1 is the collection's MATERIAL, SHAPE, CAMERA and LETTERING STYLE reference only. Create a new matching piece, not a second object or an arrangement.\nPiece: red chariot. The only character must be exactly \"俥\", in correct traditional Chinese stroke anatomy, large, upright, bold and centered. Completely replace the reference 帥 with \"俥\". Glyph diameter about 62% of the disc. Both character and circular ring use deep vermilion-red pigment. The exact traditional character 俥 has the person radical 亻 on the LEFT and 車 on the RIGHT; keep both components, no simplification.\nSame physical design as the reference: 44mm round pale milky jade-grey glazed ceramic disc, broad flat readable face, finely rolled lip, stepped shoulder, one recessed circular face ring. Real carved stroke recesses and ring with pigment below the ceramic face. Pristine continuously smooth circular silhouette, no chips, flakes, fringe, detached specks or rough edges. Subtle interior glaze variation only, no heavy crackle. No metal, gold, seal or decoration.\nMatch the reference material brightness and quiet satin-gloss studio lighting. Strong readable dark pigment, no glare covering the character, crisp natural ceramic edge detail.\nStrict top-down orthographic view, no tilt or rotation. A single complete disc centered in a square frame, occupying about 76% of image width/height, with at least12% genuinely transparent margin on every side. Real alpha background, no board, floor, cast shadow, checkerboard, labels, cropped edge or extra objects.\nOutput one finished high-resolution transparent image. Only the exact character \"俥\" and one plain pigment-filled circular face ring.",
+      "generationId": "exec-76ee2735-d73f-4217-aa82-6d34f2d07a3d"
+    },
+    {
+      "name": "black-chariot",
+      "owner": "black",
+      "role": "chariot",
+      "glyph": "車",
+      "file": "black-chariot.png",
+      "references": [
+        "red-general.png"
+      ],
+      "prompt": "Use case: product-mockup\nAsset type: ONE transparent 2D Xiangqi game-piece sprite matching the Celadon collection.\nInput image 1 is the collection's MATERIAL, SHAPE, CAMERA and LETTERING STYLE reference only. Create a new matching piece, not a second object or an arrangement.\nPiece: black chariot. The only character must be exactly \"車\", in correct traditional Chinese stroke anatomy, large, upright, bold and centered. Completely replace the reference 帥 with \"車\". Glyph diameter about 62% of the disc. Both character and circular ring use deep charcoal-black pigment. No red. Correct traditional 車, with central vertical stroke through the box and top and bottom crossbars; no person radical.\nSame physical design as the reference: 44mm round pale milky jade-grey glazed ceramic disc, broad flat readable face, finely rolled lip, stepped shoulder, one recessed circular face ring. Real carved stroke recesses and ring with pigment below the ceramic face. Pristine continuously smooth circular silhouette, no chips, flakes, fringe, detached specks or rough edges. Subtle interior glaze variation only, no heavy crackle. No metal, gold, seal or decoration.\nMatch the reference material brightness and quiet satin-gloss studio lighting. Strong readable dark pigment, no glare covering the character, crisp natural ceramic edge detail.\nStrict top-down orthographic view, no tilt or rotation. A single complete disc centered in a square frame, occupying about 76% of image width/height, with at least12% genuinely transparent margin on every side. Real alpha background, no board, floor, cast shadow, checkerboard, labels, cropped edge or extra objects.\nOutput one finished high-resolution transparent image. Only the exact character \"車\" and one plain pigment-filled circular face ring.",
+      "generationId": "exec-a87092b4-fc93-4a50-b409-7329d1ea233c"
+    },
+    {
+      "name": "red-cannon",
+      "owner": "red",
+      "role": "cannon",
+      "glyph": "炮",
+      "file": "red-cannon.png",
+      "references": [
+        "red-general.png"
+      ],
+      "prompt": "Use case: product-mockup\nAsset type: ONE transparent 2D Xiangqi game-piece sprite matching the Celadon collection.\nInput image 1 is the collection's MATERIAL, SHAPE, CAMERA and LETTERING STYLE reference only. Create a new matching piece, not a second object or an arrangement.\nPiece: red cannon. The only character must be exactly \"炮\", in correct traditional Chinese stroke anatomy, large, upright, bold and centered. Completely replace the reference 帥 with \"炮\". Glyph diameter about 62% of the disc. Both character and circular ring use deep vermilion-red pigment. The exact character 炮 has fire radical 火 on the LEFT and 包 on the RIGHT. Do not substitute 砲 or any other character.\nSame physical design as the reference: 44mm round pale milky jade-grey glazed ceramic disc, broad flat readable face, finely rolled lip, stepped shoulder, one recessed circular face ring. Real carved stroke recesses and ring with pigment below the ceramic face. Pristine continuously smooth circular silhouette, no chips, flakes, fringe, detached specks or rough edges. Subtle interior glaze variation only, no heavy crackle. No metal, gold, seal or decoration.\nMatch the reference material brightness and quiet satin-gloss studio lighting. Strong readable dark pigment, no glare covering the character, crisp natural ceramic edge detail.\nStrict top-down orthographic view, no tilt or rotation. A single complete disc centered in a square frame, occupying about 76% of image width/height, with at least12% genuinely transparent margin on every side. Real alpha background, no board, floor, cast shadow, checkerboard, labels, cropped edge or extra objects.\nOutput one finished high-resolution transparent image. Only the exact character \"炮\" and one plain pigment-filled circular face ring.",
+      "generationId": "exec-0a91d59d-63d3-4642-8975-195eade42b6a"
+    },
+    {
+      "name": "black-cannon",
+      "owner": "black",
+      "role": "cannon",
+      "glyph": "砲",
+      "file": "black-cannon.png",
+      "references": [
+        "red-general.png"
+      ],
+      "prompt": "Use case: product-mockup\nAsset type: ONE transparent 2D Xiangqi game-piece sprite matching the Celadon collection.\nInput image 1 is the collection's MATERIAL, SHAPE, CAMERA and LETTERING STYLE reference only. Create a new matching piece, not a second object or an arrangement.\nPiece: black cannon. The only character must be exactly \"砲\", in correct traditional Chinese stroke anatomy, large, upright, bold and centered. Completely replace the reference 帥 with \"砲\". Glyph diameter about 62% of the disc. Both character and circular ring use deep charcoal-black pigment. No red. The exact character 砲 has stone radical 石 on the LEFT and 包 on the RIGHT. Do not substitute 炮.\nSame physical design as the reference: 44mm round pale milky jade-grey glazed ceramic disc, broad flat readable face, finely rolled lip, stepped shoulder, one recessed circular face ring. Real carved stroke recesses and ring with pigment below the ceramic face. Pristine continuously smooth circular silhouette, no chips, flakes, fringe, detached specks or rough edges. Subtle interior glaze variation only, no heavy crackle. No metal, gold, seal or decoration.\nMatch the reference material brightness and quiet satin-gloss studio lighting. Strong readable dark pigment, no glare covering the character, crisp natural ceramic edge detail.\nStrict top-down orthographic view, no tilt or rotation. A single complete disc centered in a square frame, occupying about 76% of image width/height, with at least12% genuinely transparent margin on every side. Real alpha background, no board, floor, cast shadow, checkerboard, labels, cropped edge or extra objects.\nOutput one finished high-resolution transparent image. Only the exact character \"砲\" and one plain pigment-filled circular face ring.",
+      "generationId": "exec-3c4a4c93-c501-4a8c-8767-b0c2e99e9a74"
+    },
+    {
+      "name": "red-soldier",
+      "owner": "red",
+      "role": "soldier",
+      "glyph": "兵",
+      "file": "red-soldier.png",
+      "references": [
+        "red-general.png"
+      ],
+      "prompt": "Use case: product-mockup\nAsset type: ONE transparent 2D Xiangqi game-piece sprite matching the Celadon collection.\nInput image 1 is the collection's MATERIAL, SHAPE, CAMERA and LETTERING STYLE reference only. Create a new matching piece, not a second object or an arrangement.\nPiece: red soldier. The only character must be exactly \"兵\", in correct traditional Chinese stroke anatomy, large, upright, bold and centered. Completely replace the reference 帥 with \"兵\". Glyph diameter about 62% of the disc. Both character and circular ring use deep vermilion-red pigment. The exact native character is 兵, with its two separate lower spreading strokes. No other symbols.\nSame physical design as the reference: 44mm round pale milky jade-grey glazed ceramic disc, broad flat readable face, finely rolled lip, stepped shoulder, one recessed circular face ring. Real carved stroke recesses and ring with pigment below the ceramic face. Pristine continuously smooth circular silhouette, no chips, flakes, fringe, detached specks or rough edges. Subtle interior glaze variation only, no heavy crackle. No metal, gold, seal or decoration.\nMatch the reference material brightness and quiet satin-gloss studio lighting. Strong readable dark pigment, no glare covering the character, crisp natural ceramic edge detail.\nStrict top-down orthographic view, no tilt or rotation. A single complete disc centered in a square frame, occupying about 76% of image width/height, with at least12% genuinely transparent margin on every side. Real alpha background, no board, floor, cast shadow, checkerboard, labels, cropped edge or extra objects.\nOutput one finished high-resolution transparent image. Only the exact character \"兵\" and one plain pigment-filled circular face ring.",
+      "generationId": "exec-bdfe0ddf-0e9a-4a30-aaf6-89ce5f4587ef"
+    },
+    {
+      "name": "black-soldier",
+      "owner": "black",
+      "role": "soldier",
+      "glyph": "卒",
+      "file": "black-soldier.png",
+      "references": [
+        "red-general.png"
+      ],
+      "prompt": "Use case: product-mockup\nAsset type: ONE transparent 2D Xiangqi game-piece sprite matching the Celadon collection.\nInput image 1 is the collection's MATERIAL, SHAPE, CAMERA and LETTERING STYLE reference only. Create a new matching piece, not a second object or an arrangement.\nPiece: black soldier. The only character must be exactly \"卒\", in correct traditional Chinese stroke anatomy, large, upright, bold and centered. Completely replace the reference 帥 with \"卒\". Glyph diameter about 62% of the disc. Both character and circular ring use deep charcoal-black pigment. No red. The exact native character is 卒, with a top dot and horizontal line, two small 人 shapes, and lower 十. No other symbols.\nSame physical design as the reference: 44mm round pale milky jade-grey glazed ceramic disc, broad flat readable face, finely rolled lip, stepped shoulder, one recessed circular face ring. Real carved stroke recesses and ring with pigment below the ceramic face. Pristine continuously smooth circular silhouette, no chips, flakes, fringe, detached specks or rough edges. Subtle interior glaze variation only, no heavy crackle. No metal, gold, seal or decoration.\nMatch the reference material brightness and quiet satin-gloss studio lighting. Strong readable dark pigment, no glare covering the character, crisp natural ceramic edge detail.\nStrict top-down orthographic view, no tilt or rotation. A single complete disc centered in a square frame, occupying about 76% of image width/height, with at least12% genuinely transparent margin on every side. Real alpha background, no board, floor, cast shadow, checkerboard, labels, cropped edge or extra objects.\nOutput one finished high-resolution transparent image. Only the exact character \"卒\" and one plain pigment-filled circular face ring.",
+      "generationId": "exec-894095c7-6fa5-4fd7-96c8-ccfd1f22d4d4"
+    }
+  ]
+}

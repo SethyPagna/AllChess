@@ -1,16 +1,18 @@
-import { Bot, Eye, Flag, MonitorSmartphone, PlayCircle, Timer, Users } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { botDifficultyLevels, type BotDifficultyKey } from "@/lib/bot/config";
 import type { CatalogModeSupport } from "@/lib/catalog";
-import { getTimeControl, timeControls, type TimeControlKey } from "@/lib/game/time-controls";
+import { timeControls, type TimeControlKey } from "@/lib/game/time-controls";
 import type { PlayMode } from "@/components/board/game-board-options";
+
+import { ChoicePicker } from "./choice-buttons";
 
 type SeatChoice = "random" | "first" | "second";
 
 type PlayPregameSetupCardProps = {
+  gameSetup?: ReactNode;
   botDifficulty: BotDifficultyKey;
   botLevelLabel: string;
-  botStrengthDisplay: string;
   botStrengthLabel: string;
   botTargetElo: number;
   firstColorLabel: string;
@@ -25,12 +27,20 @@ type PlayPregameSetupCardProps = {
   seatChoice: SeatChoice;
   secondColorLabel: string;
   timeControl: TimeControlKey;
+  joiningRoom?: boolean;
 };
+
+// Watching is reached from Watch, a spectator link or ?mode=spectate; it is not a way to play, so it has no segment here.
+const modes = [
+  { key: "bot" as const, label: "Bot Mode", shortLabel: "Bot" },
+  { key: "online" as const, label: "Quick Match", shortLabel: "Match" },
+  { key: "room" as const, label: "Play a Friend", shortLabel: "Friend" },
+  { key: "offline" as const, label: "Offline Local", shortLabel: "Local" }
+];
 
 export function PlayPregameSetupCard({
   botDifficulty,
   botLevelLabel,
-  botStrengthDisplay,
   botStrengthLabel,
   botTargetElo,
   firstColorLabel,
@@ -44,90 +54,51 @@ export function PlayPregameSetupCard({
   modeSupport,
   seatChoice,
   secondColorLabel,
-  timeControl
+  timeControl,
+  gameSetup,
+  joiningRoom = false
 }: PlayPregameSetupCardProps) {
-  const timeControlLabel = getTimeControl(timeControl).label;
-  const secondaryModes = [
-    { key: "online" as const, label: "Quick Match", Icon: Flag },
-    { key: "room" as const, label: "Play a Friend", Icon: Users },
-    { key: "spectate" as const, label: "Watch Games", Icon: Eye },
-    { key: "offline" as const, label: "Offline Local", Icon: MonitorSmartphone }
-  ];
-  const modeAccessibleNames: Partial<Record<PlayMode, string>> = {
-    spectate: "Spectate"
-  };
-  const startActionLabel = startLabelForMode(playMode);
+  const startActionLabel = joiningRoom && playMode === "room" ? "Join game" : startLabelForMode(playMode);
+  const showSide = playMode !== "online" && playMode !== "spectate";
+  const sides = [{ key: "random" as const, label: "Random" }, { key: "first" as const, label: firstColorLabel }, { key: "second" as const, label: secondColorLabel }];
 
   return (
-    <div className="play-options-card play-setup-stack">
-      <label className="play-setup-select-card">
-        <Timer size={18} />
-        <select aria-label="Time control" value={timeControl} onChange={(event) => onTimeControlChange(event.target.value as TimeControlKey)}>
-          {timeControls.slice(0, 6).map((control) => (
-            <option key={control.key} value={control.key}>
-              {control.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <div className="play-time-grid play-time-grid-compact" aria-hidden="true">
-        <span className="is-selected">{timeControlLabel}</span>
-      </div>
-      <div className="play-mode-stack" aria-label="Play modes">
-        <button
-          type="button"
-          onClick={() => onModeChange("bot")}
-          className={`focus-ring play-mode-stack-button ${playMode === "bot" ? "is-selected" : ""}`}
-          disabled={!modeSupport.bot.enabled}
-          title={modeSupport.bot.reason}
-        >
-          <Bot size={18} />
-          <span>Bot Mode</span>
-        </button>
-        {secondaryModes.map(({ key, label, Icon }) => (
+    <div className="setup-card">
+      <div className="segmented mode-tabs" role="group" aria-label="Play modes">
+        {modes.map(({ key, label, shortLabel }) => (
           <button
             key={key}
             type="button"
-            aria-label={modeAccessibleNames[key] ?? label}
+            aria-label={label}
+            aria-pressed={playMode === key}
             onClick={() => onModeChange(key)}
-            className={`focus-ring play-mode-stack-button ${playMode === key ? "is-selected" : ""}`}
+            className="focus-ring"
             disabled={!modeSupport[key].enabled}
-            title={modeSupport[key].reason}
+            title={modeSupport[key].enabled ? label : modeSupport[key].reason}
           >
-            <Icon size={18} />
-            <span>{label}</span>
+            {shortLabel}
           </button>
         ))}
       </div>
-      {isBotMode ? (
-        <label className="bot-profile-card bot-profile-card-with-select play-setup-bot-card" title="Choose how strong the bot should be.">
-          <Bot size={18} />
-          <div>
-            <strong>{botLevelLabel} bot</strong>
-            <span title={botStrengthLabel}>{botStrengthDisplay} - {botStrengthLabel}</span>
+      <div className="setup-pickers" data-count={isBotMode ? 2 : 1}>
+        <ChoicePicker label="Time control" value={timeControl} onChange={onTimeControlChange} options={timeControls.slice(0, 6).map(control => ({ key: control.key, label: control.key === "freestyle" ? "Untimed" : control.label }))} />
+        {isBotMode ? (
+          <div className="setup-bot" title={`${botLevelLabel} · ${botStrengthLabel} · target ${botTargetElo}`}>
+            <ChoicePicker label="Bot difficulty" value={botDifficulty} onChange={onBotDifficultyChange} options={botDifficultyLevels.map(level => ({ key: level.key, label: level.label }))} />
           </div>
-          <small title={botStrengthLabel}>target {botTargetElo}</small>
-          <select aria-label="Bot difficulty" value={botDifficulty} onChange={(event) => onBotDifficultyChange(event.target.value as BotDifficultyKey)}>
-            {botDifficultyLevels.map((level) => (
-              <option key={level.key} value={level.key}>
-                {level.label}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : null}
-      <label className="play-setup-field">
-        <span>Side</span>
-        <select aria-label="Side" value={seatChoice} onChange={(event) => onSeatChoiceChange(event.target.value as SeatChoice)}>
-          <option value="random">Random side</option>
-          <option value="first">{firstColorLabel}</option>
-          <option value="second">{secondColorLabel}</option>
-        </select>
-      </label>
-      <button type="button" onClick={onStartGame} className="focus-ring action-primary play-start-button">
-        <PlayCircle size={18} />
-        {startActionLabel}
-      </button>
+        ) : null}
+      </div>
+      {showSide ? (
+        <div className="segmented" role="group" aria-label="Side">
+          {sides.map(side => <button key={side.key} type="button" className="focus-ring" aria-pressed={seatChoice === side.key} onClick={() => onSeatChoiceChange(side.key)}>{side.label}</button>)}
+        </div>
+      ) : playMode === "online" ? <p className="setup-note">Casual game · sides are assigned when paired</p> : null}
+      {gameSetup}
+      <div className="play-start-dock">
+        <button type="button" onClick={onStartGame} className="focus-ring action-primary play-start-button">
+          {startActionLabel}
+        </button>
+      </div>
     </div>
   );
 }

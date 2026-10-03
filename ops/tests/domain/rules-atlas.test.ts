@@ -31,7 +31,7 @@ describe("rules atlas", () => {
     expect(getVariantRuleSummary("shogi").completion.remainingGates).toEqual([]);
     expect(getVariantRuleSummary("mini-shogi").numberedBasics[0]).toContain("5x5");
     expect(getVariantRuleSummary("mini-shogi").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("one-rank promotion")]));
-    expect(getVariantRuleSummary("mini-shogi").completion.remainingGates).toEqual([]);
+    expect(getVariantRuleSummary("mini-shogi").completion.remainingGates).toEqual([expect.stringContaining("loss for sente")]);
     expect(getVariantRuleSummary("crazyhouse").numberedBasics[1]).toContain("pocket");
     expect(getVariantRuleSummary("crazyhouse").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Captured pieces enter the mover pocket")]));
     expect(getVariantRuleSummary("crazyhouse").completion.remainingGates).toEqual([]);
@@ -53,7 +53,8 @@ describe("rules atlas", () => {
     expect(getVariantRuleSummary("makruk").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Native Met")]));
     expect(getVariantRuleSummary("makruk").numberedBasics[0]).toContain("Thai Makruk");
     expect(getVariantRuleSummary("makruk").completion.status).toBe("verified-playable");
-    expect(getVariantRuleSummary("makruk").completion.remainingGates).toEqual([]);
+    expect(getVariantRuleSummary("makruk").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Versioned honor counting")]));
+    expect(getVariantRuleSummary("makruk").completion.remainingGates).toEqual(expect.arrayContaining([expect.stringContaining("Rated matchmaking")]));
     expect(getVariantRuleSummary("makruk").completion.remainingGates).not.toEqual(expect.arrayContaining([expect.stringContaining("promotion fixtures")]));
     expect(getVariantRuleSummary("jungle").numberedBasics[3]).toContain("No check/checkmate");
     expect(getVariantRuleSummary("jungle").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Rat river")]));
@@ -82,6 +83,17 @@ describe("rules atlas", () => {
     expect(getVariantRuleSummary("racing-kings").numberedBasics[0]).toContain("no pawns");
     expect(getVariantRuleSummary("racing-kings").completion.verifiedEdgeCases).toEqual(expect.arrayContaining([expect.stringContaining("Checks are forbidden")]));
     expect(getVariantRuleSummary("racing-kings").completion.remainingGates).toEqual([]);
+  });
+
+  test("describes repetition the way the engine adjudicates it", () => {
+    for (const key of ["crazyhouse", "chaturanga", "shatranj", "antichess", "horde", "racing-kings"]) {
+      expect(getVariantRuleSummary(key).drawConditions).toContain("Threefold repetition (automatic)");
+    }
+    expect(getVariantRuleSummary("xiangqi").drawConditions).toContain("Threefold repetition without perpetual check (automatic)");
+    expect(getVariantRuleSummary("xiangqi").completion.remainingGates).toEqual([expect.stringContaining("perpetual chasing is not adjudicated")]);
+    expect(getVariantRuleSummary("janggi").drawConditions).not.toContain("Repetition");
+    expect(getVariantRuleSummary("janggi").winConditions).toEqual(expect.arrayContaining([expect.stringContaining("perpetual check through a threefold repetition")]));
+    expect(getVariantRuleSummary("mini-shogi").completion.verifiedEdgeCases).not.toEqual(expect.arrayContaining([expect.stringContaining("repetition draws")]));
   });
 
   test("returns nullable completion for optional detail page lookups", () => {

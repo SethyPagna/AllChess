@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_ACCOUNT_ID: d105a82bc26b6913575355352c2d1bb1
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
     steps:
       - name: Checkout
@@ -27,8 +27,27 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify AllChess account before deployment
+        shell: bash
+        run: |
+          identity="$(npx wrangler whoami)"
+          printf '%s\n' "$identity"
+          if ! printf '%s\n' "$identity" | grep -Fq "$CLOUDFLARE_ACCOUNT_ID"; then
+            echo "Credentials do not have access to the authorized AllChess Apps account."
+            exit 1
+          fi
+          if printf '%s\n' "$identity" | grep -Fq 'ungsethypagna@gmail.com'; then
+            echo "BusinessOS credentials must not deploy AllChess."
+            exit 1
+          fi
+
       - name: Build Cloudflare worker
         run: npm run cf:build
+
+      - name: Populate the matching production page cache
+        run: |
+          npm run cf:cache:populate
+          sha256sum public/offline-pack.json
 
       - name: Deploy Cloudflare worker
         run: npx wrangler deploy .open-next/worker.js --config ops/infra/cloudflare/wrangler.jsonc --env=production

@@ -1,4 +1,4 @@
-import type { GameState, PlayerColor } from "@/lib/variants";
+import { canWinOnTime, type GameState, type PlayerColor } from "@/lib/variants";
 
 export function tickGameClock(state: GameState, elapsedMs: number): GameState {
   if (state.status !== "active" || elapsedMs <= 0) return state;
@@ -13,7 +13,7 @@ export function tickGameClock(state: GameState, elapsedMs: number): GameState {
   nextClock.remainingMs = Math.max(0, nextClock.remainingMs - elapsedMs);
   if (nextClock.remainingMs === 0) {
     next.status = "completed";
-    next.result = opponentOf(next, state.turn);
+    next.result = timeoutResult(next, state.turn);
     next.outcomeReason = "timeout";
   }
 
@@ -38,7 +38,7 @@ export function settleTurnClockElapsed(current: GameState, reference: GameState,
   nextClock.remainingMs = expectedRemainingMs;
   if (nextClock.remainingMs === 0) {
     next.status = "completed";
-    next.result = opponentOf(next, activeColor);
+    next.result = timeoutResult(next, activeColor);
     next.outcomeReason = "timeout";
   }
 
@@ -62,4 +62,9 @@ export function formatClock(ms: number, options: { untimed?: boolean } = {}) {
 
 function opponentOf(state: GameState, color: PlayerColor) {
   return state.clocks.find((clock) => clock.color !== color)?.color ?? "draw";
+}
+
+function timeoutResult(state: GameState, flagged: PlayerColor) {
+  const winner = opponentOf(state, flagged);
+  return winner !== "draw" && !canWinOnTime(state, winner) ? "draw" : winner;
 }

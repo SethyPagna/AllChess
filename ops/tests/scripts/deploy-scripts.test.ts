@@ -1,5 +1,5 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 
 import { describe, expect, test } from "vitest";
 
@@ -38,31 +38,38 @@ describe("deployment scripts", () => {
     expect(packageJson.scripts["cf:deploy"]).not.toContain("populateCache remote");
   });
 
-  test("cloudflare durable object patch keeps matchmaking and room transmission bounded", () => {
-    const patchScript = readFileSync(join(repoRoot, "ops", "scripts", "ops", "deploy", "patch-opennext-worker.ts"), "utf8");
-
-    expect(patchScript).toContain("function allchessRatingRange");
-    expect(patchScript).toContain("function allchessRoomIdFromPath");
-    expect(patchScript).toContain("function allchessRoomSocketRequest");
-    expect(patchScript).toContain("function allchessTicketsCompatible");
-    expect(patchScript).toContain("function allchessMatch");
-    expect(patchScript).toContain("(?:\\\\/api)?\\\\/rooms\\\\/([^/]+)");
-    expect(patchScript).toContain('/^\\\\/api\\\\/rooms\\\\/([^/]+)\\\\/socket\\\\/?$/');
-    expect(patchScript).toContain("const allchessRealtimeResponse = allchessRoomSocketRequest(request, env);");
-    expect(patchScript).toContain("return stub.fetch(request);");
-    expect(patchScript).toContain("broadcastSocket");
-    expect(patchScript).toContain("handleSocketMessage");
-    expect(patchScript).toContain("socket.send(JSON.stringify(message))");
-    expect(patchScript).toContain("[Math.max(100, rating - 200), rating + 200]");
-    expect(patchScript).toContain("body.expectedMoveVersion !== snapshot.moveVersion");
-    expect(patchScript).toContain("message.expectedMoveVersion !== snapshot.moveVersion");
-    expect(patchScript).toContain("snapshot.roomId = roomId");
-    expect(patchScript).toContain("match_found");
-    expect(patchScript).toContain("opponentTicketId");
-    expect(patchScript).not.toContain("body.ratingRange ?? [0, 3000]");
+  test("root and organized Wrangler configs resolve the same artifacts and cache bindings", () => {
+    const files = ["wrangler.jsonc", "ops/infra/cloudflare/wrangler.jsonc"];
+    for (const file of files) {
+      const configPath = join(repoRoot, file);
+      const config = JSON.parse(readFileSync(configPath, "utf8"));
+      expect(resolve(dirname(configPath), config.main)).toBe(join(repoRoot, ".open-next", "worker.js"));
+      expect(resolve(dirname(configPath), config.assets.directory)).toBe(join(repoRoot, ".open-next", "assets"));
+      for (const scope of [config, config.env.production]) {
+        expect(scope.r2_buckets).toContainEqual({ binding: "NEXT_INC_CACHE_R2_BUCKET", bucket_name: "allchess-opennext-cache" });
+        expect(scope.vars.R2_CACHE_BINDING_NAME).toBeUndefined();
+        const migrations = resolve(dirname(configPath), scope.d1_databases[0].migrations_dir);
+        expect(migrations).toBe(join(repoRoot, "ops", "infra", "cloudflare", "d1", "migrations"));
+        expect(existsSync(join(migrations, "0001_initial.sql"))).toBe(true);
+      }
+    }
   });
 
-  test("cloudflare cache population is explicit because R2 upload retries should not block deploys", () => {
-    expect(packageJson.scripts["cf:cache:populate"]).toBe("opennextjs-cloudflare populateCache remote --cacheChunkSize 1");
+  test("cloudflare bundles the authoritative realtime source with production write guards", () => {
+    const patchScript = readFileSync(join(repoRoot, "ops", "scripts", "ops", "deploy", "patch-opennext-worker.ts"), "utf8");
+
+    expect(patchScript).toContain('entryPoints: ["src/lib/realtime/durable-objects.ts"]');
+    expect(patchScript).toContain('external: ["cloudflare:workers"]');
+    expect(patchScript).toContain('"process.env.NODE_ENV": \'"production"\'');
+    expect(patchScript).toContain('from "./durable-objects/allchess.js";');
+    expect(patchScript).toContain("function allchessRoomSocketRequest");
+    expect(patchScript).toContain("const allchessRealtimeResponse = allchessRoomSocketRequest(request, env);");
+    expect(patchScript).not.toContain("allchessTicketsCompatible");
+  });
+
+  test("cloudflare cache population uses direct R2 uploads without a remote preview worker", () => {
+    expect(packageJson.scripts["cf:cache:populate"]).toContain("prepare-r2-cache-upload.ts");
+    expect(packageJson.scripts["cf:cache:populate"]).toContain("wrangler r2 bulk put allchess-opennext-cache");
+    expect(packageJson.scripts["cf:cache:populate"]).toContain("--env=production");
   });
 });
