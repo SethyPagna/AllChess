@@ -38,7 +38,8 @@
     "db:catalog:sql": "node ops/scripts/data/sync-catalog-d1.ts --print",
     "db:catalog:sync:local": "powershell -NoProfile -ExecutionPolicy Bypass -File ops/scripts/data/sync-catalog-d1.ps1 -Local",
     "db:catalog:sync:remote": "powershell -NoProfile -ExecutionPolicy Bypass -File ops/scripts/data/sync-catalog-d1.ps1 -Remote",
-    "prepare:offline": "npx tsx ops/scripts/assets/prepare-offline-pack.ts"
+    "prepare:offline": "npx tsx ops/scripts/assets/prepare-offline-pack.ts",
+    "build:arcade": "vite build --config ops/arcade/vite.config.ts"
   },
   "dependencies": {
     "chess.js": "^1.4.0",
@@ -70,6 +71,7 @@
     "tailwindcss": "^4.3.0",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
+    "vite": "^8.0.16",
     "vitest": "^4.1.8",
     "wrangler": "^4.98.0"
   },
