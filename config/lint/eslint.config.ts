@@ -11,6 +11,7 @@ const eslintConfig = [
       ".open-next/**",
       "**/.wrangler/**",
       "coverage/**",
+      "dist/**",
       "legacy/**",
       "node_modules/**",
       "playwright-report/**",
