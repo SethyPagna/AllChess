@@ -67,7 +67,9 @@ describe("deployment scripts", () => {
     expect(patchScript).not.toContain("allchessTicketsCompatible");
   });
 
-  test("cloudflare cache population is explicit because R2 upload retries should not block deploys", () => {
-    expect(packageJson.scripts["cf:cache:populate"]).toBe("opennextjs-cloudflare populateCache remote --cacheChunkSize 1");
+  test("cloudflare cache population uses direct R2 uploads without a remote preview worker", () => {
+    expect(packageJson.scripts["cf:cache:populate"]).toContain("prepare-r2-cache-upload.ts");
+    expect(packageJson.scripts["cf:cache:populate"]).toContain("wrangler r2 bulk put allchess-opennext-cache");
+    expect(packageJson.scripts["cf:cache:populate"]).toContain("--env=production");
   });
 });
