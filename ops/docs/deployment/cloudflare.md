@@ -61,3 +61,5 @@ npm run cf:deploy
 ```
 
 Deploy only to the Apps account (`d105a82bc26b6913575355352c2d1bb1`) belonging to `jamesung.kh@gmail.com`. The BusinessOS account must not be used. GitHub Actions pins this account and checks the credential's access before deployment. `deploy:prod` now uses Cloudflare; `deploy:preview` runs the local Cloudflare preview. Vercel hosting is retired.
+
+The public address is `https://allchess.pagna.workers.dev`. `cf:deploy` builds, prepares the generated incremental-cache keys with the installed OpenNext adapter, uploads those files directly to R2, and deploys the matching Worker. Direct R2 bulk upload avoids OpenNext's temporary preview-worker proxy, which returned repeated 503 responses during the October release. GitHub Actions logs the offline manifest checksum so the deployed pack can be matched to its build.
